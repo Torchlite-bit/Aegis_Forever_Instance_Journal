@@ -78,7 +78,7 @@ td code { white-space: nowrap; }
   <header>
     <span class="eyebrow">WoW: Forever · Aegis Instance Journal</span>
     <h1>Collecting data for the Aegis journal</h1>
-    <p class="lede">Thank you for helping. You play as you normally would with one addon running; it notes what happens in dungeons, and you paste what it caught in our Discord. This guide covers setting it up, what to do in a dungeon run, how to mark boats, zeppelins and portals, and how to send what you recorded.</p>
+    <p class="lede">Thank you for helping. You play as you normally would with one addon running; it notes what happens in dungeons, and you paste what it caught in our Discord, with the bosses' spells added from your combat log by the Log Reader page. This guide covers setting it up, what to do in a dungeon run, how to mark boats, zeppelins and portals, and how to send what you recorded.</p>
     <nav class="toc" aria-label="Contents">
       <a href="#setup">Setup</a>
       <a href="#dungeons">Dungeon runs</a>
@@ -96,8 +96,9 @@ td code { white-space: nowrap; }
   <section id="setup">
     <h2>Setup, once</h2>
     <ol>
-      <li>Unzip the package you were given. Copy the <code>Aegis_Forever_Instance_Journal</code> folder inside it into your Forever AddOns folder. Keep the folder name exactly as it is.</li>
+      <li>Download the newest zip from the journal's GitHub releases, or install <b>Aegis: Forever Instance Journal</b> from CurseForge. Unzip it and copy the <code>Aegis_Forever_Instance_Journal</code> folder into your Forever AddOns folder. Keep the folder name exactly as it is.</li>
     </ol>
+    <div class="cmd"><pre>https://github.com/Torchlite-bit/Aegis_Forever_Instance_Journal/releases</pre><button type="button" data-copy>Copy</button></div>
     <div class="cmd"><pre>World of Warcraft\_classic_beta_\Interface\AddOns\Aegis_Forever_Instance_Journal</pre><button type="button" data-copy>Copy</button></div>
     <ol start="2">
       <li>Close the game completely and start it again. A <code>/reload</code> is not enough the first time.</li>
@@ -228,11 +229,13 @@ td code { white-space: nowrap; }
           <tr><td><code>Entrance of … not recorded</code></td><td>Screenshot the line and send it. The rest of the run still recorded.</td></tr>
           <tr><td>Combat log never says "on"</td><td>Check the box on the Record tab is ticked. If you started the combat log yourself with <code>/combatlog</code>, the addon leaves yours alone; that is fine.</td></tr>
           <tr><td>Copy shows less than you played</td><td>Recording was off at the time. Tick <b>Record automatically in dungeons</b>, or start recording before you go.</td></tr>
+          <tr><td>Copy names no combat log</td><td>The combat log box was off, or you started the log yourself. Your log is still in the <code>Logs</code> folder: the newest <code>WoWCombatLog</code> file from the day of your run.</td></tr>
+          <tr><td>The Log Reader finds no boss fights</td><td>That log is from another session. Pick the file the Copy hint names, or the one whose date and time match your run.</td></tr>
           <tr><td>A red line under Recent</td><td>Screenshot it and post it with your recording.</td></tr>
         </tbody>
       </table>
     </div>
-    <p class="note">When you get a newer version of the addon, delete the old <code>Aegis_Forever_Instance_Journal</code> folder, copy in the new one and restart the game. Your recordings are kept; they live in the WTF folder, not the addon folder.</p>
+    <p class="note">When you get a newer version of the addon, delete the old <code>Aegis_Forever_Instance_Journal</code> folder, copy in the new one and restart the game (the CurseForge app does this for you). Your recordings are kept; they live in the WTF folder, not the addon folder.</p>
   </section>
 
   <section id="commands">
@@ -258,7 +261,6 @@ td code { white-space: nowrap; }
     <h2>Credits</h2>
     <p>The journal's code and data are its own. Other people's work is part of it, used with their permission.</p>
     <div class="credits">
-      <div><strong>Alex Atlas Loot, by Alex Brandson and its contributors</strong><span>The inspiration for the Record tab, the raids and the Forever marks, and the copy of WoW: Forever's emblem the journal uses. Contributors: Niceheal Shadow, Gaia Cloudv, Buddley Wuddley, Beef Party, Thunder Lance, Wakkytabbaky Solstice, Reasonabull Stouthoof, Markofwild Buffer, Joyful Yoda, Mac Bond, Faylastral Ox, Deathjoze Jeijet, Balance Magy, Bulky Wulky, Anowa Stax, Zero Onezero, Perina Bracketfix, Satosha Nakamuara, Annahay Lotusbloom, Furii Vox, Sidja, Mad Skillz, Oogar, Cier, Jolly, Mali, Grama and Eris.</span></div>
       <div><strong>Atlas de Azeroth: Forever, by Santiago Reyes</strong><span>The maps of The Hall of Thanes, Ruins of Lordaeron, Excavation Site: Wetlands and City of Dalaran: his own reinterpretations, not official World of Warcraft art, and he is not affiliated with Blizzard. If you show them in a video or a stream, please credit him in its description, and never alter them or remove his watermark. Support his maps on <a href="https://www.patreon.com/c/SantiagoReyesMaps">Patreon</a> or <a href="https://ko-fi.com/sr433_20">Ko-fi</a>.</span></div>
     </div>
     <p>The paintings of Onyxia's Lair and of the dungeons with no picture of their own are Lionel Schramm's, from Mysteries of Azeroth (Turtle WoW), used with his permission.</p>
