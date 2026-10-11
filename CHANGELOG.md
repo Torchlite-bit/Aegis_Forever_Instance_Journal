@@ -12,6 +12,27 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.26.1]
+
+From the first combat log sent through the Log Reader (Blackfathom Deeps).
+
+### Added
+- **Blackfathom Deeps' boss abilities now have numbers**: how hard each one hit, when it
+  first came and how often, for all seven bosses with a fight. Old Serra'kis gains
+  **Leech Pulse**.
+
+### Fixed
+- **A fight the game never ends** (Lorgus Jett's) no longer runs on through the trash
+  after it. The Log Reader now ends it when he dies, and the journal takes only the
+  boss's own spells from a fight with no end.
+- A creature that only buffed itself near a boss is no longer listed as one of its adds.
+
+### Changed
+- Credits: Alex Atlas Loot is named again as the inspiration for the Record and
+  Reputation tabs.
+
+---
+
 ## [0.26.0]
 
 ### Added

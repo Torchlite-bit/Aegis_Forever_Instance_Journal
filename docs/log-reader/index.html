@@ -218,7 +218,8 @@ function Reader() {
       const comma = raw.indexOf(",", gap);
       const event = raw.slice(gap + 2, comma < 0 ? undefined : comma);
       if (!current && event !== "ENCOUNTER_START") return;
-      if (current && !SPELL_EVENTS.has(event) && event !== "ENCOUNTER_START" && event !== "ENCOUNTER_END") return;
+      if (current && !SPELL_EVENTS.has(event) && event !== "ENCOUNTER_START" && event !== "ENCOUNTER_END"
+        && event !== "UNIT_DIED") return;
       const match = LINE.exec(raw);
       if (!match) return;
       const [, month, day, year, hour, minute, second, millis] = match.map(Number);
@@ -233,6 +234,16 @@ function Reader() {
       if (event === "ENCOUNTER_END") {
         if (current && current.id === parseInt(row[1], 10)) { current.ended = when; current.success = row[5] === "1"; }
         current = null;
+        return;
+      }
+      if (event === "UNIT_DIED") {
+        // Some fights the game never ends (Lorgus Jett's): the death of the creature the fight
+        // is named for ends it, before the trash after it is taken for its adds.
+        if (row.length > 6 && row[6] === current.name && npcID(row[5]) !== null) {
+          current.ended = when;
+          current.success = true;
+          current = null;
+        }
         return;
       }
       if (row.length < 12) return;

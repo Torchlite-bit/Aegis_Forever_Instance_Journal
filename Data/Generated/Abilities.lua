@@ -8,24 +8,106 @@ local _, ns = ...
 ns.SetAbilities({
 	BlackfathomDeeps = {
 		["Ghamoo-ra"] = {
+			abilities = {
+				{
+					spellID = 5568,
+					name = "Trample",
+					school = 1,
+					hit = { 31, 80, 50 },
+					every = { 15, 20 },
+					firstCast = 5,
+				},
+			},
 			encounterID = 2916,
 		},
 		["Lady Sarevess"] = {
+			abilities = {
+				{
+					spellID = 8435,
+					name = "Forked Lightning",
+					school = 8,
+					hit = { 30, 130, 118 },
+					every = { 2, 11 },
+					firstCast = 4,
+				},
+			},
 			encounterID = 2915,
 		},
 		Gelihast = {
+			abilities = {
+				{
+					spellID = 6533,
+					name = "Net",
+					school = 1,
+					every = { 6, 9 },
+					firstCast = 5,
+				},
+			},
 			encounterID = 2914,
 		},
 		["Lorgus Jett"] = {
+			abilities = {
+				{
+					spellID = 12167,
+					name = "Lightning Bolt",
+					school = 8,
+					hit = { 115, 191, 156 },
+					every = { 4, 7 },
+					firstCast = 0,
+				},
+				{
+					spellID = 12550,
+					name = "Lightning Shield",
+					school = 8,
+					hit = { 49, 54, 51 },
+					firstCast = 22,
+					onSelf = true,
+				},
+			},
 			encounterID = 2913,
 		},
 		["Old Serra'kis"] = {
+			abilities = {
+				{
+					spellID = 8433,
+					name = "Leech Pulse",
+					school = 32,
+					hit = { 25, 50, 41 },
+				},
+			},
 			encounterID = 2912,
 		},
 		["Twilight Lord Kelris"] = {
+			abilities = {
+				{
+					spellID = 8399,
+					name = "Sleep",
+					school = 32,
+					every = { 26, 26 },
+					firstCast = 11,
+				},
+			},
 			encounterID = 2911,
 		},
 		["Aku'mai"] = {
+			abilities = {
+				{
+					spellID = 3815,
+					name = "Poison Cloud",
+					school = 8,
+					tick = { 36, 92 },
+					every = { 27, 27 },
+					firstCast = 11,
+				},
+				{
+					spellID = 3490,
+					name = "Frenzied Rage",
+					school = 1,
+					every = { 18, 18 },
+					firstCast = 27,
+					onSelf = true,
+				},
+			},
 			encounterID = 2910,
 		},
 	},

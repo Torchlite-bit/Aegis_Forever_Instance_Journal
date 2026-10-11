@@ -167,8 +167,7 @@ def main():
     os.makedirs(RELEASES, exist_ok=True)
     target = os.path.join(RELEASES, "{}_v{}_testers.zip".format(ADDON, version))
     alex = textwrap.fill("- Alex Atlas Loot, by Alex Brandson and its contributors: the inspiration for "
-                         "the Record tab, the raids and the Forever marks, and the copy of WoW: Forever's "
-                         "emblem the journal uses. Contributors: " + contributors() + ".", width=78, subsequent_indent="  ")
+                         "the Record and Reputation tabs. Contributors: " + contributors() + ".", width=78, subsequent_indent="  ")
     readme = README.format(version=version, alex=alex).replace("\n", "\r\n")
     with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as package:
         for path in files:
