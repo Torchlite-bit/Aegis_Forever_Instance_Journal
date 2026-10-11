@@ -247,7 +247,8 @@ if you're planning something big.
 
 **Releases are automatic.** Every push to `main` publishes a release named
 after the `.toc` version, with the addon zip and that version's changelog entry.
-A push that keeps the version refreshes that release's zip.
+A push that keeps the version refreshes that release's zip. Each new version also
+goes to CurseForge, once: bump the version for CurseForge to get a new file.
 
 ## License
 
