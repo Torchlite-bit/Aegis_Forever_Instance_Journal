@@ -7,7 +7,8 @@ The dungeons, their abilities, factions and transports are the journal's own fil
 (Data/Instances, Data/Authored, Data/Reputation, Data/Travel), edited by hand. This tool writes:
   Data/Generated/Abilities.lua    what the combat logs of recorded runs saw: encounter ids,
                                   damage, timings, spells the written abilities lack, and the
-                                  adds that cast in each fight; pasted recordings add encounter ids
+                                  adds that cast in each fight; pasted recordings add encounter ids,
+                                  and the spells the Log Reader page read from a tester's log
   Data/Generated/Unconfirmed.lua  items an /aegis items scan found the server knows nothing of
   Data/Reputation/Captured.lua    the reputation quartermasters captured in game
 
@@ -199,18 +200,51 @@ def load_recordings():
                 creatures[npc] = {"name": name, "spells": [s for s in spells if s["name"] != "Melee"]}
             by_instance.setdefault(encounter.instance_id, []).append(
                 {"id": encounter.id, "name": encounter.name, "creatures": creatures})
-    # Pasted recordings name each fight and its id, though not what was cast in it.
+    # Pasted recordings: their ENCOUNTER lines name each fight and its id; the FIGHT and SPELL lines
+    # the Log Reader page adds (docs/log-reader) carry what the tester's combat log saw cast in it.
     # ENCOUNTER;encounterID;name;instanceID;kills;wipes;seconds;area
+    # FIGHT;encounterID;name;instanceID;seconds;result
+    # SPELL;encounterID;npcID;creature;spellID;spell;school;casts;hitMin;hitMax;hitAvg;tickMin;tickMax;
+    #       firstCast;everyMin;everyMax;onSelf
     for lines in pasted_recordings():
+        fights = {}
         for fields in (line.split(";") for line in lines):
-            if fields[0] != "ENCOUNTER" or len(fields) < 4 or not fields[2]:
-                continue
-            encounter_id, instance_id = number(fields[1]), number(fields[3])
-            if isinstance(encounter_id, int) and isinstance(instance_id, int):
+            if fields[0] in ("ENCOUNTER", "FIGHT") and len(fields) >= 4 and fields[2]:
+                encounter_id, instance_id = number(fields[1]), number(fields[3])
+                if not (isinstance(encounter_id, int) and isinstance(instance_id, int)):
+                    continue
                 known = by_instance.setdefault(instance_id, [])
-                if not any(e["id"] == encounter_id for e in known):
+                if fields[0] == "FIGHT":
+                    # Each pull is its own fight; its SPELL lines follow it.
+                    fights[encounter_id] = {"id": encounter_id, "name": fields[2], "creatures": {}}
+                    known.append(fights[encounter_id])
+                elif not any(e["id"] == encounter_id for e in known):
                     known.append({"id": encounter_id, "name": fields[2], "creatures": {}})
+            elif fields[0] == "SPELL" and len(fields) >= 17 and number(fields[1]) in fights:
+                npc, spell = number(fields[2]), pasted_spell(fields)
+                if isinstance(npc, int) and spell:
+                    creature = fights[number(fields[1])]["creatures"].setdefault(npc, {"name": fields[3], "spells": []})
+                    creature["spells"].append(spell)
     return by_instance
+
+
+def pasted_spell(fields):
+    """A Log Reader SPELL line as read_combat_log.summarise gives the spell (Melee left out)."""
+    spell_id, school, casts = number(fields[4]), number(fields[6]), number(fields[7])
+    if not isinstance(spell_id, int) or not fields[5] or fields[5] == "Melee":
+        return None
+    spell = {"spellID": spell_id, "name": fields[5], "school": school if isinstance(school, int) else 0}
+    for key, values in (("hit", fields[8:11]), ("tick", fields[11:13]), ("every", fields[14:16])):
+        values = [number(v) for v in values]
+        if all(isinstance(v, int) for v in values):
+            spell[key] = values
+    if isinstance(number(fields[13]), int):
+        spell["firstCast"] = number(fields[13])
+    if isinstance(casts, int) and casts > 0:
+        spell["casts"] = casts
+    if fields[16] == "1":
+        spell["onSelf"] = True
+    return spell
 
 
 def apply_recordings(bosses, encounters):

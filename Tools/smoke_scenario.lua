@@ -2335,6 +2335,8 @@ check(door and door.mapID == 1455 and door.x == 0.5456 and door.y == 0.3779, "wh
 check(ns.DungeonMap:Entrance(ns.GetInstance("HallOfThanes")) == door, "and the map's entrance pin uses it")
 check(state.visits[3065] and state.visits[3065].count == 1, "dungeon visit counted")
 check(Mock.combatLogging and state.combatLogOwned, "combat log turned on inside the dungeon")
+check(#state.combatLogs == 1 and state.combatLogs[1].file:find("^WoWCombatLog%-%d%d%d%d%d%d_%d%d%d%d%d%d%.txt$")
+	and state.combatLogs[1].instanceID == 3065, "the log's file noted by the name the game gives it")
 Mock.subzone = "Anvilmar's Rest"
 Mock.Fire("ZONE_CHANGED")
 Mock.Fire("ZONE_CHANGED")
@@ -2571,6 +2573,8 @@ do
 		and record.ListTitle:GetText() == "Your recording, as text", "Copy turns the right page into the recording as text")
 	check(text:find("^AEGIS RECORDING;1;") and text:find(";Testy McTester\n", 1, true)
 		and text:find("\nQUEST;96403;Important Heirlooms;", 1, true), "the text, credited: " .. text:sub(1, 120))
+	check(record.CopyHint:GetText():find("paste it in our Discord", 1, true) and not record.LogLink:IsShown()
+		and not text:find("COMBATLOG;", 1, true), "no combat log written: straight to Discord")
 	record.CopyBox:SetText("typed over")
 	record.CopyBox:_RunScript("OnTextChanged", true)
 	check(record.CopyBox:GetText() == text, "typing in it puts the recording back")
@@ -2602,6 +2606,14 @@ do
 	Mock.instance = nil
 	Mock.Fire("PLAYER_ENTERING_WORLD", false, false)
 	check(not ns.Recorder:IsRecording(), "and leaving stops it again")
+	-- That run wrote a combat log: Copy names it and points to the Log Reader
+	local written = state.combatLogs[#state.combatLogs]
+	record.Copy:Click()
+	check(written and record.CopyHint:GetText():find(written.file, 1, true) and record.LogLink:IsShown()
+		and record.LogLink:GetText() == "https://torchlite-bit.github.io/Aegis_Forever_Instance_Journal/log-reader/",
+		"a run that wrote a combat log: the hint names its file and links the Log Reader")
+	check(record.CopyBox:GetText():find("\nCOMBATLOG;" .. written.file .. ";3065", 1, true), "and the text says which log it wrote")
+	record.Copy:Click()
 	ns.Recorder:Start()
 	Mock.instance = { name = "The Hall of Thanes", id = 3065 }
 	Mock.Fire("PLAYER_ENTERING_WORLD", false, false)

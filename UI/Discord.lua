@@ -2,12 +2,14 @@ local _, ns = ...
 local L = ns.L
 
 --[[
-	The journal's Discord, where testers post what they recorded. The game cannot open a
-	browser, so the link sits in a box that picks it out when clicked: Ctrl+C copies it. Typing
-	in the box puts the link back. On a parchment page (onParchment) the box gets a dark ground,
-	so its light text reads, and the hint the page's ink.
+	The journal's Discord, where testers post what they recorded, and the Log Reader page, which
+	adds a combat log's boss spells to a recording. The game cannot open a browser, so a link
+	sits in a box that picks it out when clicked: Ctrl+C copies it. Typing in the box puts the
+	link back. On a parchment page (onParchment) the box gets a dark ground, so its light text
+	reads, and the hint the page's ink.
 ]]
 ns.DISCORD_URL = "https://discord.gg/Hr66t25vE7"
+ns.LOG_READER_URL = "https://torchlite-bit.github.io/Aegis_Forever_Instance_Journal/log-reader/"
 
 -- A dark ground behind an input box on a parchment page, where its light text would not read.
 function ns.DarkenInputBox(box)
@@ -19,11 +21,15 @@ function ns.DarkenInputBox(box)
 end
 
 function ns.CreateDiscordLink(parent, width, onParchment)
+	return ns.CreateLinkBox(parent, ns.DISCORD_URL, width, onParchment)
+end
+
+function ns.CreateLinkBox(parent, url, width, onParchment)
 	local box = ns.CreateFrameWithTemplate("EditBox", nil, parent, "InputBoxTemplate")
 	box:SetSize(width or 210, 22)
 	if onParchment then ns.DarkenInputBox(box) end
 	box:SetAutoFocus(false)
-	box:SetText(ns.DISCORD_URL)
+	box:SetText(url)
 	box:SetCursorPosition(0)
 	box:SetScript("OnEditFocusGained", function(self) self:HighlightText() end)
 	box:SetScript("OnEditFocusLost", function(self)
@@ -32,7 +38,7 @@ function ns.CreateDiscordLink(parent, width, onParchment)
 	end)
 	box:SetScript("OnTextChanged", function(self, userInput)
 		if userInput then
-			self:SetText(ns.DISCORD_URL)
+			self:SetText(url)
 			self:HighlightText()
 		end
 	end)

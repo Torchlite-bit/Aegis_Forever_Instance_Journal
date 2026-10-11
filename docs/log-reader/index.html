@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aegis Log Reader</title>
+<meta name="description" content="Adds the boss spells from your WoW: Forever combat log to an Aegis Instance Journal recording. The log is read in your browser and never uploaded.">
+<link rel="icon" href="../images/logo.png">
+<style>
+/* The Aegis Field Guide's look: one reading column, brass accents, paths in a monospace face. */
+:root {
+  --bg: #f1f3f0;
+  --panel: #e6eae4;
+  --fg: #1c272b;
+  --muted: #55626a;
+  --rule: #c9d0c8;
+  --brass: #8a5a12;
+  --ok: #2f6b2f;
+  --rec: #b0362b;
+  --code-bg: #e3e7e1;
+  --display: "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --body: "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: Consolas, "Cascadia Mono", "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12181a; --panel: #1a2225; --fg: #e4e2da; --muted: #9aa4a8; --rule: #2c373b;
+    --brass: #e2ac4d; --ok: #7cc47c; --rec: #e8665a; --code-bg: #1d272a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12181a; --panel: #1a2225; --fg: #e4e2da; --muted: #9aa4a8; --rule: #2c373b;
+  --brass: #e2ac4d; --ok: #7cc47c; --rec: #e8665a; --code-bg: #1d272a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 17px/1.6 var(--body); }
+.page { max-width: 46rem; margin: 0 auto; padding: 40px 16px 72px; display: flex; flex-direction: column; gap: 40px; }
+header { display: flex; flex-direction: column; gap: 12px; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand img { width: 44px; height: 44px; }
+.eyebrow { font: 600 12px/1.2 var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--brass); }
+h1 { font: 700 clamp(28px, 6vw, 40px)/1.15 var(--display); margin: 0; text-wrap: balance; }
+h2 { font: 700 22px/1.25 var(--display); margin: 0; display: flex; align-items: baseline; gap: 10px; }
+h2 .n { font: 700 15px/1 var(--body); color: var(--brass); }
+p { margin: 0; }
+.lede { color: var(--muted); font-size: 18px; max-width: 62ch; }
+section { display: flex; flex-direction: column; gap: 14px; }
+a { color: var(--brass); }
+a:focus-visible, button:focus-visible, textarea:focus-visible, input:focus-visible, .drop:focus-within { outline: 2px solid var(--brass); outline-offset: 2px; }
+code { font: 14px/1.4 var(--mono); background: var(--code-bg); padding: 1px 6px; border-radius: 4px; overflow-wrap: anywhere; }
+.cmd { display: flex; background: var(--code-bg); border-radius: 6px; min-width: 0; }
+.cmd pre { margin: 0; padding: 10px 14px; overflow-x: auto; font: 14px/1.5 var(--mono); flex: 1; min-width: 0; }
+textarea { width: 100%; min-height: 9rem; resize: vertical; font: 13px/1.5 var(--mono); color: var(--fg); background: var(--code-bg); border: 1px solid var(--rule); border-radius: 6px; padding: 10px 12px; }
+textarea[readonly] { min-height: 12rem; }
+input[type="text"] { font: 16px/1.4 var(--body); color: var(--fg); background: var(--code-bg); border: 1px solid var(--rule); border-radius: 6px; padding: 6px 10px; width: min(100%, 20rem); }
+button, .button { font: 600 14px/1 var(--body); letter-spacing: .04em; color: var(--fg); background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 10px 16px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+button:hover, .button:hover { border-color: var(--brass); color: var(--brass); }
+button.primary { background: var(--brass); border-color: var(--brass); color: var(--bg); }
+button.primary:hover { filter: brightness(1.08); color: var(--bg); }
+.cmd button { border: 0; border-left: 1px solid var(--rule); border-radius: 0 6px 6px 0; background: transparent; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.status { font-size: 15px; color: var(--muted); min-height: 1.6em; }
+.status.ok { color: var(--ok); }
+.status.bad { color: var(--rec); }
+.drop { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; min-height: 9rem; padding: 20px; border: 2px dashed var(--rule); border-radius: 8px; background: var(--panel); cursor: pointer; }
+.drop.over { border-color: var(--brass); }
+.drop strong { font-size: 18px; }
+.drop span { color: var(--muted); font-size: 15px; }
+.drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+progress { width: 100%; height: 8px; accent-color: var(--brass); }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font: 600 12px/1.3 var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+td.num { font-variant-numeric: tabular-nums; }
+.kill { color: var(--ok); font-weight: 600; }
+.wipe { color: var(--rec); font-weight: 600; }
+details { border-bottom: 1px solid var(--rule); padding: 6px 0; }
+summary { cursor: pointer; font-weight: 600; }
+details ul { margin: 6px 0 4px; padding-left: 1.2em; font-size: 14px; display: flex; flex-direction: column; gap: 2px; }
+details li span { color: var(--muted); }
+.note { border-left: 3px solid var(--brass); padding: 4px 0 4px 14px; color: var(--muted); font-size: 15px; }
+.small { font-size: 15px; color: var(--muted); }
+[hidden] { display: none !important; }
+footer { font-size: 14px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 16px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<main class="page">
+  <header>
+    <div class="brand"><img src="../images/logo.png" alt="" width="44" height="44"><span class="eyebrow">WoW: Forever · Aegis Instance Journal</span></div>
+    <h1>Add your combat log to your recording</h1>
+    <p class="lede">Addons can't see what bosses cast inside Forever's dungeons, but the game's combat log can. Paste the recording you copied from the journal's Record tab, add the log file, and send the result in our Discord: one paste with everything.</p>
+  </header>
+
+  <section aria-labelledby="step-recording">
+    <h2 id="step-recording"><span class="n">1</span> Paste your recording</h2>
+    <p>In game, open the journal's <b>Record</b> tab, press <b>Copy</b>, then <kbd>Ctrl</kbd>+<kbd>C</kbd>. Paste it here.</p>
+    <textarea id="recording" spellcheck="false" placeholder="AEGIS RECORDING;1;…" aria-describedby="recording-status"></textarea>
+    <p id="recording-status" class="status" aria-live="polite"></p>
+    <div id="credit-row" class="row" hidden>
+      <label for="credit">No recording? Credit me as</label>
+      <input id="credit" type="text" maxlength="40" autocomplete="nickname">
+    </div>
+  </section>
+
+  <section aria-labelledby="step-log">
+    <h2 id="step-log"><span class="n">2</span> Add your combat log</h2>
+    <p>It's in the game's <code>Logs</code> folder, named for when it started, like <code>WoWCombatLog-101126_172405.txt</code>. The journal writes one per dungeon while <b>Write the combat log in dungeons</b> is ticked.</p>
+    <div class="cmd"><pre>World of Warcraft\_classic_beta_\Logs</pre><button type="button" data-copy="World of Warcraft\_classic_beta_\Logs">Copy</button></div>
+    <label class="drop" id="drop">
+      <strong>Drop the log file here</strong>
+      <span>or click to choose it. Several files are fine.</span>
+      <input id="files" type="file" accept=".txt,text/plain" multiple>
+    </label>
+    <progress id="progress" max="1" value="0" hidden></progress>
+    <p id="log-status" class="status" aria-live="polite"></p>
+  </section>
+
+  <section id="result" aria-labelledby="step-send" hidden>
+    <h2 id="step-send"><span class="n">3</span> Send it</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th scope="col">Boss fight</th><th scope="col">Result</th><th scope="col">Length</th><th scope="col">Spells</th></tr></thead>
+        <tbody id="fights"></tbody>
+      </table>
+    </div>
+    <div id="details"></div>
+    <textarea id="output" readonly spellcheck="false" aria-label="Your recording with the combat log's boss spells"></textarea>
+    <div class="row">
+      <button type="button" class="primary" id="copy">Copy it</button>
+      <button type="button" id="save">Save as a file</button>
+      <a class="button" href="https://discord.gg/Hr66t25vE7" target="_blank" rel="noopener">Open our Discord</a>
+    </div>
+    <p id="copy-status" class="status" aria-live="polite"></p>
+    <p class="note">Paste it in our Discord. A long paste turns into a file there by itself, and that's fine.</p>
+  </section>
+
+  <section aria-labelledby="about">
+    <h2 id="about">What this page does</h2>
+    <p class="small">It reads the log in your browser: the file never leaves your computer. From the boss fights only, it keeps what the enemies cast: each spell, how hard it hit, when it was first cast and how often. It leaves out everything else, including every player's name, so your group isn't shared.</p>
+  </section>
+
+  <footer>Part of the <a href="https://github.com/Torchlite-bit/Aegis_Forever_Instance_Journal">Aegis Instance Journal</a>. The lines it adds are read by the journal's build tool, <code>Tools/build_data.py</code>.</footer>
+</main>
+
+<script>
+"use strict";
+/*
+  The journal's own combat-log reader (Tools/read_combat_log.py), in the browser: the same rules,
+  so the numbers match what the build tool reads from a log file.
+
+  Added to the recording:
+    LOGREADER;version;files
+    FIGHT;encounterID;name;instanceID;seconds;result
+    SPELL;encounterID;npcID;creature;spellID;spell;school;casts;hitMin;hitMax;hitAvg;tickMin;tickMax;firstCast;everyMin;everyMax;onSelf
+*/
+const READER_VERSION = 1;
+const LINE = /^(\d+)\/(\d+)\/(\d+) (\d+):(\d+):(\d+)\.(\d+)(?:[-+]\d+)?\s\s(.*)$/;
+const SPELL_EVENTS = new Set(["SPELL_CAST_START", "SPELL_CAST_SUCCESS", "SPELL_DAMAGE", "SPELL_PERIODIC_DAMAGE",
+  "SPELL_AURA_APPLIED", "SPELL_SUMMON", "SPELL_HEAL", "SPELL_MISSED"]);
+const HOSTILE = 0x40;
+// Forever writes the target's state after the spell on damage lines (combat log version 22).
+const ADVANCED_FIELDS = 19;
+const CHUNK = 4 * 1024 * 1024;
+const OWN_LINES = /^(LOGREADER|FIGHT|SPELL);/;
+
+// Python's round(): halves go to the even number.
+function pyRound(x) {
+  const floor = Math.floor(x), part = x - floor;
+  if (part > 0.5) return floor + 1;
+  if (part < 0.5) return floor;
+  return floor % 2 === 0 ? floor : floor + 1;
+}
+
+function csvFields(text) {
+  const out = [];
+  let field = "", quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (quoted) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; } else quoted = false;
+      } else field += c;
+    } else if (c === '"') quoted = true;
+    else if (c === ",") { out.push(field); field = ""; }
+    else field += c;
+  }
+  out.push(field);
+  return out;
+}
+
+function amount(row) {
+  let index = 12;
+  if (row.length > 12 && (row[12].includes("-") || row[12] === "0000000000000000")) index += ADVANCED_FIELDS;
+  if (row.length <= index) return null;
+  const value = parseInt(row[index], 10);
+  return Number.isNaN(value) ? null : value;
+}
+
+function npcID(guid) {
+  const parts = guid.split("-");
+  if ((parts[0] === "Creature" || parts[0] === "Vehicle") && parts.length > 5) return parseInt(parts[5], 10);
+  return null;
+}
+
+function Reader() {
+  const encounters = [];
+  let current = null;
+  return {
+    encounters,
+    line(raw) {
+      // Most lines are outside a fight or not a spell: skip them before the costly parts.
+      const gap = raw.indexOf("  ");
+      if (gap < 0) return;
+      const comma = raw.indexOf(",", gap);
+      const event = raw.slice(gap + 2, comma < 0 ? undefined : comma);
+      if (!current && event !== "ENCOUNTER_START") return;
+      if (current && !SPELL_EVENTS.has(event) && event !== "ENCOUNTER_START" && event !== "ENCOUNTER_END") return;
+      const match = LINE.exec(raw);
+      if (!match) return;
+      const [, month, day, year, hour, minute, second, millis] = match.map(Number);
+      const when = Date.UTC(year, month - 1, day, hour, minute, second, millis);
+      const row = csvFields(match[8]);
+      if (event === "ENCOUNTER_START") {
+        current = { id: parseInt(row[1], 10), name: row[2], instanceID: parseInt(row[5], 10), started: when,
+          ended: null, success: null, creatures: new Map(), spells: new Map() };
+        encounters.push(current);
+        return;
+      }
+      if (event === "ENCOUNTER_END") {
+        if (current && current.id === parseInt(row[1], 10)) { current.ended = when; current.success = row[5] === "1"; }
+        current = null;
+        return;
+      }
+      if (row.length < 12) return;
+      const sourceGUID = row[1], npc = npcID(sourceGUID);
+      if (npc === null || !(parseInt(row[3], 16) & HOSTILE)) return;
+      current.creatures.set(npc, row[2]);
+      const spellID = parseInt(row[9], 10), key = npc + ":" + spellID;
+      let stats = current.spells.get(key);
+      if (!stats) {
+        stats = { npc, spellID, name: row[10], school: parseInt(row[11], 16), casts: [], hits: [], ticks: [], auraOn: new Set() };
+        current.spells.set(key, stats);
+      }
+      const seconds = (when - current.started) / 1000;
+      const casts = stats.casts, last = casts[casts.length - 1];
+      if (event === "SPELL_CAST_START" || event === "SPELL_CAST_SUCCESS") {
+        // A cast that starts and then succeeds is one cast: keep the start.
+        if (!casts.length || seconds - last > 1.0 || event === "SPELL_CAST_START") {
+          if (!(event === "SPELL_CAST_SUCCESS" && casts.length && seconds - last <= 5.0 && stats.lastStart === last)) {
+            casts.push(seconds);
+            if (event === "SPELL_CAST_START") stats.lastStart = seconds;
+          }
+        }
+      } else if (event === "SPELL_DAMAGE") {
+        const value = amount(row);
+        if (value !== null) stats.hits.push(value);
+      } else if (event === "SPELL_PERIODIC_DAMAGE") {
+        const value = amount(row);
+        if (value !== null) stats.ticks.push(value);
+      } else if (event === "SPELL_AURA_APPLIED") {
+        stats.auraOn.add(row[5] === sourceGUID);
+      }
+    },
+  };
+}
+
+function summarise(stats) {
+  const out = { spellID: stats.spellID, name: stats.name, school: stats.school };
+  if (stats.hits.length) {
+    const hits = stats.hits;
+    out.hit = [Math.min(...hits), Math.max(...hits), pyRound(hits.reduce((a, b) => a + b, 0) / hits.length)];
+  }
+  if (stats.ticks.length) out.tick = [Math.min(...stats.ticks), Math.max(...stats.ticks)];
+  const casts = stats.casts;
+  if (casts.length) {
+    out.firstCast = pyRound(casts[0]);
+    const gaps = casts.slice(1).map((b, i) => b - casts[i]);
+    if (gaps.length) out.every = [pyRound(Math.min(...gaps)), pyRound(Math.max(...gaps))];
+    out.casts = casts.length;
+  }
+  if (stats.auraOn.size === 1 && stats.auraOn.has(true)) out.onSelf = true;
+  return out;
+}
+
+// Each fight's creatures and what they did: only spells that were cast or hit (the build tool
+// keeps nothing else), Melee left out, earliest first.
+function fightReport(encounter) {
+  const creatures = [];
+  for (const [npc, name] of encounter.creatures) {
+    const spells = [];
+    for (const stats of encounter.spells.values()) {
+      if (stats.npc !== npc) continue;
+      const spell = summarise(stats);
+      if (spell.name !== "Melee" && (spell.casts || spell.hit || spell.tick)) spells.push(spell);
+    }
+    spells.sort((a, b) => (a.firstCast ?? 9999) - (b.firstCast ?? 9999));
+    if (spells.length) creatures.push({ npc, name, spells });
+  }
+  return {
+    id: encounter.id, name: encounter.name, instanceID: encounter.instanceID,
+    seconds: encounter.ended !== null ? pyRound((encounter.ended - encounter.started) / 1000) : null,
+    result: encounter.success === true ? "kill" : encounter.success === false ? "wipe" : "",
+    creatures,
+  };
+}
+
+function clean(value) {
+  return value === undefined || value === null ? "" : String(value).replace(/[;\r\n|]/g, ",");
+}
+
+function fightLines(fights) {
+  const lines = [];
+  for (const fight of fights) {
+    lines.push(["FIGHT", fight.id, fight.name, fight.instanceID, fight.seconds, fight.result].map(clean).join(";"));
+    for (const creature of fight.creatures) {
+      for (const s of creature.spells) {
+        const hit = s.hit || [], tick = s.tick || [], every = s.every || [];
+        lines.push(["SPELL", fight.id, creature.npc, creature.name, s.spellID, s.name, s.school, s.casts || 0,
+          hit[0], hit[1], hit[2], tick[0], tick[1], s.firstCast, every[0], every[1], s.onSelf ? 1 : ""].map(clean).join(";"));
+      }
+    }
+  }
+  return lines;
+}
+
+async function readFile(file, onProgress) {
+  const reader = Reader(), decoder = new TextDecoder("utf-8");
+  let rest = "";
+  for (let offset = 0; offset < file.size; offset += CHUNK) {
+    const text = rest + decoder.decode(await file.slice(offset, offset + CHUNK).arrayBuffer(), { stream: true });
+    const lines = text.split("\n");
+    rest = lines.pop();
+    for (const line of lines) reader.line(line.endsWith("\r") ? line.slice(0, -1) : line);
+    onProgress(Math.min(offset + CHUNK, file.size));
+  }
+  rest += decoder.decode();
+  if (rest) reader.line(rest.endsWith("\r") ? rest.slice(0, -1) : rest);
+  return reader.encounters.map(fightReport);
+}
+
+// What the pasted recording says: its header, the fights it saw, the logs it wrote.
+function readRecording(text) {
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const header = lines.find((l) => l.startsWith("AEGIS RECORDING;"));
+  const encounters = new Map(), logs = [];
+  for (const line of lines) {
+    const f = line.split(";");
+    if (f[0] === "ENCOUNTER") encounters.set(parseInt(f[1], 10), f[2]);
+    if (f[0] === "COMBATLOG" && f[1]) logs.push(f[1]);
+  }
+  return { lines: lines.filter((l) => !OWN_LINES.test(l)), header, encounters, logs,
+    credit: header ? header.split(";")[6] || "" : "" };
+}
+
+// A log's name is the moment logging began; the journal notes it to the second, the game may
+// differ by one, so names match to the minute.
+function sameLog(a, b) {
+  const minute = (name) => (name.match(/WoWCombatLog-(\d{6}_\d{4})/) || [])[1];
+  return minute(a) && minute(a) === minute(b);
+}
+
+const $ = (id) => document.getElementById(id);
+const state = { fights: [], files: [] };
+
+function setStatus(id, text, kind) {
+  const el = $(id);
+  el.textContent = text;
+  el.className = "status" + (kind ? " " + kind : "");
+}
+
+function stamp() {
+  const d = new Date(), two = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}:${two(d.getMinutes())}`;
+}
+
+function showRecording() {
+  const text = $("recording").value;
+  const recording = readRecording(text);
+  $("credit-row").hidden = Boolean(recording.header);
+  if (!text.trim()) setStatus("recording-status", "");
+  else if (!recording.header) setStatus("recording-status", "That doesn't look like a recording: it should start with AEGIS RECORDING. You can still add a log on its own.", "bad");
+  else {
+    const who = recording.credit ? ` from ${recording.credit}` : "";
+    const asks = recording.logs.length ? ` It wrote ${recording.logs.join(", ")}.` : " It doesn't name a combat log; add yours below.";
+    setStatus("recording-status", `Recording${who}: ${recording.encounters.size} boss fight(s).${asks}`, "ok");
+  }
+  render();
+}
+
+function render() {
+  const recording = readRecording($("recording").value);
+  const fights = state.fights;
+  $("result").hidden = !fights.length;
+  if (!fights.length) return;
+
+  const body = $("fights");
+  body.textContent = "";
+  for (const fight of fights) {
+    const row = body.insertRow();
+    const spells = fight.creatures.reduce((n, c) => n + c.spells.length, 0);
+    row.insertCell().textContent = fight.name + (recording.encounters.size && !recording.encounters.has(fight.id) ? " (not in the recording)" : "");
+    const result = row.insertCell();
+    result.textContent = fight.result || "unfinished";
+    result.className = fight.result;
+    const length = row.insertCell();
+    length.className = "num";
+    length.textContent = fight.seconds === null ? "?" : `${Math.floor(fight.seconds / 60)}:${String(fight.seconds % 60).padStart(2, "0")}`;
+    const count = row.insertCell();
+    count.className = "num";
+    count.textContent = spells;
+  }
+
+  const details = $("details");
+  details.textContent = "";
+  for (const fight of fights) {
+    const box = document.createElement("details");
+    const summary = document.createElement("summary");
+    summary.textContent = `What was kept from ${fight.name}`;
+    box.append(summary);
+    for (const creature of fight.creatures) {
+      const list = document.createElement("ul");
+      const head = document.createElement("li");
+      head.innerHTML = "<b></b>";
+      head.firstChild.textContent = creature.name;
+      list.append(head);
+      for (const s of creature.spells) {
+        const item = document.createElement("li");
+        const facts = [];
+        if (s.hit) facts.push(`hits ${s.hit[0]}–${s.hit[1]}`);
+        if (s.tick) facts.push(`ticks ${s.tick[0]}–${s.tick[1]}`);
+        if (s.casts) facts.push(`${s.casts} cast(s), first at ${s.firstCast}s`);
+        item.append(s.name + " ");
+        const span = document.createElement("span");
+        span.textContent = facts.join(", ");
+        item.append(span);
+        list.append(item);
+      }
+      box.append(list);
+    }
+    details.append(box);
+  }
+
+  const base = recording.header ? recording.lines
+    : [["AEGIS RECORDING", 1, "log-reader", "", stamp(), "", $("credit").value.trim()].map(clean).join(";")];
+  const out = [...base, ["LOGREADER", READER_VERSION, state.files.join(",")].map(clean).join(";"), ...fightLines(fights)];
+  $("output").value = out.join("\n");
+  setStatus("copy-status", "");
+}
+
+async function addFiles(list) {
+  const files = [...list].filter((f) => f.size > 0);
+  if (!files.length) return;
+  const recording = readRecording($("recording").value);
+  const progress = $("progress");
+  progress.hidden = false;
+  const total = files.reduce((n, f) => n + f.size, 0);
+  let done = 0;
+  const fights = [];
+  try {
+    for (const file of files) {
+      setStatus("log-status", `Reading ${file.name}…`);
+      fights.push(...await readFile(file, (read) => { progress.value = (done + read) / total; }));
+      done += file.size;
+    }
+  } catch (error) {
+    progress.hidden = true;
+    setStatus("log-status", `Couldn't read that file: ${error.message}`, "bad");
+    return;
+  }
+  progress.hidden = true;
+  state.files = files.map((f) => f.name);
+  state.fights = fights;
+  if (!fights.length) {
+    setStatus("log-status", "No boss fights in that log. Is it the one from your dungeon run? The newest file in the Logs folder usually is.", "bad");
+  } else {
+    const named = recording.logs.length && !files.some((f) => recording.logs.some((l) => sameLog(f.name, l)));
+    setStatus("log-status", `${fights.length} boss fight(s) found in ${files.length} file(s).` +
+      (named ? ` Your recording named ${recording.logs.join(", ")}: if this log covers the same run, that's fine.` : ""), named ? "" : "ok");
+  }
+  render();
+}
+
+$("recording").addEventListener("input", showRecording);
+$("credit").addEventListener("input", render);
+$("files").addEventListener("change", (e) => addFiles(e.target.files));
+const drop = $("drop");
+drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
+drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+drop.addEventListener("drop", (e) => { e.preventDefault(); drop.classList.remove("over"); addFiles(e.dataTransfer.files); });
+
+async function copyText(text, statusID) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const box = $("output");
+    box.focus();
+    box.select();
+    document.execCommand("copy");
+  }
+  if (statusID) setStatus(statusID, "Copied. Now paste it in our Discord.", "ok");
+}
+$("copy").addEventListener("click", () => copyText($("output").value, "copy-status"));
+$("save").addEventListener("click", () => {
+  const blob = new Blob([$("output").value + "\n"], { type: "text/plain" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `aegis-recording-${stamp().replace(/[: ]/g, "-")}.txt`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+});
+for (const button of document.querySelectorAll("[data-copy]")) {
+  button.addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(button.dataset.copy); button.textContent = "Copied"; } catch { button.textContent = "Select it"; }
+    setTimeout(() => { button.textContent = "Copy"; }, 1500);
+  });
+}
+
+// For checking the reader against Tools/read_combat_log.py.
+window.AegisLogReader = {
+  readText(text) { const r = Reader(); for (const l of text.split(/\r?\n/)) r.line(l); return r.encounters.map(fightReport); },
+  fightLines,
+};
+</script>
+</body>
+</html>
