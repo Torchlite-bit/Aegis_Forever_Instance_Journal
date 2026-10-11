@@ -7,7 +7,7 @@ The dungeons, their abilities, factions and transports are the journal's own fil
 (Data/Instances, Data/Authored, Data/Reputation, Data/Travel), edited by hand. This tool writes:
   Data/Generated/Abilities.lua    what the combat logs of recorded runs saw: encounter ids,
                                   damage, timings, spells the written abilities lack, and the
-                                  adds that cast in each fight
+                                  adds that cast in each fight; pasted recordings add encounter ids
   Data/Generated/Unconfirmed.lua  items an /aegis items scan found the server knows nothing of
   Data/Reputation/Captured.lua    the reputation quartermasters captured in game
 
@@ -199,6 +199,17 @@ def load_recordings():
                 creatures[npc] = {"name": name, "spells": [s for s in spells if s["name"] != "Melee"]}
             by_instance.setdefault(encounter.instance_id, []).append(
                 {"id": encounter.id, "name": encounter.name, "creatures": creatures})
+    # Pasted recordings name each fight and its id, though not what was cast in it.
+    # ENCOUNTER;encounterID;name;instanceID;kills;wipes;seconds;area
+    for lines in pasted_recordings():
+        for fields in (line.split(";") for line in lines):
+            if fields[0] != "ENCOUNTER" or len(fields) < 4 or not fields[2]:
+                continue
+            encounter_id, instance_id = number(fields[1]), number(fields[3])
+            if isinstance(encounter_id, int) and isinstance(instance_id, int):
+                known = by_instance.setdefault(instance_id, [])
+                if not any(e["id"] == encounter_id for e in known):
+                    known.append({"id": encounter_id, "name": fields[2], "creatures": {}})
     return by_instance
 
 
@@ -281,6 +292,18 @@ def number(text):
         return None
 
 
+def pasted_recordings():
+    """The lines of each recording pasted in Discord and saved as text (Recordings/**/*.txt, any
+    file holding an "AEGIS RECORDING;" header; combat logs are skipped)."""
+    for path in sorted(glob.glob(os.path.join(RECORDINGS, "**", "*.txt"), recursive=True)):
+        if os.path.basename(path).startswith("WoWCombatLog"):
+            continue
+        with open(path, encoding="utf-8", errors="replace") as handle:
+            lines = handle.read().splitlines()
+        if any(line.startswith("AEGIS RECORDING;") for line in lines):
+            yield lines
+
+
 def load_vendors():
     """Reputation quartermasters captured in game (the Reputation tab's Capture button, or a
     recording): from the saved files (the player's and Recordings/<name>/) and from recordings
@@ -316,11 +339,7 @@ def load_vendors():
                     add_ware(vendor, item_id, ware.get("price"), ware.get("cost"), ware.get("faction"), ware.get("reaction"))
 
     # VENDOR;npcID;vendor;mapID;x;y;itemID;item;price;faction;reaction;cost
-    for path in glob.glob(os.path.join(RECORDINGS, "**", "*.txt"), recursive=True):
-        with open(path, encoding="utf-8", errors="replace") as handle:
-            lines = handle.read().splitlines()
-        if not any(line.startswith("AEGIS RECORDING;") for line in lines):
-            continue
+    for lines in pasted_recordings():
         sources += 1
         for line in lines:
             fields = line.split(";")

@@ -388,6 +388,12 @@ ns.AddInstance({
 					quality = 3,
 				},
 				{
+					itemID = 5881,
+					name = "Head of Kelris",
+					slot = "Quest",
+					quality = 1,
+				},
+				{
 					itemID = 252820,
 					name = "Pattern: Brawler's Leather Legguards",
 					slot = "Recipe, Leatherworking",
