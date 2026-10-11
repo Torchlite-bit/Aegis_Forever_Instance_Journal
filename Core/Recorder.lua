@@ -68,6 +68,7 @@ function Recorder:Init()
 	state.quests = state.quests or {}
 	state.entrances = state.entrances or {}
 	state.vendors = state.vendors or {}
+	state.combatLogs = state.combatLogs or {}
 	if state.combatLog == nil then state.combatLog = true end
 	-- On unless the player turns it off: recording starts on entering a dungeon.
 	if state.autoRecord == nil then state.autoRecord = true end
@@ -157,7 +158,7 @@ end
 
 function Recorder:Clear()
 	seenItems = nil
-	for _, key in ipairs({ "log", "visits", "areas", "encounters", "loot", "quests", "entrances", "vendors" }) do
+	for _, key in ipairs({ "log", "visits", "areas", "encounters", "loot", "quests", "entrances", "vendors", "combatLogs" }) do
 		state[key] = {}
 	end
 	state.copiedTotal = nil
@@ -389,6 +390,8 @@ function Recorder:Export(credit)
 	-- Items an /aegis items scan found the server knows nothing of.
 	local scan = ns.db.missingItems
 	for _, itemID in ipairs(SortedKeys(scan and scan.items)) do Line("MISSING", itemID, scan.items[itemID]) end
+	-- The combat logs this recording wrote, for the Log Reader to ask for by name.
+	for _, written in ipairs(state.combatLogs) do Line("COMBATLOG", written.file, written.instanceID) end
 	return table.concat(lines, "\n")
 end
 
@@ -396,7 +399,19 @@ end
 -- Combat log
 ------------------------------------------------------------------------------------------
 
--- Only a log this addon started is ever turned off; a log the player started is theirs.
+--[[
+	Addons cannot read what enemies cast inside dungeons, but the game's own log file has it. The
+	journal turns that log on inside dungeons and notes the file it starts: the game names it for
+	the moment logging began (Logs\WoWCombatLog-MMDDYY_HHMMSS.txt). The Log Reader page asks for
+	that file by name and turns it into lines the recording carries.
+	Only a log this addon started is ever turned off; a log the player started is theirs.
+]]
+local LOG_FILES_KEPT = 20
+
+function Recorder:CombatLogs()
+	return state and state.combatLogs or {}
+end
+
 function Recorder:UpdateCombatLog()
 	if not state or type(LoggingCombat) ~= "function" then return end
 	local ok, logging = pcall(LoggingCombat)
@@ -407,7 +422,10 @@ function Recorder:UpdateCombatLog()
 	if wanted and not logging then
 		if pcall(LoggingCombat, true) then
 			state.combatLogOwned = true
-			Log(L.RECORD_LOG_COMBATLOG_ON)
+			local file = "WoWCombatLog-" .. date("%m%d%y_%H%M%S") .. ".txt"
+			table.insert(state.combatLogs, { file = file, instanceID = currentInstanceID, at = Stamp() })
+			if #state.combatLogs > LOG_FILES_KEPT then table.remove(state.combatLogs, 1) end
+			Log(string.format(L.RECORD_LOG_COMBATLOG_ON, file))
 		end
 	elseif not wanted and logging and state.combatLogOwned then
 		pcall(LoggingCombat, false)

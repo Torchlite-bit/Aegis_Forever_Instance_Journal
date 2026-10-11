@@ -13,7 +13,8 @@ local L = ns.L
 	drops the journal does not list there yet (off a boss, off trash, looted by the group), the ones it lists
 	only counted; then quests, quartermasters, travel marks and the latest entries. Copy turns
 	this page into the recording as text, picked out for Ctrl+C (the game cannot write to the
-	clipboard itself); Back, or Escape, turns it back.
+	clipboard itself); Back, or Escape, turns it back. When the recording wrote a combat log, the
+	hint names the file and links the Log Reader, which adds the log's boss spells to the text.
 ]]
 
 local RecordPanel = {}
@@ -31,6 +32,8 @@ local STOP_LOCK_SECONDS = 5
 local RECENT_LINES = 8
 local LEFT_X, LEFT_WIDTH = 28, 322
 local LIST_WIDTH = 316
+-- The recording's text under its hint; shorter when the Log Reader's link sits between them.
+local COPY_HEIGHT, COPY_HEIGHT_WITH_LINK = 340, 284
 
 -- Everything on the page is the journal's body size or larger, in full ink: on this parchment,
 -- small or lighter text does not read.
@@ -275,8 +278,12 @@ local function CreateRightPage(panel, book)
 	panel.CopyHint:SetPoint("TOPLEFT", book, "TOPRIGHT", -348, -48)
 	panel.CopyHint:SetWidth(LIST_WIDTH)
 	panel.CopyHint:SetText(L.RECORD_COPY_HINT)
+	-- Under the hint when the recording wrote a combat log: the page that adds its boss spells.
+	panel.LogLink = ns.CreateLinkBox(book, ns.LOG_READER_URL, 210, true)
+	panel.LogLink:SetPoint("TOPLEFT", panel.CopyHint, "BOTTOMLEFT", 6, -4)
+	panel.LogLink:Hide()
 	local copy = ns.CreateScrollFrame(book, -15, -6, 6)
-	copy:SetSize(350, 340)
+	copy:SetSize(350, COPY_HEIGHT)
 	copy:SetPoint("BOTTOMRIGHT", -5, 1)
 	local box = CreateFrame("EditBox", nil, copy)
 	box:SetMultiLine(true)
@@ -461,6 +468,19 @@ function RecordPanel:SetCopyShown(panel, shown)
 	panel.CopyScroll:SetShown(shown)
 	panel.ListTitle:SetText(shown and L.RECORD_COPY_TITLE or L.RECORD_CAUGHT_TITLE)
 	panel.Copy:SetText(shown and L.RECORD_BACK or L.RECORD_COPY)
+	-- A recording that wrote a combat log goes by the Log Reader, which adds the log's boss spells.
+	local logs = ns.Recorder:CombatLogs()
+	local withLog = shown and #logs > 0
+	if withLog then
+		-- The newest log by name (the hint has room for one), and how many came before it.
+		local files = logs[#logs].file
+		if #logs > 1 then files = string.format(L.RECORD_MORE_LOGS, files, #logs - 1) end
+		panel.CopyHint:SetText(string.format(L.RECORD_COPY_HINT_LOG, files))
+	else
+		panel.CopyHint:SetText(L.RECORD_COPY_HINT)
+	end
+	panel.LogLink:SetShown(withLog)
+	panel.CopyScroll:SetHeight(withLog and COPY_HEIGHT_WITH_LINK or COPY_HEIGHT)
 	if shown then
 		panel.export = ns.Recorder:Export(CreditName())
 		panel.CopyBox:SetText(panel.export)

@@ -104,7 +104,7 @@ td code { white-space: nowrap; }
       <li>At character select, open <b>AddOns</b> and make sure <b>Aegis Instance Journal</b> is ticked.</li>
       <li>In game, press <kbd>Shift</kbd>+<kbd>J</kbd> or type <code>/aegis</code> to open the journal.</li>
       <li>Click the <b>Record</b> tab, the fourth tab along the bottom. It opens like a page of the journal: the recorder on the left, what you caught on the right. Leave <b>Record automatically in dungeons</b> ticked: recording starts by itself when you enter a dungeon and stops when you leave, and a red light <span class="rec-dot" aria-hidden="true"></span>shows on the tab while it runs.</li>
-      <li>Leave <b>Write the game's combat log inside dungeons</b> ticked. That is how boss abilities get recorded.</li>
+      <li>Leave <b>Write the combat log in dungeons</b> ticked. That is how boss abilities get recorded.</li>
       <li>Type the name you want to be credited under in <b>Credit me as</b>; left empty, it is your character's name. Testers who send data are listed in the journal's contributors.</li>
     </ol>
     <p class="note">To record outside dungeons too (quest givers), click <b>Start Recording</b>: it then stays on through logouts and restarts until you click <b>Stop Recording</b>. You only need this one addon. Nothing is uploaded; everything stays on your computer until you send it.</p>
@@ -132,14 +132,14 @@ td code { white-space: nowrap; }
 13:57  Pulled Durgen Dirgehammer.
 13:56  New area: Reliquary of Kings.
 13:37  Killed Faldrim Anvilmar.
-13:32  Combat log on (Logs\WoWCombatLog.txt).
+13:32  Combat log on: Logs\WoWCombatLog-100726_133241.txt.
 13:32  Entered The Hall of Thanes.
 13:32  Entrance of The Hall of Thanes recorded.</div>
     <p>If a line appears in red, or one says <span class="log" style="display:inline;padding:1px 6px;white-space:normal">Entrance of … not recorded: …</span>, take a screenshot and post it with your recording. It tells us what went wrong.</p>
     <h3>After the run</h3>
     <ol>
       <li>Leave the dungeon. Recent shows <code>Left the dungeon.</code> and <code>Combat log off.</code></li>
-      <li>Open the Record tab and press <b>Copy</b> to send what you recorded (see below).</li>
+      <li>Open the Record tab and press <b>Copy</b>, then add your combat log on the Log Reader to send what you recorded (see below).</li>
     </ol>
   </section>
 
@@ -188,7 +188,7 @@ td code { white-space: nowrap; }
     <div class="priority">
       <div><strong>Forever's new dungeons</strong><p>Full runs of City of Dalaran now. From 4 November: The Drowned City, Krol'dok Stronghold, Alcaz Prison, Blackmaw Hold and Shaper's Terrace. Then the raids as they open: Barrow Deeps, Hyjal Summit and Onyxia's Lair. Everything counts: bosses, loot, quests, entrance, area names. Their pages in the journal say "Coming soon" until your recordings fill them in.</p></div>
       <div><strong>The returning dungeons</strong><p>Razorfen Downs through Stratholme are back in the journal with their bosses and loot, but a few entrances are only roughly placed and some bosses have no spot on the map yet. Walking in from outside and killing every boss fixes both.</p></div>
-      <div><strong>Boss abilities</strong><p>How hard each ability hits and when it comes now come only from your runs, for every boss. Gnomeregan, Razorfen Kraul, Scarlet Monastery, Excavation Site and every dungeon from Razorfen Downs on have no abilities listed at all yet. One clean kill of each boss with the combat log on is enough.</p></div>
+      <div><strong>Boss abilities</strong><p>How hard each ability hits and when it comes now come only from your runs, for every boss. The dungeons from Razorfen Downs on have no abilities listed at all yet. One clean kill of each boss with the combat log on is enough, sent through the Log Reader.</p></div>
       <div><strong>Quartermasters</strong><p>Every faction's rewards are empty until someone captures its quartermaster. Walk up to one, open their shop, open the journal's <b>Reputation</b> tab and press <b>Capture vendor</b>. No need to be recording: the wares, their prices and the standing each needs join the tab at once, and come along when you Copy.</p></div>
       <div><strong>Entrances</strong><p>Every dungeon, walked into from outside with recording on.</p></div>
       <div><strong>Quest givers</strong><p>Pick up and hand in dungeon quests with recording on, especially the ones that start far from the dungeon.</p></div>
@@ -201,17 +201,20 @@ td code { white-space: nowrap; }
     <h2>Sending what you recorded</h2>
     <ol>
       <li>On the Record tab, press <b>Copy</b>. The right-hand page turns into everything recorded as text, already selected. <b>Back</b> (the same button) or <kbd>Esc</kbd> turns it back.</li>
-      <li>Press <kbd>Ctrl</kbd>+<kbd>C</kbd>, then paste it in our Discord. Long recordings turn into a text file there by themselves; that is fine.</li>
+      <li>Press <kbd>Ctrl</kbd>+<kbd>C</kbd>.</li>
+      <li>Ran a dungeon? Open the <b>Log Reader</b>, paste it there, and drop in your combat log. The hint above the copied text names the file; it is in the game's <code>Logs</code> folder. The page adds the bosses' spells and gives you one text back: press <b>Copy it</b>.</li>
+      <li>Paste it in our Discord. Long recordings turn into a text file there by themselves; that is fine.</li>
     </ol>
+    <div class="cmd"><pre>https://torchlite-bit.github.io/Aegis_Forever_Instance_Journal/log-reader/</pre><button type="button" data-copy>Copy</button></div>
     <div class="cmd"><pre>https://discord.gg/Hr66t25vE7</pre><button type="button" data-copy>Copy</button></div>
     <p>Under the recorder's title, the Record tab counts what you have caught and how much of it is new since your last Copy, so you can tell when there is something worth sending.</p>
-    <h3>Combat logs, for boss abilities</h3>
-    <p>Damage and timings come from the game's combat logs, which are too big to copy as text. Zip the ones from the days you recorded and attach the zip in Discord:</p>
-    <div class="cmd"><pre>World of Warcraft\_classic_beta_\Logs\WoWCombatLog-*.txt</pre><button type="button" data-copy>Copy</button></div>
+    <h3>Why the Log Reader</h3>
+    <p>Addons can't see what bosses cast inside Forever's dungeons. The game's combat log can, but addons can't read files. The Log Reader reads the log in your browser, so the file never leaves your computer. It keeps only what the enemies cast in boss fights, and no one's name. No dungeon run? Paste straight into Discord.</p>
+    <div class="cmd"><pre>World of Warcraft\_classic_beta_\Logs</pre><button type="button" data-copy>Copy</button></div>
     <ul>
       <li>Do not press <b>Clear</b> on the Record tab until you hear your recording arrived. After that you can clear it or keep going; new recordings just add on.</li>
     </ul>
-    <p class="note">What is in it: the copied text holds what you recorded (dungeons, bosses, loot, quests, travel marks, quartermasters) and the name you chose to be credited under, with no passwords or account details. The combat logs include the names of the characters in your group and what they did in combat. We only read the creatures' side of it, but your group is named in the file.</p>
+    <p class="note">What is in it: the copied text holds what you recorded (dungeons, bosses, loot, quests, travel marks, quartermasters) and the name you chose to be credited under, with no passwords or account details. The Log Reader adds the enemies' spells from boss fights: how hard each hit, when it came and how often. It leaves out every player's name, so your group isn't shared.</p>
   </section>
 
   <section id="trouble">
