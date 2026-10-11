@@ -8,30 +8,6 @@ boss spots, flight paths and travel routes, models and images) is the journal's 
 checked against what is public on many sites, foreverchanges.pro first, and against what
 the testers record in game.
 
-## Alex Atlas Loot
-
-By Alex Brandson and its contributors: Niceheal Shadow, Gaia Cloudv, Buddley Wuddley, Beef
-Party, Thunder Lance, Wakkytabbaky Solstice, Reasonabull Stouthoof, Markofwild Buffer, Joyful
-Yoda, Mac Bond, Faylastral Ox, Deathjoze Jeijet, Balance Magy, Bulky Wulky, Anowa Stax, Zero
-Onezero, Perina Bracketfix, Satosha Nakamuara, Annahay Lotusbloom, Furii Vox, Sidja, Mad
-Skillz, Oogar, Cier, Jolly, Mali, Grama and Eris.
-
-- **Inspiration.** The Record tab's design (recording on entering a dungeon, a copy to paste
-  in Discord, a contributors list), the raids shown before they open, and marking what is new
-  in Forever.
-- **WoW: Forever's emblem** (`Media/ForeverIcon.tga`), Blizzard's, in the copy its textures carry.
-
-Until version 0.24 the journal also listed the spells each boss casts from its `BossSpellsDB`,
-and the factions' rewards from its `FactionDB`. Since 0.25 neither is used: the bosses'
-abilities are the journal's own data, and the factions' rewards come only from quartermasters
-captured in game.
-
-Its author gave permission to share this build with testers (2026-10-07), allows its
-information to be used, not its code (2026-10-08), and agreed to its public release
-(2026-10-11). As its license asks of a work made with permission, its author and contributors
-are named where players see them: in the addon's notes in the AddOns list, here (linked from
-the README), and in the testers' README and guide. None of its code is used.
-
 ## Santiago Reyes's maps
 
 The maps of the Forever dungeons (The Hall of Thanes, Ruins of Lordaeron, Excavation Site:
