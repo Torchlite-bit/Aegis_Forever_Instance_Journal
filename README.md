@@ -1,6 +1,6 @@
 <p align="center"><img src="docs/images/logo.png" alt="Aegis Instance Journal" width="220"></p>
 
-# Aegis: Forever Instance Journal (v0.25.2)
+# Aegis: Forever Instance Journal (v0.26.0)
 
 **Retail's instance journal and dungeon maps, brought to WoW: Forever.**
 
@@ -126,6 +126,9 @@ click opens the right page.
   travel spots you mark.
 - **What you caught** lists what the journal doesn't have yet. **Copy** turns it
   into text to paste in our Discord, and your name goes on the contributors list.
+- **The [Log Reader](https://torchlite-bit.github.io/Aegis_Forever_Instance_Journal/log-reader/)**
+  adds the bosses' spells from your combat log to that text, in your browser.
+  Addons can't see enemy casts in Forever's dungeons, but the log can.
 
 ### ⚡ Light on your game
 
@@ -210,7 +213,7 @@ Aegis_Forever_Instance_Journal/
 ├── Media/         maps, raid pictures and the journal's own textures
 ├── Locales/       every string the journal shows
 ├── Tools/         build, test and packaging scripts (never shipped)
-└── docs/          the README's pictures (never shipped)
+└── docs/          the README's pictures and the Log Reader page (never shipped)
 ```
 
 Everything is the Forever client's own API, guarded where the client withholds
@@ -221,7 +224,7 @@ and checks it; `--perf` measures it.
 
 ## Something broken?
 
-1. Check the **version** in the AddOns list (`0.25.2`) and quote it.
+1. Check the **version** in the AddOns list (`0.26.0`) and quote it.
 2. A red line under **Recent** on the Record tab says what went wrong.
    Screenshot it.
 3. Tell us on **[Discord](https://discord.gg/Hr66t25vE7)** or open an
@@ -234,7 +237,10 @@ Recent changes are in [CHANGELOG.md](CHANGELOG.md).
 ## Contributing
 
 **The easiest way to help is to play.** Leave the Record tab on, run a dungeon,
-press **Copy** and paste it in the Discord.
+press **Copy**, then paste it on the
+[**Log Reader**](https://torchlite-bit.github.io/Aegis_Forever_Instance_Journal/log-reader/)
+with your combat log, which adds the bosses' spells. Post what it gives you in the
+Discord. The page reads the log in your browser and never uploads it.
 
 PRs are welcome too. Say hi on **[Discord](https://discord.gg/Hr66t25vE7)** first
 if you're planning something big.

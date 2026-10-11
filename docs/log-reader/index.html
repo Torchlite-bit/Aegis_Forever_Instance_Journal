@@ -372,6 +372,9 @@ function setStatus(id, text, kind) {
   el.className = "status" + (kind ? " " + kind : "");
 }
 
+const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+const range = ([low, high]) => (low === high ? String(low) : `${low}–${high}`);
+
 function stamp() {
   const d = new Date(), two = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}:${two(d.getMinutes())}`;
@@ -386,7 +389,7 @@ function showRecording() {
   else {
     const who = recording.credit ? ` from ${recording.credit}` : "";
     const asks = recording.logs.length ? ` It wrote ${recording.logs.join(", ")}.` : " It doesn't name a combat log; add yours below.";
-    setStatus("recording-status", `Recording${who}: ${recording.encounters.size} boss fight(s).${asks}`, "ok");
+    setStatus("recording-status", `Recording${who}: ${plural(recording.encounters.size, "boss fight")}.${asks}`, "ok");
   }
   render();
 }
@@ -430,9 +433,9 @@ function render() {
       for (const s of creature.spells) {
         const item = document.createElement("li");
         const facts = [];
-        if (s.hit) facts.push(`hits ${s.hit[0]}–${s.hit[1]}`);
-        if (s.tick) facts.push(`ticks ${s.tick[0]}–${s.tick[1]}`);
-        if (s.casts) facts.push(`${s.casts} cast(s), first at ${s.firstCast}s`);
+        if (s.hit) facts.push(`hits ${range(s.hit)}`);
+        if (s.tick) facts.push(`ticks ${range(s.tick)}`);
+        if (s.casts) facts.push(`${plural(s.casts, "cast")}, first at ${s.firstCast}s`);
         item.append(s.name + " ");
         const span = document.createElement("span");
         span.textContent = facts.join(", ");
@@ -478,7 +481,7 @@ async function addFiles(list) {
     setStatus("log-status", "No boss fights in that log. Is it the one from your dungeon run? The newest file in the Logs folder usually is.", "bad");
   } else {
     const named = recording.logs.length && !files.some((f) => recording.logs.some((l) => sameLog(f.name, l)));
-    setStatus("log-status", `${fights.length} boss fight(s) found in ${files.length} file(s).` +
+    setStatus("log-status", `${plural(fights.length, "boss fight")} found in ${plural(files.length, "file")}.` +
       (named ? ` Your recording named ${recording.logs.join(", ")}: if this log covers the same run, that's fine.` : ""), named ? "" : "ok");
   }
   render();

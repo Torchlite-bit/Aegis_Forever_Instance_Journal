@@ -12,6 +12,24 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.26.0]
+
+### Added
+- **The Log Reader**, a web page that adds the bosses' spells from your combat log
+  to your recording: https://torchlite-bit.github.io/Aegis_Forever_Instance_Journal/log-reader/
+  Addons can't see what enemies cast inside Forever's dungeons, but the game's log
+  file can. Paste your recording, drop in the log, and send the one text it gives
+  back. The log is read in your browser and never uploaded. Only the enemies' spells
+  from boss fights are kept, with no player names.
+- The Record tab notes the log file it starts (Recent says `Combat log on:
+  Logs\WoWCombatLog-….txt`). When a recording wrote one, **Copy** names the file
+  and links the Log Reader.
+
+### Changed
+- The build tool reads the Log Reader's lines like a combat log file.
+
+---
+
 ## [0.25.2]
 
 From the first recorded Blackfathom Deeps run.
