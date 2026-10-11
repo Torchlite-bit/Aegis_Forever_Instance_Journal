@@ -6,6 +6,29 @@
 local _, ns = ...
 
 ns.SetAbilities({
+	BlackfathomDeeps = {
+		["Ghamoo-ra"] = {
+			encounterID = 2916,
+		},
+		["Lady Sarevess"] = {
+			encounterID = 2915,
+		},
+		Gelihast = {
+			encounterID = 2914,
+		},
+		["Lorgus Jett"] = {
+			encounterID = 2913,
+		},
+		["Old Serra'kis"] = {
+			encounterID = 2912,
+		},
+		["Twilight Lord Kelris"] = {
+			encounterID = 2911,
+		},
+		["Aku'mai"] = {
+			encounterID = 2910,
+		},
+	},
 	HallOfThanes = {
 		["Faldrim Anvilmar"] = {
 			abilities = {

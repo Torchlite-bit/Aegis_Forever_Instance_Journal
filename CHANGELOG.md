@@ -12,6 +12,23 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.25.2]
+
+From the first recorded Blackfathom Deeps run.
+
+### Added
+- **Blackfathom Deeps' encounter IDs** for all seven bosses that have a fight, so each
+  fight is tied to its boss by ID, not by name (the game calls Gelihast's "Geilhast").
+- Recordings pasted in Discord now give the journal their encounter IDs when the data
+  is rebuilt.
+- **Head of Kelris** on Twilight Lord Kelris's loot, for Blackfathom Villainy.
+
+### Fixed
+- The first pool is **The Pool of Ask'ar**, as the game names it. The Drowned Sacellum
+  joins the list of the dungeon's areas.
+
+---
+
 ## [0.25.1] (restart)
 
 ### Added

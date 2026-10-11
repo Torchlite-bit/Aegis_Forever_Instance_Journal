@@ -10,15 +10,17 @@ ns.AmendInstance("BlackfathomDeeps", {
 		.. "Sundering. The Twilight's Hammer now holds its flooded halls, guarding Aku'mai, a beast prized by the "
 		.. "Old Gods, while naga and murlocs prowl its pools.",
 
-	areas = { "Pool of Ask'ar", "Moonshrine Ruins", "The Forgotten Pool", "Moonshrine Sanctum", "Aku'mai's Lair" },
+	-- The client's own area names, as a recorded run (2026-10-11) saw them.
+	areas = { "The Drowned Sacellum", "The Pool of Ask'ar", "Moonshrine Ruins", "The Forgotten Pool", "Moonshrine Sanctum",
+		"Aku'mai's Lair" },
 
 	bosses = {
 		["Ghamoo-ra"] = {
-			area = "Pool of Ask'ar",
+			area = "The Pool of Ask'ar",
 			notes = { "A giant turtle in the first great pool." },
 		},
 		["Lady Sarevess"] = {
-			area = "Pool of Ask'ar",
+			area = "The Pool of Ask'ar",
 			notes = { "A naga sorceress in a side cavern off the pool; optional." },
 		},
 		["Gelihast"] = {

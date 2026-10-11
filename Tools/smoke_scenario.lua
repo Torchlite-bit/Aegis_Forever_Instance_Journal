@@ -649,6 +649,16 @@ local thanes = ns.GetInstance("HallOfThanes")
 local magmatus
 for _, boss in ipairs(thanes.bosses) do if boss.name == "Magmatus" then magmatus = boss end end
 check(magmatus.encounterID == 3495 and magmatus.adds and magmatus.adds[1].name == "Dark Iron Summoner", "the recorded run's add and encounter id")
+do
+	-- A pasted recording (Blackfathom Deeps): its fights' ids, by the client's misspelt name too.
+	local deeps = {}
+	for _, boss in ipairs(ns.GetInstance("BlackfathomDeeps").bosses) do deeps[boss.name] = boss end
+	check(deeps["Gelihast"].encounterID == 2914 and deeps["Aku'mai"].encounterID == 2910, "a pasted recording's encounter ids")
+	check(deeps["Ghamoo-ra"].area == "The Pool of Ask'ar", "the client's own name for the first pool")
+	local head
+	for _, row in ipairs(deeps["Twilight Lord Kelris"].loot) do if row.itemID == 5881 then head = row end end
+	check(head and head.name == "Head of Kelris", "Kelris drops his head for the quest")
+end
 ns.Journal:OpenBoss(thanes, magmatus)
 local magmatusHeaders = shownHeaders()
 local addHeader
