@@ -1,4 +1,6 @@
-# Aegis: Forever Instance Journal (v0.25.0)
+<p align="center"><img src="docs/images/logo.png" alt="Aegis Instance Journal" width="220"></p>
+
+# Aegis: Forever Instance Journal (v0.25.1)
 
 **Retail's instance journal and dungeon maps, brought to WoW: Forever.**
 
@@ -39,7 +41,7 @@ and to send in your recorded runs.
 
 ### 📖 The journal
 
-<p align="center"><img src="docs/images/journal-city-of-dalaran.webp" alt="The journal open on City of Dalaran" width="720"></p>
+<p align="center"><img src="docs/images/journal-city-of-dalaran.jpg" alt="The journal open on City of Dalaran" width="720"></p>
 
 - **Retail's Encounter Journal**, rebuilt to its measurements (Blizzard's own
   doesn't load on Forever): breadcrumb bar, search box, and four tabs:
@@ -66,9 +68,9 @@ Five side tabs, as in retail, plus one:
 
 | Overview | Loot | Abilities |
 |:---:|:---:|:---:|
-| <img src="docs/images/boss-overview.webp" alt="A boss's overview" width="280"> | <img src="docs/images/boss-loot.webp" alt="A boss's loot" width="280"> | <img src="docs/images/boss-abilities.webp" alt="A boss's abilities" width="280"> |
+| <img src="docs/images/boss-overview.jpg" alt="A boss's overview" width="280"> | <img src="docs/images/boss-loot.jpg" alt="A boss's loot" width="280"> | <img src="docs/images/boss-abilities.jpg" alt="A boss's abilities" width="280"> |
 | **Model** | **Quests** | |
-| <img src="docs/images/boss-model.webp" alt="A boss in 3D" width="280"> | <img src="docs/images/boss-quests.webp" alt="The dungeon's quests" width="280"> | |
+| <img src="docs/images/boss-model.jpg" alt="A boss in 3D" width="280"> | <img src="docs/images/boss-quests.jpg" alt="The dungeon's quests" width="280"> | |
 
 ### 🗺️ Dungeon maps
 
@@ -83,7 +85,7 @@ Five side tabs, as in retail, plus one:
 
 | The Hall of Thanes | City of Dalaran, with the map legend | Old Ironforge |
 |:---:|:---:|:---:|
-| <img src="docs/images/map-hall-of-thanes.webp" alt="The Hall of Thanes map" width="280"> | <img src="docs/images/map-city-of-dalaran.webp" alt="City of Dalaran map and legend" width="280"> | <img src="docs/images/map-old-ironforge.webp" alt="Old Ironforge map" width="280"> |
+| <img src="docs/images/map-hall-of-thanes.jpg" alt="The Hall of Thanes map" width="280"> | <img src="docs/images/map-city-of-dalaran.jpg" alt="City of Dalaran map and legend" width="280"> | <img src="docs/images/map-old-ironforge.jpg" alt="Old Ironforge map" width="280"> |
 
 ### 🧭 World map
 
@@ -97,7 +99,7 @@ Five side tabs, as in retail, plus one:
 - The map's **Quests** and **Map Legend** tabs are back, and the legend lights
   up the journal's icons.
 
-<p align="center"><img src="docs/images/map-ruins-of-lordaeron.webp" alt="Ruins of Lordaeron map with a quest mark's tooltip" width="560"></p>
+<p align="center"><img src="docs/images/map-ruins-of-lordaeron.jpg" alt="Ruins of Lordaeron map with a quest mark's tooltip" width="560"></p>
 
 ### 🛡️ Reputation
 
@@ -219,7 +221,7 @@ and checks it; `--perf` measures it.
 
 ## Something broken?
 
-1. Check the **version** in the AddOns list (`0.25.0`) and quote it.
+1. Check the **version** in the AddOns list (`0.25.1`) and quote it.
 2. A red line under **Recent** on the Record tab says what went wrong.
    Screenshot it.
 3. Tell us on **[Discord](https://discord.gg/Hr66t25vE7)** or open an

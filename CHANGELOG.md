@@ -12,6 +12,17 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.25.1] (restart)
+
+### Added
+- **The Aegis Instance Journal logo**: the journal's icon in the AddOns list, and at
+  the top of the README.
+
+### Changed
+- The README's screenshots are JPGs, so they show on CurseForge too.
+
+---
+
 ## [0.25.0] (restart)
 
 ### Added
