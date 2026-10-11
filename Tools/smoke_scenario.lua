@@ -176,11 +176,16 @@ for _, instance in ipairs(ns.GetInstances("dungeon")) do
 	if instance.forever then foreverDungeons[#foreverDungeons + 1] = instance.key end
 end
 check(#foreverDungeons == 9, "the nine Forever dungeons are known, got " .. #foreverDungeons)
-check(buttonNamed(dungeons, "The Hall of Thanes").Forever:IsShown() and not buttonNamed(dungeons, "The Deadmines").Forever:IsShown()
-	and buttonNamed(dungeons, "The Hall of Thanes").Forever.Label:GetText() == "New in Forever",
-	"what is new in Forever says so on its button")
-check(buttonNamed(dungeons, "The Drowned City").Untested._points[1][3] == 26,
-	"a placeholder's untested note sits above its Forever mark")
+do
+	local mark = buttonNamed(dungeons, "The Hall of Thanes").Forever
+	check(mark:IsShown() and not buttonNamed(dungeons, "The Deadmines").Forever:IsShown()
+		and mark.Icon:GetTexture():find("Media\\ForeverIcon", 1, true), "what is new in Forever carries its emblem")
+	mark:_RunScript("OnEnter")
+	check(GameTooltip._text == "New in WoW: Forever", "and hovering it says what it means")
+	mark:_RunScript("OnLeave")
+	check(buttonNamed(dungeons, "The Drowned City").Untested._points[1][2] == -31,
+		"a placeholder's untested note sits beside the emblem")
+end
 
 -- Excavation Site: Santiago Reyes's newer map, its four bosses on it, the last one the site added
 do
@@ -304,11 +309,9 @@ check(tabs[3]:IsEnabled() and not tabs[3].unselected._desaturated, "Abilities av
 local bullets = page.BossOverview.Child.Bullets
 check(bullets[1]:IsShown() and bullets[1].Text:GetText():find("spiders of the courtyard", 1, true)
 	and bullets[2]:IsShown() and bullets[2].Text:GetText():find("level", 1, true), "the written note first, then the level")
-local castBullet = false
-for _, bullet in ipairs(bullets) do
-	if bullet:IsShown() and bullet.Text:GetText():find("Leech Poison", 1, true) then castBullet = true end
-end
-check(castBullet, "abilities bullet lists Witherfang's Leech Poison")
+check(page.boss.extraAbilities and page.boss.extraAbilities[1].title == "Spiders of the courtyard"
+	and page.boss.extraAbilities[1].icon:find("inv_misc_monsterspidercarapace_01", 1, true),
+	"what matters in the fight, written down where it has no spell: the courtyard's spiders")
 check(#f.NavBar._nav == 3 and f.NavBar._nav[3].name == "Witherfang", "Home > dungeon > boss breadcrumbs")
 
 -- Breadcrumb dropdowns
@@ -540,8 +543,9 @@ check(#rows == 3 and namedGraveweave == 1 and not nameOnlyLeft, "once its real o
 -- What the guide added: Lyn's abilities and how to summon him, notes, alerts, the Horde's key quests
 local lyn
 for _, boss in ipairs(cityOfDalaran.bosses) do if boss.name == "Lyn the Ignored" then lyn = boss end end
-check(#lyn.abilities == 3 and lyn.abilities[2].spellID == 1304473 and lyn.spellFlags[1304473][1] == "Curse"
-	and lyn.notes[1]:find("Tome of Dalaran", 1, true), "Lyn the Ignored's abilities, and how to summon him")
+check(#lyn.abilities == 2 and lyn.abilities[2].spellID == 1304473 and lyn.abilities[2].flags[1] == "Curse"
+	and lyn.extraAbilities[1].title == "Skeletons" and lyn.fightNote:find("Tome of Dalaran", 1, true)
+	and lyn.notes[1]:find("Tome of Dalaran", 1, true), "Lyn the Ignored's abilities, and how to summon her")
 local heartOfDisruption
 for _, quest in ipairs(cityOfDalaran.quests) do if quest.questID == 96984 then heartOfDisruption = quest end end
 check(#heartOfDisruption.prerequisites == 4 and heartOfDisruption.prerequisites[4].name == "Blood in the Streets",
@@ -570,24 +574,32 @@ local function flagNames(header)
 	return table.concat(names, ",")
 end
 
--- Spells from the combat-log data, with the client's own names and descriptions
+-- A boss the site describes only in words: the recorded run's spells, with the client's names and
+-- descriptions and the run's numbers, then what the site wrote
 ns.Journal:OpenBoss(ns.GetInstance("HallOfThanes"), ns.GetInstance("HallOfThanes").bosses[1])
 tabs[3]:Click()
 check(abilities:IsShown() and not page.Placeholder:IsShown() and page.info.EncounterTitle:IsShown(), "Abilities tab shows the boss's abilities")
 local headers = shownHeaders()
-check(#headers == 2 and headers[1].Button.Title:GetText() == "Mind Blast", "Faldrim's two spells, by client name")
+check(#headers == 3 and headers[1].Button.Title:GetText() == "Mind Blast" and headers[3].Button.Title:GetText() == "Curses and diseases",
+	"Faldrim's two recorded spells, by client name, then the site's note")
 check(headers[1].Button.AbilityIcon:GetTexture() == 136224, "spell icon from the client")
 check(headers[1].Description:IsShown() and headers[1].Description:GetText():find("Blasts the target for 54 Shadow damage.", 1, true),
 	"open by default, white colour codes stripped: " .. tostring(headers[1].Description:GetText()))
 check(headers[1].Description:GetText():find("Hits 71-73, first cast at 7s", 1, true),
 	"the player's own combat-log numbers under the description: " .. tostring(headers[1].Description:GetText()))
--- A boss no recording has seen lists its spells without numbers: those come only from the player's own logs
+check(flagNames(headers[1]):find("Interruptible", 1, true), "a cast with a cast time is marked interruptible: " .. flagNames(headers[1]))
+check(flagNames(headers[2]):find("Curse", 1, true), "a curse is marked as one: " .. flagNames(headers[2]))
+check(headers[3].Button.AbilityIcon:GetTexture():find("spell_shadow_curseofsargeras", 1, true)
+	and flagNames(headers[3]):find("Disease", 1, true), "the written note with its icon and alerts")
+-- A boss the site lists spells for: its words over the client's, its alerts, and no numbers until a recording
 local rhahk
 for _, boss in ipairs(ns.GetInstance("TheDeadmines").bosses) do if boss.name == "Rhahk'Zor" then rhahk = boss end end
 check(rhahk.abilities and #rhahk.abilities > 0 and rhahk.abilities[1].hit == nil and rhahk.abilities[1].firstCast == nil
 	and rhahk.abilities[1].every == nil, "spells from the sources carry no damage or timings")
-check(flagNames(headers[1]):find("Interruptible", 1, true), "a cast with a cast time is marked interruptible: " .. flagNames(headers[1]))
-check(flagNames(headers[2]):find("Curse", 1, true), "a curse is marked as one: " .. flagNames(headers[2]))
+ns.Journal:OpenBoss(ns.GetInstance("TheDeadmines"), rhahk)
+headers = shownHeaders()
+check(#headers == 1 and headers[1].Description:GetText():find("Hits the tank hard and stuns them for 3 seconds.", 1, true)
+	and flagNames(headers[1]) == "Tank Alert", "what the spell does in the fight, and who it is for")
 headers[1].Button:Click()
 check(not shownHeaders()[1].Description:IsShown() and shownHeaders()[1].Button.ExpandedIcon:GetText() == "+", "clicking a header closes it")
 headers[1].Button:Click()
@@ -600,14 +612,14 @@ check(page.tab == Page.TAB_ABILITIES, "the abilities tab stays open across bosse
 headers = shownHeaders()
 local titles = {}
 for _, header in ipairs(headers) do titles[#titles + 1] = header.Button.Title:GetText() end
-check(#headers == 6 and titles[1] == "Stage One" and titles[3] == "Stage Two: 75% Health" and titles[6] == "Stage Three: 50% Health",
+check(#headers == 6 and titles[1] == "Stage One" and titles[2] == "Stage Two: 66% Health" and titles[5] == "Stage Three: 33% Health",
 	"three stages with their spells: " .. table.concat(titles, " | "))
-check(headers[4].Button.Title:GetText() == "Spell 6432" and headers[4].Description:IsShown() == false, "stage spells start closed")
-check(flagNames(headers[4]) == "Important,Healer Alert", "hand-written role alerts win: " .. flagNames(headers[4]))
-local stageIndent = select(4, headers[4]:GetPoint(1))
+check(headers[3].Button.Title:GetText() == "Spell 6432" and headers[3].Description:IsShown() == false, "stage spells start closed")
+check(flagNames(headers[3]) == "Important", "the ability's own alerts: " .. flagNames(headers[3]))
+local stageIndent = select(4, headers[3]:GetPoint(1))
 check(stageIndent == 15, "spells indent under their stage")
 
--- Hand-written abilities after the logged ones, for what no combat log has seen
+-- The Fanglords: the site's spells, each once, with its alerts
 local anacondra, cobrahn
 for _, boss in ipairs(ns.GetInstance("WailingCaverns").bosses) do
 	if boss.name == "Lady Anacondra" then anacondra = boss end
@@ -615,11 +627,8 @@ for _, boss in ipairs(ns.GetInstance("WailingCaverns").bosses) do
 end
 ns.Journal:OpenBoss(ns.GetInstance("WailingCaverns"), cobrahn)
 headers = shownHeaders()
-check(#headers == 5 and headers[1].Button.Title:GetText() == "Spell 9532" and headers[5].Button.Title:GetText() == "Poison",
-	"Cobrahn's logged spells, then his written Poison, which no log has seen")
-check(headers[5].Button.AbilityIcon:GetTexture() == "Interface\\Icons\\Spell_Nature_CorrosiveBreath", "written abilities carry their icons")
-check(flagNames(headers[3]):find("Magic", 1, true) and flagNames(headers[3]):find("Interruptible", 1, true),
-	"his logged Druid's Slumber keeps the alerts written for it")
+check(#headers == 3 and headers[1].Button.Title:GetText() == "Spell 9532" and flagNames(headers[1]):find("Interruptible", 1, true)
+	and headers[3].Description:GetText():find("At 30% health he turns into a serpent", 1, true), "Cobrahn's three spells")
 ns.Journal:OpenBoss(ns.GetInstance("WailingCaverns"), anacondra)
 headers = shownHeaders()
 local healingTouches = 0
@@ -628,9 +637,13 @@ for _, header in ipairs(headers) do
 		healingTouches = healingTouches + 1
 	end
 end
-check(#headers == 4 and healingTouches == 1, "Anacondra's Healing Touch, logged now, is listed once")
-check(flagNames(headers[3]):find("Magic", 1, true), "her logged Sleep keeps the magic alert written for it")
-
+check(#headers == 3 and healingTouches == 1, "Anacondra's Healing Touch is listed once")
+check(flagNames(headers[2]):find("Magic", 1, true), "her Sleep carries its magic alert")
+-- How the fight begins, above the abilities, where it is unusual
+local sneed
+for _, boss in ipairs(ns.GetInstance("TheDeadmines").bosses) do if boss.name == "Sneed" then sneed = boss end end
+ns.Journal:OpenBoss(ns.GetInstance("TheDeadmines"), sneed)
+check(abilities.Child.Description:GetText():find("He pilots Sneed's Shredder", 1, true), "Sneed: how the fight begins")
 -- Adds from recorded runs: their own header, their spells beneath
 local thanes = ns.GetInstance("HallOfThanes")
 local magmatus
@@ -647,8 +660,8 @@ check(addHeader and magmatusHeaders[addHeader + 1].Button.Title:GetText() == "Sp
 check(#ns.Search:Find("Summon Fiery Assistant") > 0, "search finds the add's spells")
 
 -- Nothing known yet
-local excavation = ns.GetInstance("ExcavationSiteWetlands")
-ns.Journal:OpenBoss(excavation, excavation.bosses[1])
+local uldaman = ns.GetInstance("Uldaman")
+ns.Journal:OpenBoss(uldaman, uldaman.bosses[1])
 check(#shownHeaders() == 0 and abilities.Child.Empty:IsShown(), "a boss with no abilities says so")
 tabs[1]:Click()
 
@@ -1135,8 +1148,8 @@ do
 	for _, entry in ipairs(ns.QuestMap:MarksOn(1424)) do
 		if entry.quest.questID == 1053 then raleigh = raleigh + 1 end
 	end
-	check(raleigh == 1 and #ns.GetInstance("ScarletMonasteryArmory").quests == 2,
-		"the Armory lists the Cathedral's Herod quests too, and the map marks each once, got " .. raleigh)
+	check(raleigh == 1 and #ns.GetInstance("ScarletMonasteryArmory").quests == 3,
+		"the Armory lists the Cathedral's Herod quests too (and its Hearts of Zeal), and the map marks each once, got " .. raleigh)
 	WorldMapFrame:Hide()
 
 	-- Inside: the quests that start in the dungeon, on its own map
@@ -1951,6 +1964,36 @@ check(not page:IsShown() and reputation:IsShown(), "switching tabs closes an ope
 -- Reputation tab
 ------------------------------------------------------------------------------------------
 
+-- Rewards come only from captured quartermasters: none ship yet, so every faction waits for one
+do
+	local waiting = 0
+	for _, faction in ipairs(ns.GetFactions()) do
+		if not ns.FactionCaptured(faction) then waiting = waiting + 1 end
+	end
+	check(waiting == 23, "no faction has rewards before its quartermaster is captured, got " .. (23 - waiting))
+	check(buttonNamed(reputation, "Booty Bay").Count:GetText() == "Not captured yet"
+		and buttonNamed(reputation, "Azeroth Commerce Authority").Count:GetText() == "Coming soon",
+		"a card says so: a Forever faction is still to come, any other waits for its quartermaster")
+	check(not reputation.Capture:IsEnabled() and reputation.CaptureStatus:GetText() == "Open a quartermaster's shop to capture their wares.",
+		"Capture waits for a shop to be open")
+end
+-- A captured quartermaster, as a build's capture (Data/Reputation/Captured.lua) brings one in
+ns.AddCapturedVendors({ { npcID = 10857, name = "Argent Quartermaster Lightspark", mapID = 1422, x = 0.426, y = 0.836, wares = {
+	{ itemID = 13724, faction = "Argent Dawn", reaction = 5, price = 6000 },
+	{ itemID = 4996, faction = "Argent Dawn", reaction = 6 }, { itemID = 13482, faction = "Argent Dawn", reaction = 6 },
+	{ itemID = 19446, faction = "Argent Dawn", reaction = 6 }, { itemID = 19442, faction = "Argent Dawn", reaction = 6 },
+	{ itemID = 19216, faction = "Argent Dawn", reaction = 6 }, { itemID = 227896, faction = "Argent Dawn", reaction = 6 },
+	{ itemID = 19328, faction = "Argent Dawn", reaction = 6 }, { itemID = 19203, faction = "Argent Dawn", reaction = 6 },
+	{ itemID = 1164, faction = "Argent Dawn", reaction = 6 }, { itemID = 22014, faction = "Argent Dawn", reaction = 6 },
+	{ itemID = 12698, faction = "Argent Dawn", reaction = 7 }, { itemID = 19447, faction = "Argent Dawn", reaction = 7 },
+	{ itemID = 19217, faction = "Argent Dawn", reaction = 7 }, { itemID = 227897, faction = "Argent Dawn", reaction = 7 },
+	{ itemID = 19329, faction = "Argent Dawn", reaction = 7 }, { itemID = 227895, faction = "Argent Dawn", reaction = 7 },
+	{ itemID = 19205, faction = "Argent Dawn", reaction = 7 }, { itemID = 22704, faction = "Argent Dawn", reaction = 7 },
+	{ itemID = 13810, faction = "Argent Dawn", reaction = 7 }, { itemID = 13813, faction = "Argent Dawn", reaction = 7 },
+	{ itemID = 22703, faction = "Argent Dawn", reaction = 8, cost = "2 Arcane Crystal" },
+} } })
+ns.FactionSelect:Refresh(reputation)
+
 -- A card per faction, by name
 local cards = visibleButtons(reputation)
 check(#cards == 23 and #cards == #ns.GetFactions(), "a card for each of the 23 factions, got " .. #cards)
@@ -1967,9 +2010,16 @@ local function centre(texture) local p = texture._points[1]; return p[1] .. p[3]
 check(centre(argent.Rim) == centre(argent.Crest) and centre(argent.Edge) == centre(argent.Crest), "rim, edge and crest share a centre")
 check(reputation.Scroll.scrollBarX == 6, "the grid's scroll bar in the backdrop's gutter, where retail puts it")
 check(buttonNamed(reputation, "Booty Bay").Standing:GetText() == "Not met", "a faction the player has not met")
-check(buttonNamed(reputation, "Azeroth Commerce Authority").Count:GetText() == "3 rewards", "counts per faction")
+check(buttonNamed(reputation, "Azeroth Commerce Authority").Count:GetText() == "Coming soon", "counts per faction, once captured")
 argent:_RunScript("OnEnter")
 check(GameTooltip._text == "Argent Dawn", "card tooltip names the faction")
+do
+	local namesQuartermaster = false
+	for _, line in ipairs(GameTooltip._lines) do
+		if line == "Quartermaster: Argent Quartermaster Lightspark" then namesQuartermaster = true end
+	end
+	check(namesQuartermaster, "and its quartermaster")
+end
 argent:_RunScript("OnLeave")
 
 -- The factions WoW: Forever brought are known (numbered from 2500 up), for a later way to show it
@@ -1979,6 +2029,7 @@ for _, faction in ipairs(ns.GetFactions()) do
 end
 check(foreverFactions == 10 and ns.GetInstance("Faction2740").forever and not ns.GetInstance("Faction529").forever,
 	"the ten new factions are known, got " .. foreverFactions)
+check(rawget(argent, "Forever") == nil, "faction cards carry no Forever mark")
 
 -- A crest the client lacks gives way to the faction's best reward
 Mock.missingFiles["Interface\\Icons\\NoSuchCrest"] = true
@@ -2017,6 +2068,9 @@ check(#rows == 22, "every reward listed, got " .. #rows)
 check(rows[1].BossFrame:IsShown() and rows[1].Boss:GetText() == "Friendly" and rows[1].Boss._textColor[2] == 0.42,
 	"each reward names its standing, green once reached")
 check(rows[22].Boss:GetText() == "Exalted" and rows[22].Boss._textColor[2] == ns.PARCHMENT_TEXT_COLOR[2], "not yet reached: plain")
+check(rows[22].ArmorType:GetText() == "2 Arcane Crystal" and rows[1].ArmorType:GetText():find("60", 1, true),
+	"each reward says what its quartermaster asks: " .. tostring(rows[1].ArmorType:GetText()))
+check(not page.ComingSoon:IsShown(), "no placeholder on a captured faction")
 check(#f.NavBar._nav == 2 and f.NavBar._nav[2].name == "Argent Dawn", "breadcrumb names the faction")
 check(#f.NavBar._nav[2].listFunc() == 23, "its arrow lists every faction")
 
@@ -2042,6 +2096,49 @@ Mock.reputation[529].reaction, Mock.reputation[529].value = 7, 21500
 Mock.Fire("UPDATE_FACTION")
 check(standingBox.Label:GetText() == "Your standing: Revered" and standingButtons[3].Reached:IsShown(), "standing moves on")
 check(lootRows()[12].Boss._textColor[2] == 0.42, "Revered rewards turn green")
+
+-- A faction with nothing captured: its page asks for its quartermaster
+do
+	ns.Journal:OpenInstance(ns.GetInstance("Faction21"))
+	local soon = page.ComingSoon
+	check(soon:IsShown() and soon.Title:GetText() == "Not captured yet" and soon.Text:GetText() == ns.L.REP_NOT_CAPTURED_TEXT
+		and soon._points[1][3] == -(10 + 15 + 55 + 15), "Booty Bay: no rewards yet, and how to capture them, beneath the standing")
+	ns.Journal:OpenInstance(ns.GetInstance("Faction2740"))
+	check(soon:IsShown() and soon.Title:GetText() == "Coming soon" and soon.Text:GetText() == ns.L.REP_COMING_SOON_TEXT,
+		"a Forever faction: coming soon")
+	f.Tabs[3]:Click()
+end
+
+-- Capturing a quartermaster from the Reputation tab, recording or not
+do
+	check(not ns.Recorder:IsRecording(), "(not recording)")
+	Mock.units.npc = { name = "Lorekeeper Lydros", guid = "Creature-0-1-2-3-14368-0000" }
+	Mock.merchant = {
+		{ itemID = 290101, name = "Libram of Rumination", price = 0, lines = { "Requires Booty Bay - Honored" },
+			costs = { { 1, "Pristine Black Diamond" }, { 30, "Honor Points", true } } },
+		{ itemID = 290102, name = "Plans: Bootybay Blade", price = 45000, lines = { "Requires Booty Bay - Revered" } },
+		{ itemID = 159, name = "Refreshing Spring Water", price = 25, lines = {} },
+	}
+	Mock.Fire("MERCHANT_SHOW")
+	check(reputation.Capture:IsEnabled() and reputation.CaptureStatus:GetText() == "Shop open: press Capture vendor.",
+		"a shop open: Capture can be pressed")
+	reputation.Capture:Click()
+	local vendor = ns.Recorder:GetState().vendors[14368]
+	check(vendor and vendor.items[159] and vendor.items[290101].cost == "1 Pristine Black Diamond + 30 Honor Points"
+		and vendor.items[290102].price == 45000, "everything it sells is kept, with each ware's price and other costs")
+	local booty = ns.GetInstance("Faction21")
+	check(ns.FactionCaptured(booty) and #booty.bosses == 2 and booty.bosses[1].reaction == 6 and booty.bosses[2].reaction == 7,
+		"the wares that need a standing join the faction at once")
+	check(reputation.CaptureStatus:GetText() == "Lorekeeper Lydros: 2 wares for Booty Bay, 2 new."
+		and buttonNamed(reputation, "Booty Bay").Count:GetText() == "2 rewards", "and the tab says what was captured")
+	reputation.Capture:Click()
+	check(#booty.bosses[1].loot == 1 and reputation.CaptureStatus:GetText():find("0 new", 1, true), "capturing again adds nothing twice")
+	Mock.Fire("MERCHANT_CLOSED")
+	check(not reputation.Capture:IsEnabled(), "the shop closed: Capture waits again")
+	check(ns.Recorder:Export():find("\nVENDOR;14368;Lorekeeper Lydros;", 1, true)
+		and ns.Recorder:Export():find(";1 Pristine Black Diamond + 30 Honor Points", 1, true), "and the capture comes along with Copy")
+	Mock.merchant, Mock.units.npc = {}, nil
+end
 
 -- Back to a dungeon: its side tabs and the tab the reader had
 dungeons.Buttons[1]:Click()
@@ -2373,7 +2470,7 @@ do
 	local function standingWith(reaction)
 		for _, standing in ipairs(thorium.bosses) do if standing.reaction == reaction then return standing end end
 	end
-	local friendlyCount = #standingWith(5).loot
+
 	Mock.units.npc = { name = "Lokhtos Darkbargainer", guid = "Creature-0-1-2-3-12944-0000" }
 	Mock.merchant = {
 		{ itemID = 17051, name = "Plans: Dark Iron Bracers", price = 40000, lines = { "Requires Thorium Brotherhood - Friendly" } },
@@ -2387,8 +2484,9 @@ do
 	check(vendor and vendor.name == "Lokhtos Darkbargainer" and wares == 2 and vendor.items[290001].reaction == 8
 		and vendor.items[290001].price == 120000 and vendor.place.mapID, "the wares that need a standing, with their price, and the vendor's place")
 	local exalted = standingWith(8).loot
-	check(exalted[#exalted].itemID == 290001 and #standingWith(5).loot == friendlyCount,
-		"a ware the journal lacked joins the faction's rewards at its standing; one it has is not added twice")
+	Mock.Fire("MERCHANT_SHOW")
+	check(exalted[#exalted].itemID == 290001 and #standingWith(5).loot == 1,
+		"the wares join the faction's rewards at their standings, and seeing them again adds nothing twice")
 	Mock.units.npc = { name = "Tharynn Bouden", guid = "Creature-0-1-2-3-66-0000" }
 	Mock.merchant = { { itemID = 2901, name = "Mining Pick", price = 81, lines = {} } }
 	Mock.Fire("MERCHANT_SHOW")
@@ -2415,7 +2513,7 @@ do
 		and #thanes.bosses == 1 and thanes.bosses[1].name == "Durgen Dirgehammer",
 		"the drops the journal lists are counted; the ones it lacks are listed off their boss, off trash and looted by the group")
 	check(#thanes.kills == 2 and catch.quests[1].title == "Important Heirlooms" and catch.quests[1].done
-		and catch.vendors[1].name == "Lokhtos Darkbargainer" and catch.vendors[1].wares == 2 and catch.vendors[1].new == 1,
+		and catch.vendors[1].name == "Lokhtos Darkbargainer" and catch.vendors[1].wares == 2 and catch.vendors[1].new == 2,
 		"kills, the quest handed in, and the quartermaster's one ware the faction lacked")
 	check(not record.Title:IsShown() and record.Book:IsShown(), "the page is the journal's book, with its own titles")
 end
@@ -2535,15 +2633,15 @@ do
 	local cathedralBosses = table.concat(visibleBosses(), ", ")
 	check(ns.Items:IsHidden(7723) and cathedralBosses:find("Mograine", 1, true) and cathedralBosses:find("Whitemane", 1, true),
 		"a boss written up by hand stays even while all its drops are hidden: " .. cathedralBosses)
-	-- No boss is known by its loot alone today; Whitemane without her notes stands in for one
-	local notes = whitemane.notes
-	whitemane.notes = nil
+	-- No boss is known by its loot alone today; Whitemane without her notes and abilities stands in for one
+	local notes, spells, written = whitemane.notes, whitemane.abilities, whitemane.extraAbilities
+	whitemane.notes, whitemane.abilities, whitemane.extraAbilities = nil, nil, nil
 	ns.Journal:OpenInstance(ns.GetInstance("ShadowfangKeep")) -- the book redraws a dungeon's bosses when it is opened anew
 	ns.Journal:OpenInstance(cathedral)
 	cathedralBosses = table.concat(visibleBosses(), ", ")
 	check(not cathedralBosses:find("Whitemane", 1, true) and cathedralBosses:find("Mograine", 1, true),
 		"a creature listed only for loot the server does not know is hidden with it; the others stay: " .. cathedralBosses)
-	whitemane.notes = notes
+	whitemane.notes, whitemane.abilities, whitemane.extraAbilities = notes, spells, written
 	Mock.itemsCached[19507] = true
 	ns.Journal:OpenBoss(cathedral, fairbanks)
 	ns.EncounterPage:SetTab(page, Page.TAB_LOOT)

@@ -194,17 +194,41 @@ function ns.AmendInstance(key, patch)
 end
 
 --[[
-	The bosses' abilities, recorded fights and adds (Data/Generated/Abilities.lua, from
-	Tools/build_data.py): { [instance key] = { [boss name] = { abilities, adds, encounterID } } }.
-	Loaded after every other data file; what a hand-written file already gave a boss is kept.
+	What recorded fights measured (Data/Generated/Abilities.lua, from Tools/build_data.py):
+	{ [instance key] = { [boss name] = { abilities, adds, encounterID } } }. Loaded after every
+	other data file. A recorded spell the boss's written abilities name gives them its numbers
+	(damage, timings); one they lack is added. What a hand-written file gave a boss is kept.
 ]]
+local RECORDED_FIELDS = { "hit", "tick", "firstCast", "every", "school", "onSelf" }
+
+local function MergeRecorded(boss, recorded)
+	if boss.abilities == nil then
+		boss.abilities = recorded
+		return
+	end
+	local bySpell = {}
+	for _, row in ipairs(boss.abilities) do
+		if row.spellID then bySpell[row.spellID] = row end
+	end
+	for _, spell in ipairs(recorded or {}) do
+		local row = bySpell[spell.spellID]
+		if row then
+			for _, field in ipairs(RECORDED_FIELDS) do
+				if row[field] == nil then row[field] = spell[field] end
+			end
+		else
+			boss.abilities[#boss.abilities + 1] = spell
+		end
+	end
+end
+
 function ns.SetAbilities(byInstance)
 	for key, bosses in pairs(byInstance) do
 		local instance = byKey[key]
 		for name, found in pairs(instance and bosses or {}) do
 			local boss = FindBoss(instance, name)
 			if boss then
-				if boss.abilities == nil then boss.abilities = found.abilities end
+				MergeRecorded(boss, found.abilities)
 				if boss.adds == nil then boss.adds = found.adds end
 				if boss.encounterID == nil then boss.encounterID = found.encounterID end
 			end
@@ -215,8 +239,10 @@ end
 --[[
 	Factions are registered in the shape of an instance, a standing in place of a boss:
 	{ key = "Faction529", kind = "faction", factionID, name, bosses = { standing, ... } },
-	each standing { name, reaction, standing = true, loot = { { itemID }, ... } }. The journal
-	then draws a faction's rewards the way it draws a dungeon's loot, filters and all.
+	each standing { name, reaction, standing = true, loot = { { itemID, price, cost }, ... } }.
+	The journal then draws a faction's rewards the way it draws a dungeon's loot, filters and
+	all. The list itself (Data/Reputation/Factions.lua) has no rewards: they come from captured
+	quartermasters (ns.AddCapturedVendors).
 ]]
 -- The original game's factions all have ids below 1000; those added since (WoW: Forever's
 -- own, and the Season of Discovery ones it brought along) are numbered from 2500 up.
@@ -241,34 +267,69 @@ function ns.AddFactions(list)
 end
 
 --[[
-	A ware a reputation vendor was seen selling (the Record tab): added to that faction's rewards
-	at the standing it needs, unless the journal lists it already. The faction is known by the
-	name the vendor's tooltip gives; one the journal does not have is left alone.
+	Reputation rewards come only from quartermasters captured in game (the Reputation tab's
+	Capture button, or a recording): the build's captures (Data/Reputation/Captured.lua) and the
+	player's own (seen = true). Each vendor:
+	  { npcID, name, mapID, x, y, wares = { { itemID, price, cost, faction, reaction }, ... } }
+	A ware that needs a standing joins that faction's rewards at it, with its price (copper) and
+	any other cost ("2 Arcane Crystal"), unless the faction lists it already. The faction is known
+	by the name the ware's tooltip gives; one the journal does not have is left alone. The vendor
+	is kept on the faction as one of its quartermasters. Returns how many wares joined.
 ]]
-function ns.AddVendorReward(factionName, reaction, itemID)
+local function StandingFor(faction, reaction)
+	for _, candidate in ipairs(faction.bosses) do
+		if candidate.reaction == reaction then return candidate end
+	end
+	local standing = { name = _G["FACTION_STANDING_LABEL" .. tostring(reaction)] or tostring(reaction),
+		reaction = reaction, standing = true, loot = {} }
+	local at = #faction.bosses + 1
+	while at > 1 and (faction.bosses[at - 1].reaction or 0) > reaction do at = at - 1 end
+	table.insert(faction.bosses, at, standing)
+	return standing
+end
+
+local function FactionNamed(name)
 	for _, faction in ipairs(factions) do
-		if faction.name == factionName then
-			local standing
-			for _, candidate in ipairs(faction.bosses) do
-				for _, row in ipairs(candidate.loot) do
-					if row.itemID == itemID then return false end
-				end
-				if candidate.reaction == reaction then standing = candidate end
-			end
-			if not standing then
-				standing = { name = _G["FACTION_STANDING_LABEL" .. tostring(reaction)] or tostring(reaction),
-					reaction = reaction, standing = true, loot = {} }
-				local at = #faction.bosses + 1
-				while at > 1 and (faction.bosses[at - 1].reaction or 0) > reaction do at = at - 1 end
-				table.insert(faction.bosses, at, standing)
-			end
-			standing.loot[#standing.loot + 1] = { itemID = itemID, seen = true }
-			return true
+		if faction.name == name then return faction end
+	end
+	return nil
+end
+
+local function HasReward(faction, itemID)
+	for _, standing in ipairs(faction.bosses) do
+		for _, row in ipairs(standing.loot) do
+			if row.itemID == itemID then return true end
 		end
 	end
 	return false
 end
 
+function ns.AddCapturedVendors(vendors, seen)
+	local added = 0
+	for _, vendor in ipairs(vendors) do
+		for _, ware in ipairs(vendor.wares or {}) do
+			local faction = ware.faction and ware.reaction and FactionNamed(ware.faction)
+			if faction then
+				faction.quartermasters = faction.quartermasters or {}
+				faction.quartermasters[vendor.npcID or vendor.name] = { name = vendor.name, mapID = vendor.mapID,
+					x = vendor.x, y = vendor.y }
+				if not HasReward(faction, ware.itemID) then
+					local loot = StandingFor(faction, ware.reaction).loot
+					loot[#loot + 1] = { itemID = ware.itemID, price = ware.price, cost = ware.cost, seen = seen or nil }
+					-- Its count and crest are worked out again.
+					faction.rewardCount, faction.crest = nil, nil
+					added = added + 1
+				end
+			end
+		end
+	end
+	return added
+end
+
+-- Whether a faction has any rewards yet; one without waits for its quartermaster to be captured.
+function ns.FactionCaptured(faction)
+	return #faction.bosses > 0
+end
 -- Whether a faction's own rewards list an item (not counting wares a vendor was seen selling).
 function ns.FactionListsItem(factionName, itemID)
 	for _, faction in ipairs(factions) do

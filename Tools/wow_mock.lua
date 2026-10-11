@@ -858,7 +858,17 @@ function GetMerchantItemLink(index)
 end
 function GetMerchantItemInfo(index)
 	local ware = Mock.merchant[index]
-	if ware then return ware.name, 134400, ware.price, 1, -1, true, true, false end
+	if ware then return ware.name, 134400, ware.price, 1, -1, true, true, ware.costs ~= nil end
+end
+-- Other costs: ware.costs = { { value, name, isCurrency }, ... }.
+function GetMerchantItemCostInfo(index)
+	local ware = Mock.merchant[index]
+	return ware and ware.costs and #ware.costs or 0
+end
+function GetMerchantItemCostItem(index, costIndex)
+	local cost = Mock.merchant[index].costs[costIndex]
+	if cost[3] then return 134400, cost[1], nil, cost[2] end
+	return 134400, cost[1], "|cffffffff|Hitem:1::|h[" .. cost[2] .. "]|h|r", nil
 end
 C_TooltipInfo = {
 	GetMerchantItem = function(index)

@@ -19,10 +19,12 @@ Skillz, Oogar, Cier, Jolly, Mali, Grama and Eris.
 - **Inspiration.** The Record tab's design (recording on entering a dungeon, a copy to paste
   in Discord, a contributors list), the raids shown before they open, and marking what is new
   in Forever.
-- **Which spells each boss casts**, from its `BossSpellsDB`: the spells' names and schools only,
-  none of its damage or timings (`Data/Generated/Abilities.lua`, written by
-  `Tools/build_data.py`). The journal will replace these with its own as its testers record
-  the fights; the damage and timings it shows come only from their recordings.
+- **WoW: Forever's emblem** (`Media/ForeverIcon.tga`), Blizzard's, in the copy its textures carry.
+
+Until version 0.24 the journal also listed the spells each boss casts from its `BossSpellsDB`,
+and the factions' rewards from its `FactionDB`. Since 0.25 neither is used: the bosses'
+abilities are the journal's own data, and the factions' rewards come only from quartermasters
+captured in game.
 
 Its author gave permission to share this build with testers (2026-10-07), allows its
 information to be used, not its code (2026-10-08), and agreed to its public release

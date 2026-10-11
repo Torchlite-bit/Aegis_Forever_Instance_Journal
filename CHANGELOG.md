@@ -12,6 +12,42 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.25.0] (restart)
+
+### Added
+- **Capture vendor**, on the Reputation tab. Walk up to a quartermaster, open their
+  shop, press the button: everything they sell is kept with its price, any other
+  cost and the standing it needs. Their faction's rewards fill in at once, and the
+  capture comes along with Copy on the Record tab. No need to be recording.
+- **A placeholder for every faction nobody has captured yet**, saying how to
+  capture it, with the Discord link. Forever's own factions say *Coming soon*.
+- **Abilities for every boss of the 16 dungeons foreverchanges.pro describes**: what
+  each ability does in the fight, its role alerts, the mechanics with no spell, and
+  how the fight begins where it is unusual (Sneed's Shredder, the Fires of Aku'mai,
+  Lyn the Ignored's summoning...). Lyn's raised skeletons no longer read
+  "Retrieving data".
+- **14 quests the journal lacked**, most of them the Horde's: in Maraudon, Uldaman,
+  Dire Maul, Blackrock Spire, Gnomeregan, the Scarlet Monastery, the Excavation Site
+  and the Drowned City.
+- **WoW: Forever's emblem** marks Forever's dungeons and raids, with a tooltip.
+
+### Changed
+- **The Reputation tab's rewards come only from captured quartermasters.** The
+  rewards lists from another addon are gone; every faction starts as a placeholder.
+- **Loot matches the site again**: Forever's new leather helms and patterns where
+  players have seen them, and the recipes seen on Kresh, Skum, Lady Anacondra,
+  Rhahk'Zor and Captain Greenskin.
+- **Mr. Smite's stages** are at 66% and 33% health, with the weapons he takes up.
+- **The levels quests open at**, where the site differs, and the right giver for
+  Destruction in Deadmines.
+- **The README** has screenshots, and says the journal is a work in progress.
+
+### Removed
+- **The "New in Forever" label** on dungeon buttons (now the emblem) and on faction
+  cards.
+
+---
+
 ## [0.24.2]
 
 ### Added

@@ -4,9 +4,10 @@ local _, ns = ...
 	Wailing Caverns, written by hand over the generated data.
 
 	Run order, areas and the Naralex event from warcraft.wiki.gg, "Wailing Caverns" (CC BY-SA 4.0),
-	in our own words. Most bosses now have the spells players' combat logs saw (generated), with
-	their role alerts here; the abilities written out below are the ones no log has seen yet,
-	from the Classic encounters. Recordings from the Record tab will correct them.
+	in our own words. The bosses' abilities are in Data/Authored/Abilities.lua; the role alerts
+	here are for spells that list lacks (a recording's), and the abilities written out below are
+	for the Deviate Faerie Dragon, which it does not cover. Recordings from the Record tab will
+	correct them.
 ]]
 
 local ICONS = "Interface\\Icons\\"
@@ -51,10 +52,6 @@ ns.AmendInstance("WailingCaverns", {
 			area = "Pit of Fangs",
 			notes = { "A Fanglord who turns into a serpent partway through the fight." },
 			spellFlags = FANG_SPELLS,
-			extraAbilities = {
-				{ title = "Poison", icon = ICONS .. "Spell_Nature_CorrosiveBreath",
-					description = "Poisons a player, dealing damage over time.", flags = { "Poison" } },
-			},
 		},
 		["Lord Pythas"] = {
 			area = "Pit of Fangs",

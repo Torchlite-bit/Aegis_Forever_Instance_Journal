@@ -312,6 +312,14 @@ function LootPanel:UpdateStar(row, hovered)
 	row.Star:SetAlpha(favorite and 1 or 0.45)
 end
 
+-- What a faction's reward costs at its quartermaster: coins, then any other cost; nil if unknown.
+local function CostText(lootRow)
+	local parts = {}
+	if type(lootRow.price) == "number" and lootRow.price > 0 then parts[#parts + 1] = ns.MoneyText(lootRow.price) end
+	if lootRow.cost then parts[#parts + 1] = lootRow.cost end
+	return #parts > 0 and table.concat(parts, " + ") or nil
+end
+
 --[[
 	Fills a row for an entry. A row remembers what it drew last (row.drawn*), and only what
 	changed is set again: redraws mostly come from item data arriving or a filter changing,
@@ -340,8 +348,17 @@ local function SetItemRow(row, entry, instanceView, instance, reaction)
 		local lineColor = reached and REACHED_COLOR or ns.PARCHMENT_TEXT_COLOR
 		row.Boss:SetTextColor(lineColor[1], lineColor[2], lineColor[3])
 		row.Icon:SetTexture(info.icon or QUESTION_MARK)
-		row.Slot:SetText(info.equipLoc and _G[info.equipLoc] or (entry.row.slot or ""))
-		row.ArmorType:SetText(info.equipLoc and info.subType or "")
+		local slot = info.equipLoc and _G[info.equipLoc] or entry.row.slot
+		local cost = entry.boss.standing and CostText(entry.row)
+		if cost then
+			-- A faction's reward: what its quartermaster asks, where the armour type would go.
+			local kind = info.equipLoc and info.subType ~= "" and info.subType or nil
+			row.Slot:SetText(slot and kind and (slot .. ", " .. kind) or slot or kind or "")
+			row.ArmorType:SetText(cost)
+		else
+			row.Slot:SetText(slot or "")
+			row.ArmorType:SetText(info.equipLoc and info.subType or "")
+		end
 	end
 
 	-- The name and its colour change when the server's answer comes in.

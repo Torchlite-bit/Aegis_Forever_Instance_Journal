@@ -3,18 +3,17 @@ Builds the journal's generated data from its own data files and the player's rec
 
     python Tools/build_data.py
 
-The dungeons, factions and transports are the journal's own files (Data/Instances,
-Data/Reputation, Data/Travel), edited by hand. This tool writes only:
-  Data/Generated/Abilities.lua    which spells each boss casts, from Alex Atlas Loot's
-                                  BossSpellsDB (the spells' names and schools; none of its
-                                  damage or timings), and what the player's own combat logs
-                                  saw: encounter ids, damage, timings, and the adds that cast
-                                  in each fight
+The dungeons, their abilities, factions and transports are the journal's own files
+(Data/Instances, Data/Authored, Data/Reputation, Data/Travel), edited by hand. This tool writes:
+  Data/Generated/Abilities.lua    what the combat logs of recorded runs saw: encounter ids,
+                                  damage, timings, spells the written abilities lack, and the
+                                  adds that cast in each fight
   Data/Generated/Unconfirmed.lua  items an /aegis items scan found the server knows nothing of
+  Data/Reputation/Captured.lua    the reputation quartermasters captured in game
 
 Reads (never modifies): the journal's Data/Instances and Data/Authored files, for the bosses;
-Alex Atlas Loot's BossSpellsDB.lua (installed, or from the reference zip); the game's combat
-logs and the ones testers send (Recordings/); the saved files of /aegis items scans.
+the game's combat logs and the ones testers send (Recordings/); the saved files (the player's
+and the testers'); recordings pasted in Discord and saved as text (Recordings/**/*.txt).
 
 Needs the luaparser package (pip install luaparser).
 """
@@ -23,7 +22,6 @@ import glob
 import os
 import re
 import sys
-import zipfile
 
 from luaparser import ast
 
@@ -32,13 +30,7 @@ GAME = os.environ.get("AEGIS_GAME", r"C:\Program Files (x86)\World of Warcraft\_
 # The reference folder: the testers' recordings and the reference addons' zip.
 REFERENCE = os.environ.get("AEGIS_REFERENCE",
                            os.path.join(os.path.expanduser("~"), "OneDrive", "Pictures", "Forever Instance Journal"))
-ADDONS = os.path.join(GAME, "Interface", "AddOns")
-AAL = os.path.join(ADDONS, "AlexAtlasLoot")
-# Where Alex Atlas Loot is kept when it is not installed: read straight from the zip.
-REFERENCE_ZIP = os.path.join(REFERENCE, "Example", "Instance Guide Examples.zip")
-ZIP_PREFIX = "zip:"
-if not os.path.isdir(AAL):
-    AAL = ZIP_PREFIX + "AlexAtlasLoot/AlexAtlasLoot"
+
 # The journal's own saved files (every account on this computer), and the testers' copies of
 # theirs and their logs (Recordings/<name>/).
 AEGIS_SAVED = os.path.join(GAME, "WTF", "Account", "*", "SavedVariables", "Aegis_Forever_Instance_Journal.lua")
@@ -53,9 +45,6 @@ OUT = os.path.join(ROOT, "Data", "Generated")
 # ---------------------------------------------------------------------------------------
 
 def read(path):
-    if path.startswith(ZIP_PREFIX):
-        with zipfile.ZipFile(REFERENCE_ZIP) as archive:
-            return archive.read(path[len(ZIP_PREFIX):].replace("\\", "/")).decode("utf-8")
     with open(path, encoding="utf-8") as handle:
         return handle.read()
 
@@ -167,40 +156,6 @@ def load_instances():
                 if boss.get("name") and boss["name"] not in known:
                     instances[match.group(1)]["bosses"].append(dict(boss))
     return instances
-
-
-# ---------------------------------------------------------------------------------------
-# Alex Atlas Loot: which spells each boss casts
-# ---------------------------------------------------------------------------------------
-
-def load_aal():
-    spells_path = os.path.join(AAL, "BossSpellsDB.lua")
-    spells = table_from_block(spells_path, "NS.BOSS_SPELLS = {")
-    # The boss names only live in comments beside each npc id.
-    spell_names = {int(m.group(1)): m.group(2).strip()
-                   for m in re.finditer(r"\[(\d+)\] = \{ -- (.+)", read(spells_path))}
-    version = re.search(r"## Version: (\S+)", read(os.path.join(AAL, "AlexAtlasLoot_Camelot.toc"))).group(1)
-    return {"spells": spells, "spellNames": spell_names, "version": version}
-
-
-def abilities_for(npc_id, aliases, aal):
-    if npc_id and npc_id in aal["spells"]:
-        source_id = npc_id
-    else:
-        wanted = {a.lower() for a in aliases}
-        source_id = next((i for i, n in aal["spellNames"].items() if n.lower() in wanted), None)
-    if source_id is None:
-        return None
-    # Which spells each boss casts is public knowledge; the damage and timings measured from
-    # Alex's players' logs are theirs, so only the player's own recordings (apply_recordings)
-    # give those.
-    rows = []
-    for spell in as_list(aal["spells"][source_id]):
-        row = {"spellID": spell.get("id"), "name": spell.get("name"), "school": spell.get("school")}
-        if spell.get("self"):
-            row["onSelf"] = True
-        rows.append(row)
-    return rows
 
 
 # ---------------------------------------------------------------------------------------
@@ -316,6 +271,78 @@ def load_unconfirmed():
 
 
 # ---------------------------------------------------------------------------------------
+# Captured quartermasters
+# ---------------------------------------------------------------------------------------
+
+def number(text):
+    try:
+        return float(text) if "." in text else int(text)
+    except ValueError:
+        return None
+
+
+def load_vendors():
+    """Reputation quartermasters captured in game (the Reputation tab's Capture button, or a
+    recording): from the saved files (the player's and Recordings/<name>/) and from recordings
+    pasted in Discord and saved as text (Recordings/**/*.txt, the "VENDOR;" lines). Only the wares
+    that need a standing are kept. Returns ([vendor, ...] by npc id, sources read)."""
+    vendors, sources = {}, 0
+
+    def vendor_for(npc_id, name, map_id, x, y):
+        vendor = vendors.setdefault(npc_id, {"npcID": npc_id, "wares": {}})
+        vendor.update({k: v for k, v in (("name", name), ("mapID", map_id), ("x", x), ("y", y)) if v is not None})
+        return vendor
+
+    def add_ware(vendor, item_id, price, cost, faction, reaction):
+        if isinstance(item_id, int) and faction and isinstance(reaction, int):
+            vendor["wares"][item_id] = {"itemID": item_id, "price": price or None, "cost": cost or None,
+                                        "faction": faction, "reaction": reaction}
+
+    saved = sorted(glob.glob(AEGIS_SAVED)) + glob.glob(os.path.join(RECORDINGS, "**", "Aegis_Forever_Instance_Journal.lua"), recursive=True)
+    for path in saved:
+        text = read(path)
+        record = '["record"] = {'
+        if record not in text or '["vendors"] = {' not in text[text.index(record):]:
+            continue
+        sources += 1
+        table = table_from_block(path, '["vendors"] = {', after=record)
+        for npc_id, entry in (table.items() if isinstance(table, dict) else []):
+            if not isinstance(npc_id, int) or not isinstance(entry, dict):
+                continue
+            place = entry.get("place") or {}
+            vendor = vendor_for(npc_id, entry.get("name"), place.get("mapID"), place.get("x"), place.get("y"))
+            for item_id, ware in (entry.get("items") or {}).items():
+                if isinstance(ware, dict):
+                    add_ware(vendor, item_id, ware.get("price"), ware.get("cost"), ware.get("faction"), ware.get("reaction"))
+
+    # VENDOR;npcID;vendor;mapID;x;y;itemID;item;price;faction;reaction;cost
+    for path in glob.glob(os.path.join(RECORDINGS, "**", "*.txt"), recursive=True):
+        with open(path, encoding="utf-8", errors="replace") as handle:
+            lines = handle.read().splitlines()
+        if not any(line.startswith("AEGIS RECORDING;") for line in lines):
+            continue
+        sources += 1
+        for line in lines:
+            fields = line.split(";")
+            if fields[0] != "VENDOR" or len(fields) < 11:
+                continue
+            fields += [""] * (12 - len(fields))
+            npc_id = number(fields[1])
+            if not isinstance(npc_id, int):
+                continue
+            vendor = vendor_for(npc_id, fields[2] or None, number(fields[3]), number(fields[4]), number(fields[5]))
+            add_ware(vendor, number(fields[6]), number(fields[8]), fields[11], fields[9], number(fields[10]))
+
+    found = []
+    for npc_id in sorted(vendors):
+        vendor = vendors[npc_id]
+        if vendor["wares"]:
+            vendor["wares"] = [vendor["wares"][i] for i in sorted(vendor["wares"])]
+            found.append(vendor)
+    return found, sources
+
+
+# ---------------------------------------------------------------------------------------
 # Writing Lua
 # ---------------------------------------------------------------------------------------
 
@@ -360,19 +387,20 @@ def lua(value, indent=1):
     raise TypeError(type(value))
 
 
-def write(name, text):
-    os.makedirs(OUT, exist_ok=True)
-    with open(os.path.join(OUT, name), "w", encoding="utf-8", newline="\n") as handle:
+def write(name, text, folder=OUT):
+    os.makedirs(folder, exist_ok=True)
+    with open(os.path.join(folder, name), "w", encoding="utf-8", newline="\n") as handle:
         handle.write(text)
 
 
 def main():
-    instances, aal, recordings = load_instances(), load_aal(), load_recordings()
+    instances, recordings = load_instances(), load_recordings()
     abilities, report = {}, []
     for key, instance in sorted(instances.items()):
         bosses = [b for b in instance["bosses"] if not b.get("trash")]
         for boss in bosses:
-            boss["abilities"] = abilities_for(boss.get("npcID"), as_list(boss.get("aliases")) or [boss["name"]], aal)
+            # Only what the recordings saw: the boss's spells themselves are Data/Authored/Abilities.lua.
+            boss["abilities"] = []
         apply_recordings(bosses, recordings.get(instance["instanceID"], []))
         found = {}
         for boss in bosses:
@@ -386,12 +414,11 @@ def main():
                       % (key, sum(1 for e in found.values() if e["abilities"]), len(bosses),
                          sum(1 for e in found.values() if e["encounterID"])))
     write("Abilities.lua",
-          "-- Generated by Tools/build_data.py: the spells each boss casts, from Alex Atlas Loot %s's\n"
-          "-- BossSpellsDB (Alex Brandson and contributors; the spells' names and schools only, none of its\n"
-          "-- damage or timings), and what the player's own recorded runs saw: encounter ids, damage,\n"
-          "-- timings and adds. Do not edit by hand: rerun the tool. A boss's spells written by hand in\n"
-          "-- Data/Authored are kept over these.\n\n"
-          "local _, ns = ...\n\nns.SetAbilities(%s)\n" % (aal["version"], lua(abilities)))
+          "-- Generated by Tools/build_data.py from recorded runs (the game's own combat logs, the\n"
+          "-- player's and the testers'): each boss's encounter id, the damage and timings of its spells,\n"
+          "-- the spells it cast that Data/Authored/Abilities.lua lacks, and the adds that fought beside it.\n"
+          "-- Do not edit by hand: rerun the tool. The numbers join the written abilities by spell id.\n\n"
+          "local _, ns = ...\n\nns.SetAbilities(%s)\n" % lua(abilities))
     unconfirmed, scans = load_unconfirmed()
     write("Unconfirmed.lua",
           "-- Generated by Tools/build_data.py from %d /aegis items scan(s): the items the server knew\n"
@@ -399,6 +426,14 @@ def main():
           "-- hides them until confirmed (Core/Items.lua). Do not edit by hand.\n\n"
           "local _, ns = ...\n\nns.Items:AddUnconfirmed(%s)\n" % (scans, lua(dict(sorted(unconfirmed.items())))))
     report.append("%-26s %d items from %d scan(s)" % ("Unconfirmed", len(unconfirmed), scans))
+    vendors, vendor_sources = load_vendors()
+    write("Captured.lua",
+          "-- Generated by Tools/build_data.py from %d recording(s) and saved file(s). Do not edit by hand.\n"
+          "-- Reputation rewards captured in game: each vendor, where they stand, and their wares that\n"
+          "-- need a standing (price in copper, any other cost, the faction and standing).\n\n"
+          "local _, ns = ...\n\nns.AddCapturedVendors(%s)\n" % (vendor_sources, lua(vendors)),
+          folder=os.path.join(ROOT, "Data", "Reputation"))
+    report.append("%-26s %d quartermaster(s), %d wares" % ("Captured", len(vendors), sum(len(v["wares"]) for v in vendors)))
     print("\n".join(report))
 
 

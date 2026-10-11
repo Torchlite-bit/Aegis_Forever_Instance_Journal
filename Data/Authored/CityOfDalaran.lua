@@ -108,15 +108,7 @@ ns.AmendInstance("CityOfDalaran", {
 				"Shadow Bolt Volley and Curse of Thorns together hurt: remove the curse, melee above all. She raises skeletons as Atrexis does.",
 			},
 			mapPin = { x = 0.690, y = 0.166, floor = 1 },
-			abilities = {
-				{ spellID = 17228, name = "Shadow Bolt Volley", school = 32 },
-				{ spellID = 1304473, name = "Curse of Thorns", school = 32 },
-				{ spellID = 1303266, name = "Raise Dead", school = 1 },
-			},
-			spellFlags = {
-				[17228] = { "Healer" },  -- Shadow Bolt Volley
-				[1304473] = { "Curse" }, -- Curse of Thorns
-			},
+			-- Her abilities: Data/Authored/Abilities.lua.
 		},
 		["Shade of the Archmage"] = {
 			notes = {

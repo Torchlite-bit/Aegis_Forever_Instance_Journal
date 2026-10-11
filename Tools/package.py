@@ -20,7 +20,8 @@ ADDON = "Aegis_Forever_Instance_Journal"
 TOC = os.path.join(ROOT, ADDON + ".toc")
 GUIDE = os.path.join(ROOT, "Tools", "tester_guide.html")
 RELEASES = os.path.join(os.path.expanduser("~"), "OneDrive", "Pictures", "Forever Instance Journal", "Releases")
-LEFT_OUT = {"Tools"}
+# Kept in the repository, not in the addon: the tools, and the README's pictures.
+LEFT_OUT = {"Tools", "docs"}
 
 README = """Aegis Instance Journal {version}, tester build
 ==============================================
@@ -120,8 +121,8 @@ def main():
     os.makedirs(RELEASES, exist_ok=True)
     target = os.path.join(RELEASES, "{}_v{}_testers.zip".format(ADDON, version))
     alex = textwrap.fill("- Alex Atlas Loot, by Alex Brandson and its contributors: the inspiration for "
-                         "the Record tab, the raids and the Forever marks, and the lists of the spells each "
-                         "boss casts. Contributors: " + contributors() + ".", width=78, subsequent_indent="  ")
+                         "the Record tab, the raids and the Forever marks, and the copy of WoW: Forever's "
+                         "emblem the journal uses. Contributors: " + contributors() + ".", width=78, subsequent_indent="  ")
     readme = README.format(version=version, alex=alex).replace("\n", "\r\n")
     with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as package:
         for path in files:

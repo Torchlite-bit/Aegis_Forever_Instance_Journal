@@ -1,4 +1,4 @@
-# Aegis: Forever Instance Journal (v0.24.2)
+# Aegis: Forever Instance Journal (v0.25.0)
 
 **Retail's instance journal and dungeon maps, brought to WoW: Forever.**
 
@@ -11,6 +11,13 @@ where each boss stands and an icon on the world map at every door.
 
 > Built for **WoW: Forever** (the `_classic_beta_` client, Interface 16001).
 > Not Classic Era. Not retail.
+
+> ### 🚧 Work in progress
+> The journal is still being built and filled in. Forever's own dungeons, raids
+> and reputations join as they open and as players record them, and some data is
+> still missing: a few boss spots and entrances, the damage abilities do, and the
+> reputation rewards nobody has captured yet.
+> Expect changes between versions: see the [changelog](CHANGELOG.md).
 
 **[💬 Join the Discord](https://discord.gg/Hr66t25vE7)** for help, bug reports,
 and to send in your recorded runs.
@@ -32,6 +39,8 @@ and to send in your recorded runs.
 
 ### 📖 The journal
 
+<p align="center"><img src="docs/images/journal-city-of-dalaran.webp" alt="The journal open on City of Dalaran" width="720"></p>
+
 - **Retail's Encounter Journal**, rebuilt to its measurements (Blizzard's own
   doesn't load on Forever): breadcrumb bar, search box, and four tabs:
   **Dungeons · Raids · Reputation · Record**.
@@ -39,7 +48,7 @@ and to send in your recorded runs.
   (The Hall of Thanes, Ruins of Lordaeron, Excavation Site: Wetlands, City of
   Dalaran), and the five Blizzard has announced.
 - **3 raids, coming soon**: Barrow Deeps, Hyjal Summit and Onyxia's Lair.
-- A **level-range filter**; **New in Forever** marks what Forever added;
+- A **level-range filter**; **WoW: Forever's emblem** marks what Forever added;
   **Not yet tested** marks what still needs a recorded run.
 
 ### 🗡️ Boss pages
@@ -49,10 +58,17 @@ Five side tabs, as in retail, plus one:
 - **Overview**: fight notes and quick facts.
 - **Loot**: filter by class, armour and slot, ★ favourites, pin an item to the
   map. Items the server doesn't know yet stay hidden until someone sees one drop.
-- **Abilities**: retail's collapsible tree, with stages and role alerts.
+- **Abilities**: retail's collapsible tree: what each ability does in the fight, its
+  role alerts, stages, and the damage and timings your recorded runs measured.
 - **Model**: the creature in 3D. Drag to turn it, scroll to zoom.
 - **Quests**: the dungeon's quests with status icons and chains, their rewards,
   and **Show Start / Show End** to put a waypoint on the map.
+
+| Overview | Loot | Abilities |
+|:---:|:---:|:---:|
+| <img src="docs/images/boss-overview.webp" alt="A boss's overview" width="280"> | <img src="docs/images/boss-loot.webp" alt="A boss's loot" width="280"> | <img src="docs/images/boss-abilities.webp" alt="A boss's abilities" width="280"> |
+| **Model** | **Quests** | |
+| <img src="docs/images/boss-model.webp" alt="A boss in 3D" width="280"> | <img src="docs/images/boss-quests.webp" alt="The dungeon's quests" width="280"> | |
 
 ### 🗺️ Dungeon maps
 
@@ -64,6 +80,10 @@ Five side tabs, as in retail, plus one:
 - **The places Blizzard never mapped**: Old Ironforge, the Defias Hideout on the
   way to the Deadmines, and the Deeprun Tram, with your arrow where the game
   gives a position.
+
+| The Hall of Thanes | City of Dalaran, with the map legend | Old Ironforge |
+|:---:|:---:|:---:|
+| <img src="docs/images/map-hall-of-thanes.webp" alt="The Hall of Thanes map" width="280"> | <img src="docs/images/map-city-of-dalaran.webp" alt="City of Dalaran map and legend" width="280"> | <img src="docs/images/map-old-ironforge.webp" alt="Old Ironforge map" width="280"> |
 
 ### 🧭 World map
 
@@ -77,11 +97,17 @@ Five side tabs, as in retail, plus one:
 - The map's **Quests** and **Map Legend** tabs are back, and the legend lights
   up the journal's icons.
 
+<p align="center"><img src="docs/images/map-ruins-of-lordaeron.webp" alt="Ruins of Lordaeron map with a quest mark's tooltip" width="560"></p>
+
 ### 🛡️ Reputation
 
 - **A card per faction** with its crest and your standing.
-- **Each standing's rewards**, filtered like loot. Forever's new factions are
-  marked, and quartermasters' wares are added as players see them.
+- **Each standing's rewards**, filtered like loot, with what the quartermaster asks
+  for each: gold, and any other cost.
+- **Captured in game, first hand.** Open a quartermaster's shop, then press
+  **Capture vendor** on the Reputation tab: every ware, its price and the standing
+  it needs join the faction at once. A faction nobody has captured yet says so,
+  and Forever's own factions say *Coming soon* until they open.
 
 ### 🔍 Search
 
@@ -94,7 +120,8 @@ click opens the right page.
   writes the game's combat log there for boss abilities.
 - **Notes what the journal needs**: entrances, area names, boss kills, every drop
   (your loot window, your group's loot and group rolls), quests from offer to
-  hand-in, quartermasters' wares, and travel spots you mark.
+  hand-in, quartermasters' wares (or press **Capture vendor** at any shop), and
+  travel spots you mark.
 - **What you caught** lists what the journal doesn't have yet. **Copy** turns it
   into text to paste in our Discord, and your name goes on the contributors list.
 
@@ -180,7 +207,8 @@ Aegis_Forever_Instance_Journal/
 │   └── Travel/      boats, zeppelins, trams and portals
 ├── Media/         maps, raid pictures and the journal's own textures
 ├── Locales/       every string the journal shows
-└── Tools/         build, test and packaging scripts (never shipped)
+├── Tools/         build, test and packaging scripts (never shipped)
+└── docs/          the README's pictures (never shipped)
 ```
 
 Everything is the Forever client's own API, guarded where the client withholds
@@ -191,7 +219,7 @@ and checks it; `--perf` measures it.
 
 ## Something broken?
 
-1. Check the **version** in the AddOns list (`0.24.2`) and quote it.
+1. Check the **version** in the AddOns list (`0.25.0`) and quote it.
 2. A red line under **Recent** on the Record tab says what went wrong.
    Screenshot it.
 3. Tell us on **[Discord](https://discord.gg/Hr66t25vE7)** or open an

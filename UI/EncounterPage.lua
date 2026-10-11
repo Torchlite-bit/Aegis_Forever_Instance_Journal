@@ -618,12 +618,22 @@ local function FillBossList(page)
 		EncounterPage:RefreshStanding(page)
 	end
 
-	-- A placeholder's list ends with what it waits on, and where to send a run.
-	local soon = page.ComingSoon
-	soon:SetShown(page.instance.comingSoon == true or page.instance.untested == true)
+	-- A placeholder's list ends with what it waits on, and where to send a run; a faction with no
+	-- quartermaster captured yet, beneath the player's standing, with how to capture one.
+	local soon, instance = page.ComingSoon, page.instance
+	local uncaptured = instance.kind == "faction" and not ns.FactionCaptured(instance)
+	soon:SetShown(instance.comingSoon == true or instance.untested == true or uncaptured)
 	if soon:IsShown() then
 		local top = #list > 0 and (BOSS_TOP_PADDING + #list * (BOSS_BUTTON_HEIGHT + BOSS_SPACING)) or BOSS_TOP_PADDING
-		soon.Text:SetText(#list > 0 and L.COMING_SOON_PARTLY or L.COMING_SOON_TEXT)
+		if uncaptured then
+			top = BOSS_TOP_PADDING + #list * (BOSS_BUTTON_HEIGHT + BOSS_SPACING) + BOSS_SPACING + BOSS_BUTTON_HEIGHT
+				+ BOSS_SPACING
+			soon.Title:SetText(instance.forever and L.COMING_SOON or L.REP_NOT_CAPTURED)
+			soon.Text:SetText(instance.forever and L.REP_COMING_SOON_TEXT or L.REP_NOT_CAPTURED_TEXT)
+		else
+			soon.Title:SetText(L.COMING_SOON)
+			soon.Text:SetText(#list > 0 and L.COMING_SOON_PARTLY or L.COMING_SOON_TEXT)
+		end
 		soon:ClearAllPoints()
 		soon:SetPoint("TOPLEFT", 0, -top)
 		height = top + COMING_SOON_HEIGHT + BOSS_BOTTOM_PADDING
@@ -684,7 +694,7 @@ local function FillInstanceOverview(page)
 	overview.MapButton:SetShown(ns.DungeonMap:HasMap(instance))
 
 	local lines = {}
-	if instance.forever then lines[#lines + 1] = FOREVER_COLOR .. L.FOREVER_LINE .. "|r" end
+	if instance.forever then lines[#lines + 1] = ns.ForeverIconText(16) .. " " .. FOREVER_COLOR .. L.FOREVER_LINE .. "|r" end
 	if instance.location then lines[#lines + 1] = string.format(L.LOCATION_LINE, instance.location) end
 	if instance.levelMin then
 		lines[#lines + 1] = string.format(L.LEVEL_RANGE, instance.levelMin, instance.levelMax or instance.levelMin)

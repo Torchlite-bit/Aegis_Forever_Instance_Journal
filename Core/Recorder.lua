@@ -296,7 +296,7 @@ function Recorder:Catch()
 		local entry = { name = vendor.name or tostring(npcID), wares = 0, new = 0 }
 		for itemID, ware in pairs(vendor.items or {}) do
 			entry.wares = entry.wares + 1
-			if not ns.FactionListsItem(ware.faction, itemID) then entry.new = entry.new + 1 end
+			if ware.faction and not ns.FactionListsItem(ware.faction, itemID) then entry.new = entry.new + 1 end
 		end
 		catch.vendors[#catch.vendors + 1] = entry
 		catch.new = catch.new + entry.new
@@ -383,7 +383,7 @@ function Recorder:Export(credit)
 		for _, itemID in ipairs(SortedKeys(vendor.items)) do
 			local ware = vendor.items[itemID]
 			Line("VENDOR", npcID, vendor.name, place.mapID, place.x, place.y, itemID, ware.name, ware.price, ware.faction,
-				ware.reaction)
+				ware.reaction, ware.cost)
 		end
 	end
 	-- Items an /aegis items scan found the server knows nothing of.
@@ -797,10 +797,13 @@ end
 ------------------------------------------------------------------------------------------
 
 --[[
-	A vendor whose wares ask for a standing with a faction (a quartermaster): each such ware,
-	its price, the faction and standing it needs, the vendor and where they stand. The wares join
-	that faction's rewards on the Reputation tab at once. A vendor with none is not kept.
+	A quartermaster's wares: each ware's price, any other cost (items or currencies), and the
+	faction and standing it needs, with the vendor and where they stand. Captured on purpose by
+	the Reputation tab's Capture button (everything the vendor sells), or, while recording, as
+	soon as a vendor whose wares need a standing opens their shop (only then is a vendor with
+	none of those left out). The wares that need a standing join that faction's rewards at once.
 ]]
+local merchantOpen = false
 local requiresPattern, reactionOfLabel
 
 local function StandingOf(text)
@@ -849,43 +852,111 @@ local function WareInfo(index)
 	if ok then return ns.Readable(name), ns.Readable(price) end
 end
 
-function Recorder:MerchantShown()
-	local npc = Npc()
-	if not npc or not npc.npcID then return end
+-- Other costs of a ware, as "2 Arcane Crystal + 5 Holy Water", or nil.
+local function WareCost(index)
+	local parts = {}
+	for costIndex = 1, Call(GetMerchantItemCostInfo, index) or 0 do
+		local ok, _, value, link, currencyName = pcall(GetMerchantItemCostItem, index, costIndex)
+		if ok then
+			value, link = ns.Readable(value), ns.Readable(link)
+			local name = ns.Readable(currencyName) or (type(link) == "string" and link:match("%[(.-)%]")) or nil
+			if value and name then parts[#parts + 1] = value .. " " .. name end
+		end
+	end
+	return #parts > 0 and table.concat(parts, " + ") or nil
+end
+
+-- Every ware on the open shop: { [itemID] = { name, price, cost, faction, reaction } }.
+local function ReadWares()
 	local wares = {}
 	for index = 1, Call(GetMerchantNumItems) or 0 do
 		local itemID = ns.ItemIDFromLink(Call(GetMerchantItemLink, index))
 		if itemID then
+			local name, price = WareInfo(index)
+			local ware = { name = name, price = price, cost = WareCost(index) }
 			for _, text in ipairs(WareLines(index)) do
 				local faction, reaction = StandingOf(text)
 				if faction then
-					local name, price = WareInfo(index)
-					wares[itemID] = { name = name, price = price, faction = faction, reaction = reaction }
+					ware.faction, ware.reaction = faction, reaction
 					break
 				end
 			end
+			wares[itemID] = ware
 		end
 	end
-	if not next(wares) then return end
+	return wares
+end
+
+-- A kept vendor in the shape ns.AddCapturedVendors takes.
+local function VendorEntry(npcID, vendor)
+	local wares, place = {}, vendor.place or {}
+	for itemID, ware in pairs(vendor.items or {}) do
+		wares[#wares + 1] = { itemID = itemID, price = ware.price, cost = ware.cost, faction = ware.faction,
+			reaction = ware.reaction }
+	end
+	return { npcID = npcID, name = vendor.name, mapID = place.mapID, x = place.x, y = place.y, wares = wares }
+end
+
+function Recorder:MerchantOpen()
+	return merchantOpen
+end
+
+--[[
+	Keeps the open shop's wares (onPurpose: even a vendor with none that need a standing). Returns
+	what was found, { name, wares, forStanding, new, factions = { name, ... } }, or nil with no shop
+	open or no vendor to name. new counts the wares that joined a faction's rewards just now.
+]]
+function Recorder:CaptureVendor(onPurpose)
+	if not merchantOpen then return nil end
+	local npc = Npc()
+	if not npc or not npc.npcID then return nil end
+	local wares = ReadWares()
+	local found = { name = npc.name, wares = 0, forStanding = 0, new = 0, factions = {} }
+	local named = {}
+	for _, ware in pairs(wares) do
+		found.wares = found.wares + 1
+		if ware.faction then
+			found.forStanding = found.forStanding + 1
+			if not named[ware.faction] then
+				named[ware.faction] = true
+				found.factions[#found.factions + 1] = ware.faction
+			end
+		end
+	end
+	table.sort(found.factions)
+	if found.forStanding == 0 and not onPurpose then return found end
 	local vendor = state.vendors[npc.npcID] or { items = {} }
 	vendor.name, vendor.place, vendor.at = npc.name, Place(), Stamp()
-	local added = 0
+	-- Seen while recording, only the wares that need a standing; captured on purpose, all of them.
 	for itemID, ware in pairs(wares) do
-		if not vendor.items[itemID] then added = added + 1 end
-		vendor.items[itemID] = ware
-		ns.AddVendorReward(ware.faction, ware.reaction, itemID)
+		if onPurpose or ware.faction then vendor.items[itemID] = ware end
 	end
 	state.vendors[npc.npcID] = vendor
-	if added > 0 then Log(string.format(L.RECORD_LOG_VENDOR, npc.name, added)) end
+	found.new = ns.AddCapturedVendors({ VendorEntry(npc.npcID, vendor) }, true)
+	Log(string.format(L.RECORD_LOG_VENDOR, npc.name, found.wares, found.new))
+	return found
 end
 
--- What the vendors seen so far sell joins their factions' rewards.
+-- What the vendors kept so far sell joins their factions' rewards.
 function Recorder:ShareVendors()
-	for _, vendor in pairs(state.vendors or {}) do
-		for itemID, ware in pairs(vendor.items or {}) do ns.AddVendorReward(ware.faction, ware.reaction, itemID) end
-	end
+	local list = {}
+	for npcID, vendor in pairs(state.vendors or {}) do list[#list + 1] = VendorEntry(npcID, vendor) end
+	ns.AddCapturedVendors(list, true)
 end
 
+-- A shop opening or closing, heard whether recording or not: the Capture button follows it, and
+-- while recording a quartermaster's wares are kept at once.
+local shop = CreateFrame("Frame")
+ns.RegisterEvents(shop, "MERCHANT_SHOW", "MERCHANT_CLOSED")
+shop:SetScript("OnEvent", function(_, event)
+	merchantOpen = event == "MERCHANT_SHOW"
+	if not state then return end
+	if merchantOpen and Recorder:IsRecording() then
+		local ok, err = pcall(Recorder.CaptureVendor, Recorder, false)
+		if not ok then Log("|cffff4040" .. event .. ": " .. tostring(err) .. "|r") end
+	end
+	Changed()
+end)
 ------------------------------------------------------------------------------------------
 -- Events
 ------------------------------------------------------------------------------------------
@@ -909,7 +980,6 @@ local HANDLERS = {
 	QUEST_COMPLETE = function() Recorder:QuestComplete() end,
 	QUEST_TURNED_IN = function(...) Recorder:QuestTurnedIn(...) end,
 	CHAT_MSG_COMBAT_FACTION_CHANGE = function(text) Recorder:ReputationMessage(text) end,
-	MERCHANT_SHOW = function() Recorder:MerchantShown() end,
 }
 
 -- Heard even while stopped: the way into a dungeon and out of it, for recording by itself there.

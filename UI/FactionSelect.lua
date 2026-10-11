@@ -2,10 +2,14 @@ local _, ns = ...
 local L = ns.L
 
 --[[
-	The Reputation tab's list: a card for every faction with rewards, laid out like the
-	dungeon grid and framed the same way. A card shows the faction's crest in the journal's
-	gold ring over a glow of its colour, the player's standing, and how many rewards it has.
-	Clicking one opens its rewards in the book, its standings where a dungeon lists bosses.
+	The Reputation tab's list: a card for every faction, laid out like the dungeon grid and
+	framed the same way. A card shows the faction's crest in the journal's gold ring over a glow
+	of its colour, the player's standing, and how many rewards it has (or that its quartermaster
+	is not captured yet). Clicking one opens its rewards in the book, its standings where a
+	dungeon lists bosses.
+
+	Above the grid, Capture: with a quartermaster's shop open, it keeps everything they sell,
+	and the wares that need a standing join that faction's rewards at once.
 ]]
 
 local FactionSelect = {}
@@ -68,6 +72,11 @@ local function ShowTooltip(card)
 	else
 		GameTooltip:AddLine(L.REP_UNKNOWN, 0.6, 0.6, 0.6)
 	end
+	local names = {}
+	for _, vendor in pairs(faction.quartermasters or {}) do names[#names + 1] = vendor.name end
+	table.sort(names)
+	for _, name in ipairs(names) do GameTooltip:AddLine(string.format(L.REP_QUARTERMASTER, name), 1, 1, 1) end
+	if not ns.FactionCaptured(faction) then GameTooltip:AddLine(L.REP_NOT_CAPTURED_TIP, 0.6, 0.6, 0.6, true) end
 	GameTooltip:AddLine(" ")
 	GameTooltip:AddLine(L.REP_CARD_CLICK, 0.5, 0.8, 1)
 	GameTooltip:Show()
@@ -120,9 +129,6 @@ local function CreateCard(parent)
 	card.Count:SetPoint("BOTTOMRIGHT", -9, 9)
 	card.Count:SetJustifyH("RIGHT")
 
-	-- A reputation new in WoW: Forever, beside its crest (where the player chose it to go).
-	card.Forever = ns.CreateForeverMark(card)
-	card.Forever:SetPoint("RIGHT", -10, 2)
 
 	card:SetScript("OnEnter", ShowTooltip)
 	card:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -136,7 +142,6 @@ end
 local function SetCard(card, faction)
 	card.faction = faction
 	SetName(card, faction.name)
-	card.Forever:SetShown(faction.forever == true)
 
 	local color = Reputation:CardColor(faction)
 	card.Base:SetColorTexture(color[1] * 0.2, color[2] * 0.2, color[3] * 0.2, 1)
@@ -155,8 +160,70 @@ local function SetCard(card, faction)
 		card.Standing:SetTextColor(UNKNOWN_COLOR[1], UNKNOWN_COLOR[2], UNKNOWN_COLOR[3])
 	end
 
-	local count = Reputation:RewardCount(faction)
-	card.Count:SetText(count == 1 and L.REP_REWARD_ONE or string.format(L.REP_REWARDS, count))
+	if ns.FactionCaptured(faction) then
+		local count = Reputation:RewardCount(faction)
+		card.Count:SetText(count == 1 and L.REP_REWARD_ONE or string.format(L.REP_REWARDS, count))
+		card.Count:SetTextColor(1, 1, 1)
+	else
+		-- Nothing captured yet: a Forever faction is still to come, any other waits for its quartermaster.
+		card.Count:SetText(faction.forever and L.COMING_SOON or L.REP_NOT_CAPTURED)
+		card.Count:SetTextColor(UNKNOWN_COLOR[1], UNKNOWN_COLOR[2], UNKNOWN_COLOR[3])
+	end
+end
+
+------------------------------------------------------------------------------------------
+-- Capturing a quartermaster
+------------------------------------------------------------------------------------------
+
+local function CreateCapture(panel)
+	local button = ns.CreateFrameWithTemplate("Button", nil, panel, "UIPanelButtonTemplate")
+	button:SetSize(150, 24)
+	button:SetPoint("TOPRIGHT", -26, -22)
+	button:SetText(L.REP_CAPTURE)
+	button:SetScript("OnClick", function() FactionSelect:Capture(panel) end)
+	button:SetScript("OnEnter", function(self)
+		GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
+		GameTooltip:SetText(L.REP_CAPTURE, 1, 1, 1)
+		GameTooltip:AddLine(L.REP_CAPTURE_TIP, 1, 0.82, 0, true)
+		GameTooltip:Show()
+	end)
+	button:SetScript("OnLeave", function() GameTooltip:Hide() end)
+	-- Wrapped so the button reacts to the mouse even while disabled, for its tooltip.
+	if button.SetMotionScriptsWhileDisabled then button:SetMotionScriptsWhileDisabled(true) end
+	panel.Capture = button
+
+	panel.CaptureStatus = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+	panel.CaptureStatus:SetPoint("RIGHT", button, "LEFT", -12, 0)
+	panel.CaptureStatus:SetJustifyH("RIGHT")
+end
+
+function FactionSelect:RefreshCapture(panel)
+	local open = ns.Recorder:MerchantOpen()
+	panel.Capture:SetEnabled(open)
+	local found, status = panel.lastCapture, panel.CaptureStatus
+	if found and open then
+		if found.forStanding > 0 then
+			status:SetText(string.format(L.REP_CAPTURED, found.name, found.forStanding, table.concat(found.factions, ", "),
+				found.new))
+		else
+			status:SetText(string.format(L.REP_CAPTURED_NONE, found.name, found.wares))
+		end
+		status:SetTextColor(0.3, 1, 0.3)
+	elseif open then
+		status:SetText(L.REP_CAPTURE_READY)
+		status:SetTextColor(1, 0.82, 0)
+	else
+		panel.lastCapture = nil
+		status:SetText(L.REP_CAPTURE_HINT)
+		status:SetTextColor(0.7, 0.7, 0.7)
+	end
+end
+
+function FactionSelect:Capture(panel)
+	ns.PlaySoundKit("IG_MAINMENU_OPTION")
+	panel.lastCapture = ns.Recorder:CaptureVendor(true)
+	self:RefreshCapture(panel)
+	if panel:IsVisible() then self:Refresh(panel) end
 end
 
 ------------------------------------------------------------------------------------------
@@ -184,6 +251,11 @@ function FactionSelect:Build(panel)
 	end)
 	panel:SetScript("OnShow", function(self) FactionSelect:Refresh(self) end)
 
+	CreateCapture(panel)
+	-- A shop opening or closing (and a capture) shows on the button and the line beside it.
+	ns.Recorder:OnChange(function() FactionSelect:RefreshCapture(panel) end)
+	self:RefreshCapture(panel)
+
 	-- The cards are made the first time the tab shows (OnShow above), not with the window.
 	panels[#panels + 1] = panel
 end
@@ -209,4 +281,5 @@ function FactionSelect:Refresh(panel)
 	local rows = math.ceil(#list / COLUMNS)
 	child:SetHeight(math.max(1, rows * (CARD_HEIGHT + SPACING_Y) - SPACING_Y))
 	panel.Empty:SetShown(#list == 0)
+	self:RefreshCapture(panel)
 end

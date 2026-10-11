@@ -45,6 +45,7 @@ local function Update(key, spec)
 		if patch.replaceNotes or not boss.notes then boss.notes = {} end
 		for _, note in ipairs(patch.notes or {}) do boss.notes[#boss.notes + 1] = note end
 		if patch.level then boss.level = patch.level end
+		if patch.displayID then boss.displayID = patch.displayID end
 		AddLoot(boss, patch.loot)
 	end
 	if spec.trash then
@@ -384,3 +385,195 @@ Update("ScarletMonasteryLibrary", {
 
 -- City of Dalaran's own page, checked again: two trash drops the journal lacked.
 Update("CityOfDalaran", { trash = { 276160, 276158 } })
+
+------------------------------------------------------------------------------------------
+-- Checked again against foreverchanges.pro on 2026-10-11, every dungeon page and the quest
+-- pages of the quests below: the levels quests can be taken from, two creatures' models,
+-- one quest's giver, and the quests our data lacked. Inside a dungeon, a giver has no place
+-- on the world map; the quest says who it is.
+------------------------------------------------------------------------------------------
+
+local function From(level) return { requiredLevel = level } end
+
+Update("WailingCaverns", { questPatches = { [914] = From(12) } })
+Update("TheDeadmines", {
+	questPatches = {
+		[92753] = {
+			pickup = "Alba Fairmoon, Sentinel Hill, Westfall",
+			turnin = "Alba Fairmoon, at the Deadmines' exit, Westfall",
+			startMap = { mapID = 1436, x = 0.524, y = 0.530, label = "Alba Fairmoon" },
+			endMap = { mapID = 1436, x = 0.386, y = 0.836, label = "Alba Fairmoon" },
+		},
+	},
+})
+Update("ShadowfangKeep", { bosses = { ["Fel Steed / Shadow Charger"] = { displayID = 1952 } } })
+Update("Gnomeregan", {
+	bosses = { ["Grubbis"] = { displayID = 6533 } },
+	questPatches = {
+		[2843] = From(25),
+		[2945] = { level = 34 },
+		[2947] = { level = 34, requiredLevel = 28 },
+		[2949] = { level = 34, requiredLevel = 28 },
+	},
+	addQuests = {
+		{
+			questID = 2952, name = "The Sparklematic 5200!", level = 30, requiredLevel = 25, faction = "Both",
+			pickup = "The Sparklematic 5200, inside Gnomeregan", turnin = "The Sparklematic 5200, inside Gnomeregan",
+			objective = "Put a Grime-Encrusted Item into the Sparklematic 5200 to have it cleaned.",
+			rewards = { xp = 2450, items = { { itemID = 9363, name = "Sparklematic-Wrapped Box", quality = 1 } } },
+		},
+	},
+})
+Update("ScarletMonasteryLibrary", { questPatches = { [1160] = From(25) } })
+Update("ScarletMonasteryArmory", {
+	addQuests = {
+		{
+			questID = 1113, name = "Hearts of Zeal", level = 33, requiredLevel = 30, faction = "Horde",
+			pickup = "Master Apothecary Faranell, the Apothecarium, Undercity",
+			turnin = "Master Apothecary Faranell, the Apothecarium, Undercity",
+			startMap = { mapID = 1458, x = 0.488, y = 0.693, label = "Master Apothecary Faranell" },
+			endMap = { mapID = 1458, x = 0.488, y = 0.693, label = "Master Apothecary Faranell" },
+			objective = "Bring 20 Hearts of Zeal to Master Apothecary Faranell in the Undercity.",
+			note = "Follows Going, Going, Guano! The Scarlet Crusaders of every wing carry the hearts, and so do their leaders.",
+			rewards = { xp = 3300 },
+		},
+	},
+})
+Update("Uldaman", {
+	questPatches = { [17] = From(36), [2201] = From(40), [2341] = From(40), [2204] = From(40), [2361] = From(40) },
+	addQuests = {
+		{
+			questID = 2202, name = "Uldaman Reagent Run", level = 42, requiredLevel = 36, faction = "Horde",
+			pickup = "Jarkal Mossmeld, Kargath, Badlands", turnin = "Jarkal Mossmeld, Kargath, Badlands",
+			startMap = { mapID = 1418, x = 0.024, y = 0.461, label = "Jarkal Mossmeld" },
+			endMap = { mapID = 1418, x = 0.024, y = 0.461, label = "Jarkal Mossmeld" },
+			objective = "Bring 12 Magenta Fungus Caps from inside Uldaman to Jarkal Mossmeld in Kargath.",
+			note = "Follows Badlands Reagent Run.",
+			rewards = { xp = 3450, money = 5500, items = { { itemID = 9030, name = "Restorative Potion", quality = 1, count = 5 } } },
+		},
+	},
+})
+Update("Maraudon", {
+	questPatches = { [7070] = From(38), [7066] = From(45) },
+	addQuests = {
+		{
+			questID = 7068, name = "Shadowshard Fragments", level = 42, requiredLevel = 38, faction = "Horde",
+			pickup = "Uthel'nay, the Cleft of Shadow, Orgrimmar", turnin = "Uthel'nay, the Cleft of Shadow, Orgrimmar",
+			startMap = { mapID = 1454, x = 0.392, y = 0.863, label = "Uthel'nay" },
+			endMap = { mapID = 1454, x = 0.392, y = 0.863, label = "Uthel'nay" },
+			objective = "Collect 10 Shadowshard Fragments from the Shadowshard Rumblers and Smashers of Maraudon.",
+			rewards = {
+				xp = 3450, choice = true,
+				items = {
+					{ itemID = 17772, name = "Zealous Shadowshard Pendant", quality = 2 },
+					{ itemID = 17773, name = "Prodigious Shadowshard Pendant", quality = 2 },
+				},
+			},
+		},
+		{
+			questID = 7029, name = "Vyletongue Corruption", level = 47, requiredLevel = 41, faction = "Horde",
+			pickup = "Vark Battlescar, Shadowprey Village, Desolace", turnin = "Vark Battlescar, Shadowprey Village, Desolace",
+			startMap = { mapID = 1443, x = 0.232, y = 0.703, label = "Vark Battlescar" },
+			endMap = { mapID = 1443, x = 0.232, y = 0.703, label = "Vark Battlescar" },
+			objective = "Fill the Coated Cerulean Vial at the orange crystal pool, pour it on the Vylestem Vines and kill the 8 Noxxious Scions that come out.",
+			rewards = {
+				xp = 5250, choice = true,
+				items = {
+					{ itemID = 17768, name = "Woodseed Hoop", quality = 2 },
+					{ itemID = 17778, name = "Sagebrush Girdle", quality = 2 },
+					{ itemID = 17770, name = "Branchclaw Gauntlets", quality = 2 },
+				},
+			},
+		},
+		{
+			questID = 7064, name = "Corruption of Earth and Seed", level = 51, requiredLevel = 45, faction = "Horde",
+			pickup = "Selendra, near Shadowprey Village, Desolace", turnin = "Selendra, near Shadowprey Village, Desolace",
+			startMap = { mapID = 1443, x = 0.269, y = 0.777, label = "Selendra" },
+			endMap = { mapID = 1443, x = 0.269, y = 0.777, label = "Selendra" },
+			objective = "Kill Princess Theradras.",
+			rewards = {
+				xp = 6100, choice = true,
+				items = {
+					{ itemID = 17705, name = "Thrash Blade", quality = 3 },
+					{ itemID = 17743, name = "Resurgence Rod", quality = 3 },
+					{ itemID = 17753, name = "Verdant Keeper's Aim", quality = 3 },
+				},
+			},
+		},
+	},
+})
+Update("TempleOfAtalHakkar", { questPatches = { [1475] = From(41) } })
+
+-- A copy for each dungeon that lists it.
+local function Bijou() return {
+	questID = 4982, name = "Bijou's Belongings", level = 59, requiredLevel = 55, faction = "Horde",
+	pickup = "Bijou, inside Lower Blackrock Spire", turnin = "Bijou, inside Lower Blackrock Spire",
+	objective = "Find the belongings Bijou stashed on the bottom floor of the city, and bring them back to her.",
+	note = "Follows Operative Bijou.",
+	rewards = { xp = 6400 },
+} end
+Update("LowerBlackrockSpire", { questPatches = { [5047] = From(55) }, addQuests = { Bijou() } })
+Update("UpperBlackrockSpire", { questPatches = { [5047] = From(55) }, addQuests = { Bijou() } })
+
+local function Shendralar() return {
+	questID = 7877, name = "The Treasure of the Shen'dralar", level = 60, requiredLevel = 56, faction = "Horde",
+	pickup = "Shen'dralar Ancient, inside Dire Maul", turnin = "The Treasure of the Shen'dralar, in the Athenaeum, Dire Maul",
+	objective = "Go back to the Athenaeum, find the Treasure of the Shen'dralar and claim your reward.",
+	note = "Follows The Madness Within.",
+	rewards = {
+		xp = 675, money = 27000, choice = true,
+		items = {
+			{ itemID = 18420, name = "Bonecrusher", quality = 3 },
+			{ itemID = 18421, name = "Backwood Helm", quality = 3 },
+			{ itemID = 18424, name = "Sedge Boots", quality = 3 },
+		},
+	},
+} end
+Update("DireMaulEast", {
+	questPatches = { [5528] = From(57) },
+	addQuests = {
+		{
+			questID = 7489, name = "Lethtendris's Web", level = 57, requiredLevel = 54, faction = "Horde",
+			pickup = "Talo Thornhoof, Camp Mojache, Feralas", turnin = "Talo Thornhoof, Camp Mojache, Feralas",
+			startMap = { mapID = 1444, x = 0.762, y = 0.438, label = "Talo Thornhoof" },
+			endMap = { mapID = 1444, x = 0.762, y = 0.438, label = "Talo Thornhoof" },
+			objective = "Bring Lethtendris's Web to Talo Thornhoof at Camp Mojache.",
+			rewards = { xp = 7550, money = 17000, items = { { itemID = 18491, name = "Lorespinner", quality = 3 } } },
+		},
+		Shendralar(),
+	},
+})
+Update("DireMaulNorth", { questPatches = { [5528] = From(57), [5525] = From(57) }, addQuests = { Shendralar() } })
+Update("DireMaulWest", { questPatches = { [5528] = From(57) }, addQuests = { Shendralar() } })
+
+Update("ExcavationSiteWetlands", {
+	addQuests = {
+		{
+			questID = 95663, name = "Dragonmaw Rumors", level = 31, requiredLevel = 24, faction = "Horde",
+			pickup = "Zaruk, Hammerfall, Arathi Highlands", turnin = "Deathstalker Agent, above the Dragonmaw camp, Wetlands",
+			startMap = { mapID = 1417, x = 0.744, y = 0.356, label = "Zaruk" },
+			endMap = { mapID = 1437, x = 0.514, y = 0.592, label = "Deathstalker Agent" },
+			objective = "Meet the Deathstalker Agent in the hills above the Dragonmaw camp in the Wetlands.",
+			rewards = { xp = 550 },
+		},
+		{
+			questID = 95737, name = "Seeking Caitlin", level = 31, requiredLevel = 24, faction = "Alliance",
+			pickup = "Llana, Astranaar, Ashenvale", turnin = "Caitlin Grassman, Menethil Harbor, Wetlands",
+			startMap = { mapID = 1440, x = 0.350, y = 0.484, label = "Llana" },
+			endMap = { mapID = 1437, x = 0.118, y = 0.586, label = "Caitlin Grassman" },
+			objective = "Speak with Caitlin Grassman in Menethil Harbor.",
+			rewards = { xp = 1250 },
+		},
+	},
+})
+Update("CityOfDalaran", { questPatches = { [96984] = From(24), [92458] = From(24) } })
+Update("TheDrownedCity", {
+	addQuests = {
+		{
+			questID = 96774, name = "Ancient Gurubashi Idol", level = 40, requiredLevel = 30, faction = "Horde",
+			pickup = "Mazu'kon, Mulgore", startMap = { mapID = 1412, x = 0.324, y = 0.206, label = "Mazu'kon" },
+			objective = "Recover an Ancient Gurubashi Idol from the Drowned City.",
+			rewards = { xp = 8800 },
+		},
+	},
+})

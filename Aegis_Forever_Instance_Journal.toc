@@ -1,8 +1,8 @@
 ## Interface: 16001
 ## Title: Aegis Instance Journal
-## Notes: Retail-style instance journal and dungeon maps for WoW: Forever. Shift+J to open. Inspired by Alex Atlas Loot by Alex Brandson and its contributors Niceheal Shadow, Gaia Cloudv, Buddley Wuddley, Beef Party, Thunder Lance, Wakkytabbaky Solstice, Reasonabull Stouthoof, Markofwild Buffer, Joyful Yoda, Mac Bond, Faylastral Ox, Deathjoze Jeijet, Balance Magy, Bulky Wulky, Anowa Stax, Zero Onezero, Perina Bracketfix, Satosha Nakamuara, Annahay Lotusbloom, Furii Vox, Sidja, Mad Skillz, Oogar, Cier, Jolly, Mali, Grama and Eris, whose lists of the spells each boss casts it uses; Forever dungeon maps by Santiago Reyes (Atlas de Azeroth: Forever).
+## Notes: Retail-style instance journal and dungeon maps for WoW: Forever. Shift+J to open. Inspired by Alex Atlas Loot by Alex Brandson and its contributors Niceheal Shadow, Gaia Cloudv, Buddley Wuddley, Beef Party, Thunder Lance, Wakkytabbaky Solstice, Reasonabull Stouthoof, Markofwild Buffer, Joyful Yoda, Mac Bond, Faylastral Ox, Deathjoze Jeijet, Balance Magy, Bulky Wulky, Anowa Stax, Zero Onezero, Perina Bracketfix, Satosha Nakamuara, Annahay Lotusbloom, Furii Vox, Sidja, Mad Skillz, Oogar, Cier, Jolly, Mali, Grama and Eris, whose addon inspired its Record tab; Forever dungeon maps by Santiago Reyes (Atlas de Azeroth: Forever).
 ## Author: Aegis
-## Version: 0.24.2
+## Version: 0.25.0
 ## X-Credits: Alex Brandson and the Alex Atlas Loot contributors; Santiago Reyes (Atlas de Azeroth: Forever); Lionel Schramm (paintings); made with the help of Claude AI. See CREDITS.md.
 ## SavedVariables: AegisJournalDB
 ## SavedVariablesPerCharacter: AegisJournalCharDB
@@ -49,7 +49,8 @@ Data\Instances\Scholomance.lua
 Data\Instances\StratholmeMainGate.lua
 Data\Instances\StratholmeServiceGate.lua
 Data\Instances\Raids.lua
-Data\Reputation\FactionRewards.lua
+Data\Reputation\Factions.lua
+Data\Reputation\Captured.lua
 Data\Travel\KnownTransports.lua
 Data\Generated\Unconfirmed.lua
 Data\Authored\TheDeadmines.lua
@@ -73,6 +74,7 @@ Data\Authored\ClassicMaps.lua
 Data\Authored\FromForeverChanges.lua
 Data\Authored\SiteLoot.lua
 Data\Authored\ItemNames.lua
+Data\Authored\Abilities.lua
 Data\Authored\Contributors.lua
 Data\Generated\Abilities.lua
 Data\Authored\SubMaps.lua

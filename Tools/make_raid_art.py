@@ -1,6 +1,7 @@
 """Makes the journal's own pictures (512 x 256 TGA) from the pictures in the reference folder's
 Art: the raids' (Media/Raids) and the one shown for a dungeon with no picture of its own
-(Media/DungeonPlaceholder). Each is cut to 2:1, around its middle unless a part is given.
+(Media/DungeonPlaceholder). Each is cut to 2:1, around its middle unless a part is given. Also
+the square icons (64 x 64, with their transparency), such as WoW: Forever's emblem.
 
     python Tools/make_raid_art.py
 
@@ -27,6 +28,13 @@ PICTURES = [
     ("Dungeon placeholder.webp", (0, 50, 2000, 1050), "DungeonPlaceholder"),
 ]
 
+# Square icons, kept whole with their transparency: source (under Art), file made (under Media).
+ICONS = [
+    # WoW: Forever's emblem, on what Forever added (UI/ForeverMark.lua).
+    ("Forever icon.png", "ForeverIcon"),
+]
+ICON_SIZE = (64, 64)
+
 
 def two_to_one(image):
     width, height = image.size
@@ -46,6 +54,11 @@ def main():
         image = two_to_one(image).resize(SIZE, Image.LANCZOS)
         path = os.path.join(MEDIA, name + ".tga")
         os.makedirs(os.path.dirname(path), exist_ok=True)
+        image.save(path, compression="tga_rle")
+        print("wrote", path)
+    for source, name in ICONS:
+        image = Image.open(os.path.join(ART, source)).convert("RGBA").resize(ICON_SIZE, Image.LANCZOS)
+        path = os.path.join(MEDIA, name + ".tga")
         image.save(path, compression="tga_rle")
         print("wrote", path)
     return 0

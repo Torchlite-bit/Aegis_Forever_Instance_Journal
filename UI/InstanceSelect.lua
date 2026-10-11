@@ -55,9 +55,9 @@ local function CreateInstanceButton(parent)
 	button.Untested:SetText(L.UNTESTED)
 	button.Untested:SetTextColor(0.75, 0.75, 0.75)
 
-	-- What is new in WoW: Forever, called out as retail calls out something new.
+	-- What is new in WoW: Forever: its emblem in the corner.
 	button.Forever = ns.CreateForeverMark(button)
-	button.Forever:SetPoint("BOTTOMRIGHT", -9, 8)
+	button.Forever:SetPoint("BOTTOMRIGHT", -5, 5)
 
 	button:SetScript("OnClick", function(self)
 		ns.PlaySoundKit("IG_SPELLBOOK_OPEN")
@@ -71,9 +71,9 @@ local function SetButtonInstance(button, instance)
 	button.Name:SetText(instance.name)
 	button.Untested:SetShown(instance.untested == true)
 	button.Forever:SetShown(instance.forever == true)
-	-- Both: the note goes above the mark.
+	-- Both: the note goes beside the emblem.
 	button.Untested:ClearAllPoints()
-	button.Untested:SetPoint("BOTTOMRIGHT", -7, instance.forever and 26 or 7)
+	button.Untested:SetPoint("BOTTOMRIGHT", instance.forever and -31 or -7, 7)
 
 	if instance.buttonImage then
 		-- Blizzard's own button picture, cut as EncounterInstanceButtonTemplate cuts it.

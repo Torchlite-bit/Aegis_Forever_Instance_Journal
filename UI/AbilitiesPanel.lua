@@ -8,11 +8,14 @@ local L = ns.L
 
 	Where the tree comes from, best first:
 	  boss.stages          hand-written phases, each listing the spells used in it
-	  boss.abilities       spells seen in players' combat logs (generated)
-	  boss.extraAbilities  hand-written abilities with no known spell id
+	  boss.abilities       the boss's spells ({ spellID, name, flags, text }: Data/Authored/
+	                       Abilities.lua), with what players' recorded runs measured (generated)
+	  boss.extraAbilities  abilities with no spell id ({ title, icon, description, flags })
 	  boss.adds            the creatures that fight beside it, with their spells (recorded runs)
-	Names, icons and descriptions of spells come from the client. Role alerts come from
-	boss.spellFlags where written by hand, and otherwise from the spell itself.
+	Names and icons of spells come from the client, descriptions from the ability's text where
+	written, else the client. Role alerts come from the ability's flags, then boss.spellFlags where written by hand,
+	and otherwise from the spell itself. boss.fightNote, above the tree,
+	says how the fight begins where that is unusual.
 ]]
 
 local AbilitiesPanel = {}
@@ -124,9 +127,11 @@ local function SpellSection(boss, row)
 	end
 	if not description and C_Spell and C_Spell.RequestLoadSpellData then pcall(C_Spell.RequestLoadSpellData, spellID) end
 
-	local written = boss.spellFlags and boss.spellFlags[spellID]
+	-- Role alerts given with the ability, else written for the boss, else read from the spell.
+	local written = row.flags or boss.spellFlags and boss.spellFlags[spellID]
 	local stats = StatsLine(row)
-	local body = description or L.ABILITY_LOADING
+	-- What the ability does in the fight, where written down, over the spell's own tooltip text.
+	local body = row.text or description or L.ABILITY_LOADING
 	return {
 		key = "spell:" .. spellID,
 		spellID = spellID,
@@ -428,8 +433,12 @@ function AbilitiesPanel:Refresh(scroll)
 	end
 
 	local child = scroll.Child
-	child.Description:SetText(boss.description or "")
-	local y = 8 + (boss.description and boss.description ~= "" and child.Description:GetStringHeight() + 12 or 0)
+	-- The boss's description, then how the fight begins, where it is unusual (boss.fightNote).
+	local intro = {}
+	if boss.description and boss.description ~= "" then intro[#intro + 1] = boss.description end
+	if boss.fightNote then intro[#intro + 1] = boss.fightNote end
+	child.Description:SetText(table.concat(intro, "\n\n"))
+	local y = 8 + (#intro > 0 and child.Description:GetStringHeight() + 12 or 0)
 
 	local used = 0
 	local function place(section, depth)

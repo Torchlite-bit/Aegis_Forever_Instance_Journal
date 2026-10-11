@@ -56,14 +56,15 @@ ns.AmendInstance("TheDeadmines", {
 				"Stomps at 75% and again at 50% health, stunning the whole party. It cannot be interrupted.",
 				"Changes weapons partway through the fight.",
 			},
+			-- The stages follow foreverchanges.pro's account of the fight; the spells are in
+			-- Data/Authored/Abilities.lua.
 			stages = {
-				{ title = "Stage One", description = "Mr. Smite opens the fight with his first set of weapons.",
-					spells = { 3391 } },
-				{ title = "Stage Two: 75% Health", description = "He stomps, stunning everyone nearby, and changes weapons.",
-					spells = { 6432, 6435 } },
-				{ title = "Stage Three: 50% Health", description = "He stomps again and changes weapons once more." },
+				{ title = "Stage One", description = "Mr. Smite opens the fight with a sword and shield." },
+				{ title = "Stage Two: 66% Health", description = "He stomps, stunning everyone near him, and takes up two axes.",
+					spells = { 6432, 12787 } },
+				{ title = "Stage Three: 33% Health", description = "He stomps again and takes up his hammer.",
+					spells = { 6435 } },
 			},
-			spellFlags = { [6432] = { "Important", "Healer" }, [6435] = { "Tank" }, [3391] = { "Tank" } },
 		},
 		["Cookie"] = {
 			area = "Ironclad Cove",

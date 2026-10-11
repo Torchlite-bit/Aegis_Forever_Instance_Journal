@@ -150,6 +150,31 @@ function ns.PlaySoundKit(key)
 	if SOUNDKIT and SOUNDKIT[key] then PlaySound(SOUNDKIT[key]) end
 end
 
+local COIN_ICON = "%d|TInterface\\MoneyFrame\\UI-%sIcon:0:0:2:0|t"
+
+-- Coins as icons. The Forever client keeps GetCoinTextureString under C_CurrencyInfo;
+-- GetMoneyString (SharedXML), the old global and our own icons are fallbacks.
+function ns.MoneyText(copper)
+	local formatters = {
+		C_CurrencyInfo and C_CurrencyInfo.GetCoinTextureString,
+		GetMoneyString,
+		GetCoinTextureString,
+	}
+	for index = 1, 3 do
+		local format = formatters[index]
+		if type(format) == "function" then
+			local ok, text = pcall(format, copper)
+			if ok and type(text) == "string" and text:find("|T", 1, true) then return text end
+		end
+	end
+	local gold, silver, rest = math.floor(copper / 10000), math.floor(copper / 100) % 100, copper % 100
+	local parts = {}
+	if gold > 0 then parts[#parts + 1] = COIN_ICON:format(gold, "Gold") end
+	if silver > 0 then parts[#parts + 1] = COIN_ICON:format(silver, "Silver") end
+	if rest > 0 then parts[#parts + 1] = COIN_ICON:format(rest, "Copper") end
+	return table.concat(parts, " ")
+end
+
 --[[
 	Values the client may withhold. Inside dungeons Forever hands addons "secret" values
 	for enemy guids and casts; those are treated as unknown rather than compared or stored.
