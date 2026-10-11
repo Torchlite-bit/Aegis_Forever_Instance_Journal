@@ -42,3 +42,6 @@ luac.out
 
 # Python caches (Tools/)
 __pycache__/
+
+# Releases built by Tools/package.py --public
+dist/

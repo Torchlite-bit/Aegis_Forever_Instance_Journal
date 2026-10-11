@@ -239,11 +239,15 @@ press **Copy** and paste it in the Discord.
 PRs are welcome too. Say hi on **[Discord](https://discord.gg/Hr66t25vE7)** first
 if you're planning something big.
 
-1. Keep `python Tools/smoke_test.py` passing.
+1. Keep `python Tools/smoke_test.py` passing: every push and pull request runs it.
 2. Bump the version in the `.toc`, this file's **H1** and "Check the version"
    line, and add a [`CHANGELOG.md`](CHANGELOG.md) entry.
 3. A new `.lua` file or texture needs a full client restart: say so in the
    changelog.
+
+**Releases are automatic.** Every push to `main` publishes a release named
+after the `.toc` version, with the addon zip and that version's changelog entry.
+A push that keeps the version refreshes that release's zip.
 
 ## License
 
