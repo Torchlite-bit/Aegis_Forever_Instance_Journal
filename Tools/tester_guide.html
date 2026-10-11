@@ -1,0 +1,286 @@
+<title>Aegis Field Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column with a contents strip; commands, paths and log lines set as the game shows them. */
+:root {
+  --bg: #f1f3f0;
+  --panel: #e6eae4;
+  --fg: #1c272b;
+  --muted: #55626a;
+  --rule: #c9d0c8;
+  --brass: #8a5a12;
+  --rec: #b0362b;
+  --code-bg: #e3e7e1;
+  --display: "Cinzel", "Palatino Linotype", Georgia, serif;
+  --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", Consolas, "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12181a; --panel: #1a2225; --fg: #e4e2da; --muted: #9aa4a8; --rule: #2c373b;
+    --brass: #e2ac4d; --rec: #e8665a; --code-bg: #1d272a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12181a; --panel: #1a2225; --fg: #e4e2da; --muted: #9aa4a8; --rule: #2c373b;
+  --brass: #e2ac4d; --rec: #e8665a; --code-bg: #1d272a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 17px/1.6 var(--body); }
+.page { max-width: 46rem; margin: 0 auto; padding-inline: 20px; padding-block: 40px 72px; display: flex; flex-direction: column; gap: 44px; }
+header { display: flex; flex-direction: column; gap: 12px; }
+.eyebrow { font: 600 12px/1 var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--brass); }
+h1 { font: 700 clamp(30px, 6vw, 42px)/1.15 var(--display); margin: 0; text-wrap: balance; letter-spacing: .01em; }
+h2 { font: 700 22px/1.25 var(--display); margin: 0; text-wrap: balance; letter-spacing: .02em; }
+h3 { font: 700 17px/1.35 var(--body); margin: 0; }
+p { margin: 0; }
+.lede { color: var(--muted); font-size: 18px; max-width: 62ch; }
+section { display: flex; flex-direction: column; gap: 16px; scroll-margin-top: 16px; }
+.toc { display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 14px 16px; background: var(--panel); border-radius: 6px; font-size: 15px; }
+.toc a { color: var(--fg); text-decoration: none; border-bottom: 1px solid var(--rule); }
+.toc a:hover, .toc a:focus-visible { border-color: var(--brass); color: var(--brass); }
+a { color: var(--brass); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+ol, ul { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 8px; }
+li::marker { color: var(--brass); font-weight: 700; }
+code, kbd { font: 14px/1.4 var(--mono); background: var(--code-bg); padding: 1px 6px; border-radius: 4px; overflow-wrap: anywhere; }
+kbd { border: 1px solid var(--rule); }
+.cmd { display: flex; align-items: stretch; gap: 0; background: var(--code-bg); border-radius: 6px; min-width: 0; }
+.cmd pre { margin: 0; padding: 10px 14px; overflow-x: auto; font: 14px/1.5 var(--mono); flex: 1; min-width: 0; }
+.cmd button { font: 600 12px/1 var(--body); letter-spacing: .06em; text-transform: uppercase; border: 0; border-left: 1px solid var(--rule); background: transparent; color: var(--muted); padding: 0 14px; cursor: pointer; border-radius: 0 6px 6px 0; }
+.cmd button:hover { color: var(--brass); }
+.log { background: var(--code-bg); border-radius: 6px; padding: 12px 14px; font: 14px/1.6 var(--mono); overflow-x: auto; white-space: pre; }
+.log .bad { color: var(--rec); }
+.rec-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--rec); margin-right: 6px; vertical-align: 1px; }
+.note { border-left: 3px solid var(--brass); padding: 4px 0 4px 14px; color: var(--muted); }
+.warn { border-left-color: var(--rec); }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font: 600 12px/1.3 var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+td code { white-space: nowrap; }
+.priority { display: flex; flex-direction: column; gap: 10px; }
+.priority div { display: grid; grid-template-columns: 7.5rem 1fr; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--rule); }
+.priority strong { font: 600 13px/1.5 var(--body); letter-spacing: .06em; text-transform: uppercase; color: var(--brass); }
+.credits { display: flex; flex-direction: column; gap: 12px; }
+.credits div { display: flex; flex-direction: column; gap: 2px; padding-bottom: 12px; border-bottom: 1px solid var(--rule); }
+.credits strong { font-weight: 700; }
+.credits span { color: var(--muted); font-size: 15px; }
+@media (max-width: 520px) {
+  body { font-size: 16px; }
+  .priority div { grid-template-columns: 1fr; gap: 2px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<main class="page">
+  <header>
+    <span class="eyebrow">WoW: Forever · Aegis Instance Journal</span>
+    <h1>Collecting data for the Aegis journal</h1>
+    <p class="lede">Thank you for helping. You play as you normally would with one addon running; it notes what happens in dungeons, and you paste what it caught in our Discord. This guide covers setting it up, what to do in a dungeon run, how to mark boats, zeppelins and portals, and how to send what you recorded.</p>
+    <nav class="toc" aria-label="Contents">
+      <a href="#setup">Setup</a>
+      <a href="#dungeons">Dungeon runs</a>
+      <a href="#quests">Quests</a>
+      <a href="#travel">Travel spots</a>
+      <a href="#readings">Map readings</a>
+      <a href="#wanted">What we need most</a>
+      <a href="#send">Sending what you recorded</a>
+      <a href="#trouble">If something goes wrong</a>
+      <a href="#commands">Commands</a>
+      <a href="#credits">Credits</a>
+    </nav>
+  </header>
+
+  <section id="setup">
+    <h2>Setup, once</h2>
+    <ol>
+      <li>Unzip the package you were given. Copy the <code>Aegis_Forever_Instance_Journal</code> folder inside it into your Forever AddOns folder. Keep the folder name exactly as it is.</li>
+    </ol>
+    <div class="cmd"><pre>World of Warcraft\_classic_beta_\Interface\AddOns\Aegis_Forever_Instance_Journal</pre><button type="button" data-copy>Copy</button></div>
+    <ol start="2">
+      <li>Close the game completely and start it again. A <code>/reload</code> is not enough the first time.</li>
+      <li>At character select, open <b>AddOns</b> and make sure <b>Aegis Instance Journal</b> is ticked.</li>
+      <li>In game, press <kbd>Shift</kbd>+<kbd>J</kbd> or type <code>/aegis</code> to open the journal.</li>
+      <li>Click the <b>Record</b> tab, the fourth tab along the bottom. It opens like a page of the journal: the recorder on the left, what you caught on the right. Leave <b>Record automatically in dungeons</b> ticked: recording starts by itself when you enter a dungeon and stops when you leave, and a red light <span class="rec-dot" aria-hidden="true"></span>shows on the tab while it runs.</li>
+      <li>Leave <b>Write the game's combat log inside dungeons</b> ticked. That is how boss abilities get recorded.</li>
+      <li>Type the name you want to be credited under in <b>Credit me as</b>; left empty, it is your character's name. Testers who send data are listed in the journal's contributors.</li>
+    </ol>
+    <p class="note">To record outside dungeons too (quest givers), click <b>Start Recording</b>: it then stays on through logouts and restarts until you click <b>Stop Recording</b>. You only need this one addon. Nothing is uploaded; everything stays on your computer until you send it.</p>
+  </section>
+
+  <section id="dungeons">
+    <h2>Recording a dungeon run</h2>
+    <h3>Before you go in</h3>
+    <ol>
+      <li>With <b>Record automatically in dungeons</b> ticked there is nothing to switch on. Otherwise, start recording first.</li>
+      <li><b>Walk in through the portal yourself</b> from outside. The addon remembers where you stood as the loading screen started; that is the dungeon's entrance. Being summoned in or teleported by the group finder still records the run, just not the entrance.</li>
+    </ol>
+    <h3>Inside</h3>
+    <ul>
+      <li><b>Kill the bosses</b> and play as normal. Wipes are fine.</li>
+      <li><b>Open the loot window on every boss corpse</b>, even when nothing in it is for you. Looting trash helps too. In a group, what the others loot and roll on is noted as well, but only your own loot window says which creature it came off.</li>
+      <li><b>Walk into every area</b>, including side rooms. Each area's name is noted.</li>
+      <li><b>Accept quests</b> from anyone inside who offers one.</li>
+    </ul>
+    <h3>What the Record tab shows</h3>
+    <p>The right-hand page, <b>What you caught</b>, fills in as you go: each dungeon you entered, whether its entrance was recorded, the bosses you killed, and the drops the journal does not have yet (the ones it has are only counted). At its foot, <b>Recent</b> lists the latest entries, newest first. A good run looks like this:</p>
+    <div class="log">13:59  Combat log off.
+13:58  Loot: 1 new item(s).
+13:58  Killed Durgen Dirgehammer.
+13:57  Pulled Durgen Dirgehammer.
+13:56  New area: Reliquary of Kings.
+13:37  Killed Faldrim Anvilmar.
+13:32  Combat log on (Logs\WoWCombatLog.txt).
+13:32  Entered The Hall of Thanes.
+13:32  Entrance of The Hall of Thanes recorded.</div>
+    <p>If a line appears in red, or one says <span class="log" style="display:inline;padding:1px 6px;white-space:normal">Entrance of … not recorded: …</span>, take a screenshot and post it with your recording. It tells us what went wrong.</p>
+    <h3>After the run</h3>
+    <ol>
+      <li>Leave the dungeon. Recent shows <code>Left the dungeon.</code> and <code>Combat log off.</code></li>
+      <li>Open the Record tab and press <b>Copy</b> to send what you recorded (see below).</li>
+    </ol>
+  </section>
+
+  <section id="quests">
+    <h2>Dungeon quests</h2>
+    <p>With recording on, pick up and hand in dungeon quests as usual. The addon notes who gave the quest and exactly where they stand, the objective, the rewards offered and any reputation gained. This is how the journal's <b>Show Start</b> and <b>Show End</b> buttons learn where to point.</p>
+    <ul>
+      <li>Quests that start from an item work too: loot the item and right-click it in your bags while recording.</li>
+      <li>Hand-ins count as much as pick-ups. Hand in at the quest giver while recording is on.</li>
+    </ul>
+  </section>
+
+  <section id="travel">
+    <h2>Boats, zeppelins, airships, trams and portals</h2>
+    <p>Forever moved several of these, so we need each one marked where it really is. Stand where you board: on the dock where the boat stops, at the top of the zeppelin tower, on the portal itself. Then type one line in chat:</p>
+    <div class="cmd"><pre>/aegis travel boat Auberdine</pre><button type="button" data-copy>Copy</button></div>
+    <p>The first word is the kind: <code>boat</code>, <code>zeppelin</code>, <code>airship</code>, <code>tram</code> or <code>portal</code>. The rest is where it goes. Two optional extras go at the end, in either order:</p>
+    <ul>
+      <li><b>Who it serves</b>: <code>alliance</code>, <code>horde</code> or <code>neutral</code>. Without it, zeppelins count as Horde and everything else as your own faction. Use <code>neutral</code> for routes both factions can take, such as Booty Bay to Ratchet.</li>
+      <li><b>A note in brackets</b> for who may take it, such as a race-only route.</li>
+    </ul>
+    <div class="cmd"><pre>/aegis travel boat Ratchet neutral
+/aegis travel zeppelin Orgrimmar
+/aegis travel portal Dalaran (Skyborne only)
+/aegis travel airship Zephras Isle (Skyborne only) alliance</pre><button type="button" data-copy>Copy</button></div>
+    <ul>
+      <li><b>Mark both ends.</b> Do it at the departure dock, then again when you arrive, naming the place it goes back to.</li>
+      <li>A dock with several routes: run the command once per destination while standing in the same spot.</li>
+      <li><code>/aegis travel list</code> shows everything you have marked. <code>/aegis travel undo</code> takes back the last one.</li>
+      <li>Each spot appears on your world map right away, so you can check it landed in the right place.</li>
+    </ul>
+    <p class="note">Most boats and zeppelins, the Deeprun Tram and the Skyborne portal and airship are on the map already. Mark one anyway when its icon is not where you board: your mark replaces it. Still missing: the Horde airship between Valanaar and Skywatcher, and any route you find that has no icon.</p>
+  </section>
+
+  <section id="readings">
+    <h2>Map readings, when asked</h2>
+    <p>Sometimes we will ask for the exact spot of something, usually for the underground areas the game has no map of, like Old Ironforge or the Defias Hideout under Moonbrook. Stand on the spot and type:</p>
+    <div class="cmd"><pre>/aegis where</pre><button type="button" data-copy>Copy</button></div>
+    <p>It prints a line like this in chat:</p>
+    <div class="log">Map 1415 (Eastern Kingdoms)  x 0.4069  y 0.7958  area "The Deadmines"  minimap "The Deadmines"  height 0.0</div>
+    <p>Send a screenshot of the line and of where you were standing. If we sent you a picture with lettered spots, tell us which letter you stood on.</p>
+  </section>
+
+  <section id="wanted">
+    <h2>What we need most</h2>
+    <div class="priority">
+      <div><strong>Forever's new dungeons</strong><p>Full runs of City of Dalaran now. From 4 November: The Drowned City, Krol'dok Stronghold, Alcaz Prison, Blackmaw Hold and Shaper's Terrace. Then the raids as they open: Barrow Deeps, Hyjal Summit and Onyxia's Lair. Everything counts: bosses, loot, quests, entrance, area names. Their pages in the journal say "Coming soon" until your recordings fill them in.</p></div>
+      <div><strong>The returning dungeons</strong><p>Razorfen Downs through Stratholme are back in the journal with their bosses and loot, but a few entrances are only roughly placed and some bosses have no spot on the map yet. Walking in from outside and killing every boss fixes both.</p></div>
+      <div><strong>Boss abilities</strong><p>How hard each ability hits and when it comes now come only from your runs, for every boss. Gnomeregan, Razorfen Kraul, Scarlet Monastery, Excavation Site and every dungeon from Razorfen Downs on have no abilities listed at all yet. One clean kill of each boss with the combat log on is enough.</p></div>
+      <div><strong>Quartermasters</strong><p>Every faction's rewards are empty until someone captures its quartermaster. Walk up to one, open their shop, open the journal's <b>Reputation</b> tab and press <b>Capture vendor</b>. No need to be recording: the wares, their prices and the standing each needs join the tab at once, and come along when you Copy.</p></div>
+      <div><strong>Entrances</strong><p>Every dungeon, walked into from outside with recording on.</p></div>
+      <div><strong>Quest givers</strong><p>Pick up and hand in dungeon quests with recording on, especially the ones that start far from the dungeon.</p></div>
+      <div><strong>Travel</strong><p>Routes with no icon on the map yet, both ends, including race- or faction-only ones: the Horde airship between Valanaar and Skywatcher first. And any icon that is not where you board.</p></div>
+      <div><strong>Horde side</strong><p>Most data so far comes from Alliance characters. Horde quests, zeppelins and capitals are especially welcome.</p></div>
+    </div>
+  </section>
+
+  <section id="send">
+    <h2>Sending what you recorded</h2>
+    <ol>
+      <li>On the Record tab, press <b>Copy</b>. The right-hand page turns into everything recorded as text, already selected. <b>Back</b> (the same button) or <kbd>Esc</kbd> turns it back.</li>
+      <li>Press <kbd>Ctrl</kbd>+<kbd>C</kbd>, then paste it in our Discord. Long recordings turn into a text file there by themselves; that is fine.</li>
+    </ol>
+    <div class="cmd"><pre>https://discord.gg/Hr66t25vE7</pre><button type="button" data-copy>Copy</button></div>
+    <p>Under the recorder's title, the Record tab counts what you have caught and how much of it is new since your last Copy, so you can tell when there is something worth sending.</p>
+    <h3>Combat logs, for boss abilities</h3>
+    <p>Damage and timings come from the game's combat logs, which are too big to copy as text. Zip the ones from the days you recorded and attach the zip in Discord:</p>
+    <div class="cmd"><pre>World of Warcraft\_classic_beta_\Logs\WoWCombatLog-*.txt</pre><button type="button" data-copy>Copy</button></div>
+    <ul>
+      <li>Do not press <b>Clear</b> on the Record tab until you hear your recording arrived. After that you can clear it or keep going; new recordings just add on.</li>
+    </ul>
+    <p class="note">What is in it: the copied text holds what you recorded (dungeons, bosses, loot, quests, travel marks, quartermasters) and the name you chose to be credited under, with no passwords or account details. The combat logs include the names of the characters in your group and what they did in combat. We only read the creatures' side of it, but your group is named in the file.</p>
+  </section>
+
+  <section id="trouble">
+    <h2>If something goes wrong</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>What you see</th><th>What to do</th></tr></thead>
+        <tbody>
+          <tr><td><kbd>Shift</kbd>+<kbd>J</kbd> does nothing</td><td>Another addon took the key. Type <code>/aegis</code>, or set a key in <b>Key Bindings › AddOns › Toggle Instance Journal</b>.</td></tr>
+          <tr><td>No red light after Start Recording</td><td>Close and reopen the journal. If it still has none, send a screenshot.</td></tr>
+          <tr><td><code>Entrance of … not recorded</code></td><td>Screenshot the line and send it. The rest of the run still recorded.</td></tr>
+          <tr><td>Combat log never says "on"</td><td>Check the box on the Record tab is ticked. If you started the combat log yourself with <code>/combatlog</code>, the addon leaves yours alone; that is fine.</td></tr>
+          <tr><td>Copy shows less than you played</td><td>Recording was off at the time. Tick <b>Record automatically in dungeons</b>, or start recording before you go.</td></tr>
+          <tr><td>A red line under Recent</td><td>Screenshot it and post it with your recording.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">When you get a newer version of the addon, delete the old <code>Aegis_Forever_Instance_Journal</code> folder, copy in the new one and restart the game. Your recordings are kept; they live in the WTF folder, not the addon folder.</p>
+  </section>
+
+  <section id="commands">
+    <h2>Commands</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Type</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>/aegis</code></td><td>Opens or closes the journal (same as <kbd>Shift</kbd>+<kbd>J</kbd>).</td></tr>
+          <tr><td><code>/aegis record</code></td><td>Starts or stops recording.</td></tr>
+          <tr><td><code>/aegis where</code></td><td>Prints and saves exactly where you stand.</td></tr>
+          <tr><td><code>/aegis travel boat Auberdine</code></td><td>Marks a boat, zeppelin, airship, tram or portal where you stand.</td></tr>
+          <tr><td><code>/aegis travel list</code></td><td>Lists what you have marked.</td></tr>
+          <tr><td><code>/aegis travel undo</code></td><td>Takes back your last mark.</td></tr>
+          <tr><td><code>/aegis items</code></td><td>Finds the items in the journal the game does not have yet (they show as "Item" and a number). Takes about a minute; the list comes along when you Copy.</td></tr>
+          <tr><td><code>/aegis reset</code></td><td>Moves the journal window back to its default place.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="credits">
+    <h2>Credits</h2>
+    <p>The journal's code and data are its own. Other people's work is part of it, used with their permission.</p>
+    <div class="credits">
+      <div><strong>Alex Atlas Loot, by Alex Brandson and its contributors</strong><span>The inspiration for the Record tab, the raids and the Forever marks, and the copy of WoW: Forever's emblem the journal uses. Contributors: Niceheal Shadow, Gaia Cloudv, Buddley Wuddley, Beef Party, Thunder Lance, Wakkytabbaky Solstice, Reasonabull Stouthoof, Markofwild Buffer, Joyful Yoda, Mac Bond, Faylastral Ox, Deathjoze Jeijet, Balance Magy, Bulky Wulky, Anowa Stax, Zero Onezero, Perina Bracketfix, Satosha Nakamuara, Annahay Lotusbloom, Furii Vox, Sidja, Mad Skillz, Oogar, Cier, Jolly, Mali, Grama and Eris.</span></div>
+      <div><strong>Atlas de Azeroth: Forever, by Santiago Reyes</strong><span>The maps of The Hall of Thanes, Ruins of Lordaeron, Excavation Site: Wetlands and City of Dalaran: his own reinterpretations, not official World of Warcraft art, and he is not affiliated with Blizzard. If you show them in a video or a stream, please credit him in its description, and never alter them or remove his watermark. Support his maps on <a href="https://www.patreon.com/c/SantiagoReyesMaps">Patreon</a> or <a href="https://ko-fi.com/sr433_20">Ko-fi</a>.</span></div>
+    </div>
+    <p>The paintings of Onyxia's Lair and of the dungeons with no picture of their own are Lionel Schramm's, from Mysteries of Azeroth (Turtle WoW), used with his permission.</p>
+    <p>This addon was created with the help of Claude AI, Anthropic's assistant.</p>
+    <p>World of Warcraft, its art and its game data are Blizzard Entertainment's. More in <code>CREDITS.md</code>, inside the addon folder.</p>
+  </section>
+</main>
+
+<script>
+document.querySelectorAll("[data-copy]").forEach(function (button) {
+  button.addEventListener("click", function () {
+    var text = button.parentElement.querySelector("pre").textContent;
+    var done = function () { button.textContent = "Copied"; setTimeout(function () { button.textContent = "Copy"; }, 1500); };
+    var select = function () {
+      var range = document.createRange();
+      range.selectNodeContents(button.parentElement.querySelector("pre"));
+      var selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    };
+    try {
+      navigator.clipboard.writeText(text).then(done, select);
+    } catch (error) {
+      select();
+    }
+  });
+});
+</script>

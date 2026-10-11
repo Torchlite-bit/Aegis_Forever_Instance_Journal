@@ -1,0 +1,84 @@
+"""
+Loads the addon the way the client would (files in TOC order, sharing one namespace)
+against Tools/wow_mock.lua, then runs Tools/smoke_scenario.lua, which clicks through the
+journal and checks what it shows.
+
+    python Tools/smoke_test.py
+
+Needs the lupa package (pip install lupa), which bundles Lua 5.1, WoW's Lua version.
+It catches mistakes in the addon's own logic. It does not show what the window looks
+like; only the game does that.
+"""
+
+import os
+import re
+import sys
+from xml.etree import ElementTree
+
+import lupa.lua51 as lupa
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+TOOLS = os.path.join(ROOT, "Tools")
+ADDON = "Aegis_Forever_Instance_Journal"
+
+
+def toc_files():
+    with open(os.path.join(ROOT, ADDON + ".toc"), encoding="utf-8") as handle:
+        for line in handle:
+            line = line.strip()
+            if line and not line.startswith("#"):
+                yield line.replace("\\", os.sep)
+
+
+def read(path):
+    with open(path, encoding="utf-8") as handle:
+        return handle.read()
+
+
+def main():
+    lua = lupa.LuaRuntime(unpack_returned_tuples=True)
+    lua.execute("date = os.date; debugstack = function() return debug.traceback() end")
+    lua.execute(read(os.path.join(TOOLS, "wow_mock.lua")))
+
+    load = lua.eval("""function(source, name, addon, ns)
+        local chunk, err = loadstring(source, "@" .. name)
+        if not chunk then error(err) end
+        local ok, runErr = xpcall(function() return chunk(addon, ns) end, debug.traceback)
+        if not ok then error(runErr) end
+    end""")
+    register = lua.eval("""function(name, frameType, mixin)
+        WOWMOCK.xmlTemplates[name] = { type = frameType, mixin = mixin }
+    end""")
+    perf = "--perf" in sys.argv[1:]
+    memory = lua.eval('function() collectgarbage("collect") return collectgarbage("count") end')
+    before = memory()
+    ns = lua.table()
+    for relative in toc_files():
+        if relative.lower().endswith(".xml"):
+            # The client reads these; here they are checked for well-formedness and their
+            # virtual templates registered, so CreateFrame applies each one's mixin.
+            tree = ElementTree.parse(os.path.join(ROOT, relative))
+            for element in tree.getroot().iter():
+                if element.get("virtual") == "true" and element.get("name"):
+                    register(element.get("name"), element.tag.split("}")[-1], element.get("mixin"))
+            continue
+        load(read(os.path.join(ROOT, relative)), relative, ADDON, ns)
+    loaded = memory() - before
+    print("Loaded %d files from the TOC." % len(list(toc_files())))
+
+    # --perf times the heavy operations instead of checking behaviour (Tools/perf_scenario.lua).
+    scenario = "perf_scenario.lua" if perf else "smoke_scenario.lua"
+    run = lua.eval("""function(source, name, ns, loaded)
+        local chunk = assert(loadstring(source, "@" .. name))
+        return xpcall(function() return chunk(ns, loaded) end, debug.traceback)
+    end""")
+    ok, result = run(read(os.path.join(TOOLS, scenario)), scenario, ns, loaded)
+    if not ok:
+        print("FAILED:\n" + str(result))
+        return 1
+    print(result)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

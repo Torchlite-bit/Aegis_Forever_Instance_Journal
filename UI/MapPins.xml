@@ -1,0 +1,34 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+	<!--
+		The journal's boss pin on Blizzard's world map, as retail's EncounterJournalPinTemplate
+		(which Forever does not ship): the creature's portrait in the journal's round frame.
+		Its textures are made by AegisJournalBossPinMixin:OnLoad (UI/DungeonMap.lua), which
+		the map canvas calls when it first acquires the pin.
+	-->
+	<Button name="AegisJournalBossPinTemplate" mixin="AegisJournalBossPinMixin" hidden="true" enableMouse="true" virtual="true">
+		<Size x="50" y="49"/>
+	</Button>
+	<!--
+		A dungeon or raid entrance on a zone or continent map, as retail's DungeonEntrancePinTemplate
+		draws it (its icon and highlight are made by AegisJournalEntrancePinMixin:OnLoad).
+	-->
+	<Frame name="AegisJournalEntrancePinTemplate" mixin="AegisJournalEntrancePinMixin" hidden="true" enableMouse="true" virtual="true">
+		<Size x="32" y="32"/>
+	</Frame>
+	<!-- The way down to an area below a zone, as retail's cave entrance (MapLinkPinTemplate). -->
+	<Frame name="AegisJournalCavePinTemplate" mixin="AegisJournalCavePinMixin" hidden="true" enableMouse="true" virtual="true">
+		<Size x="32" y="32"/>
+	</Frame>
+	<!-- A flight master, as retail's FlightPointPinTemplate (made by UI/TravelMap.lua). -->
+	<Frame name="AegisJournalFlightPinTemplate" mixin="AegisJournalFlightPinMixin" hidden="true" enableMouse="true" virtual="true">
+		<Size x="24" y="24"/>
+	</Frame>
+	<!-- A boat, zeppelin, tram or portal, as retail's teleport point (made by UI/TravelMap.lua). -->
+	<Frame name="AegisJournalTransportPinTemplate" mixin="AegisJournalTransportPinMixin" hidden="true" enableMouse="true" virtual="true">
+		<Size x="24" y="24"/>
+	</Frame>
+	<!-- Where a dungeon quest starts, or is handed in, as the client's own quest marks (made by UI/QuestMap.lua). -->
+	<Frame name="AegisJournalQuestPinTemplate" mixin="AegisJournalQuestPinMixin" hidden="true" enableMouse="true" virtual="true">
+		<Size x="24" y="24"/>
+	</Frame>
+</Ui>
