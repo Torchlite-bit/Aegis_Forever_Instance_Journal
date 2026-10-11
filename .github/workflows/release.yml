@@ -1,0 +1,57 @@
+# Tests every push and pull request; every push to main also publishes a release.
+#
+# The release is named after the TOC's ## Version (v0.25.1, say), with the addon zip and that
+# version's CHANGELOG entry as its notes. A push that keeps the same version refreshes that
+# release's zip and notes, so its download is always the latest push. Bump the version (and
+# add a CHANGELOG entry) for a new release.
+
+name: Test and release
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the test tools
+        run: pip install lupa==2.8
+
+      - name: Run the tests
+        run: python Tools/smoke_test.py
+
+      - name: Build the release zip
+        id: build
+        run: python Tools/package.py --public dist
+
+      - name: Publish the release
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: v${{ steps.build.outputs.version }}
+        run: |
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" dist/*.zip --clobber
+            gh release edit "$TAG" --notes-file dist/notes.md
+            echo "Refreshed $TAG with this push."
+          else
+            gh release create "$TAG" dist/*.zip --target "$GITHUB_SHA" \
+              --title "Aegis: Forever Instance Journal $TAG" --notes-file dist/notes.md
+            echo "Published $TAG."
+          fi

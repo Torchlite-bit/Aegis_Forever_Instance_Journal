@@ -7,6 +7,12 @@ testers' guide as a page to open in a browser, and a short README.
 The zip lands in the reference folder's Releases folder, named with the TOC's version. The
 addon goes in without Tools/ (as the install copies it). Every file the TOC lists must be
 there, or nothing is written.
+
+    python Tools/package.py --public dist
+
+instead writes the public release GitHub publishes on every push to main
+(.github/workflows/release.yml): the addon folder alone in a zip, and its notes from the
+CHANGELOG.
 """
 
 import os
@@ -20,8 +26,8 @@ ADDON = "Aegis_Forever_Instance_Journal"
 TOC = os.path.join(ROOT, ADDON + ".toc")
 GUIDE = os.path.join(ROOT, "Tools", "tester_guide.html")
 RELEASES = os.path.join(os.path.expanduser("~"), "OneDrive", "Pictures", "Forever Instance Journal", "Releases")
-# Kept in the repository, not in the addon: the tools, and the README's pictures.
-LEFT_OUT = {"Tools", "docs"}
+# Kept in the repository, not in the addon: the tools, the README's pictures, and built releases.
+LEFT_OUT = {"Tools", "docs", "dist"}
 
 README = """Aegis Instance Journal {version}, tester build
 ==============================================
@@ -109,6 +115,40 @@ def guide_page():
             + "\n</body>\n</html>\n")
 
 
+def changelog_section(version):
+    """The CHANGELOG's entry for a version, without its heading, or "" when it has none."""
+    path = os.path.join(ROOT, "CHANGELOG.md")
+    if not os.path.exists(path):
+        return ""
+    with open(path, encoding="utf-8") as handle:
+        text = handle.read()
+    match = re.search(r"^## \[" + re.escape(version) + r"\][^\n]*\n(.*?)(?=^---$|^## \[|\Z)", text, re.M | re.S)
+    return match.group(1).strip() if match else ""
+
+
+def public_release(out, version, files):
+    """The release GitHub publishes: the addon folder alone in the zip (what addon managers
+    expect), and the release notes, from the CHANGELOG."""
+    os.makedirs(out, exist_ok=True)
+    target = os.path.join(out, "{}-v{}.zip".format(ADDON, version))
+    with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as package:
+        for path in files:
+            package.write(os.path.join(ROOT, path), ADDON + "/" + path)
+    notes = changelog_section(version) or "See the CHANGELOG."
+    notes += ("\n\n### Install\nUnzip, put the `{0}` folder in `World of Warcraft/_classic_beta_/Interface/AddOns/`, "
+              "then restart the game fully.\n\n[Full changelog](CHANGELOG.md) · [Discord](https://discord.gg/Hr66t25vE7)\n"
+              ).format(ADDON)
+    notes = notes.replace("](CHANGELOG.md)",
+                          "](https://github.com/Torchlite-bit/Aegis_Forever_Instance_Journal/blob/main/CHANGELOG.md)")
+    with open(os.path.join(out, "notes.md"), "w", encoding="utf-8", newline="\n") as handle:
+        handle.write(notes)
+    # For the release workflow (.github/workflows/release.yml): the version, as a step output.
+    if os.environ.get("GITHUB_OUTPUT"):
+        with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+            handle.write("version={}\n".format(version))
+    print("Wrote {} ({} addon files, {:.1f} MB) and its notes".format(target, len(files), os.path.getsize(target) / 1024 / 1024))
+
+
 def main():
     version, listed = toc_version_and_files()
     if not version:
@@ -117,6 +157,12 @@ def main():
     missing = [path for path in listed if path not in files]
     if missing:
         sys.exit("The TOC lists files that are not there: " + ", ".join(missing))
+
+    # python Tools/package.py --public <folder>: the public release instead of the testers' package.
+    if "--public" in sys.argv:
+        index = sys.argv.index("--public")
+        public_release(sys.argv[index + 1] if len(sys.argv) > index + 1 else "dist", version, files)
+        return
 
     os.makedirs(RELEASES, exist_ok=True)
     target = os.path.join(RELEASES, "{}_v{}_testers.zip".format(ADDON, version))
