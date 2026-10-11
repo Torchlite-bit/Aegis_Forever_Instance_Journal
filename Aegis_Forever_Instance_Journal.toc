@@ -1,0 +1,99 @@
+## Interface: 16001
+## Title: Aegis Instance Journal
+## Notes: Retail-style instance journal and dungeon maps for WoW: Forever. Shift+J to open. Inspired by Alex Atlas Loot by Alex Brandson and its contributors Niceheal Shadow, Gaia Cloudv, Buddley Wuddley, Beef Party, Thunder Lance, Wakkytabbaky Solstice, Reasonabull Stouthoof, Markofwild Buffer, Joyful Yoda, Mac Bond, Faylastral Ox, Deathjoze Jeijet, Balance Magy, Bulky Wulky, Anowa Stax, Zero Onezero, Perina Bracketfix, Satosha Nakamuara, Annahay Lotusbloom, Furii Vox, Sidja, Mad Skillz, Oogar, Cier, Jolly, Mali, Grama and Eris, whose lists of the spells each boss casts it uses; Forever dungeon maps by Santiago Reyes (Atlas de Azeroth: Forever).
+## Author: Aegis
+## Version: 0.24.2
+## X-Credits: Alex Brandson and the Alex Atlas Loot contributors; Santiago Reyes (Atlas de Azeroth: Forever); Lionel Schramm (paintings); made with the help of Claude AI. See CREDITS.md.
+## SavedVariables: AegisJournalDB
+## SavedVariablesPerCharacter: AegisJournalCharDB
+## IconTexture: Interface\EncounterJournal\UI-EJ-PortraitIcon
+
+Locales\enUS.lua
+Core\Init.lua
+Core\Compat.lua
+Core\Registry.lua
+Core\Items.lua
+Core\Reputation.lua
+Core\Recorder.lua
+Core\Perf.lua
+
+Data\Authored\LevelBrackets.lua
+Data\Instances\HallOfThanes.lua
+Data\Instances\RuinsOfLordaeron.lua
+Data\Instances\ExcavationSiteWetlands.lua
+Data\Instances\TheDeadmines.lua
+Data\Instances\RagefireChasm.lua
+Data\Instances\WailingCaverns.lua
+Data\Instances\ShadowfangKeep.lua
+Data\Instances\TheStockade.lua
+Data\Instances\CityOfDalaran.lua
+Data\Instances\BlackfathomDeeps.lua
+Data\Instances\Gnomeregan.lua
+Data\Instances\RazorfenKraul.lua
+Data\Instances\ScarletMonasteryGraveyard.lua
+Data\Instances\ScarletMonasteryLibrary.lua
+Data\Instances\ScarletMonasteryArmory.lua
+Data\Instances\ScarletMonasteryCathedral.lua
+Data\Instances\RazorfenDowns.lua
+Data\Instances\Uldaman.lua
+Data\Instances\ZulFarrak.lua
+Data\Instances\Maraudon.lua
+Data\Instances\TempleOfAtalHakkar.lua
+Data\Instances\BlackrockDepths.lua
+Data\Instances\LowerBlackrockSpire.lua
+Data\Instances\UpperBlackrockSpire.lua
+Data\Instances\DireMaulEast.lua
+Data\Instances\DireMaulNorth.lua
+Data\Instances\DireMaulWest.lua
+Data\Instances\Scholomance.lua
+Data\Instances\StratholmeMainGate.lua
+Data\Instances\StratholmeServiceGate.lua
+Data\Instances\Raids.lua
+Data\Reputation\FactionRewards.lua
+Data\Travel\KnownTransports.lua
+Data\Generated\Unconfirmed.lua
+Data\Authored\TheDeadmines.lua
+Data\Authored\RagefireChasm.lua
+Data\Authored\WailingCaverns.lua
+Data\Authored\ShadowfangKeep.lua
+Data\Authored\TheStockade.lua
+Data\Authored\BlackfathomDeeps.lua
+Data\Authored\Gnomeregan.lua
+Data\Authored\RazorfenKraul.lua
+Data\Authored\ScarletMonastery.lua
+Data\Authored\CityOfDalaran.lua
+Data\Authored\Upcoming.lua
+Data\Authored\FromGuides.lua
+Data\Authored\HallOfThanes.lua
+Data\Authored\RuinsOfLordaeron.lua
+Data\Authored\ExcavationSiteWetlands.lua
+Data\Authored\Factions.lua
+Data\Authored\MapAreas.lua
+Data\Authored\ClassicMaps.lua
+Data\Authored\FromForeverChanges.lua
+Data\Authored\SiteLoot.lua
+Data\Authored\ItemNames.lua
+Data\Authored\Contributors.lua
+Data\Generated\Abilities.lua
+Data\Authored\SubMaps.lua
+Data\Authored\Transports.lua
+
+UI\Art.lua
+UI\Discord.lua
+UI\ForeverMark.lua
+UI\MapPin.lua
+UI\DungeonMap.lua
+UI\MapPins.xml
+UI\MapLegend.lua
+UI\TravelMap.lua
+UI\InstanceSelect.lua
+UI\FactionSelect.lua
+UI\LootPanel.lua
+UI\AbilitiesPanel.lua
+UI\ModelPanel.lua
+UI\QuestsPanel.lua
+UI\QuestMap.lua
+UI\EncounterPage.lua
+UI\RecordPanel.lua
+UI\Search.lua
+UI\Journal.lua
