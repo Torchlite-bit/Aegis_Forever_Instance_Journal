@@ -15,7 +15,10 @@ local _, ns = ...
 local Items = {}
 ns.Items = Items
 
-local WEAPON, ARMOR = 2, 4
+-- Enum.ItemClass
+local CONSUMABLE, CONTAINER, WEAPON, ARMOR, TRADE_GOODS, RECIPE, QUEST, MISCELLANEOUS, BATTLE_PET = 0, 1, 2, 4, 7, 9, 12, 15, 17
+-- Enum.ItemMiscellaneousSubclass
+local MISC_PET, MISC_MOUNT = 2, 5
 
 -- Enum.ItemArmorSubclass
 local ARMOR_GENERIC, ARMOR_CLOTH, ARMOR_LEATHER, ARMOR_MAIL, ARMOR_PLATE = 0, 1, 2, 3, 4
@@ -91,6 +94,45 @@ Items.SLOT_NAMES = {
 
 Items.ARMOR_ORDER = { ARMOR_CLOTH, ARMOR_LEATHER, ARMOR_MAIL, ARMOR_PLATE }
 
+--[[
+	What kind of thing an item is, for the loot pages' Type menu (info.kind), and a recipe's
+	profession (info.profession, the client's own name: "Alchemy"). Mounts and pets are
+	Miscellaneous items of their own subclass; a toy is one the toy box knows.
+]]
+Items.KIND_ORDER = { "EQUIPMENT", "RECIPE", "CONSUMABLE", "MOUNT", "PET", "TOY", "BAG", "TRADE", "QUEST", "OTHER" }
+local KIND_BY_CLASS = {
+	[WEAPON] = "EQUIPMENT", [ARMOR] = "EQUIPMENT", [RECIPE] = "RECIPE", [CONSUMABLE] = "CONSUMABLE",
+	[CONTAINER] = "BAG", [TRADE_GOODS] = "TRADE", [QUEST] = "QUEST", [BATTLE_PET] = "PET",
+}
+-- The sources' own first word, for an item the client cannot describe ("Recipe, Alchemy", "Quest").
+local KIND_BY_WORD = { Recipe = "RECIPE", Quest = "QUEST", Consumable = "CONSUMABLE", Mount = "MOUNT", Pet = "PET",
+	Toy = "TOY", Bag = "BAG" }
+-- Not an equipment slot, though GetItemInfoInstant names one.
+local NOT_EQUIPPED = { INVTYPE_NON_EQUIP = true, INVTYPE_NON_EQUIP_IGNORE = true }
+
+local function IsToy(itemID)
+	if not (C_ToyBox and C_ToyBox.GetToyInfo) then return false end
+	local ok, toyID = pcall(C_ToyBox.GetToyInfo, itemID)
+	return ok and toyID ~= nil
+end
+
+local function Classify(info, words)
+	local where, what = (words or ""):match("^%s*([^,]*),?%s*(.-)%s*$")
+	local kind
+	if info.classID == MISCELLANEOUS then
+		kind = (info.subclassID == MISC_MOUNT and "MOUNT") or (info.subclassID == MISC_PET and "PET") or nil
+	elseif info.classID then
+		kind = KIND_BY_CLASS[info.classID]
+	end
+	if not kind and Items:IsIdentified(info.itemID) and IsToy(info.itemID) then kind = "TOY" end
+	if not kind and info.slot ~= "OTHER" then kind = "EQUIPMENT" end
+	if not kind and not info.classID then kind = KIND_BY_WORD[where] or (SLOT_BY_NAME[where] and "EQUIPMENT") end
+	info.kind = kind or "OTHER"
+	if info.kind == "RECIPE" then
+		info.profession = (info.classID == RECIPE and info.subType ~= "" and info.subType) or (what ~= "" and what) or nil
+	end
+end
+
 local instantCache = {}
 
 -- Whether the item has an id; one the sources name without an id yet is keyed "?Name"
@@ -107,7 +149,8 @@ local function Instant(itemID)
 	local ok, _, itemType, itemSubType, equipLoc, icon, classID, subclassID = pcall(getInstant, itemID)
 	if not ok or not classID then return nil end
 	cached = {
-		itemType = itemType, subType = itemSubType, equipLoc = equipLoc ~= "" and equipLoc or nil,
+		itemType = itemType, subType = itemSubType,
+		equipLoc = equipLoc ~= "" and not NOT_EQUIPPED[equipLoc] and equipLoc or nil,
 		icon = icon, classID = classID, subclassID = subclassID,
 	}
 	instantCache[itemID] = cached
@@ -165,6 +208,7 @@ function Items:Get(itemID, fallback)
 			slot = SLOT_BY_NAME[where] or "OTHER", unidentified = true,
 		}
 		if info.slot ~= "BACK" then info.armor = ARMOR_BY_NAME[what] end
+		Classify(info, fallback and fallback.slot)
 		infoCache[itemID] = info
 		return info
 	end
@@ -179,6 +223,7 @@ function Items:Get(itemID, fallback)
 		and info.slot ~= "BACK" then
 		info.armor = info.subclassID
 	end
+	Classify(info, fallback and fallback.slot)
 
 	if not Describe(info) then
 		info.name = fallback and fallback.name

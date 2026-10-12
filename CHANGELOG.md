@@ -12,6 +12,20 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.26.4]
+
+### Added
+- **A Type filter on loot and reward pages**, in place of the slot filter: Equipment
+  (by slot), Recipes (by profession: Alchemy, Blacksmithing, Enchanting…),
+  Consumables, Mounts, Pets, Toys, Bags, Trade Goods and Quest Items. Only the kinds a
+  page has are offered. A slot you had chosen carries over as Equipment.
+
+### Fixed
+- Recipes and other items that aren't worn showed ", Alchemy" where the slot goes; they
+  now read "Recipe, Alchemy", "Mount", "Toy" and so on.
+
+---
+
 ## [0.26.3]
 
 ### Fixed

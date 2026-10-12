@@ -446,8 +446,9 @@ rows = lootRows()
 check(#rows == 1 and rows[1].Name:GetText() == "Kindlegem Girdle", "Mail shows the girdle")
 check(loot.FilterBar.Text:GetText() == "Filter: Mail", "filter bar names the armour type")
 loot.FilterBar.Clear:Click()
-local slotMenu = loot.SlotFilter._menu
-check(#slotMenu.radios == 4, "slot menu: all slots plus the three present")
+local typeMenu = loot.TypeFilter._menu
+check(typeMenu.radios[1].text == "All Types" and #typeMenu.buttons == 1 and typeMenu.buttons[1].text == "Equipment"
+	and #typeMenu.buttons[1].radios == 4, "type menu: equipment, its submenu all slots plus the three present")
 
 -- Favourites sort to the top
 rows = lootRows()
@@ -2115,8 +2116,52 @@ lootRows()[5]:Click("RightButton")
 check(ns.charDB.pins[lootRows()[1].itemID] and loot.Dividers[1].Name:GetText() == "Pinned"
 	and loot.Dividers[2].Name:GetText() == "Rewards", "a pinned reward leads, then the rest under Rewards")
 lootRows()[1]:Click("RightButton")
-loot.SlotFilter._menu.radios[1].setSelected()
-check(loot.SlotFilter._menu.radios[1].text == "All Slots", "slot filter offered")
+loot.TypeFilter._menu.radios[1].setSelected()
+check(loot.TypeFilter._menu.radios[1].text == "All Types", "type filter offered")
+
+-- The Type menu sorts rewards by what they are: equipment by slot, recipes by profession, and
+-- consumables, mounts, pets and toys on their own
+do
+	Mock.itemInstant[290401] = { "INVTYPE_NON_EQUIP_IGNORE", 9, 6, "Alchemy" }
+	Mock.itemInstant[290402] = { "INVTYPE_NON_EQUIP_IGNORE", 9, 3, "Engineering" }
+	Mock.itemInstant[290403] = { "INVTYPE_NON_EQUIP_IGNORE", 15, 5, "Mount" }
+	Mock.itemInstant[290404] = { "INVTYPE_NON_EQUIP_IGNORE", 15, 4, "Other" }
+	Mock.itemInstant[290405] = { "INVTYPE_NON_EQUIP_IGNORE", 0, 1, "Potion" }
+	Mock.toys[290404] = true
+	local wares = {}
+	for itemID = 290401, 290405 do
+		wares[#wares + 1] = { itemID = itemID, faction = "Azeroth Commerce Authority", reaction = 5, cost = "10 Merchant's Favor" }
+	end
+	ns.AddCapturedVendors({ { npcID = 990020, name = "Kind Tester", wares = wares } })
+	ns.Journal:OpenInstance(ns.GetInstance("Faction2586"))
+	loot.FilterBar.Clear:Click()
+	local menu = loot.TypeFilter._menu
+	local function Named(list, text)
+		for _, item in ipairs(list) do if item.text == text then return item end end
+	end
+	local recipes = Named(menu.buttons, "Recipes")
+	check(Named(menu.radios, "Consumables") and Named(menu.radios, "Mounts") and Named(menu.radios, "Toys")
+		and Named(menu.buttons, "Equipment") and recipes and recipes.radios[1].text == "All Recipes"
+		and recipes.radios[2].text == "Alchemy" and recipes.radios[3].text == "Engineering",
+		"the menu offers the kinds the page has, recipes by profession")
+	local function Shown()
+		local ids = {}
+		for _, row in ipairs(lootRows()) do ids[#ids + 1] = row.itemID end
+		return ids
+	end
+	recipes.radios[2].setSelected()
+	local shown = Shown()
+	check(#shown == 1 and shown[1] == 290401 and lootRows()[1].Slot:GetText() == "Recipe, Alchemy"
+		and loot.FilterBar.Text:GetText() == "Filter: Alchemy", "one profession's recipes, named as recipes")
+	Named(loot.TypeFilter._menu.radios, "Mounts").setSelected()
+	shown = Shown()
+	check(#shown == 1 and shown[1] == 290403 and lootRows()[1].Slot:GetText() == "Mount", "mounts")
+	Named(loot.TypeFilter._menu.radios, "Toys").setSelected()
+	shown = Shown()
+	check(#shown == 1 and shown[1] == 290404 and loot.FilterBar.Text:GetText() == "Filter: Toys", "toys, known to the toy box")
+	loot.FilterBar.Clear:Click()
+	ns.Journal:OpenInstance(ns.GetInstance("Faction529"))
+end
 
 -- Earning reputation updates the page
 Mock.reputation[529].reaction, Mock.reputation[529].value = 7, 21500

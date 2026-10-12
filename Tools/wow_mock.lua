@@ -184,18 +184,28 @@ end
 
 -- The modern dropdown: keeps the menu generator and builds a record of it on demand.
 function Region:SetupMenu(generator) self._menuGenerator = generator; self:GenerateMenu() end
+-- A menu's record: its radios, checkboxes and buttons; a button holds its submenu's record.
+local function MenuDescription(text)
+	local description = { text = text, radios = {}, checkboxes = {}, buttons = {} }
+	function description:CreateRadio(radioText, isSelected, setSelected, data)
+		self.radios[#self.radios + 1] = { text = radioText, isSelected = isSelected, setSelected = setSelected, data = data }
+		return {}
+	end
+	function description:CreateCheckbox(boxText, isSelected, setSelected)
+		self.checkboxes[#self.checkboxes + 1] = { text = boxText, isSelected = isSelected, setSelected = setSelected }
+		return {}
+	end
+	function description:CreateButton(buttonText)
+		local submenu = MenuDescription(buttonText)
+		self.buttons[#self.buttons + 1] = submenu
+		return submenu
+	end
+	function description:CreateDivider() return {} end
+	return description
+end
 function Region:GenerateMenu()
 	if not self._menuGenerator then return end
-	local root = { radios = {}, checkboxes = {} }
-	function root:CreateRadio(text, isSelected, setSelected, data)
-		self.radios[#self.radios + 1] = { text = text, isSelected = isSelected, setSelected = setSelected, data = data }
-		return {}
-	end
-	function root:CreateCheckbox(text, isSelected, setSelected)
-		self.checkboxes[#self.checkboxes + 1] = { text = text, isSelected = isSelected, setSelected = setSelected }
-		return {}
-	end
-	function root:CreateDivider() return {} end
+	local root = MenuDescription()
 	self._menuGenerator(self, root)
 	self._menu = root
 end
@@ -801,10 +811,16 @@ Mock.itemInstant = {
 	[271095] = { "INVTYPE_WEAPONMAINHAND", 2, 15, "Dagger" },
 }
 Mock.itemsCached, Mock.itemsRequested, Mock.itemNames = {}, {}, {}
+-- The toy box: Mock.toys[itemID] = true for an item it knows.
+Mock.toys = {}
+C_ToyBox = { GetToyInfo = function(itemID) if Mock.toys[itemID] then return itemID, "Toy " .. itemID, 134400 end end }
+-- The client's name for each item class, as GetItemInfoInstant gives it.
+local ITEM_CLASS_NAMES = { [0] = "Consumable", [1] = "Container", [2] = "Weapon", [4] = "Armor", [7] = "Trade Goods",
+	[9] = "Recipe", [12] = "Quest", [15] = "Miscellaneous" }
 C_Item = {
 	GetItemInfoInstant = function(itemID)
 		local entry = Mock.itemInstant[itemID] or { "INVTYPE_CHEST", 4, 1, "Cloth" }
-		return itemID, entry[2] == 2 and "Weapon" or "Armor", entry[4], entry[1], 134400 + itemID % 7, entry[2], entry[3]
+		return itemID, ITEM_CLASS_NAMES[entry[2]], entry[4], entry[1], 134400 + itemID % 7, entry[2], entry[3]
 	end,
 	-- A cached item's name: Mock.itemNames[itemID] where a test gives one, else "Cached <id>".
 	GetItemInfo = function(itemID)
