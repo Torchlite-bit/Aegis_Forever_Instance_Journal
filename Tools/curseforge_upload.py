@@ -3,7 +3,7 @@ Uploads the release zip to CurseForge, for .github/workflows/release.yml.
 
     python Tools/curseforge_upload.py dist
 
-Reads the zip and its notes from the folder (Tools/package.py --public writes both). Needs two
+Reads the zip and its notes from the folder (Tools/package.py writes both). Needs two
 settings of the GitHub repository; without them it says so and does nothing:
   CF_API_KEY             a CurseForge API token (a repository secret)
   CURSEFORGE_PROJECT_ID  the project's id, from its CurseForge page (a repository variable)

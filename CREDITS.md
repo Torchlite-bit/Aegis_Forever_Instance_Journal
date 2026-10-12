@@ -28,7 +28,7 @@ be used free of charge, on these terms, which the journal keeps:
   cropped from them or drawn into them. The boss and quest marks are drawn over them in game,
   not into the files. A copy without the watermark would need his review.
 - He is credited wherever the maps are used: here, in the README, in the addon's notes in the
-  AddOns list, and in the testers' README and guide.
+  AddOns list, and in the testers' field guide.
 - Anyone who shows the maps in a video or a stream (YouTube, Twitch, Kick and so on) should
   credit him in its description.
 - The maps are not to be altered, nor their watermark removed, without his consent.

@@ -78,12 +78,11 @@ td code { white-space: nowrap; }
   <header>
     <span class="eyebrow">WoW: Forever · Aegis Instance Journal</span>
     <h1>Collecting data for the Aegis journal</h1>
-    <p class="lede">Thank you for helping. You play as you normally would with one addon running; it notes what happens in dungeons, and you paste what it caught in our Discord, with the bosses' spells added from your combat log by the Log Reader page. This guide covers setting it up, what to do in a dungeon run, how to mark boats, zeppelins and portals, and how to send what you recorded.</p>
+    <p class="lede">Thank you for helping. You play as you normally would with one addon running; it notes what happens in dungeons, and you paste what it caught in our Discord, with the bosses' spells added from your combat log by the Log Reader page. This guide covers setting it up, what to do in a dungeon run, and how to send what you recorded.</p>
     <nav class="toc" aria-label="Contents">
       <a href="#setup">Setup</a>
       <a href="#dungeons">Dungeon runs</a>
       <a href="#quests">Quests</a>
-      <a href="#travel">Travel spots</a>
       <a href="#readings">Map readings</a>
       <a href="#wanted">What we need most</a>
       <a href="#send">Sending what you recorded</a>
@@ -153,28 +152,6 @@ td code { white-space: nowrap; }
     </ul>
   </section>
 
-  <section id="travel">
-    <h2>Boats, zeppelins, airships, trams and portals</h2>
-    <p>Forever moved several of these, so we need each one marked where it really is. Stand where you board: on the dock where the boat stops, at the top of the zeppelin tower, on the portal itself. Then type one line in chat:</p>
-    <div class="cmd"><pre>/aegis travel boat Auberdine</pre><button type="button" data-copy>Copy</button></div>
-    <p>The first word is the kind: <code>boat</code>, <code>zeppelin</code>, <code>airship</code>, <code>tram</code> or <code>portal</code>. The rest is where it goes. Two optional extras go at the end, in either order:</p>
-    <ul>
-      <li><b>Who it serves</b>: <code>alliance</code>, <code>horde</code> or <code>neutral</code>. Without it, zeppelins count as Horde and everything else as your own faction. Use <code>neutral</code> for routes both factions can take, such as Booty Bay to Ratchet.</li>
-      <li><b>A note in brackets</b> for who may take it, such as a race-only route.</li>
-    </ul>
-    <div class="cmd"><pre>/aegis travel boat Ratchet neutral
-/aegis travel zeppelin Orgrimmar
-/aegis travel portal Dalaran (Skyborne only)
-/aegis travel airship Zephras Isle (Skyborne only) alliance</pre><button type="button" data-copy>Copy</button></div>
-    <ul>
-      <li><b>Mark both ends.</b> Do it at the departure dock, then again when you arrive, naming the place it goes back to.</li>
-      <li>A dock with several routes: run the command once per destination while standing in the same spot.</li>
-      <li><code>/aegis travel list</code> shows everything you have marked. <code>/aegis travel undo</code> takes back the last one.</li>
-      <li>Each spot appears on your world map right away, so you can check it landed in the right place.</li>
-    </ul>
-    <p class="note">Most boats and zeppelins, the Deeprun Tram and the Skyborne portal and airship are on the map already. Mark one anyway when its icon is not where you board: your mark replaces it. Still missing: the Horde airship between Valanaar and Skywatcher, and any route you find that has no icon.</p>
-  </section>
-
   <section id="readings">
     <h2>Map readings, when asked</h2>
     <p>Sometimes we will ask for the exact spot of something, usually for the underground areas the game has no map of, like Old Ironforge or the Defias Hideout under Moonbrook. Stand on the spot and type:</p>
@@ -193,8 +170,7 @@ td code { white-space: nowrap; }
       <div><strong>Quartermasters</strong><p>Every faction's rewards are empty until someone captures its quartermaster. Walk up to one, open their shop, open the journal's <b>Reputation</b> tab and press <b>Capture vendor</b>. No need to be recording: the wares, their prices and the standing each needs join the tab at once, and come along when you Copy.</p></div>
       <div><strong>Entrances</strong><p>Every dungeon, walked into from outside with recording on.</p></div>
       <div><strong>Quest givers</strong><p>Pick up and hand in dungeon quests with recording on, especially the ones that start far from the dungeon.</p></div>
-      <div><strong>Travel</strong><p>Routes with no icon on the map yet, both ends, including race- or faction-only ones: the Horde airship between Valanaar and Skywatcher first. And any icon that is not where you board.</p></div>
-      <div><strong>Horde side</strong><p>Most data so far comes from Alliance characters. Horde quests, zeppelins and capitals are especially welcome.</p></div>
+      <div><strong>Horde side</strong><p>Most data so far comes from Alliance characters. Horde dungeon runs and quests are especially welcome.</p></div>
     </div>
   </section>
 
@@ -215,7 +191,7 @@ td code { white-space: nowrap; }
     <ul>
       <li>Do not press <b>Clear</b> on the Record tab until you hear your recording arrived. After that you can clear it or keep going; new recordings just add on.</li>
     </ul>
-    <p class="note">What is in it: the copied text holds what you recorded (dungeons, bosses, loot, quests, travel marks, quartermasters) and the name you chose to be credited under, with no passwords or account details. The Log Reader adds the enemies' spells from boss fights: how hard each hit, when it came and how often. It leaves out every player's name, so your group isn't shared.</p>
+    <p class="note">What is in it: the copied text holds what you recorded (dungeons, bosses, loot, quests, quartermasters) and the name you chose to be credited under, with no passwords or account details. The Log Reader adds the enemies' spells from boss fights: how hard each hit, when it came and how often. It leaves out every player's name, so your group isn't shared.</p>
   </section>
 
   <section id="trouble">
@@ -247,9 +223,6 @@ td code { white-space: nowrap; }
           <tr><td><code>/aegis</code></td><td>Opens or closes the journal (same as <kbd>Shift</kbd>+<kbd>J</kbd>).</td></tr>
           <tr><td><code>/aegis record</code></td><td>Starts or stops recording.</td></tr>
           <tr><td><code>/aegis where</code></td><td>Prints and saves exactly where you stand.</td></tr>
-          <tr><td><code>/aegis travel boat Auberdine</code></td><td>Marks a boat, zeppelin, airship, tram or portal where you stand.</td></tr>
-          <tr><td><code>/aegis travel list</code></td><td>Lists what you have marked.</td></tr>
-          <tr><td><code>/aegis travel undo</code></td><td>Takes back your last mark.</td></tr>
           <tr><td><code>/aegis items</code></td><td>Finds the items in the journal the game does not have yet (they show as "Item" and a number). Takes about a minute; the list comes along when you Copy.</td></tr>
           <tr><td><code>/aegis reset</code></td><td>Moves the journal window back to its default place.</td></tr>
         </tbody>

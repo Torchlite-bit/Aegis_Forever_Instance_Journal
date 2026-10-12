@@ -30,6 +30,9 @@ From the first combat log sent through the Log Reader (Blackfathom Deeps).
 ### Changed
 - Credits: Alex Atlas Loot is named again as the inspiration for the Record and
   Reputation tabs.
+- The field guide no longer asks for travel marks: every route is in the journal.
+- No more testers' zip: everyone gets the release from GitHub or CurseForge, and
+  `Tools/package.py` builds only that.
 
 ---
 
