@@ -23,8 +23,10 @@ and the version shown in the AddOns list. Quote it in bug reports.
   names it, the Capture line says the faction isn't named yet, and the wares wait.
 
 ### Added
-- The **Azeroth Commerce Authority**'s first rewards: its Tabard and the Reins of the
-  Pack Kodo (Exalted), and the Advertising License Application (Honored).
+- The **Azeroth Commerce Authority**'s rewards, captured from its nine vendors in
+  Redridge: 183 wares bought with Merchant's Favor, from the craftsmen's recipes,
+  plans, patterns, schematics and formulas (83 at Friendly, 97 at Honored) to the
+  Packmule Treat (Revered), the Tabard and the Reins of the Pack Kodo (Exalted).
 
 ---
 

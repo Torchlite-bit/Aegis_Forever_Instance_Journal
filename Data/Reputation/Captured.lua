@@ -20,11 +20,974 @@ ns.AddCapturedVendors({
 				faction = "Azeroth Commerce Authority",
 				reaction = 6,
 			},
+			{
+				itemID = 284664,
+				cost = "1500 Merchant's Favor",
+				reaction = 7,
+			},
 		},
 		name = "Tamelyn Aldridge",
 		mapID = 1433,
-		x = 0.1056,
-		y = 0.714,
+		x = 0.1063,
+		y = 0.7132,
+	},
+	{
+		npcID = 256729,
+		wares = {
+			{
+				itemID = 250364,
+				cost = "180 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 250365,
+				cost = "180 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 250369,
+				cost = "120 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 250371,
+				cost = "120 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 250372,
+				cost = "180 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 250373,
+				cost = "180 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 250374,
+				cost = "180 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 250377,
+				cost = "120 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 250379,
+				cost = "180 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 250383,
+				cost = "120 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 250384,
+				cost = "180 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 250386,
+				cost = "180 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 250387,
+				cost = "240 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 250981,
+				cost = "180 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 250987,
+				cost = "240 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 250993,
+				cost = "180 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 250994,
+				cost = "180 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 250995,
+				cost = "180 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 250996,
+				cost = "120 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 250997,
+				cost = "120 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 250998,
+				cost = "180 Merchant's Favor",
+				reaction = 6,
+			},
+		},
+		name = "Nina Surefire",
+		mapID = 1433,
+		x = 0.11,
+		y = 0.7235,
+	},
+	{
+		npcID = 256730,
+		wares = {
+			{
+				itemID = 251413,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 251414,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 251415,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 251416,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 251417,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 251418,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 251419,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 251420,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 251421,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 251422,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 251423,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 251424,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 251425,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 251426,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 251427,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 251428,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 251429,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 251430,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 251431,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 251432,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 251433,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 251434,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 251435,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 251436,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 251437,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 251447,
+				cost = "120 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 251448,
+				cost = "120 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 251449,
+				cost = "120 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 251465,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 251466,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 251471,
+				cost = "120 Merchant's Favor",
+				reaction = 6,
+			},
+		},
+		name = "Stondry Darkhammer",
+		mapID = 1433,
+		x = 0.1032,
+		y = 0.7468,
+	},
+	{
+		npcID = 256731,
+		wares = {
+			{
+				itemID = 249888,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 249889,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 249890,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+		},
+		name = "Kalsey Sanden",
+		mapID = 1433,
+		x = 0.1077,
+		y = 0.7275,
+	},
+	{
+		npcID = 256732,
+		wares = {
+			{
+				itemID = 249493,
+				cost = "120 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 249494,
+				cost = "120 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 249495,
+				cost = "120 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 249496,
+				cost = "120 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 249502,
+				cost = "120 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 249503,
+				cost = "120 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 249504,
+				cost = "120 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 249505,
+				cost = "120 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 249506,
+				cost = "120 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 249507,
+				cost = "120 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 249508,
+				cost = "120 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 249509,
+				cost = "120 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 249510,
+				cost = "120 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 249525,
+				cost = "240 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 249526,
+				cost = "240 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 249529,
+				cost = "240 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 249530,
+				cost = "240 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 249532,
+				cost = "240 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 249534,
+				cost = "240 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 249535,
+				cost = "240 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 249536,
+				cost = "240 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 249537,
+				cost = "180 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 249538,
+				cost = "240 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 249539,
+				cost = "240 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 274393,
+				cost = "240 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 274394,
+				cost = "240 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 274398,
+				cost = "240 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 274399,
+				cost = "240 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 274401,
+				cost = "240 Merchant's Favor",
+				reaction = 6,
+			},
+		},
+		name = "Alynsia",
+		mapID = 1433,
+		x = 0.112,
+		y = 0.7157,
+	},
+	{
+		npcID = 256733,
+		wares = {
+			{
+				itemID = 264209,
+				cost = "180 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 264211,
+				cost = "180 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 264216,
+				cost = "270 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 264217,
+				cost = "270 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 264220,
+				cost = "270 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 264232,
+				cost = "360 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 264234,
+				cost = "360 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 264235,
+				cost = "360 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 264237,
+				cost = "360 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 280321,
+				cost = "180 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 280322,
+				cost = "180 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 280323,
+				cost = "180 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 280325,
+				cost = "180 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 280326,
+				cost = "180 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 280327,
+				cost = "180 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 280328,
+				cost = "180 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 285286,
+				cost = "180 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 285287,
+				cost = "270 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 285288,
+				cost = "270 Merchant's Favor",
+				reaction = 6,
+			},
+		},
+		name = "Fritz Fizzle",
+		mapID = 1433,
+		x = 0.1044,
+		y = 0.7429,
+	},
+	{
+		npcID = 256734,
+		wares = {
+			{
+				itemID = 252834,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 252836,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 252837,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 252838,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 252839,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 252840,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 252841,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 252842,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 252848,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 252849,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 252850,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 252851,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 252852,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 252853,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 252854,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 252855,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 252856,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 252857,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 252860,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 252861,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 252862,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 252863,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 252864,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 252872,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 252873,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 252874,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 252875,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 252876,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 252900,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 252901,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 252902,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 252903,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 252904,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 252905,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 252906,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 252907,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 252910,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 252911,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 252912,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 252913,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 252922,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 252923,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 252924,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 252925,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 252941,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+		},
+		name = "Daniel Stitchsong",
+		mapID = 1433,
+		x = 0.1012,
+		y = 0.7294,
+	},
+	{
+		npcID = 256735,
+		wares = {
+			{
+				itemID = 254024,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 254026,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 254028,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 254030,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 254032,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 254036,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 254050,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 254052,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 254054,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 254056,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 254058,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 254060,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 254062,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 254064,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 254066,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 254068,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 254070,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 254072,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 254080,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 254082,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 254084,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 254086,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 254088,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 254090,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 254092,
+				cost = "60 Merchant's Favor",
+				reaction = 5,
+			},
+			{
+				itemID = 254108,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 254110,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 254112,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 254114,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 254116,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+			{
+				itemID = 254118,
+				cost = "90 Merchant's Favor",
+				reaction = 6,
+			},
+		},
+		name = "Mivin Shadowweave",
+		mapID = 1433,
+		x = 0.1012,
+		y = 0.7294,
 	},
 	{
 		npcID = 256736,
@@ -38,7 +1001,7 @@ ns.AddCapturedVendors({
 		},
 		name = "Huey Sunnydale",
 		mapID = 1433,
-		x = 0.085,
+		x = 0.0849,
 		y = 0.7206,
 	},
 })

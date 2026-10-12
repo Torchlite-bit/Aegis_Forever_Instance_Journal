@@ -1997,7 +1997,8 @@ do
 	end
 	check(waiting == 22, "no faction has rewards before its quartermaster is captured, got " .. (23 - waiting))
 	check(buttonNamed(reputation, "Booty Bay").Count:GetText() == "Not captured yet"
-		and buttonNamed(reputation, "Durotar Supply and Logistics").Count:GetText() == "Coming soon",
+		and buttonNamed(reputation, "Durotar Supply and Logistics").Count:GetText() == "Coming soon"
+		and buttonNamed(reputation, "Azeroth Commerce Authority").Count:GetText():match("^%d+ rewards$"),
 		"a card says so: a Forever faction is still to come, any other waits for its quartermaster")
 	check(not reputation.Capture:IsEnabled() and reputation.CaptureStatus:GetText() == "Open a quartermaster's shop to capture their wares.",
 		"Capture waits for a shop to be open")
@@ -2036,7 +2037,7 @@ check(centre(argent.Rim) == centre(argent.Crest) and centre(argent.Edge) == cent
 check(reputation.Scroll.scrollBarX == 6, "the grid's scroll bar in the backdrop's gutter, where retail puts it")
 check(buttonNamed(reputation, "Booty Bay").Standing:GetText() == "Not met", "a faction the player has not met")
 check(buttonNamed(reputation, "Durotar Supply and Logistics").Count:GetText() == "Coming soon"
-	and buttonNamed(reputation, "Azeroth Commerce Authority").Count:GetText() == "3 rewards", "counts per faction, once captured")
+	and buttonNamed(reputation, "Azeroth Commerce Authority").Count:GetText():match("^%d+ rewards$"), "counts per faction, once captured")
 argent:_RunScript("OnEnter")
 check(GameTooltip._text == "Argent Dawn", "card tooltip names the faction")
 do
@@ -2181,19 +2182,19 @@ do
 		return status
 	end
 	local function Costs(amount, currency) return { { amount, currency, true } } end
-	-- The build's capture names the Authority on wares paid in Merchant's Favor
-	check(ns.FactionCaptured(commerce) and buttonNamed(reputation, "Azeroth Commerce Authority").Count:GetText() == "3 rewards",
-		"the build's capture of the Authority's quartermasters")
-	local status = Shop(256733, "Fritz Fizzle", 0.1045, 0.7435, {
-		{ itemID = 280321, name = "Schematic: Whimsical Waistwrap", price = 0,
+	-- The build's capture names the Authority on wares paid in Merchant's Favor (made-up wares here,
+	-- so the build's own do not count)
+	check(ns.FactionCaptured(commerce), "the build's capture of the Authority's quartermasters")
+	local status = Shop(990010, "Fizzy Testgear", 0.1045, 0.7435, {
+		{ itemID = 290301, name = "Schematic: Test Waistwrap", price = 0,
 			lines = { "Requires Engineering (175)", "Requires Friendly with this faction." }, costs = Costs(180, "Merchant's Favor") },
-		{ itemID = 264201, name = "Schematic: SAF-T Tabs", price = 0, lines = { "Requires Neutral with this faction." },
+		{ itemID = 290302, name = "Schematic: Test Tabs", price = 0, lines = { "Requires Neutral with this faction." },
 			costs = Costs(45, "Merchant's Favor") },
 	})
-	check(status == "Fritz Fizzle: 2 wares for Azeroth Commerce Authority, 2 new."
+	check(status == "Fizzy Testgear: 2 wares for Azeroth Commerce Authority, 2 new."
 		and commerce.bosses[1].reaction == 4 and commerce.bosses[2].reaction == 5,
 		"wares naming no faction take the one their currency buys for: " .. tostring(status))
-	check(ns.Recorder:Export():find("\nVENDOR;256733;Fritz Fizzle;1455;0.1045;0.7435;280321;Schematic: Whimsical Waistwrap;0;;5;180 Merchant's Favor", 1, true),
+	check(ns.Recorder:Export():find("\nVENDOR;990010;Fizzy Testgear;1455;0.1045;0.7435;290301;Schematic: Test Waistwrap;0;;5;180 Merchant's Favor", 1, true),
 		"and are copied with the standing they need")
 	-- A currency no named ware has shown yet: the wares wait for one that names their faction
 	status = Shop(990001, "Captain Testshore", 0.70, 0.20, {
