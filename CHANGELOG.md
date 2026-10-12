@@ -12,16 +12,28 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.26.2]
+
+### Added
+- **Subtilizer** is the journal's first contributor, on the Record tab, for the
+  Blackfathom Deeps run.
+- **Sword of the Fallen** is back on the Ruins of Lordaeron's trash loot, dropped by
+  Tattered Ghouls. The site's dungeon page leaves it out, so it had been dropped.
+
+### Changed
+- **Old Serra'kis only melees**: Leech Pulse, which his combat log showed, is no longer
+  listed as an ability.
+
+---
+
 ## [0.26.1]
 
 From the first combat log sent through the Log Reader (Blackfathom Deeps).
 
 ### Added
 - **Blackfathom Deeps' boss abilities now have numbers**: how hard each one hit, when it
-  first came and how often, for the bosses with abilities. Old Serra'kis only melees.
-- **Subtilizer** is the journal's first contributor, on the Record tab.
-- **Sword of the Fallen** is back on the Ruins of Lordaeron's trash loot (Tattered
-  Ghouls). The site's dungeon page leaves it out, so it had been dropped.
+  first came and how often, for all seven bosses with a fight. Old Serra'kis gains
+  **Leech Pulse**.
 
 ### Fixed
 - **A fight the game never ends** (Lorgus Jett's) no longer runs on through the trash
