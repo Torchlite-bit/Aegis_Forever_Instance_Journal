@@ -131,7 +131,15 @@ L.TAB_MODEL = MODEL or "Model"
 L.TAB_QUESTS = QUESTS_LABEL or "Quests"
 L.ALL_CLASSES = ALL_CLASSES or "All Classes"
 L.ALL_ARMOR = "All Armor"
-L.ALL_SLOTS = ALL_INVENTORY_SLOTS or "All Slots"
+L.ALL_TYPES = "All Types"
+-- The loot pages' Type menu: the kinds of item, "All ..." atop the two with a submenu, and one of each.
+L.LOOT_KIND = {
+	EQUIPMENT = "Equipment", RECIPE = "Recipes", CONSUMABLE = "Consumables", MOUNT = "Mounts", PET = "Pets",
+	TOY = "Toys", BAG = "Bags", TRADE = "Trade Goods", QUEST = "Quest Items", OTHER = "Other",
+}
+L.LOOT_KIND_ALL = { EQUIPMENT = "All Equipment", RECIPE = "All Recipes" }
+L.LOOT_KIND_ONE = { MOUNT = "Mount", PET = "Pet", TOY = "Toy" }
+L.LOOT_RECIPE = "Recipe"
 L.LOOT_FAVORITES = "Favorites"
 L.LOOT_FAVORITES_ONLY = "Favorites only"
 L.LOOT_FAVORITE = "Add to favorites"

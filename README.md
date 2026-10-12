@@ -1,6 +1,6 @@
 <p align="center"><img src="docs/images/logo.png" alt="Aegis Instance Journal" width="220"></p>
 
-# Aegis: Forever Instance Journal (v0.26.3)
+# Aegis: Forever Instance Journal (v0.26.4)
 
 **Retail's instance journal and dungeon maps, brought to WoW: Forever.**
 
@@ -58,7 +58,8 @@ and to send in your recorded runs.
 Five side tabs, as in retail, plus one:
 
 - **Overview**: fight notes and quick facts.
-- **Loot**: filter by class, armour and slot, ★ favourites, pin an item to the
+- **Loot**: filter by class, armour and type (equipment by slot, recipes by
+  profession, consumables, mounts, pets, toys), ★ favourites, pin an item to the
   map. Items the server doesn't know yet stay hidden until someone sees one drop.
 - **Abilities**: retail's collapsible tree: what each ability does in the fight, its
   role alerts, stages, and the damage and timings your recorded runs measured.
@@ -224,7 +225,7 @@ and checks it; `--perf` measures it.
 
 ## Something broken?
 
-1. Check the **version** in the AddOns list (`0.26.3`) and quote it.
+1. Check the **version** in the AddOns list (`0.26.4`) and quote it.
 2. A red line under **Recent** on the Record tab says what went wrong.
    Screenshot it.
 3. Tell us on **[Discord](https://discord.gg/Hr66t25vE7)** or open an

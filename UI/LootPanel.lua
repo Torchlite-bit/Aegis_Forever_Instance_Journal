@@ -42,7 +42,18 @@ local function Filters()
 		filters = { class = classFile or ALL, armor = ALL, slot = ALL, favoritesOnly = false }
 		ns.charDB.lootFilters = filters
 	end
+	-- The Type menu (kind of item, and a recipe's profession) came later than the others; a slot
+	-- chosen before it is equipment's.
+	if filters.kind == nil then filters.kind = filters.slot ~= ALL and "EQUIPMENT" or ALL end
+	filters.profession = filters.profession or ALL
 	return filters
+end
+
+local function ClearFilters()
+	local filters = Filters()
+	filters.class, filters.armor, filters.slot, filters.kind, filters.profession = ALL, ALL, ALL, ALL, ALL
+	filters.favoritesOnly = false
+	filterVersion = filterVersion + 1
 end
 
 local function Favorites()
@@ -117,7 +128,9 @@ local function PassesFilters(entry, filters)
 	if filters.favoritesOnly and not LootPanel:IsFavorite(entry.itemID) then return false end
 	if filters.class ~= ALL and not Items:ClassCanUse(filters.class, info) then return false end
 	if filters.armor ~= ALL and info.armor ~= filters.armor then return false end
+	if filters.kind ~= ALL and info.kind ~= filters.kind then return false end
 	if filters.slot ~= ALL and info.slot ~= filters.slot then return false end
+	if filters.profession ~= ALL and info.profession ~= filters.profession then return false end
 	return true
 end
 
@@ -313,6 +326,19 @@ function LootPanel:UpdateStar(row, hovered)
 end
 
 -- What a faction's reward costs at its quartermaster: coins, then any other cost; nil if unknown.
+-- What a row that is not equipment shows where a slot would go: "Recipe, Alchemy", "Mount".
+local function KindText(info)
+	if info.kind == "RECIPE" then
+		local recipe = info.itemType or L.LOOT_RECIPE
+		return info.profession and (recipe .. ", " .. info.profession) or recipe
+	end
+	if info.kind == "MOUNT" or info.kind == "PET" or info.kind == "TOY" then return L.LOOT_KIND_ONE[info.kind] end
+	if info.itemType and info.subType and info.subType ~= "" and info.subType ~= info.itemType then
+		return info.itemType .. ", " .. info.subType
+	end
+	return info.itemType
+end
+
 local function CostText(lootRow)
 	local parts = {}
 	if type(lootRow.price) == "number" and lootRow.price > 0 then parts[#parts + 1] = ns.MoneyText(lootRow.price) end
@@ -348,7 +374,7 @@ local function SetItemRow(row, entry, instanceView, instance, reaction)
 		local lineColor = reached and REACHED_COLOR or ns.PARCHMENT_TEXT_COLOR
 		row.Boss:SetTextColor(lineColor[1], lineColor[2], lineColor[3])
 		row.Icon:SetTexture(info.icon or QUESTION_MARK)
-		local slot = info.equipLoc and _G[info.equipLoc] or entry.row.slot
+		local slot = info.equipLoc and _G[info.equipLoc] or entry.row.slot or KindText(info)
 		local cost = entry.boss.standing and CostText(entry.row)
 		if cost then
 			-- A faction's reward: what its quartermaster asks, where the armour type would go.
@@ -428,19 +454,52 @@ local function CreateFilters(container, info)
 			end
 		end
 	end)
-	container.SlotFilter = CreateDropdown(container, 95, function(_, root)
-		Radio(root, L.ALL_SLOTS, "slot", ALL)
-		local present = container.presentSlots or {}
-		for _, slot in ipairs(Items.SLOT_ORDER) do
-			if present[slot] or Filters().slot == slot then
-				Radio(root, Items.SLOT_NAMES[slot], "slot", slot)
+	--[[
+		What kind of item: equipment (by slot, in place of retail's slot menu), recipes (by
+		profession), consumables, mounts, pets, toys and the rest. Each choice sets the kind, and
+		the slot or profession under it; only what the page's loot has is offered.
+	]]
+	container.TypeFilter = CreateDropdown(container, 105, function(_, root)
+		local function Choose(parent, text, kind, slot, profession)
+			slot, profession = slot or ALL, profession or ALL
+			parent:CreateRadio(text, function()
+				local filters = Filters()
+				return filters.kind == kind and filters.slot == slot and filters.profession == profession
+			end, function()
+				local filters = Filters()
+				filters.kind, filters.slot, filters.profession = kind, slot, profession
+				filterVersion = filterVersion + 1
+				LootPanel:RefreshShown()
+			end)
+		end
+		local filters = Filters()
+		local kinds = container.presentKinds or {}
+		Choose(root, L.ALL_TYPES, ALL)
+		for _, kind in ipairs(Items.KIND_ORDER) do
+			if kinds[kind] or filters.kind == kind then
+				if kind == "EQUIPMENT" or kind == "RECIPE" then
+					local menu = root.CreateButton and root:CreateButton(L.LOOT_KIND[kind]) or root
+					Choose(menu, L.LOOT_KIND_ALL[kind], kind)
+					if kind == "EQUIPMENT" then
+						local slots = container.presentSlots or {}
+						for _, slot in ipairs(Items.SLOT_ORDER) do
+							if slots[slot] or filters.slot == slot then Choose(menu, Items.SLOT_NAMES[slot], kind, slot) end
+						end
+					else
+						for _, profession in ipairs(container.presentProfessions or {}) do
+							Choose(menu, profession, kind, nil, profession)
+						end
+					end
+				else
+					Choose(root, L.LOOT_KIND[kind], kind)
+				end
 			end
 		end
 	end)
 
 	-- In the right page's header, where retail places its class and slot filters.
 	container.Dropdowns = {}
-	for _, dropdown in ipairs({ container.ClassFilter, container.ArmorFilter, container.SlotFilter }) do
+	for _, dropdown in ipairs({ container.ClassFilter, container.ArmorFilter, container.TypeFilter }) do
 		if dropdown then container.Dropdowns[#container.Dropdowns + 1] = dropdown end
 	end
 	for index, dropdown in ipairs(container.Dropdowns) do
@@ -475,9 +534,7 @@ local function CreateFilters(container, info)
 	bar.Clear:SetScript("OnLeave", function(self) self.Icon:SetAlpha(0.8) end)
 	bar.Clear:SetScript("OnClick", function()
 		ns.PlaySoundKit("IG_MAINMENU_OPTION_CHECKBOX_ON")
-		local filters = Filters()
-		filters.class, filters.armor, filters.slot, filters.favoritesOnly = ALL, ALL, ALL, false
-		filterVersion = filterVersion + 1
+		ClearFilters()
 		LootPanel:RefreshShown()
 	end)
 	container.FilterBar = bar
@@ -487,7 +544,14 @@ local function FilterSummary()
 	local filters, parts = Filters(), {}
 	if filters.class ~= ALL then parts[#parts + 1] = ClassName(filters.class) end
 	if filters.armor ~= ALL then parts[#parts + 1] = Items:ArmorName(filters.armor) end
-	if filters.slot ~= ALL then parts[#parts + 1] = Items.SLOT_NAMES[filters.slot] end
+	-- The kind, or what narrows it: "Head" says equipment, "Alchemy" says recipes.
+	if filters.slot ~= ALL then
+		parts[#parts + 1] = Items.SLOT_NAMES[filters.slot]
+	elseif filters.profession ~= ALL then
+		parts[#parts + 1] = filters.profession
+	elseif filters.kind ~= ALL then
+		parts[#parts + 1] = L.LOOT_KIND[filters.kind]
+	end
 	if filters.favoritesOnly then parts[#parts + 1] = L.LOOT_FAVORITES end
 	if #parts == 0 then return nil end
 	return string.format(L.LOOT_FILTER_BAR, table.concat(parts, ", "))
@@ -559,9 +623,7 @@ function LootPanel:Reveal(itemID)
 	if not (container and container:IsShown()) then return false end
 	local row = ShownRow(container, itemID)
 	if not row then
-		local filters = Filters()
-		filters.class, filters.armor, filters.slot, filters.favoritesOnly = ALL, ALL, ALL, false
-		filterVersion = filterVersion + 1
+		ClearFilters()
 		self:Refresh(container)
 		row = ShownRow(container, itemID)
 		if not row then return false end
@@ -587,15 +649,29 @@ function LootPanel:Refresh(container)
 	local standing = instance.kind == "faction" and ns.Reputation:Player(instance.factionID)
 	local reaction = standing and standing.reaction or nil
 
-	-- The armour and slot menus offer only what this page's loot actually has.
+	-- The armour and type menus offer only what this page's loot actually has.
 	container.presentArmor = Wipe(container.presentArmor or {})
 	container.presentSlots = Wipe(container.presentSlots or {})
+	container.presentKinds = Wipe(container.presentKinds or {})
+	container.presentProfessions = Wipe(container.presentProfessions or {})
+	local professions = {}
 	for _, entry in ipairs(all) do
 		if not Items:IsHidden(entry.itemID) and not Items:Superseded(entry.boss, entry.row) then
-			if entry.info.armor then container.presentArmor[entry.info.armor] = true end
-			container.presentSlots[entry.info.slot] = true
+			local info = entry.info
+			if info.armor then container.presentArmor[info.armor] = true end
+			container.presentKinds[info.kind] = true
+			if info.kind == "EQUIPMENT" then container.presentSlots[info.slot] = true end
+			if info.profession and not professions[info.profession] then
+				professions[info.profession] = true
+				container.presentProfessions[#container.presentProfessions + 1] = info.profession
+			end
 		end
 	end
+	local chosen = Filters().profession
+	if chosen ~= ALL and not professions[chosen] then
+		container.presentProfessions[#container.presentProfessions + 1] = chosen
+	end
+	table.sort(container.presentProfessions)
 	-- The menus only change with the page or the filters.
 	if container.menuInstance ~= instance or container.menuBoss ~= boss or container.menuFilters ~= filterVersion then
 		container.menuInstance, container.menuBoss, container.menuFilters = instance, boss, filterVersion
