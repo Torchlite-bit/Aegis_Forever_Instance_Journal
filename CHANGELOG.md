@@ -12,6 +12,22 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.26.3]
+
+### Fixed
+- **Capture vendor** now keeps wares whose tooltip says only "Requires Friendly with
+  this faction." Many quartermasters' wares, like the Azeroth Commerce Authority's
+  craftsmen, never name their faction. The journal works it out from the wares that do:
+  another ware of the same vendor, then the currency they cost (whatever Merchant's
+  Favor buys belongs to the Authority), then a vendor standing beside them. Until one
+  names it, the Capture line says the faction isn't named yet, and the wares wait.
+
+### Added
+- The **Azeroth Commerce Authority**'s first rewards: its Tabard and the Reins of the
+  Pack Kodo (Exalted), and the Advertising License Application (Honored).
+
+---
+
 ## [0.26.2]
 
 ### Added

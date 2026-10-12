@@ -295,9 +295,12 @@ function Recorder:Catch()
 	for _, npcID in ipairs(SortedKeys(state.vendors)) do
 		local vendor = state.vendors[npcID]
 		local entry = { name = vendor.name or tostring(npcID), wares = 0, new = 0 }
+		local place = vendor.place or {}
+		local whose = { npcID = npcID, name = vendor.name, mapID = place.mapID, x = place.x, y = place.y }
 		for itemID, ware in pairs(vendor.items or {}) do
 			entry.wares = entry.wares + 1
-			if ware.faction and not ns.FactionListsItem(ware.faction, itemID) then entry.new = entry.new + 1 end
+			local faction = ware.reaction and ns.WareFaction(whose, ware)
+			if faction and not ns.FactionListsItem(faction, itemID) then entry.new = entry.new + 1 end
 		end
 		catch.vendors[#catch.vendors + 1] = entry
 		catch.new = catch.new + entry.new
@@ -823,7 +826,12 @@ end
 ]]
 local merchantOpen = false
 local requiresPattern, reactionOfLabel
+-- Many vendors' wares name no faction, "Requires Friendly with this faction.": the vendor's own,
+-- which ns.WareFaction works out from the wares that do name theirs.
+local THIS_FACTION_PATTERN = "^Requires (.+) with this faction%.?$"
 
+-- The faction and standing a tooltip line asks for: (name, reaction), (false, reaction) for "this
+-- faction", or nil.
 local function StandingOf(text)
 	if not requiresPattern then
 		local template = ITEM_REQ_REPUTATION or "Requires %s - %s"
@@ -834,8 +842,11 @@ local function StandingOf(text)
 			if label then reactionOfLabel[label] = reaction end
 		end
 	end
-	local faction, standing = (text or ""):match(requiresPattern)
+	text = text or ""
+	local faction, standing = text:match(requiresPattern)
 	if faction and reactionOfLabel[standing] then return faction, reactionOfLabel[standing] end
+	standing = text:match(THIS_FACTION_PATTERN)
+	if standing and reactionOfLabel[standing] then return false, reactionOfLabel[standing] end
 end
 
 -- A ware's tooltip lines: from the client's tooltip data, else read off a hidden tooltip.
@@ -894,8 +905,8 @@ local function ReadWares()
 			local ware = { name = name, price = price, cost = WareCost(index) }
 			for _, text in ipairs(WareLines(index)) do
 				local faction, reaction = StandingOf(text)
-				if faction then
-					ware.faction, ware.reaction = faction, reaction
+				if reaction then
+					ware.faction, ware.reaction = faction or nil, reaction
 					break
 				end
 			end
@@ -921,36 +932,44 @@ end
 
 --[[
 	Keeps the open shop's wares (onPurpose: even a vendor with none that need a standing). Returns
-	what was found, { name, wares, forStanding, new, factions = { name, ... } }, or nil with no shop
-	open or no vendor to name. new counts the wares that joined a faction's rewards just now.
+	what was found, { name, wares, forStanding, unknown, new, factions = { name, ... } }, or nil
+	with no shop open or no vendor to name. forStanding counts the wares that need a standing,
+	unknown those whose faction is not known yet, new those that joined a faction's rewards just now.
 ]]
 function Recorder:CaptureVendor(onPurpose)
 	if not merchantOpen then return nil end
 	local npc = Npc()
 	if not npc or not npc.npcID then return nil end
 	local wares = ReadWares()
-	local found = { name = npc.name, wares = 0, forStanding = 0, new = 0, factions = {} }
-	local named = {}
+	local found = { name = npc.name, wares = 0, forStanding = 0, unknown = 0, new = 0, factions = {} }
 	for _, ware in pairs(wares) do
 		found.wares = found.wares + 1
-		if ware.faction then
-			found.forStanding = found.forStanding + 1
-			if not named[ware.faction] then
-				named[ware.faction] = true
-				found.factions[#found.factions + 1] = ware.faction
-			end
-		end
+		if ware.reaction then found.forStanding = found.forStanding + 1 end
 	end
-	table.sort(found.factions)
 	if found.forStanding == 0 and not onPurpose then return found end
 	local vendor = state.vendors[npc.npcID] or { items = {} }
 	vendor.name, vendor.place, vendor.at = npc.name, Place(), Stamp()
 	-- Seen while recording, only the wares that need a standing; captured on purpose, all of them.
 	for itemID, ware in pairs(wares) do
-		if onPurpose or ware.faction then vendor.items[itemID] = ware end
+		if onPurpose or ware.reaction then vendor.items[itemID] = ware end
 	end
 	state.vendors[npc.npcID] = vendor
-	found.new = ns.AddCapturedVendors({ VendorEntry(npc.npcID, vendor) }, true)
+	local entry = VendorEntry(npc.npcID, vendor)
+	found.new = ns.AddCapturedVendors({ entry }, true)
+	-- Which factions, now that the wares that name theirs have been heard.
+	local named = {}
+	for _, ware in ipairs(entry.wares) do
+		if ware.reaction and wares[ware.itemID] then
+			local faction = ns.WareFaction(entry, ware)
+			if not faction then
+				found.unknown = found.unknown + 1
+			elseif not named[faction] then
+				named[faction] = true
+				found.factions[#found.factions + 1] = faction
+			end
+		end
+	end
+	table.sort(found.factions)
 	Log(string.format(L.RECORD_LOG_VENDOR, npc.name, found.wares, found.new))
 	return found
 end

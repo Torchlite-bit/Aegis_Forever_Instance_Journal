@@ -202,9 +202,11 @@ function FactionSelect:RefreshCapture(panel)
 	panel.Capture:SetEnabled(open)
 	local found, status = panel.lastCapture, panel.CaptureStatus
 	if found and open then
-		if found.forStanding > 0 then
+		if found.forStanding > 0 and #found.factions > 0 then
 			status:SetText(string.format(L.REP_CAPTURED, found.name, found.forStanding, table.concat(found.factions, ", "),
 				found.new))
+		elseif found.forStanding > 0 then
+			status:SetText(string.format(L.REP_CAPTURED_UNKNOWN, found.name, found.forStanding))
 		else
 			status:SetText(string.format(L.REP_CAPTURED_NONE, found.name, found.wares))
 		end

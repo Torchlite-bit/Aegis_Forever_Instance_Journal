@@ -273,8 +273,9 @@ end
 	  { npcID, name, mapID, x, y, wares = { { itemID, price, cost, faction, reaction }, ... } }
 	A ware that needs a standing joins that faction's rewards at it, with its price (copper) and
 	any other cost ("2 Arcane Crystal"), unless the faction lists it already. The faction is known
-	by the name the ware's tooltip gives; one the journal does not have is left alone. The vendor
-	is kept on the faction as one of its quartermasters. Returns how many wares joined.
+	by the name the ware's tooltip gives (faction nil: "this faction", worked out below); one the
+	journal does not have is left alone. The vendor is kept on the faction as one of its
+	quartermasters. Returns how many wares joined.
 ]]
 local function StandingFor(faction, reaction)
 	for _, candidate in ipairs(faction.bosses) do
@@ -304,21 +305,105 @@ local function HasReward(faction, itemID)
 	return false
 end
 
+--[[
+	Many wares say only "Requires Friendly with this faction.": the vendor's own faction, which
+	the game does not name (the Azeroth Commerce Authority's craftsmen). It is worked out from the
+	wares that do name theirs, in this order:
+	  1. another ware of the same vendor that names its faction;
+	  2. the currency it costs, when wares that name a faction cost it and no other faction's do
+	     (whatever Merchant's Favor buys is the Azeroth Commerce Authority's);
+	  3. a vendor standing close by (same map, within NEAR_VENDOR) whose faction is known.
+	A ware none of these place waits (pendingWares) and is tried again with every capture.
+]]
+local NEAR_VENDOR = 0.03
+local vendorFaction, currencyFaction, placedVendors, pendingWares = {}, {}, {}, {}
+
+-- The currencies and items a cost names: "200 Merchant's Favor + 2 Arcane Crystal".
+local function CostNames(cost)
+	local names = {}
+	for part in tostring(cost or ""):gmatch("[^+]+") do
+		local name = part:match("^%s*%d+%s+(.-)%s*$")
+		if name and name ~= "" then names[#names + 1] = name end
+	end
+	return names
+end
+
+local function LearnFaction(vendor, ware)
+	local key = vendor.npcID or vendor.name
+	if key then
+		vendorFaction[key] = vendorFaction[key] or ware.faction
+		if vendor.mapID and vendor.x and vendor.y then
+			placedVendors[key] = { mapID = vendor.mapID, x = vendor.x, y = vendor.y, faction = vendorFaction[key] }
+		end
+	end
+	for _, name in ipairs(CostNames(ware.cost)) do
+		local known = currencyFaction[name]
+		if known == nil then
+			currencyFaction[name] = ware.faction
+		elseif known ~= ware.faction then
+			currencyFaction[name] = false -- paid to two factions: says nothing
+		end
+	end
+end
+
+-- The faction a ware needs a standing with: the one its tooltip names, else worked out as above.
+function ns.WareFaction(vendor, ware)
+	if ware.faction then return ware.faction end
+	local key = vendor.npcID or vendor.name
+	if key and vendorFaction[key] then return vendorFaction[key] end
+	for _, name in ipairs(CostNames(ware.cost)) do
+		if currencyFaction[name] then return currencyFaction[name] end
+	end
+	if vendor.mapID and vendor.x and vendor.y then
+		for _, other in pairs(placedVendors) do
+			if other.mapID == vendor.mapID and math.abs(other.x - vendor.x) <= NEAR_VENDOR
+				and math.abs(other.y - vendor.y) <= NEAR_VENDOR then
+				return other.faction
+			end
+		end
+	end
+	return nil
+end
+
+-- One ware joining its faction's rewards; false when its faction is not known yet.
+local function AddWare(vendor, ware, seen)
+	local name = ns.WareFaction(vendor, ware)
+	local faction = name and FactionNamed(name)
+	if not faction then return false, 0 end
+	faction.quartermasters = faction.quartermasters or {}
+	faction.quartermasters[vendor.npcID or vendor.name] = { name = vendor.name, mapID = vendor.mapID,
+		x = vendor.x, y = vendor.y }
+	if HasReward(faction, ware.itemID) then return true, 0 end
+	local loot = StandingFor(faction, ware.reaction).loot
+	loot[#loot + 1] = { itemID = ware.itemID, price = ware.price, cost = ware.cost, seen = seen or nil }
+	-- Its count and crest are worked out again.
+	faction.rewardCount, faction.crest = nil, nil
+	return true, 1
+end
+
 function ns.AddCapturedVendors(vendors, seen)
+	-- What these vendors say about whose wares are whose comes first, so their order does not matter.
+	for _, vendor in ipairs(vendors) do
+		for _, ware in ipairs(vendor.wares or {}) do
+			if ware.faction and ware.reaction and FactionNamed(ware.faction) then LearnFaction(vendor, ware) end
+		end
+	end
+	-- Wares that waited for their faction join it as soon as these name it (not counted: they are
+	-- another vendor's).
+	local waiting = pendingWares
+	pendingWares = {}
+	for _, entry in ipairs(waiting) do
+		if not AddWare(entry.vendor, entry.ware, entry.seen) then pendingWares[#pendingWares + 1] = entry end
+	end
 	local added = 0
 	for _, vendor in ipairs(vendors) do
 		for _, ware in ipairs(vendor.wares or {}) do
-			local faction = ware.faction and ware.reaction and FactionNamed(ware.faction)
-			if faction then
-				faction.quartermasters = faction.quartermasters or {}
-				faction.quartermasters[vendor.npcID or vendor.name] = { name = vendor.name, mapID = vendor.mapID,
-					x = vendor.x, y = vendor.y }
-				if not HasReward(faction, ware.itemID) then
-					local loot = StandingFor(faction, ware.reaction).loot
-					loot[#loot + 1] = { itemID = ware.itemID, price = ware.price, cost = ware.cost, seen = seen or nil }
-					-- Its count and crest are worked out again.
-					faction.rewardCount, faction.crest = nil, nil
-					added = added + 1
+			if ware.reaction then
+				local placed, count = AddWare(vendor, ware, seen)
+				added = added + count
+				-- A faction the tooltip named that the journal lacks is left alone; an unnamed one waits.
+				if not placed and not ware.faction then
+					pendingWares[#pendingWares + 1] = { vendor = vendor, ware = ware, seen = seen }
 				end
 			end
 		end
