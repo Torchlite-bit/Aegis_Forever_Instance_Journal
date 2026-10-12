@@ -6,4 +6,5 @@ local _, ns = ...
 	their data is merged; keep the list in the order they first helped.
 ]]
 ns.CONTRIBUTORS = {
+	"Subtilizer", -- Blackfathom Deeps, 2026-10-11: the first recorded run and Log Reader paste
 }

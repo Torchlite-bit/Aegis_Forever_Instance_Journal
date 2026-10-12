@@ -31,7 +31,9 @@ ns.AmendInstance("BlackfathomDeeps", {
 		},
 		["Old Serra'kis"] = {
 			area = "The Forgotten Pool",
-			notes = { "A threshadon in the underwater cave; optional." },
+			notes = { "A threshadon in the underwater cave; optional. He only melees." },
+			-- Seen in a recorded run's log, but nothing to watch for in the fight (the player who ran it).
+			notAbilities = { [8433] = true }, -- Leech Pulse
 		},
 		["Twilight Lord Kelris"] = {
 			area = "Moonshrine Sanctum",

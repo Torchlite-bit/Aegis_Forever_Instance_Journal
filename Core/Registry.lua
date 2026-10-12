@@ -197,26 +197,26 @@ end
 	What recorded fights measured (Data/Generated/Abilities.lua, from Tools/build_data.py):
 	{ [instance key] = { [boss name] = { abilities, adds, encounterID } } }. Loaded after every
 	other data file. A recorded spell the boss's written abilities name gives them its numbers
-	(damage, timings); one they lack is added. What a hand-written file gave a boss is kept.
+	(damage, timings); one they lack is added, unless a hand-written file says it is nothing to
+	watch for (boss.notAbilities, { [spellID] = true }). What a hand-written file gave a boss is kept.
 ]]
 local RECORDED_FIELDS = { "hit", "tick", "firstCast", "every", "school", "onSelf" }
 
 local function MergeRecorded(boss, recorded)
-	if boss.abilities == nil then
-		boss.abilities = recorded
-		return
-	end
 	local bySpell = {}
-	for _, row in ipairs(boss.abilities) do
+	for _, row in ipairs(boss.abilities or {}) do
 		if row.spellID then bySpell[row.spellID] = row end
 	end
 	for _, spell in ipairs(recorded or {}) do
 		local row = bySpell[spell.spellID]
-		if row then
+		if not row and boss.notAbilities and boss.notAbilities[spell.spellID] then
+			-- a spell the log saw that is not worth listing
+		elseif row then
 			for _, field in ipairs(RECORDED_FIELDS) do
 				if row[field] == nil then row[field] = spell[field] end
 			end
 		else
+			boss.abilities = boss.abilities or {}
 			boss.abilities[#boss.abilities + 1] = spell
 		end
 	end
