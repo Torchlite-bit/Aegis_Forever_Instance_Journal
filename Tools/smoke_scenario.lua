@@ -1988,15 +1988,17 @@ check(not page:IsShown() and reputation:IsShown(), "switching tabs closes an ope
 -- Reputation tab
 ------------------------------------------------------------------------------------------
 
--- Rewards come only from captured quartermasters: none ship yet, so every faction waits for one
+-- Rewards come only from captured quartermasters: only the Azeroth Commerce Authority's ship so
+-- far (Data/Reputation/Captured.lua), so every other faction waits for one
 do
 	local waiting = 0
 	for _, faction in ipairs(ns.GetFactions()) do
 		if not ns.FactionCaptured(faction) then waiting = waiting + 1 end
 	end
-	check(waiting == 23, "no faction has rewards before its quartermaster is captured, got " .. (23 - waiting))
+	check(waiting == 22, "no faction has rewards before its quartermaster is captured, got " .. (23 - waiting))
 	check(buttonNamed(reputation, "Booty Bay").Count:GetText() == "Not captured yet"
-		and buttonNamed(reputation, "Azeroth Commerce Authority").Count:GetText() == "Coming soon",
+		and buttonNamed(reputation, "Durotar Supply and Logistics").Count:GetText() == "Coming soon"
+		and buttonNamed(reputation, "Azeroth Commerce Authority").Count:GetText():match("^%d+ rewards$"),
 		"a card says so: a Forever faction is still to come, any other waits for its quartermaster")
 	check(not reputation.Capture:IsEnabled() and reputation.CaptureStatus:GetText() == "Open a quartermaster's shop to capture their wares.",
 		"Capture waits for a shop to be open")
@@ -2034,7 +2036,8 @@ local function centre(texture) local p = texture._points[1]; return p[1] .. p[3]
 check(centre(argent.Rim) == centre(argent.Crest) and centre(argent.Edge) == centre(argent.Crest), "rim, edge and crest share a centre")
 check(reputation.Scroll.scrollBarX == 6, "the grid's scroll bar in the backdrop's gutter, where retail puts it")
 check(buttonNamed(reputation, "Booty Bay").Standing:GetText() == "Not met", "a faction the player has not met")
-check(buttonNamed(reputation, "Azeroth Commerce Authority").Count:GetText() == "Coming soon", "counts per faction, once captured")
+check(buttonNamed(reputation, "Durotar Supply and Logistics").Count:GetText() == "Coming soon"
+	and buttonNamed(reputation, "Azeroth Commerce Authority").Count:GetText():match("^%d+ rewards$"), "counts per faction, once captured")
 argent:_RunScript("OnEnter")
 check(GameTooltip._text == "Argent Dawn", "card tooltip names the faction")
 do
@@ -2162,6 +2165,62 @@ do
 	check(ns.Recorder:Export():find("\nVENDOR;14368;Lorekeeper Lydros;", 1, true)
 		and ns.Recorder:Export():find(";1 Pristine Black Diamond + 30 Honor Points", 1, true), "and the capture comes along with Copy")
 	Mock.merchant, Mock.units.npc = {}, nil
+end
+
+-- Wares that say only "Requires Friendly with this faction." (the Azeroth Commerce Authority's
+-- craftsmen): their faction is worked out from the wares that name theirs
+do
+	local commerce = ns.GetInstance("Faction2586")
+	local function Shop(npcID, name, x, y, wares)
+		Mock.playerX, Mock.playerY = x, y
+		Mock.units.npc = { name = name, guid = "Creature-0-1-2-3-" .. npcID .. "-0000" }
+		Mock.merchant = wares
+		Mock.Fire("MERCHANT_SHOW")
+		reputation.Capture:Click()
+		local status = reputation.CaptureStatus:GetText()
+		Mock.Fire("MERCHANT_CLOSED")
+		return status
+	end
+	local function Costs(amount, currency) return { { amount, currency, true } } end
+	-- The build's capture names the Authority on wares paid in Merchant's Favor (made-up wares here,
+	-- so the build's own do not count)
+	check(ns.FactionCaptured(commerce), "the build's capture of the Authority's quartermasters")
+	local status = Shop(990010, "Fizzy Testgear", 0.1045, 0.7435, {
+		{ itemID = 290301, name = "Schematic: Test Waistwrap", price = 0,
+			lines = { "Requires Engineering (175)", "Requires Friendly with this faction." }, costs = Costs(180, "Merchant's Favor") },
+		{ itemID = 290302, name = "Schematic: Test Tabs", price = 0, lines = { "Requires Neutral with this faction." },
+			costs = Costs(45, "Merchant's Favor") },
+	})
+	check(status == "Fizzy Testgear: 2 wares for Azeroth Commerce Authority, 2 new."
+		and commerce.bosses[1].reaction == 4 and commerce.bosses[2].reaction == 5,
+		"wares naming no faction take the one their currency buys for: " .. tostring(status))
+	check(ns.Recorder:Export():find("\nVENDOR;990010;Fizzy Testgear;1455;0.1045;0.7435;290301;Schematic: Test Waistwrap;0;;5;180 Merchant's Favor", 1, true),
+		"and are copied with the standing they need")
+	-- A currency no named ware has shown yet: the wares wait for one that names their faction
+	status = Shop(990001, "Captain Testshore", 0.70, 0.20, {
+		{ itemID = 290201, name = "Testshore Cutlass", price = 0, lines = { "Requires Honored with this faction." },
+			costs = Costs(20, "Pirate Doubloon") },
+	})
+	check(status == "Captain Testshore: 1 wares need a standing with a faction the game doesn't name; kept until a ware names it.",
+		"wares whose faction cannot be told wait: " .. tostring(status))
+	local booty = ns.GetInstance("Faction21")
+	local before = booty.rewardCount or 0
+	status = Shop(990002, "Purser Testshore", 0.72, 0.21, {
+		{ itemID = 290202, name = "Testshore Tricorne", price = 0, lines = { "Requires Booty Bay - Friendly" },
+			costs = Costs(10, "Pirate Doubloon") },
+	})
+	local cutlass
+	for _, standing in ipairs(booty.bosses) do
+		for _, row in ipairs(standing.loot) do if row.itemID == 290201 then cutlass = standing.reaction end end
+	end
+	check(status == "Purser Testshore: 1 wares for Booty Bay, 1 new." and cutlass == 6,
+		"a ware naming its faction in the same currency brings the waiting one in")
+	-- Paid in gold, naming no faction: the faction of the vendors standing beside its vendor
+	status = Shop(990003, "Cook Testshore", 0.735, 0.205, {
+		{ itemID = 290203, name = "Testshore Chowder", price = 500, lines = { "Requires Exalted with this faction." } },
+	})
+	check(status == "Cook Testshore: 1 wares for Booty Bay, 1 new.", "one paid in gold goes by its neighbours: " .. tostring(status))
+	Mock.merchant, Mock.units.npc, Mock.playerX, Mock.playerY = {}, nil, nil, nil
 end
 
 -- Back to a dungeon: its side tabs and the tab the reader had

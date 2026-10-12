@@ -12,6 +12,24 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.26.3]
+
+### Fixed
+- **Capture vendor** now keeps wares whose tooltip says only "Requires Friendly with
+  this faction." Many quartermasters' wares, like the Azeroth Commerce Authority's
+  craftsmen, never name their faction. The journal works it out from the wares that do:
+  another ware of the same vendor, then the currency they cost (whatever Merchant's
+  Favor buys belongs to the Authority), then a vendor standing beside them. Until one
+  names it, the Capture line says the faction isn't named yet, and the wares wait.
+
+### Added
+- The **Azeroth Commerce Authority**'s rewards, captured from its nine vendors in
+  Redridge: 183 wares bought with Merchant's Favor, from the craftsmen's recipes,
+  plans, patterns, schematics and formulas (83 at Friendly, 97 at Honored) to the
+  Packmule Treat (Revered), the Tabard and the Reins of the Pack Kodo (Exalted).
+
+---
+
 ## [0.26.2]
 
 ### Added

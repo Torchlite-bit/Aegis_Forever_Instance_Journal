@@ -357,9 +357,11 @@ def load_vendors():
         return vendor
 
     def add_ware(vendor, item_id, price, cost, faction, reaction):
-        if isinstance(item_id, int) and faction and isinstance(reaction, int):
+        # No faction with a standing: the tooltip said "this faction", the vendor's own, which the
+        # journal works out at load (Registry ns.WareFaction).
+        if isinstance(item_id, int) and isinstance(reaction, int):
             vendor["wares"][item_id] = {"itemID": item_id, "price": price or None, "cost": cost or None,
-                                        "faction": faction, "reaction": reaction}
+                                        "faction": faction or None, "reaction": reaction}
 
     saved = sorted(glob.glob(AEGIS_SAVED)) + glob.glob(os.path.join(RECORDINGS, "**", "Aegis_Forever_Instance_Journal.lua"), recursive=True)
     for path in saved:
