@@ -288,7 +288,7 @@ ns.AddInstance({
 					name = "Sword of the Fallen",
 					slot = "Two-Hand, Sword",
 					quality = 3,
-					droppedBy = "Ghoul / Ragged Ghoul / Plague Ghoul",
+					droppedBy = "Tattered Ghoul",
 				},
 				{
 					itemID = 286978,

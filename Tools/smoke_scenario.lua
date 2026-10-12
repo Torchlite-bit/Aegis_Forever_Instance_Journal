@@ -658,14 +658,20 @@ do
 	local head
 	for _, row in ipairs(deeps["Twilight Lord Kelris"].loot) do if row.itemID == 5881 then head = row end end
 	check(head and head.name == "Head of Kelris", "Kelris drops his head for the quest")
-	-- Its combat log, through the Log Reader: numbers on the written abilities, a spell the
-	-- journal lacked, and no adds from a fight the game never ended or from a self-buffing caster
-	local bolt, pulse
+	-- Its combat log, through the Log Reader: numbers on the written abilities, no adds from a
+	-- fight the game never ended or from a self-buffing caster, and a spell the log saw that the
+	-- player who ran it says is nothing to watch for (Old Serra'kis only melees)
+	local bolt
 	for _, row in ipairs(deeps["Lorgus Jett"].abilities or {}) do if row.spellID == 12167 then bolt = row end end
-	for _, row in ipairs(deeps["Old Serra'kis"].abilities or {}) do if row.spellID == 8433 then pulse = row end end
 	check(bolt and bolt.text and bolt.hit and bolt.hit[2] == 191, "the log's numbers join a written ability")
-	check(pulse and pulse.name == "Leech Pulse", "and a spell the journal lacked is added")
 	check(not deeps["Lorgus Jett"].adds and not deeps["Ghamoo-ra"].adds, "no trash taken for adds")
+	check(not deeps["Old Serra'kis"].abilities, "a spell marked as nothing to watch for stays out")
+	-- A zone drop the site's dungeon page leaves out, kept on the trash
+	local sword
+	for _, boss in ipairs(ns.GetInstance("RuinsOfLordaeron").bosses) do
+		for _, row in ipairs(boss.trash and boss.loot or {}) do if row.itemID == 286977 then sword = row end end
+	end
+	check(sword and sword.name == "Sword of the Fallen" and sword.droppedBy == "Tattered Ghoul", "the Ruins' Sword of the Fallen")
 end
 ns.Journal:OpenBoss(thanes, magmatus)
 local magmatusHeaders = shownHeaders()
@@ -2565,8 +2571,8 @@ check(ns.Recorder:IsRecording(), "/aegis record starts recording")
 
 -- Copy: the recording as text for our Discord, under the name the player wants credited
 do
-	check(record.Link:GetText() == "https://discord.gg/Hr66t25vE7" and record.Names:GetText() == "No one yet: be the first.",
-		"the Discord link and the contributors, none yet")
+	check(record.Link:GetText() == "https://discord.gg/Hr66t25vE7" and record.Names:GetText():find("Subtilizer", 1, true),
+		"the Discord link and the contributors")
 	Mock.Fire("QUEST_ACCEPTED", 96403)
 	state.quests[96403].title = "Important Heirlooms"
 	record.Credit:SetText("Testy McTester")

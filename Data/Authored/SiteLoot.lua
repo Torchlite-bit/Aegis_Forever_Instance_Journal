@@ -63,7 +63,8 @@ local LOOT = {
 		["Rath'mael"] = { 271213, 271214, 271215, 273085, 273103 },
 		["Viktor the Vile"] = { 271211, 271212, 271218 },
 		["Lordaeron Captain"] = { 6641, 6642 },
-		Trash = { 286980, 286979, 286978 },
+		-- 286977 Sword of the Fallen: not on the site's dungeon page; a zone drop seen in game.
+		Trash = { 286980, 286979, 286978, 286977 },
 	},
 	ExcavationSiteWetlands = {
 		["Saltspine"] = { 273022, 273023, 273024 },

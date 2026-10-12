@@ -18,8 +18,10 @@ From the first combat log sent through the Log Reader (Blackfathom Deeps).
 
 ### Added
 - **Blackfathom Deeps' boss abilities now have numbers**: how hard each one hit, when it
-  first came and how often, for all seven bosses with a fight. Old Serra'kis gains
-  **Leech Pulse**.
+  first came and how often, for the bosses with abilities. Old Serra'kis only melees.
+- **Subtilizer** is the journal's first contributor, on the Record tab.
+- **Sword of the Fallen** is back on the Ruins of Lordaeron's trash loot (Tattered
+  Ghouls). The site's dungeon page leaves it out, so it had been dropped.
 
 ### Fixed
 - **A fight the game never ends** (Lorgus Jett's) no longer runs on through the trash
