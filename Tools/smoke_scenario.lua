@@ -658,6 +658,14 @@ do
 	local head
 	for _, row in ipairs(deeps["Twilight Lord Kelris"].loot) do if row.itemID == 5881 then head = row end end
 	check(head and head.name == "Head of Kelris", "Kelris drops his head for the quest")
+	-- Its combat log, through the Log Reader: numbers on the written abilities, a spell the
+	-- journal lacked, and no adds from a fight the game never ended or from a self-buffing caster
+	local bolt, pulse
+	for _, row in ipairs(deeps["Lorgus Jett"].abilities or {}) do if row.spellID == 12167 then bolt = row end end
+	for _, row in ipairs(deeps["Old Serra'kis"].abilities or {}) do if row.spellID == 8433 then pulse = row end end
+	check(bolt and bolt.text and bolt.hit and bolt.hit[2] == 191, "the log's numbers join a written ability")
+	check(pulse and pulse.name == "Leech Pulse", "and a spell the journal lacked is added")
+	check(not deeps["Lorgus Jett"].adds and not deeps["Ghamoo-ra"].adds, "no trash taken for adds")
 end
 ns.Journal:OpenBoss(thanes, magmatus)
 local magmatusHeaders = shownHeaders()

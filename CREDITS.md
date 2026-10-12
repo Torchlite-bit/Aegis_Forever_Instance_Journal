@@ -8,6 +8,13 @@ boss spots, flight paths and travel routes, models and images) is the journal's 
 checked against what is public on many sites, foreverchanges.pro first, and against what
 the testers record in game.
 
+## Alex Atlas Loot
+
+By Alex Brandson and its contributors. Its recorder and faction pages inspired the journal's
+**Record** and **Reputation** tabs: recording on the way into a dungeon, a copy to paste in
+Discord, a list of contributors, and each faction's rewards by standing. None of its code or
+data is used.
+
 ## Santiago Reyes's maps
 
 The maps of the Forever dungeons (The Hall of Thanes, Ruins of Lordaeron, Excavation Site:
@@ -21,7 +28,7 @@ be used free of charge, on these terms, which the journal keeps:
   cropped from them or drawn into them. The boss and quest marks are drawn over them in game,
   not into the files. A copy without the watermark would need his review.
 - He is credited wherever the maps are used: here, in the README, in the addon's notes in the
-  AddOns list, and in the testers' README and guide.
+  AddOns list, and in the testers' field guide.
 - Anyone who shows the maps in a video or a stream (YouTube, Twitch, Kick and so on) should
   credit him in its description.
 - The maps are not to be altered, nor their watermark removed, without his consent.

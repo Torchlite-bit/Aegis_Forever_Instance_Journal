@@ -90,6 +90,12 @@ def read_log(path):
                     current.ended, current.success = when, row[5] == "1"
                 current = None
                 continue
+            if event == "UNIT_DIED" and current and len(row) > 6 and row[6] == current.name and npc_id(row[5]):
+                # Some fights the game never ends (Lorgus Jett's): the death of the creature the
+                # fight is named for ends it, before the trash after it is taken for its adds.
+                current.ended, current.success = when, True
+                current = None
+                continue
             if not current or event not in SPELL_EVENTS or len(row) < 12:
                 continue
             source_guid, source_name, source_flags = row[1], row[2], int(row[3], 16)

@@ -1,6 +1,6 @@
 <p align="center"><img src="docs/images/logo.png" alt="Aegis Instance Journal" width="220"></p>
 
-# Aegis: Forever Instance Journal (v0.26.0)
+# Aegis: Forever Instance Journal (v0.26.1)
 
 **Retail's instance journal and dungeon maps, brought to WoW: Forever.**
 
@@ -69,8 +69,8 @@ Five side tabs, as in retail, plus one:
 | Overview | Loot | Abilities |
 |:---:|:---:|:---:|
 | <img src="docs/images/boss-overview.jpg" alt="A boss's overview" width="280"> | <img src="docs/images/boss-loot.jpg" alt="A boss's loot" width="280"> | <img src="docs/images/boss-abilities.jpg" alt="A boss's abilities" width="280"> |
-| **Model** | **Quests** | |
-| <img src="docs/images/boss-model.jpg" alt="A boss in 3D" width="280"> | <img src="docs/images/boss-quests.jpg" alt="The dungeon's quests" width="280"> | |
+| **Model** | **Quests** | **Quests on the map** |
+| <img src="docs/images/boss-model.jpg" alt="A boss in 3D" width="280"> | <img src="docs/images/boss-quests.jpg" alt="The dungeon's quests" width="280"> | <img src="docs/images/map-ruins-of-lordaeron.jpg" alt="Ruins of Lordaeron map with a quest mark's tooltip" width="280"> |
 
 ### 🗺️ Dungeon maps
 
@@ -99,7 +99,7 @@ Five side tabs, as in retail, plus one:
 - The map's **Quests** and **Map Legend** tabs are back, and the legend lights
   up the journal's icons.
 
-<p align="center"><img src="docs/images/map-ruins-of-lordaeron.jpg" alt="Ruins of Lordaeron map with a quest mark's tooltip" width="560"></p>
+<p align="center"><img src="docs/images/world-map-kalimdor.jpg" alt="Kalimdor's world map with dungeon doors, flight masters and boats, beside the quest log" width="720"></p>
 
 ### 🛡️ Reputation
 
@@ -224,7 +224,7 @@ and checks it; `--perf` measures it.
 
 ## Something broken?
 
-1. Check the **version** in the AddOns list (`0.26.0`) and quote it.
+1. Check the **version** in the AddOns list (`0.26.1`) and quote it.
 2. A red line under **Recent** on the Record tab says what went wrong.
    Screenshot it.
 3. Tell us on **[Discord](https://discord.gg/Hr66t25vE7)** or open an

@@ -199,7 +199,7 @@ def load_recordings():
                 spells = [read_combat_log.summarise(s) for (owner, _), s in encounter.spells.items() if owner == npc]
                 creatures[npc] = {"name": name, "spells": [s for s in spells if s["name"] != "Melee"]}
             by_instance.setdefault(encounter.instance_id, []).append(
-                {"id": encounter.id, "name": encounter.name, "creatures": creatures})
+                {"id": encounter.id, "name": encounter.name, "creatures": creatures, "unfinished": encounter.ended is None})
     # Pasted recordings: their ENCOUNTER lines name each fight and its id; the FIGHT and SPELL lines
     # the Log Reader page adds (docs/log-reader) carry what the tester's combat log saw cast in it.
     # ENCOUNTER;encounterID;name;instanceID;kills;wipes;seconds;area
@@ -215,8 +215,9 @@ def load_recordings():
                     continue
                 known = by_instance.setdefault(instance_id, [])
                 if fields[0] == "FIGHT":
-                    # Each pull is its own fight; its SPELL lines follow it.
-                    fights[encounter_id] = {"id": encounter_id, "name": fields[2], "creatures": {}}
+                    # Each pull is its own fight; its SPELL lines follow it. No result: it never ended.
+                    fights[encounter_id] = {"id": encounter_id, "name": fields[2], "creatures": {},
+                                            "unfinished": len(fields) < 6 or not fields[5]}
                     known.append(fights[encounter_id])
                 elif not any(e["id"] == encounter_id for e in known):
                     known.append({"id": encounter_id, "name": fields[2], "creatures": {}})
@@ -249,7 +250,9 @@ def pasted_spell(fields):
 
 def apply_recordings(bosses, encounters):
     """Encounter ids, the spells the logs saw that the journal lacks, and each fight's adds: the
-    other creatures that cast spells in it (trash only caught in it casts nothing)."""
+    other creatures that cast spells in it (trash only caught in it casts nothing). A fight the
+    game never ended (Lorgus Jett's) ran on through the trash after it: only the boss's own
+    spells count there. A creature that only buffed itself is not an add."""
     for boss in bosses:
         names = set([boss["name"]] + (as_list(boss.get("aliases")) or []))
         mine = [e for e in encounters if boss.get("npcID") in e["creatures"] or e["name"] in names]
@@ -272,7 +275,10 @@ def apply_recordings(bosses, encounters):
                             known[spell["spellID"]] = spell
                             boss.setdefault("abilities", []).append(spell)
                     continue
-                cast = [s for s in creature["spells"] if s.get("casts")]
+                if encounter.get("unfinished"):
+                    continue
+                cast = [s for s in creature["spells"]
+                        if s.get("casts") and not (s.get("onSelf") and "hit" not in s and "tick" not in s)]
                 if not cast:
                     continue
                 add = adds.setdefault(npc, {"name": creature["name"], "npcID": npc, "abilities": {}})

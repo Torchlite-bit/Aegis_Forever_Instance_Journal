@@ -40,7 +40,7 @@ jobs:
 
       - name: Build the release zip
         id: build
-        run: python Tools/package.py --public dist
+        run: python Tools/package.py dist
 
       - name: Publish the release
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
