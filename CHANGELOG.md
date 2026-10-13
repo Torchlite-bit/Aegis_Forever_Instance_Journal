@@ -17,7 +17,8 @@ and the version shown in the AddOns list. Quote it in bug reports.
 ### Changed
 - **Boss portraits sit in the plate's own cap**, as retail's boss pictures do, instead
   of a separate gold ring beside it. They fill the cap, cut flat by the plate's bottom
-  edge, and the hover glow traces the cap without the old workaround.
+  edge, with a gold band that thickens the cap's thin rim to retail's, and the hover glow
+  traces the cap without the old workaround.
 - Recorded timings read as one number when they never varied ("then every 12s", not
   "12-12s").
 - A boss's buff on itself that the written abilities don't list is left out (Kam

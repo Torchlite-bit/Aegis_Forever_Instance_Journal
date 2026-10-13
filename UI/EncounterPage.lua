@@ -132,10 +132,13 @@ end
 	pictures, so the plate's own rim frames it and the plate's highlight glows round it as retail's
 	does. The cap, measured on an in-game screenshot: a circle that touches the plate's top edge
 	and is cut flat by its bottom edge. CAP gives its centre (from the button's left edge, and up
-	from its middle), its radius inside the rim, and where the bottom edge cuts it. The round
-	picture sits in a frame cut at that edge, which clips it to the cap's shape.
+	from its middle), the portrait's radius, the cap's radius inside the plate's rim, and where
+	the bottom edge cuts it. Between the portrait and the plate's thin rim a gold band thickens
+	the rim to retail's. The round picture sits in a frame cut at that edge, which clips it to
+	the cap's shape.
 ]]
-local CAP = { x = 31.6, y = -5.4, radius = 27, bottom = -22.3 }
+local CAP = { x = 33.5, y = -8.4, radius = 28.9, inner = 30.4, bottom = -22.1 }
+local RIM_COLOR = { 0.80, 0.67, 0.44 }
 
 local function CreateBossButton(parent)
 	local button = CreateFrame("Button", nil, parent)
@@ -145,13 +148,17 @@ local function CreateBossButton(parent)
 	-- The creature's own portrait in the plate's cap, where the client knows its model;
 	-- otherwise Blizzard's default boss picture, placed where retail places boss art.
 	local clip = CreateFrame("Frame", nil, button)
-	clip:SetPoint("TOPLEFT", button, "LEFT", CAP.x - CAP.radius, CAP.y + CAP.radius)
-	clip:SetPoint("BOTTOMRIGHT", button, "LEFT", CAP.x + CAP.radius, CAP.bottom)
+	clip:SetPoint("TOPLEFT", button, "LEFT", CAP.x - CAP.inner, CAP.y + CAP.inner)
+	clip:SetPoint("BOTTOMRIGHT", button, "LEFT", CAP.x + CAP.inner, CAP.bottom)
 	if clip.SetClipsChildren then clip:SetClipsChildren(true) end
 	local holder = CreateFrame("Frame", nil, clip)
 	holder:SetAllPoints()
 	button.PortraitClip = clip
-	button.Portrait = Masked(holder, holder:CreateTexture(nil, "ARTWORK"))
+	button.Rim = Masked(holder, holder:CreateTexture(nil, "ARTWORK", nil, 1))
+	button.Rim:SetColorTexture(RIM_COLOR[1], RIM_COLOR[2], RIM_COLOR[3])
+	button.Rim:SetSize(CAP.inner * 2, CAP.inner * 2)
+	button.Rim:SetPoint("CENTER", button, "LEFT", CAP.x, CAP.y)
+	button.Portrait = Masked(holder, holder:CreateTexture(nil, "ARTWORK", nil, 2))
 	button.Portrait:SetSize(CAP.radius * 2, CAP.radius * 2)
 	button.Portrait:SetPoint("CENTER", button, "LEFT", CAP.x, CAP.y)
 	button.DefaultArt = button:CreateTexture(nil, "OVERLAY", nil, 6)
@@ -213,6 +220,7 @@ local function SetBossButton(button, instance, boss)
 	button.Detail:SetShown(boss.standing == true)
 	button.Reached:SetShown(boss.standing == true and ns.Reputation:Reached(instance, boss.reaction))
 	button.Portrait:SetShown(hasPortrait)
+	button.Rim:SetShown(hasPortrait)
 	button.DefaultArt:SetShown(not hasPortrait)
 end
 

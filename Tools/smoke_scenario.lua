@@ -279,10 +279,11 @@ do
 	local button = page.Bosses.Buttons[1]
 	local point, clipBottom = button.Portrait._points[1], button.PortraitClip._points[2]
 	check(button.Portrait._portrait == 144188 and button.Portrait:IsShown() and rawget(button, "Ring") == nil
-		and button.Portrait:GetWidth() == 54 and point[3] == "LEFT" and point[4] == 31.6 and point[5] == -5.4,
+		and button.Portrait:GetWidth() == 57.8 and point[3] == "LEFT" and point[4] == 33.5 and point[5] == -8.4,
 		"creature portrait filling the plate's cap")
-	check(clipBottom[1] == "BOTTOMRIGHT" and clipBottom[5] == -22.3 and #(button:GetHighlightTexture()._maskTextures or {}) == 0,
+	check(clipBottom[1] == "BOTTOMRIGHT" and clipBottom[5] == -22.1 and #(button:GetHighlightTexture()._maskTextures or {}) == 0,
 		"cut where the plate's bottom edge cuts the cap, and the plate's highlight left whole")
+	check(button.Rim:IsShown() and button.Rim:GetWidth() == 60.8, "a gold band between the portrait and the plate's rim thickens it")
 end
 check(page.Bosses.Buttons[7].Portrait._portrait == 139050 and not page.Bosses.Buttons[7].DefaultArt:IsShown(),
 	"the rare's portrait, from its model on Wowhead")
