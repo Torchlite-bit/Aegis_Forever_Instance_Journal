@@ -12,6 +12,16 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.26.7]
+
+### Changed
+- **Boss portraits are full circles** at the start of each plate, ringed in shaded gold like
+  the faction cards' crests. The plate now starts behind the circle, so nothing of it shows
+  to the portrait's left. Bosses without a known model and faction standings use the same circle.
+- The boss list starts a little lower, so the first portrait clears the dungeon's icon.
+
+---
+
 ## [0.26.6]
 
 ### Changed
