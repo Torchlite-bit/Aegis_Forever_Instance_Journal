@@ -32,10 +32,11 @@ ns.AddInstance({
 			},
 		},
 	},
+	-- Where a recorded run walked in (2026-10-12).
 	zoneEntrance = {
 		mapID = 1453,
-		x = 0.524,
-		y = 0.7,
+		x = 0.5037,
+		y = 0.6638,
 	},
 	bosses = {
 		{
@@ -44,6 +45,12 @@ ns.AddInstance({
 			level = 24,
 			displayID = 517,
 			loot = {
+				{
+					itemID = 3630,
+					name = "Head of Targorr",
+					slot = "Quest",
+					quality = 1,
+				},
 				{
 					itemID = 273805,
 					name = "Blackrock Harness",
@@ -97,6 +104,12 @@ ns.AddInstance({
 			level = 27,
 			displayID = 825,
 			loot = {
+				{
+					itemID = 3640,
+					name = "Head of Deepfury",
+					slot = "Quest",
+					quality = 1,
+				},
 				{
 					itemID = 2280,
 					name = "Kam's Walking Stick",
@@ -180,6 +193,12 @@ ns.AddInstance({
 			displayID = 2149,
 			loot = {
 				{
+					itemID = 3628,
+					name = "Hand of Dextren Ward",
+					slot = "Quest",
+					quality = 1,
+				},
+				{
 					itemID = 273817,
 					name = "Graverobber's Shovel",
 					slot = "Two-Hand, Mace",
@@ -235,6 +254,12 @@ ns.AddInstance({
 			level = 29,
 			displayID = 1621,
 			loot = {
+				{
+					itemID = 2926,
+					name = "Head of Bazil Thredd",
+					slot = "Quest",
+					quality = 1,
+				},
 				{
 					itemID = 273827,
 					name = "Debt Collector",
@@ -322,6 +347,13 @@ ns.AddInstance({
 			name = "Trash Drops",
 			trash = true,
 			loot = {
+				{
+					itemID = 2909,
+					name = "Red Wool Bandana",
+					slot = "Quest",
+					quality = 1,
+					droppedBy = "Defias prisoners, convicts, inmates and insurgents",
+				},
 				{
 					itemID = 274092,
 					name = "Sharpened Cutlery",

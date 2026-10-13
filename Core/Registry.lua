@@ -197,10 +197,17 @@ end
 	What recorded fights measured (Data/Generated/Abilities.lua, from Tools/build_data.py):
 	{ [instance key] = { [boss name] = { abilities, adds, encounterID } } }. Loaded after every
 	other data file. A recorded spell the boss's written abilities name gives them its numbers
-	(damage, timings); one they lack is added, unless a hand-written file says it is nothing to
-	watch for (boss.notAbilities, { [spellID] = true }). What a hand-written file gave a boss is kept.
+	(damage, timings); one they lack is added, unless it is nothing to watch for: a hand-written
+	file says so (boss.notAbilities, { [spellID] = true }), or it is only a buff the boss cast on
+	itself and hit no one with (Kam Deepfury's Defensive Stance). What a hand-written file gave a
+	boss is kept.
 ]]
 local RECORDED_FIELDS = { "hit", "tick", "firstCast", "every", "school", "onSelf" }
+
+local function NothingToWatch(boss, spell)
+	if boss.notAbilities and boss.notAbilities[spell.spellID] then return true end
+	return spell.onSelf == true and not spell.hit and not spell.tick
+end
 
 local function MergeRecorded(boss, recorded)
 	local bySpell = {}
@@ -209,7 +216,7 @@ local function MergeRecorded(boss, recorded)
 	end
 	for _, spell in ipairs(recorded or {}) do
 		local row = bySpell[spell.spellID]
-		if not row and boss.notAbilities and boss.notAbilities[spell.spellID] then
+		if not row and NothingToWatch(boss, spell) then
 			-- a spell the log saw that is not worth listing
 		elseif row then
 			for _, field in ipairs(RECORDED_FIELDS) do

@@ -246,4 +246,185 @@ ns.SetAbilities({
 			encounterID = 3496,
 		},
 	},
+	TheStockade = {
+		["Targorr the Dread"] = {
+			abilities = {
+				{
+					spellID = 3391,
+					name = "Thrash",
+					school = 1,
+					firstCast = 2,
+				},
+				{
+					spellID = 8599,
+					name = "Enrage",
+					school = 1,
+					firstCast = 10,
+					onSelf = true,
+				},
+			},
+			encounterID = 2756,
+		},
+		["Kam Deepfury"] = {
+			abilities = {
+				{
+					spellID = 7164,
+					name = "Defensive Stance",
+					school = 1,
+					firstCast = 1,
+					onSelf = true,
+				},
+				{
+					spellID = 8242,
+					name = "Shield Slam",
+					school = 1,
+					hit = { 25, 30, 28 },
+					firstCast = 4,
+					every = { 12, 12 },
+				},
+			},
+			adds = {
+				{
+					name = "Defias Insurgent",
+					npcID = 1715,
+					abilities = {
+						{
+							spellID = 13730,
+							name = "Demoralizing Shout",
+							school = 1,
+							firstCast = 14,
+						},
+					},
+				},
+			},
+			encounterID = 2757,
+		},
+		Hamhock = {
+			abilities = {
+				{
+					spellID = 421,
+					name = "Chain Lightning",
+					school = 8,
+					hit = { 9, 61, 42 },
+					firstCast = 11,
+					every = { 13, 13 },
+				},
+				{
+					spellID = 6742,
+					name = "Bloodlust",
+					school = 8,
+					firstCast = 14,
+					every = { 9, 9 },
+				},
+			},
+			adds = {
+				{
+					name = "Defias Insurgent",
+					npcID = 1715,
+					abilities = {
+						{
+							spellID = 13730,
+							name = "Demoralizing Shout",
+							school = 1,
+							firstCast = 7,
+							every = { 5, 5 },
+						},
+						{
+							spellID = 9128,
+							name = "Battle Shout",
+							school = 1,
+							firstCast = 8,
+						},
+					},
+				},
+			},
+			encounterID = 2758,
+		},
+		["Dextren Ward"] = {
+			abilities = {
+				{
+					spellID = 19134,
+					name = "Intimidating Shout",
+					school = 1,
+					firstCast = 68,
+					every = { 12, 12 },
+				},
+				{
+					spellID = 11976,
+					name = "Strike",
+					school = 1,
+					firstCast = 79,
+				},
+			},
+			adds = {
+				{
+					name = "Defias Inmate",
+					npcID = 1708,
+					abilities = {
+						{
+							spellID = 6547,
+							name = "Rend",
+							school = 1,
+							tick = { 8, 11 },
+							firstCast = 20,
+						},
+					},
+				},
+				{
+					name = "Defias Captive",
+					npcID = 1707,
+					abilities = {
+						{
+							spellID = 3427,
+							name = "Infected Wound",
+							school = 8,
+							firstCast = 21,
+						},
+					},
+				},
+			},
+			encounterID = 2759,
+		},
+		["Bazil Thredd"] = {
+			abilities = {
+				{
+					spellID = 9128,
+					name = "Battle Shout",
+					school = 1,
+					firstCast = 16,
+					every = { 23, 23 },
+				},
+				{
+					spellID = 7964,
+					name = "Smoke Bomb",
+					school = 1,
+					firstCast = 21,
+					every = { 21, 21 },
+				},
+			},
+			adds = {
+				{
+					name = "Defias Insurgent",
+					npcID = 1715,
+					abilities = {
+						{
+							spellID = 9128,
+							name = "Battle Shout",
+							school = 1,
+							firstCast = 7,
+							every = { 1, 1 },
+						},
+						{
+							spellID = 13730,
+							name = "Demoralizing Shout",
+							school = 1,
+							firstCast = 7,
+							every = { 27, 27 },
+						},
+					},
+				},
+			},
+			encounterID = 2760,
+		},
+	},
 })

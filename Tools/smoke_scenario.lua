@@ -273,13 +273,16 @@ end
 local bossNames = visibleBosses()
 check(#bossNames == 7, "seven bosses, trash left out, got " .. #bossNames)
 check(bossNames[1] == "The Baron" and bossNames[7] == "Lordaeron Captain (Rare)", "boss order and rare label: " .. table.concat(bossNames, ", "))
-check(page.Bosses.Buttons[1].Portrait._portrait == 144188 and page.Bosses.Buttons[1].Ring:IsShown(), "creature portrait in a ring")
 do
+	-- The portrait fills the plate's own cap, clipped flat at the plate's bottom edge, with no
+	-- ring of its own, and retail's whole highlight glows round it
 	local button = page.Bosses.Buttons[1]
-	local masks = button:GetHighlightTexture()._maskTextures or {}
-	check(#masks == 1 and masks[1] == button.HighlightMask and button.HighlightMask._texture:find("Media\\BossButtonHighlightMask", 1, true)
-		and button.RingGlow._layer == "HIGHLIGHT" and button.RingGlow:IsShown(),
-		"with a ring, the plate's highlight is kept off it and the ring glows on its own")
+	local point, clipBottom = button.Portrait._points[1], button.PortraitClip._points[2]
+	check(button.Portrait._portrait == 144188 and button.Portrait:IsShown() and rawget(button, "Ring") == nil
+		and button.Portrait:GetWidth() == 54 and point[3] == "LEFT" and point[4] == 31.6 and point[5] == -5.4,
+		"creature portrait filling the plate's cap")
+	check(clipBottom[1] == "BOTTOMRIGHT" and clipBottom[5] == -22.3 and #(button:GetHighlightTexture()._maskTextures or {}) == 0,
+		"cut where the plate's bottom edge cuts the cap, and the plate's highlight left whole")
 end
 check(page.Bosses.Buttons[7].Portrait._portrait == 139050 and not page.Bosses.Buttons[7].DefaultArt:IsShown(),
 	"the rare's portrait, from its model on Wowhead")
@@ -673,6 +676,42 @@ do
 		for _, row in ipairs(boss.trash and boss.loot or {}) do if row.itemID == 286977 then sword = row end end
 	end
 	check(sword and sword.name == "Sword of the Fallen" and sword.droppedBy == "Tattered Ghoul", "the Ruins' Sword of the Fallen")
+	-- The Stockade's recorded run: encounter ids, the ringleaders' heads, where it opens, and
+	-- where The Color of Blood is handed in
+	local stockade = ns.GetInstance("TheStockade")
+	local byName, heads = {}, {}
+	for _, boss in ipairs(stockade.bosses) do
+		byName[boss.name] = boss
+		for _, row in ipairs(boss.loot or {}) do heads[row.itemID] = boss.trash and "Trash" or boss.name end
+	end
+	check(byName["Targorr the Dread"].encounterID == 2756 and byName["Bazil Thredd"].encounterID == 2760,
+		"the Stockade's encounter ids")
+	check(heads[3630] == "Targorr the Dread" and heads[3640] == "Kam Deepfury" and heads[3628] == "Dextren Ward"
+		and heads[2926] == "Bazil Thredd" and heads[2909] == "Trash", "the quests' heads, hand and bandanas")
+	local color
+	for _, quest in ipairs(stockade.quests) do if quest.questID == 388 then color = quest end end
+	check(color.startMap.x == 0.733 and color.startMap.y == 0.554 and stockade.zoneEntrance.x == 0.5037,
+		"Nikova Raskol where she stands, and the door where the run walked in")
+	-- A boss's buff on itself that the written abilities do not name is left out (Kam Deepfury's
+	-- Defensive Stance), and a timing that never varied reads as one number
+	local kam = byName["Kam Deepfury"]
+	local stance, slam
+	for _, row in ipairs(kam.abilities or {}) do
+		if row.spellID == 7164 then stance = row end
+		if row.spellID == 8242 then slam = row end
+	end
+	check(not stance and slam and slam.hit[1] == 25 and slam.every[1] == 12, "Kam's Shield Slam with its numbers, not his stance")
+	ns.Journal:OpenBoss(stockade, kam)
+	tabs[3]:Click()
+	local slamText, titles = nil, {}
+	for _, header in ipairs(shownHeaders()) do
+		local text = header.Description:GetText() or ""
+		titles[#titles + 1] = header.Button.Title:GetText()
+		if text:find("Hits 25", 1, true) then slamText = text end
+	end
+	check(not table.concat(titles, ","):find("Defensive Stance", 1, true), "no stance on the page: " .. table.concat(titles, ", "))
+	check(slamText and slamText:find("Hits 25-30, first cast at 4s, then every 12s", 1, true),
+		"recorded numbers read plainly: " .. tostring(slamText))
 end
 ns.Journal:OpenBoss(thanes, magmatus)
 local magmatusHeaders = shownHeaders()
@@ -706,7 +745,7 @@ ns.Journal:OpenInstance(drownedCity)
 check(table.concat(visibleBosses(), ", ") == "Zul'Alai, Zin'aka, Deathless Marrow, Min'loth the Serpent", "announced bosses listed")
 check(page.Bosses.Buttons[1].DefaultArt:IsShown() and not page.Bosses.Buttons[1].Portrait:IsShown(),
 	"a boss without a known model gets Blizzard's default picture")
-check(#(page.Bosses.Buttons[1]:GetHighlightTexture()._maskTextures or {}) == 0 and not page.Bosses.Buttons[1].RingGlow:IsShown(),
+check(#(page.Bosses.Buttons[1]:GetHighlightTexture()._maskTextures or {}) == 0,
 	"and retail's whole highlight, made for that picture")
 ns.Journal:OpenBoss(drownedCity, drownedCity.bosses[1])
 check(page.BossOverview:IsShown(), "an announced boss opens")
@@ -1160,6 +1199,10 @@ do
 	Mock.Fire("QUEST_LOG_UPDATE")
 	local magni = marksOn(1455)[96393]
 	check(magni and magni.Texture._atlas == "QuestTurnin" and magni._position[1] == 0.394, "ready: a ? at Magni's throne")
+	-- Where the client marks the quest in the log itself, its "?" is left to it
+	WorldMapFrame._pools.QuestPinTemplate = { pins = { { _active = true, questID = 96393 } } }
+	check(not marksOn(1455)[96393], "the client's own mark for a quest in the log stands alone")
+	WorldMapFrame._pools.QuestPinTemplate = nil
 	Mock.questLog[96393], Mock.questsDone[96393], Mock.questsComplete[96393] = nil, true, nil
 	Mock.Fire("QUEST_TURNED_IN", 96393, 1450, 800)
 	check(not marksOn(1455)[96393], "handed in: gone")
@@ -2078,7 +2121,7 @@ check(table.concat(visibleBosses(), ", ") == "Friendly, Honored, Revered, Exalte
 local standingButtons = page.Bosses.Buttons
 check(standingButtons[1].Portrait:GetTexture() == "Interface\\Icons\\Achievement_Reputation_06"
 	and standingButtons[4].Portrait:GetTexture() == "Interface\\Icons\\Achievement_Reputation_07"
-	and standingButtons[1].Ring:IsShown() and not standingButtons[1].DefaultArt:IsShown(), "a coloured handshake per standing")
+	and standingButtons[1].Portrait:IsShown() and not standingButtons[1].DefaultArt:IsShown(), "a coloured handshake per standing")
 check(standingButtons[1].Detail:GetText() == "1 reward" and standingButtons[2].Detail:GetText() == "10 rewards", "rewards per standing")
 check(standingButtons[1].Reached:IsShown() and standingButtons[2].Reached:IsShown() and not standingButtons[3].Reached:IsShown(),
 	"standings reached are ticked")

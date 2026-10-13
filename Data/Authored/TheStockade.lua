@@ -36,4 +36,9 @@ ns.AmendInstance("TheStockade", {
 			notes = { "A rare spawn with two possible locations: not every run meets him." },
 		},
 	},
+
+	-- Nikova Raskol stands at 73.3, 55.4 on Forever's Stormwind, read in game (2026-10-12).
+	questPatches = {
+		[388] = { startMap = { mapID = 1453, x = 0.733, y = 0.554, label = "Nikova Raskol — Old Town" } },
+	},
 })

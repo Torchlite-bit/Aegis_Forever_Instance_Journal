@@ -100,12 +100,18 @@ end
 -- The tree
 ------------------------------------------------------------------------------------------
 
+-- A recorded range, "25-30", or one number where it never varied.
+local function Range(pair)
+	if pair[1] == pair[2] then return tostring(pair[1]) end
+	return pair[1] .. "-" .. pair[2]
+end
+
 local function StatsLine(row)
 	local parts = {}
-	if row.hit then parts[#parts + 1] = string.format(L.STATS_HIT, row.hit[1], row.hit[2]) end
-	if row.tick then parts[#parts + 1] = string.format(L.STATS_TICK, row.tick[1], row.tick[2]) end
+	if row.hit then parts[#parts + 1] = string.format(L.STATS_HIT, Range(row.hit)) end
+	if row.tick then parts[#parts + 1] = string.format(L.STATS_TICK, Range(row.tick)) end
 	if row.firstCast then parts[#parts + 1] = string.format(L.STATS_FIRST, row.firstCast) end
-	if row.every then parts[#parts + 1] = string.format(L.STATS_EVERY, row.every[1], row.every[2]) end
+	if row.every then parts[#parts + 1] = string.format(L.STATS_EVERY, Range(row.every)) end
 	if #parts == 0 then return nil end
 	return STATS_COLOR .. table.concat(parts, ", ") .. "|r"
 end

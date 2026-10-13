@@ -26,6 +26,9 @@ local QUEST_ITEMS = {
 	[9738] = true, [9739] = true, [9740] = true, [9741] = true, -- the Gems of the Fanglords (Wailing Caverns)
 	[5442] = true, -- Head of Arugal (Shadowfang Keep)
 	[5881] = true, -- Head of Kelris (Blackfathom Deeps; seen dropping in a recorded run)
+	-- The Stockade, seen dropping in a recorded run (2026-10-12): the ringleaders' heads and hand,
+	-- and the bandanas The Color of Blood asks for
+	[3630] = true, [3640] = true, [3628] = true, [2926] = true, [2909] = true,
 	[7146] = true, -- The Scarlet Key (Arcanist Doan, Scarlet Monastery: Library)
 	[270866] = true, -- Titan Relic, the Horde's (Relic Guardian, Excavation Site)
 	[280438] = true, -- Abominable Head (The Baron, Ruins of Lordaeron)

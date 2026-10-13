@@ -21,8 +21,9 @@ local QuestMap = {}
 ns.QuestMap = QuestMap
 
 local QUEST_PIN_TEMPLATE = "AegisJournalQuestPinTemplate"
--- The client's own marks for the quests on offer (QuestOfferDataProvider), which carry their quest's id.
-local CLIENT_OFFER_TEMPLATE = "QuestOfferPinTemplate"
+-- The client's own marks, which carry their quest's id: the quests on offer (QuestOfferDataProvider)
+-- and the quests in the player's log, a "?" once one can be handed in (QuestDataProvider).
+local CLIENT_TEMPLATES = { "QuestOfferPinTemplate", "QuestPinTemplate" }
 local START_ATLAS, TURN_IN_ATLAS = "QuestNormal", "QuestTurnin"
 local LOCKED_ALPHA = 0.8
 local RED, GREEN = { 1, 0.3, 0.3 }, { 0.1, 1, 0.1 }
@@ -242,14 +243,16 @@ function ProviderMethods:RefreshAllData()
 	local map = self:GetMap()
 	local mapID = map:GetMapID()
 	if not mapID then return end
-	local offered = {}
+	local clientMarks = {}
 	if map.EnumeratePinsByTemplate then
-		for pin in map:EnumeratePinsByTemplate(CLIENT_OFFER_TEMPLATE) do
-			if pin.questID then offered[pin.questID] = true end
+		for _, template in ipairs(CLIENT_TEMPLATES) do
+			for pin in map:EnumeratePinsByTemplate(template) do
+				if pin.questID then clientMarks[pin.questID] = true end
+			end
 		end
 	end
 	for _, entry in ipairs(QuestMap:MarksOn(mapID)) do
-		if not offered[entry.quest.questID] then
+		if not clientMarks[entry.quest.questID] then
 			map:AcquirePin(QUEST_PIN_TEMPLATE, entry.instance, entry.quest, entry.mark, entry.x, entry.y)
 		end
 	end

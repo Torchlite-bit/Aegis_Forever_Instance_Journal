@@ -1,4 +1,4 @@
-local addonName, ns = ...
+local _, ns = ...
 local L = ns.L
 
 --[[
@@ -35,9 +35,6 @@ local BOOK = "Interface\\EncounterJournal\\UI-EJ-JournalBG"
 local BOOK_COORDS = { 0, 0.766601562, 0, 0.830078125 }
 local CIRCLE_MASK = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
 local DEFAULT_BOSS = "Interface\\EncounterJournal\\UI-EJ-BOSS-Default"
--- Clear over the portrait ring and left of its centre (made by Tools/make_highlight_mask.py).
-local HIGHLIGHT_MASK = "Interface\\AddOns\\" .. addonName .. "\\Media\\BossButtonHighlightMask"
-local RING_GLOW_ALPHA = 0.55
 local REACHED_ICON = "Interface\\Buttons\\UI-CheckBox-Check"
 local STATUS_BAR = "Interface\\TargetingFrame\\UI-StatusBar"
 local STANDING_BAR_TEMPLATE = "ColoredProgressBarTemplate"
@@ -130,36 +127,33 @@ end
 -- Left page: instance header and boss list
 ------------------------------------------------------------------------------------------
 
+--[[
+	A boss's portrait fills the round cap at the plate's left end, where retail puts its boss
+	pictures, so the plate's own rim frames it and the plate's highlight glows round it as retail's
+	does. The cap, measured on an in-game screenshot: a circle that touches the plate's top edge
+	and is cut flat by its bottom edge. CAP gives its centre (from the button's left edge, and up
+	from its middle), its radius inside the rim, and where the bottom edge cuts it. The round
+	picture sits in a frame cut at that edge, which clips it to the cap's shape.
+]]
+local CAP = { x = 31.6, y = -5.4, radius = 27, bottom = -22.3 }
+
 local function CreateBossButton(parent)
 	local button = CreateFrame("Button", nil, parent)
 	button:SetSize(325, BOSS_BUTTON_HEIGHT)
 	ns.SetButtonArt(button, "BossButton-Up", "BossButton-Down", "BossButton-Highlight")
 
-	-- The creature's own portrait in the journal's ring, where the client knows its model;
+	-- The creature's own portrait in the plate's cap, where the client knows its model;
 	-- otherwise Blizzard's default boss picture, placed where retail places boss art.
-	button.Portrait = Masked(button, button:CreateTexture(nil, "OVERLAY", nil, 5))
-	button.Portrait:SetSize(48, 48)
-	button.Portrait:SetPoint("CENTER", button, "LEFT", 46, 0)
-	button.Ring = button:CreateTexture(nil, "OVERLAY", nil, 6)
-	ns.Art(button.Ring, "BossModelButton", true)
-	button.Ring:SetSize(77, 73)
-	button.Ring:SetPoint("CENTER", button.Portrait)
-
-	--[[
-		Retail's highlight glows round the cap at the plate's left end, where retail's boss
-		picture sits; around our ring, which sits further right, it spills out. With a ring the
-		plate's glow is masked off it and the ring glows on its own, so the highlight follows the
-		button's outline (SetBossButton chooses).
-	]]
-	button.HighlightMask = button:CreateMaskTexture()
-	button.HighlightMask:SetTexture(HIGHLIGHT_MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-	button.HighlightMask:SetAllPoints()
-	button.RingGlow = button:CreateTexture(nil, "HIGHLIGHT")
-	ns.Art(button.RingGlow, "BossModelButton", true)
-	button.RingGlow:SetSize(77, 73)
-	button.RingGlow:SetPoint("CENTER", button.Portrait)
-	button.RingGlow:SetBlendMode("ADD")
-	button.RingGlow:SetAlpha(RING_GLOW_ALPHA)
+	local clip = CreateFrame("Frame", nil, button)
+	clip:SetPoint("TOPLEFT", button, "LEFT", CAP.x - CAP.radius, CAP.y + CAP.radius)
+	clip:SetPoint("BOTTOMRIGHT", button, "LEFT", CAP.x + CAP.radius, CAP.bottom)
+	if clip.SetClipsChildren then clip:SetClipsChildren(true) end
+	local holder = CreateFrame("Frame", nil, clip)
+	holder:SetAllPoints()
+	button.PortraitClip = clip
+	button.Portrait = Masked(holder, holder:CreateTexture(nil, "ARTWORK"))
+	button.Portrait:SetSize(CAP.radius * 2, CAP.radius * 2)
+	button.Portrait:SetPoint("CENTER", button, "LEFT", CAP.x, CAP.y)
 	button.DefaultArt = button:CreateTexture(nil, "OVERLAY", nil, 6)
 	button.DefaultArt:SetTexture(DEFAULT_BOSS)
 	button.DefaultArt:SetSize(128, 64)
@@ -219,18 +213,7 @@ local function SetBossButton(button, instance, boss)
 	button.Detail:SetShown(boss.standing == true)
 	button.Reached:SetShown(boss.standing == true and ns.Reputation:Reached(instance, boss.reaction))
 	button.Portrait:SetShown(hasPortrait)
-	button.Ring:SetShown(hasPortrait)
 	button.DefaultArt:SetShown(not hasPortrait)
-	button.RingGlow:SetShown(hasPortrait)
-	if (button.highlightMasked or false) ~= hasPortrait then
-		local highlight = button:GetHighlightTexture()
-		if hasPortrait then
-			highlight:AddMaskTexture(button.HighlightMask)
-		else
-			highlight:RemoveMaskTexture(button.HighlightMask)
-		end
-		button.highlightMasked = hasPortrait
-	end
 end
 
 --[[
