@@ -12,6 +12,13 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.26.6]
+
+### Changed
+- The gold band round each boss portrait is twice as thick, closer to retail's rim.
+
+---
+
 ## [0.26.5]
 
 ### Changed

@@ -137,7 +137,7 @@ end
 	the rim to retail's. The round picture sits in a frame cut at that edge, which clips it to
 	the cap's shape.
 ]]
-local CAP = { x = 33.5, y = -8.4, radius = 28.9, inner = 30.4, bottom = -22.1 }
+local CAP = { x = 33.5, y = -8.4, radius = 27.4, inner = 30.4, bottom = -22.1 }
 local RIM_COLOR = { 0.80, 0.67, 0.44 }
 
 local function CreateBossButton(parent)

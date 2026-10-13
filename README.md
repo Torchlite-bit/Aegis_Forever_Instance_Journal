@@ -1,6 +1,6 @@
 <p align="center"><img src="docs/images/logo.png" alt="Aegis Instance Journal" width="220"></p>
 
-# Aegis: Forever Instance Journal (v0.26.5)
+# Aegis: Forever Instance Journal (v0.26.6)
 
 **Retail's instance journal and dungeon maps, brought to WoW: Forever.**
 
@@ -225,7 +225,7 @@ and checks it; `--perf` measures it.
 
 ## Something broken?
 
-1. Check the **version** in the AddOns list (`0.26.5`) and quote it.
+1. Check the **version** in the AddOns list (`0.26.6`) and quote it.
 2. A red line under **Recent** on the Record tab says what went wrong.
    Screenshot it.
 3. Tell us on **[Discord](https://discord.gg/Hr66t25vE7)** or open an
