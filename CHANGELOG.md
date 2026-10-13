@@ -12,6 +12,31 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.26.5]
+
+### Changed
+- **Boss portraits sit in the plate's own cap**, as retail's boss pictures do, instead
+  of a separate gold ring beside it. They fill the cap, cut flat by the plate's bottom
+  edge, with a gold band that thickens the cap's thin rim to retail's, and the hover glow
+  traces the cap without the old workaround.
+- Recorded timings read as one number when they never varied ("then every 12s", not
+  "12-12s").
+- A boss's buff on itself that the written abilities don't list is left out (Kam
+  Deepfury's Defensive Stance).
+
+### Added
+- **The Stockade from a recorded run**: encounter IDs, the bosses' recorded numbers,
+  the Defias Insurgents that fight beside three of them, the ringleaders' heads and
+  Dextren Ward's hand, the Red Wool Bandanas for The Color of Blood, and the entrance
+  where the run walked in.
+
+### Fixed
+- **The Color of Blood** is marked where Nikova Raskol stands (73.3, 55.4).
+- A quest the game already marks on the map (a "?" in your log) no longer gets a
+  second mark from the journal on top of it.
+
+---
+
 ## [0.26.4]
 
 ### Added
