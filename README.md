@@ -1,6 +1,6 @@
 <p align="center"><img src="docs/images/logo.png" alt="Aegis Instance Journal" width="220"></p>
 
-# Aegis: Forever Instance Journal (v0.26.8)
+# Aegis: Forever Instance Journal (v0.27.0)
 
 **Retail's instance journal and dungeon maps, brought to WoW: Forever.**
 
@@ -100,6 +100,10 @@ Five side tabs, as in retail, plus one:
   **?** where a finished one is handed in.
 - The map's **Quests** and **Map Legend** tabs are back, and the legend lights
   up the journal's icons.
+- **Zone level ranges**: hover a zone on a continent map and its range shows
+  after its name, coloured for your level.
+- **Show unexplored areas**: tick it in the map's filter menu (the magnifying
+  glass) to see the parts of a zone you haven't explored yet, a little darker.
 
 <p align="center"><img src="docs/images/world-map-kalimdor.jpg" alt="Kalimdor's world map with dungeon doors, flight masters and boats, beside the quest log" width="720"></p>
 
@@ -226,7 +230,7 @@ and checks it; `--perf` measures it.
 
 ## Something broken?
 
-1. Check the **version** in the AddOns list (`0.26.8`) and quote it.
+1. Check the **version** in the AddOns list (`0.27.0`) and quote it.
 2. A red line under **Recent** on the Record tab says what went wrong.
    Screenshot it.
 3. Tell us on **[Discord](https://discord.gg/Hr66t25vE7)** or open an

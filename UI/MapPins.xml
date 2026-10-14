@@ -31,4 +31,6 @@
 	<Frame name="AegisJournalQuestPinTemplate" mixin="AegisJournalQuestPinMixin" hidden="true" enableMouse="true" virtual="true">
 		<Size x="24" y="24"/>
 	</Frame>
+	<!-- A zone's unexplored areas, as the client's MapExplorationPinTemplate draws explored ones (made by UI/ZoneMap.lua). -->
+	<Frame name="AegisJournalFogPinTemplate" mixin="AegisJournalFogPinMixin" hidden="true" virtual="true"/>
 </Ui>

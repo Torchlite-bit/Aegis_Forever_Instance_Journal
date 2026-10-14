@@ -12,6 +12,21 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.27.0] (restart)
+
+### Added
+- **Zone level ranges on the world map.** Hover a zone on a continent map and its level
+  range shows after its name, coloured for your level as quests are: red when it's above
+  you, yellow while you're within it, green and grey below. Where the client knows a zone's
+  range itself, its own shows instead.
+- **Show unexplored areas.** A new tick box at the end of the world map's filter menu (the
+  magnifying glass) draws the parts of a zone you haven't explored yet, a little darker
+  than the parts you have. It is remembered across sessions and characters.
+
+New files: close the game fully and start it again; `/reload` won't load them.
+
+---
+
 ## [0.26.8]
 
 ### Changed
