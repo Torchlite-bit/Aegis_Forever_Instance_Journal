@@ -46,7 +46,8 @@ local UNTESTED_COLOR = "|cff8c1a1a"
 -- (a gold one sank into it).
 local FOREVER_COLOR = "|cff123a6e"
 
-local BOSS_BUTTON_HEIGHT, BOSS_SPACING, BOSS_TOP_PADDING, BOSS_BOTTOM_PADDING = 55, 15, 10, 20
+-- The top padding leaves room for the first portrait's circle, which stands a little taller than its plate.
+local BOSS_BUTTON_HEIGHT, BOSS_SPACING, BOSS_TOP_PADDING, BOSS_BOTTOM_PADDING = 55, 15, 6, 20
 
 -- Crops of a Forever loading screen: square for the round icon, wide for the lore picture.
 local ICON_COORDS = { 0.32, 0.68, 0.15, 0.85 }
@@ -81,12 +82,13 @@ local function SetCroppedArt(texture, art, coords)
 end
 
 -- Rounds a texture with a separate mask object, as Blizzard's creature buttons do. The older
--- texture:SetMask would forbid the crop (SetTexCoord) the dungeon icon needs.
-local function Masked(owner, texture)
+-- texture:SetMask would forbid the crop (SetTexCoord) the dungeon icon needs. shape, when given,
+-- is the region the circle fills, for a texture larger than its circle.
+local function Masked(owner, texture, shape)
 	if owner.CreateMaskTexture and texture.AddMaskTexture then
 		local mask = owner:CreateMaskTexture()
 		mask:SetTexture(CIRCLE_MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-		mask:SetAllPoints(texture)
+		mask:SetAllPoints(shape or texture)
 		texture:AddMaskTexture(mask)
 		texture.CircleMask = mask
 	end
@@ -128,43 +130,59 @@ end
 ------------------------------------------------------------------------------------------
 
 --[[
-	A boss's portrait fills the round cap at the plate's left end, where retail puts its boss
-	pictures, so the plate's own rim frames it and the plate's highlight glows round it as retail's
-	does. The cap, measured on an in-game screenshot: a circle that touches the plate's top edge
-	and is cut flat by its bottom edge. CAP gives its centre (from the button's left edge, and up
-	from its middle), the portrait's radius, the cap's radius inside the plate's rim, and where
-	the bottom edge cuts it. Between the portrait and the plate's thin rim a gold band thickens
-	the rim to retail's. The round picture sits in a frame cut at that edge, which clips it to
-	the cap's shape.
+	A boss's portrait is a full circle that starts the button, ringed like the faction cards'
+	crests: a gold band, then a thin dark edge. PORTRAIT gives its centre (from the button's left
+	edge, on the plate's middle), the portrait's radius and the band's width.
+
+	The plate starts behind the circle, so nothing of it shows to the portrait's left. Its own
+	round cap, made for retail's pictures, is left off: the plate's art is taken from PLATE.from
+	(measured on an in-game screenshot, where the cap's dark hollow ends) and drawn from PLATE.at,
+	where the circle covers its cut end top to bottom. The rest of the plate is stretched a tenth
+	to make up the length.
 ]]
-local CAP = { x = 33.5, y = -8.4, radius = 27.4, inner = 30.4, bottom = -22.1 }
-local RIM_COLOR = { 0.80, 0.67, 0.44 }
+local PORTRAIT = { x = 33.5, radius = 27, band = 3 }
+local PLATE = { width = 325, from = 72, at = 45, art = { "BossButton-Up", "BossButton-Down", "BossButton-Highlight" } }
+local RIM_DARK, RIM_LIGHT = { 0.50, 0.34, 0.10 }, { 1, 0.88, 0.52 }
+
+-- The plate's normal, pushed and highlight art without its cap.
+local function DropPlateCap(button)
+	local textures = { button:GetNormalTexture(), button:GetPushedTexture(), button:GetHighlightTexture() }
+	for index, texture in ipairs(textures) do
+		local left, right, top, bottom = ns.ArtCoords(PLATE.art[index])
+		texture:SetTexCoord(left + (right - left) * PLATE.from / PLATE.width, right, top, bottom)
+		texture:ClearAllPoints()
+		texture:SetPoint("TOPLEFT", PLATE.at, 0)
+		texture:SetPoint("BOTTOMRIGHT")
+	end
+end
+
+-- A circle of the given radius, centred on the portrait.
+local function PortraitCircle(button, holder, subLevel, radius)
+	local texture = Masked(holder, holder:CreateTexture(nil, "ARTWORK", nil, subLevel))
+	texture:SetSize(radius * 2, radius * 2)
+	texture:SetPoint("CENTER", button, "LEFT", PORTRAIT.x, 0)
+	return texture
+end
 
 local function CreateBossButton(parent)
 	local button = CreateFrame("Button", nil, parent)
 	button:SetSize(325, BOSS_BUTTON_HEIGHT)
 	ns.SetButtonArt(button, "BossButton-Up", "BossButton-Down", "BossButton-Highlight")
+	DropPlateCap(button)
 
-	-- The creature's own portrait in the plate's cap, where the client knows its model;
-	-- otherwise Blizzard's default boss picture, placed where retail places boss art.
-	local clip = CreateFrame("Frame", nil, button)
-	clip:SetPoint("TOPLEFT", button, "LEFT", CAP.x - CAP.inner, CAP.y + CAP.inner)
-	clip:SetPoint("BOTTOMRIGHT", button, "LEFT", CAP.x + CAP.inner, CAP.bottom)
-	if clip.SetClipsChildren then clip:SetClipsChildren(true) end
-	local holder = CreateFrame("Frame", nil, clip)
+	-- The creature's own portrait, where the client knows its model; otherwise Blizzard's
+	-- default boss picture in the same circle, its figure's shoulders on the circle's foot.
+	local holder = CreateFrame("Frame", nil, button)
 	holder:SetAllPoints()
-	button.PortraitClip = clip
-	button.Rim = Masked(holder, holder:CreateTexture(nil, "ARTWORK", nil, 1))
-	button.Rim:SetColorTexture(RIM_COLOR[1], RIM_COLOR[2], RIM_COLOR[3])
-	button.Rim:SetSize(CAP.inner * 2, CAP.inner * 2)
-	button.Rim:SetPoint("CENTER", button, "LEFT", CAP.x, CAP.y)
-	button.Portrait = Masked(holder, holder:CreateTexture(nil, "ARTWORK", nil, 2))
-	button.Portrait:SetSize(CAP.radius * 2, CAP.radius * 2)
-	button.Portrait:SetPoint("CENTER", button, "LEFT", CAP.x, CAP.y)
-	button.DefaultArt = button:CreateTexture(nil, "OVERLAY", nil, 6)
+	button.Rim = PortraitCircle(button, holder, 1, PORTRAIT.radius + PORTRAIT.band + 1)
+	ns.Gradient(button.Rim, "VERTICAL", RIM_DARK, 1, 1, RIM_LIGHT)
+	button.Edge = PortraitCircle(button, holder, 2, PORTRAIT.radius + 1)
+	button.Edge:SetColorTexture(0.1, 0.07, 0.03, 1)
+	button.Portrait = PortraitCircle(button, holder, 3, PORTRAIT.radius)
+	button.DefaultArt = Masked(holder, holder:CreateTexture(nil, "ARTWORK", nil, 4), button.Portrait)
 	button.DefaultArt:SetTexture(DEFAULT_BOSS)
 	button.DefaultArt:SetSize(128, 64)
-	button.DefaultArt:SetPoint("TOPLEFT", -4, 13)
+	button.DefaultArt:SetPoint("BOTTOMLEFT", button, "LEFT", PORTRAIT.x - 37.5, -PORTRAIT.radius)
 
 	button.Name = button:CreateFontString(nil, "OVERLAY", ns.Font("GameFontNormalMed3", "GameFontNormal"))
 	button.Name:SetJustifyH("LEFT")
@@ -220,7 +238,6 @@ local function SetBossButton(button, instance, boss)
 	button.Detail:SetShown(boss.standing == true)
 	button.Reached:SetShown(boss.standing == true and ns.Reputation:Reached(instance, boss.reaction))
 	button.Portrait:SetShown(hasPortrait)
-	button.Rim:SetShown(hasPortrait)
 	button.DefaultArt:SetShown(not hasPortrait)
 end
 
@@ -377,8 +394,9 @@ local function CreateLeftPage(page, info)
 	info.InstanceTitle:SetJustifyH("LEFT")
 	SetColor(info.InstanceTitle, ns.PAGE_TITLE_COLOR)
 
+	-- The list scrolls below the dungeon's icon, so a portrait's circle never shows round it.
 	local bosses = ns.CreateScrollFrame(info, 5, -5, 5)
-	bosses:SetSize(338, 382)
+	bosses:SetSize(338, 364)
 	bosses:SetPoint("BOTTOMLEFT", 25, 1)
 	bosses.Child:SetWidth(325)
 	bosses.Buttons = {}
@@ -615,7 +633,7 @@ local function FillBossList(page)
 	local uncaptured = instance.kind == "faction" and not ns.FactionCaptured(instance)
 	soon:SetShown(instance.comingSoon == true or instance.untested == true or uncaptured)
 	if soon:IsShown() then
-		local top = #list > 0 and (BOSS_TOP_PADDING + #list * (BOSS_BUTTON_HEIGHT + BOSS_SPACING)) or BOSS_TOP_PADDING
+		local top = BOSS_TOP_PADDING + #list * (BOSS_BUTTON_HEIGHT + BOSS_SPACING)
 		if uncaptured then
 			top = BOSS_TOP_PADDING + #list * (BOSS_BUTTON_HEIGHT + BOSS_SPACING) + BOSS_SPACING + BOSS_BUTTON_HEIGHT
 				+ BOSS_SPACING

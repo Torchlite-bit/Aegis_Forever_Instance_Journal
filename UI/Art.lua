@@ -76,6 +76,12 @@ function ns.ArtSize(name)
 	return piece[1], piece[2]
 end
 
+-- A piece's texture coordinates: left, right, top, bottom.
+function ns.ArtCoords(name)
+	local piece = PIECES[name]
+	return piece[3], piece[4], piece[5], piece[6]
+end
+
 -- Normal, pushed, highlight (added) and disabled textures for a button, any of which may be nil.
 function ns.SetButtonArt(button, normal, pushed, highlight, disabled)
 	if normal then

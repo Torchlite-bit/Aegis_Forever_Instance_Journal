@@ -1,11 +1,12 @@
 <p align="center"><img src="docs/images/logo.png" alt="Aegis Instance Journal" width="220"></p>
 
-# Aegis: Forever Instance Journal (v0.26.6)
+# Aegis: Forever Instance Journal (v0.26.7)
 
 **Retail's instance journal and dungeon maps, brought to WoW: Forever.**
 
 [![Discord](https://img.shields.io/badge/Discord-join%20us-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/Hr66t25vE7)
 [![WoW: Forever](https://img.shields.io/badge/WoW%3A%20Forever-Interface%2016001-c79c2e?style=flat-square&labelColor=555)](#install)
+[![GitHub: changelog](https://img.shields.io/badge/GitHub-changelog-24292f?style=flat-square&logo=github&logoColor=white)](CHANGELOG.md)
 
 Press **Shift+J** and the journal you know from retail opens: every dungeon and
 raid, its bosses, loot, abilities, 3D models and quests, with maps that show
@@ -225,7 +226,7 @@ and checks it; `--perf` measures it.
 
 ## Something broken?
 
-1. Check the **version** in the AddOns list (`0.26.6`) and quote it.
+1. Check the **version** in the AddOns list (`0.26.7`) and quote it.
 2. A red line under **Recent** on the Record tab says what went wrong.
    Screenshot it.
 3. Tell us on **[Discord](https://discord.gg/Hr66t25vE7)** or open an

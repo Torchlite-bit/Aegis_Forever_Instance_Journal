@@ -274,16 +274,28 @@ local bossNames = visibleBosses()
 check(#bossNames == 7, "seven bosses, trash left out, got " .. #bossNames)
 check(bossNames[1] == "The Baron" and bossNames[7] == "Lordaeron Captain (Rare)", "boss order and rare label: " .. table.concat(bossNames, ", "))
 do
-	-- The portrait fills the plate's own cap, clipped flat at the plate's bottom edge, with no
-	-- ring of its own, and retail's whole highlight glows round it
+	-- The portrait is a full circle starting the button, ringed in gold then a dark edge, and
+	-- the plate starts behind it without its own cap
 	local button = page.Bosses.Buttons[1]
-	local point, clipBottom = button.Portrait._points[1], button.PortraitClip._points[2]
-	check(button.Portrait._portrait == 144188 and button.Portrait:IsShown() and rawget(button, "Ring") == nil
-		and button.Portrait:GetWidth() == 54.8 and point[3] == "LEFT" and point[4] == 33.5 and point[5] == -8.4,
-		"creature portrait filling the plate's cap")
-	check(clipBottom[1] == "BOTTOMRIGHT" and clipBottom[5] == -22.1 and #(button:GetHighlightTexture()._maskTextures or {}) == 0,
-		"cut where the plate's bottom edge cuts the cap, and the plate's highlight left whole")
-	check(button.Rim:IsShown() and button.Rim:GetWidth() == 60.8, "a gold band between the portrait and the plate's rim thickens it")
+	local point = button.Portrait._points[1]
+	check(button.Portrait._portrait == 144188 and button.Portrait:IsShown() and rawget(button, "PortraitClip") == nil
+		and button.Portrait:GetWidth() == 54 and point[3] == "LEFT" and point[4] == 33.5 and point[5] == 0,
+		"creature portrait in a full circle on the plate's middle")
+	check(button.Rim:IsShown() and button.Rim:GetWidth() == 62 and button.Edge:GetWidth() == 56
+		and button.Rim._points[1][4] == 33.5 and button.Edge._points[1][4] == 33.5,
+		"a gold band and a dark edge round it, on the same centre")
+	check(33.5 - button.Rim:GetWidth() / 2 > 0, "the circle starts inside the button")
+	local plates = { button:GetNormalTexture(), button:GetPushedTexture(), button:GetHighlightTexture() }
+	local cropped = true
+	for _, texture in ipairs(plates) do
+		local _, _, _, x = texture:GetPoint(1)
+		local left = texture._texCoord[1]
+		cropped = cropped and x == 45 and left > 0.13 and left < 0.15 and #(texture._maskTextures or {}) == 0
+	end
+	check(cropped, "plate, pushed plate and highlight start under the circle without the plate's cap")
+	-- The plate's cut end lies wholly under the circle, the art's whole height
+	local radius = button.Rim:GetWidth() / 2
+	check(math.sqrt(radius ^ 2 - (45 - 33.5) ^ 2) >= button:GetHeight() / 2, "the circle hides the plate's cut end")
 end
 check(page.Bosses.Buttons[7].Portrait._portrait == 139050 and not page.Bosses.Buttons[7].DefaultArt:IsShown(),
 	"the rare's portrait, from its model on Wowhead")
@@ -746,8 +758,13 @@ ns.Journal:OpenInstance(drownedCity)
 check(table.concat(visibleBosses(), ", ") == "Zul'Alai, Zin'aka, Deathless Marrow, Min'loth the Serpent", "announced bosses listed")
 check(page.Bosses.Buttons[1].DefaultArt:IsShown() and not page.Bosses.Buttons[1].Portrait:IsShown(),
 	"a boss without a known model gets Blizzard's default picture")
-check(#(page.Bosses.Buttons[1]:GetHighlightTexture()._maskTextures or {}) == 0,
-	"and retail's whole highlight, made for that picture")
+do
+	local button = page.Bosses.Buttons[1]
+	local masks = button.DefaultArt._maskTextures or {}
+	local _, _, _, x, y = button.DefaultArt:GetPoint(1)
+	check(button.Rim:IsShown() and button.Edge:IsShown() and #masks == 1 and masks[1]._points[1][2] == button.Portrait
+		and x + 37.5 == 33.5 and y == -27, "in the same ringed circle, cut to the portrait's round")
+end
 ns.Journal:OpenBoss(drownedCity, drownedCity.bosses[1])
 check(page.BossOverview:IsShown(), "an announced boss opens")
 -- Alex Atlas Loot's tables add the loot and the creatures the other sources lack, and nothing that is no creature's
@@ -1994,14 +2011,14 @@ do
 	barrow:Click()
 	local soon = page.ComingSoon
 	check(page:IsShown() and soon:IsShown() and soon.Link:GetText() == "https://discord.gg/Hr66t25vE7"
-		and soon.Text:GetText() == ns.L.COMING_SOON_TEXT and soon._points[1][3] == -10,
+		and soon.Text:GetText() == ns.L.COMING_SOON_TEXT and soon._points[1][3] == -6,
 		"a raid with nothing known yet: coming soon, and our Discord, at the top of the page")
 	soon.Link:SetText("typed over")
 	soon.Link:_RunScript("OnTextChanged", true)
 	check(soon.Link:GetText() == ns.DISCORD_URL, "typing in the link's box puts the link back")
 	ns.Journal:OpenInstance(ns.GetInstance("OnyxiasLair"))
 	check(page.Bosses.Buttons[1]:IsShown() and page.Bosses.Buttons[1].Name:GetText() == "Onyxia" and soon:IsShown()
-		and soon._points[1][3] == -80 and soon.Text:GetText() == ns.L.COMING_SOON_PARTLY,
+		and soon._points[1][3] == -76 and soon.Text:GetText() == ns.L.COMING_SOON_PARTLY,
 		"Onyxia's Lair: its boss, then the box beneath her")
 	check(page.InstanceOverview.Picture:GetTexture():find("Media\\Raids\\OnyxiasLair", 1, true)
 		and page.info.InstanceButton.Icon._texCoord[1] == 0.05, "its overview from her painting, the round icon cut around her head")
@@ -2134,7 +2151,7 @@ check(standingBox.Bar._template == "ColoredProgressBarTemplate" and standingBox.
 check(standingBox.Plate._texture and standingBox.Badge:GetTexture() == "Interface\\Icons\\Achievement_Reputation_05",
 	"on a standing plate, with the Honored handshake")
 local standingTop = select(5, standingBox:GetPoint(1))
-check(standingTop == -(10 + 4 * 70 + 15), "placed one gap below the last standing: " .. tostring(standingTop))
+check(standingTop == -(6 + 4 * 70 + 15), "placed one gap below the last standing: " .. tostring(standingTop))
 rows = lootRows()
 check(#rows == 22, "every reward listed, got " .. #rows)
 check(rows[1].BossFrame:IsShown() and rows[1].Boss:GetText() == "Friendly" and rows[1].Boss._textColor[2] == 0.42,
@@ -2218,7 +2235,7 @@ do
 	ns.Journal:OpenInstance(ns.GetInstance("Faction21"))
 	local soon = page.ComingSoon
 	check(soon:IsShown() and soon.Title:GetText() == "Not captured yet" and soon.Text:GetText() == ns.L.REP_NOT_CAPTURED_TEXT
-		and soon._points[1][3] == -(10 + 15 + 55 + 15), "Booty Bay: no rewards yet, and how to capture them, beneath the standing")
+		and soon._points[1][3] == -(6 + 15 + 55 + 15), "Booty Bay: no rewards yet, and how to capture them, beneath the standing")
 	ns.Journal:OpenInstance(ns.GetInstance("Faction2740"))
 	check(soon:IsShown() and soon.Title:GetText() == "Coming soon" and soon.Text:GetText() == ns.L.REP_COMING_SOON_TEXT,
 		"a Forever faction: coming soon")
