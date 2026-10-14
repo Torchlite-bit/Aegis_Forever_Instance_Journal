@@ -2011,14 +2011,14 @@ do
 	barrow:Click()
 	local soon = page.ComingSoon
 	check(page:IsShown() and soon:IsShown() and soon.Link:GetText() == "https://discord.gg/Hr66t25vE7"
-		and soon.Text:GetText() == ns.L.COMING_SOON_TEXT and soon._points[1][3] == -10,
+		and soon.Text:GetText() == ns.L.COMING_SOON_TEXT and soon._points[1][3] == -6,
 		"a raid with nothing known yet: coming soon, and our Discord, at the top of the page")
 	soon.Link:SetText("typed over")
 	soon.Link:_RunScript("OnTextChanged", true)
 	check(soon.Link:GetText() == ns.DISCORD_URL, "typing in the link's box puts the link back")
 	ns.Journal:OpenInstance(ns.GetInstance("OnyxiasLair"))
 	check(page.Bosses.Buttons[1]:IsShown() and page.Bosses.Buttons[1].Name:GetText() == "Onyxia" and soon:IsShown()
-		and soon._points[1][3] == -90 and soon.Text:GetText() == ns.L.COMING_SOON_PARTLY,
+		and soon._points[1][3] == -76 and soon.Text:GetText() == ns.L.COMING_SOON_PARTLY,
 		"Onyxia's Lair: its boss, then the box beneath her")
 	check(page.InstanceOverview.Picture:GetTexture():find("Media\\Raids\\OnyxiasLair", 1, true)
 		and page.info.InstanceButton.Icon._texCoord[1] == 0.05, "its overview from her painting, the round icon cut around her head")
@@ -2151,7 +2151,7 @@ check(standingBox.Bar._template == "ColoredProgressBarTemplate" and standingBox.
 check(standingBox.Plate._texture and standingBox.Badge:GetTexture() == "Interface\\Icons\\Achievement_Reputation_05",
 	"on a standing plate, with the Honored handshake")
 local standingTop = select(5, standingBox:GetPoint(1))
-check(standingTop == -(20 + 4 * 70 + 15), "placed one gap below the last standing: " .. tostring(standingTop))
+check(standingTop == -(6 + 4 * 70 + 15), "placed one gap below the last standing: " .. tostring(standingTop))
 rows = lootRows()
 check(#rows == 22, "every reward listed, got " .. #rows)
 check(rows[1].BossFrame:IsShown() and rows[1].Boss:GetText() == "Friendly" and rows[1].Boss._textColor[2] == 0.42,
@@ -2235,7 +2235,7 @@ do
 	ns.Journal:OpenInstance(ns.GetInstance("Faction21"))
 	local soon = page.ComingSoon
 	check(soon:IsShown() and soon.Title:GetText() == "Not captured yet" and soon.Text:GetText() == ns.L.REP_NOT_CAPTURED_TEXT
-		and soon._points[1][3] == -(10 + 15 + 55 + 15), "Booty Bay: no rewards yet, and how to capture them, beneath the standing")
+		and soon._points[1][3] == -(6 + 15 + 55 + 15), "Booty Bay: no rewards yet, and how to capture them, beneath the standing")
 	ns.Journal:OpenInstance(ns.GetInstance("Faction2740"))
 	check(soon:IsShown() and soon.Title:GetText() == "Coming soon" and soon.Text:GetText() == ns.L.REP_COMING_SOON_TEXT,
 		"a Forever faction: coming soon")

@@ -46,10 +46,8 @@ local UNTESTED_COLOR = "|cff8c1a1a"
 -- (a gold one sank into it).
 local FOREVER_COLOR = "|cff123a6e"
 
--- The top padding keeps the first portrait's circle, taller than its plate, clear of the
--- dungeon's icon in the header; with no bosses, what the page waits on sits higher.
-local BOSS_BUTTON_HEIGHT, BOSS_SPACING, BOSS_TOP_PADDING, BOSS_BOTTOM_PADDING = 55, 15, 20, 20
-local EMPTY_TOP_PADDING = 10
+-- The top padding leaves room for the first portrait's circle, which stands a little taller than its plate.
+local BOSS_BUTTON_HEIGHT, BOSS_SPACING, BOSS_TOP_PADDING, BOSS_BOTTOM_PADDING = 55, 15, 6, 20
 
 -- Crops of a Forever loading screen: square for the round icon, wide for the lore picture.
 local ICON_COORDS = { 0.32, 0.68, 0.15, 0.85 }
@@ -396,8 +394,9 @@ local function CreateLeftPage(page, info)
 	info.InstanceTitle:SetJustifyH("LEFT")
 	SetColor(info.InstanceTitle, ns.PAGE_TITLE_COLOR)
 
+	-- The list scrolls below the dungeon's icon, so a portrait's circle never shows round it.
 	local bosses = ns.CreateScrollFrame(info, 5, -5, 5)
-	bosses:SetSize(338, 382)
+	bosses:SetSize(338, 364)
 	bosses:SetPoint("BOTTOMLEFT", 25, 1)
 	bosses.Child:SetWidth(325)
 	bosses.Buttons = {}
@@ -600,7 +599,6 @@ end
 local function FillBossList(page)
 	local bosses, child = page.Bosses, page.Bosses.Child
 	local list = BossesOf(page.instance)
-	local listTop = #list > 0 and BOSS_TOP_PADDING or EMPTY_TOP_PADDING
 	for index, boss in ipairs(list) do
 		local button = bosses.Buttons[index]
 		if not button then
@@ -608,21 +606,21 @@ local function FillBossList(page)
 			bosses.Buttons[index] = button
 		end
 		button:ClearAllPoints()
-		button:SetPoint("TOPLEFT", 0, -(listTop + (index - 1) * (BOSS_BUTTON_HEIGHT + BOSS_SPACING)))
+		button:SetPoint("TOPLEFT", 0, -(BOSS_TOP_PADDING + (index - 1) * (BOSS_BUTTON_HEIGHT + BOSS_SPACING)))
 		SetBossButton(button, page.instance, boss)
 		button:Show()
 	end
 	for index = #list + 1, #bosses.Buttons do
 		bosses.Buttons[index]:Hide()
 	end
-	local height = listTop + #list * BOSS_BUTTON_HEIGHT + math.max(0, #list - 1) * BOSS_SPACING + BOSS_BOTTOM_PADDING
+	local height = BOSS_TOP_PADDING + #list * BOSS_BUTTON_HEIGHT + math.max(0, #list - 1) * BOSS_SPACING + BOSS_BOTTOM_PADDING
 
 	-- A faction's list ends with the player's own standing.
 	local holder = page.FactionStanding
 	holder:SetShown(page.instance.kind == "faction")
 	if holder:IsShown() then
 		-- Where another standing would go, one gap further down.
-		local top = listTop + #list * (BOSS_BUTTON_HEIGHT + BOSS_SPACING) + BOSS_SPACING
+		local top = BOSS_TOP_PADDING + #list * (BOSS_BUTTON_HEIGHT + BOSS_SPACING) + BOSS_SPACING
 		holder:ClearAllPoints()
 		holder:SetPoint("TOPLEFT", 0, -top)
 		height = top + BOSS_BUTTON_HEIGHT + BOSS_BOTTOM_PADDING
@@ -635,9 +633,9 @@ local function FillBossList(page)
 	local uncaptured = instance.kind == "faction" and not ns.FactionCaptured(instance)
 	soon:SetShown(instance.comingSoon == true or instance.untested == true or uncaptured)
 	if soon:IsShown() then
-		local top = listTop + #list * (BOSS_BUTTON_HEIGHT + BOSS_SPACING)
+		local top = BOSS_TOP_PADDING + #list * (BOSS_BUTTON_HEIGHT + BOSS_SPACING)
 		if uncaptured then
-			top = listTop + #list * (BOSS_BUTTON_HEIGHT + BOSS_SPACING) + BOSS_SPACING + BOSS_BUTTON_HEIGHT
+			top = BOSS_TOP_PADDING + #list * (BOSS_BUTTON_HEIGHT + BOSS_SPACING) + BOSS_SPACING + BOSS_BUTTON_HEIGHT
 				+ BOSS_SPACING
 			soon.Title:SetText(instance.forever and L.COMING_SOON or L.REP_NOT_CAPTURED)
 			soon.Text:SetText(instance.forever and L.REP_COMING_SOON_TEXT or L.REP_NOT_CAPTURED_TEXT)
