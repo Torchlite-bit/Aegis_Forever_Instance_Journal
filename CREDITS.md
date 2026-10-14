@@ -6,7 +6,8 @@ its public release (2026-10-11).
 The journal's code is its own, written for it. Its data (dungeons, bosses, loot, quests, maps'
 boss spots, flight paths and travel routes, models and images) is the journal's own files,
 checked against what is public on many sites, foreverchanges.pro first, and against what
-the testers record in game.
+the testers record in game. The world map's unexplored areas come from the client's own map
+tables, as wago.tools exports them.
 
 ## Alex Atlas Loot
 

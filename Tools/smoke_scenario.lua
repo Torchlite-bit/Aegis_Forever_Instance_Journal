@@ -2852,4 +2852,47 @@ do
 	check(ns.Recorder:Export():find("\nMISSING;19509;", 1, true), "and comes along when the tester copies their recording")
 end
 
+-- The world map's zones: a level range after a zone's name, and its unexplored areas on request
+-- (in a function of its own: the scenario's main chunk is at Lua's limit of locals)
+;(function()
+	local label, zoneMap = WorldMapFrame.areaLabel, ns.ZoneMap
+	Mock.level = 20
+	Mock.cursorZone = { mapID = 1429, name = "Elwynn Forest" }
+	label:_RunScript("OnUpdate")
+	check(Mock.zoneLabel and Mock.zoneLabel:find("^Elwynn Forest|cff%x%x%x%x%x%x %(1%-10%)|r$"),
+		"a zone's level range after its name: " .. tostring(Mock.zoneLabel))
+	check(zoneMap:LevelText(15, 25) == "|cffffd100 (15-25)|r", "yellow while the player is within it")
+	Mock.clientZoneLevels[1429] = { 1, 12 }
+	label:_RunScript("OnUpdate")
+	check(Mock.zoneLabel == "Elwynn Forest (1-12)", "the client's own range, where it knows one, and not ours too: " .. tostring(Mock.zoneLabel))
+	Mock.clientZoneLevels[1429] = nil
+	Mock.cursorZone = { mapID = 1453, name = "Stormwind City" }
+	label:_RunScript("OnUpdate")
+	check(Mock.zoneLabel == "Stormwind City", "a city keeps its plain name")
+	Mock.cursorZone = nil
+
+	local choice = Mock.TaggedMenu("MENU_WORLD_MAP_TRACKING").checkboxes[1]
+	check(choice and choice.text == "Show unexplored areas" and not choice.isSelected(),
+		"the map's filter menu offers the unexplored areas, off at first")
+	local pieces = ns.MAP_OVERLAYS[1436]
+	Mock.explored[1436] = { pieces[1][5] }
+	WorldMapFrame:Show()
+	WorldMapFrame:SetMapID(1436)
+	check(#WorldMapFrame:ActivePins("AegisJournalFogPinTemplate") == 0, "nothing drawn while it is off")
+	choice.setSelected()
+	local pins = WorldMapFrame:ActivePins("AegisJournalFogPinTemplate")
+	local expected = 0
+	for index = 2, #pieces do expected = expected + #pieces[index] - 4 end
+	check(#pins == 1 and choice.isSelected() and pins[1].shownTextures == expected,
+		"Westfall's unexplored pieces drawn, the explored one left to the client: " .. tostring(pins[1] and pins[1].shownTextures))
+	local texture, piece = pins[1].textures[1], pieces[2]
+	local _, _, _, x, y = texture:GetPoint(1)
+	check(texture._texture == piece[5] and x == piece[3] and y == -piece[4] and texture:GetWidth() == math.min(piece[1], 256),
+		"each where the client would draw it")
+	choice.setSelected()
+	check(#WorldMapFrame:ActivePins("AegisJournalFogPinTemplate") == 0 and ns.db.showUnexplored == nil, "and gone again when unticked")
+	Mock.explored[1436] = nil
+	WorldMapFrame:Hide()
+end)()
+
 return string.format("All %d checks passed.", checks)

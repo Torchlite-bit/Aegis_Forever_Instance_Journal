@@ -201,7 +201,20 @@ local function MenuDescription(text)
 		return submenu
 	end
 	function description:CreateDivider() return {} end
+	function description:CreateTitle(titleText) self.title = titleText; return {} end
 	return description
+end
+-- What addons add to the client's tagged menus (Blizzard_Menu's Menu.ModifyMenu); Mock.TaggedMenu
+-- builds one with only those additions.
+Menu = { modifiers = {} }
+function Menu.ModifyMenu(tag, callback)
+	Menu.modifiers[tag] = Menu.modifiers[tag] or {}
+	table.insert(Menu.modifiers[tag], callback)
+end
+function Mock.TaggedMenu(tag)
+	local root = MenuDescription()
+	for _, callback in ipairs(Menu.modifiers[tag] or {}) do callback(nil, root) end
+	return root
 end
 function Region:GenerateMenu()
 	if not self._menuGenerator then return end
@@ -539,6 +552,47 @@ function WorldMapFrame:TriggerEvent(event, labelType, name, description)
 		Mock.areaLabel = nil
 	end
 end
+-- The client's zone label (AreaLabelDataProvider's Label, among MapCanvasMixin's dataProviders):
+-- each frame it names the zone under the cursor, Mock.cursorZone = { mapID, name }, adding the
+-- level range itself when the client knows it (Mock.clientZoneLevels). Mock.zoneLabel is the
+-- name it shows.
+WorldMapFrame.dataProviders = {}
+local areaLabel = CreateFrame("Frame", nil, mapCanvas)
+areaLabel.labelInfoByType = {}
+function areaLabel:SetLabel(labelType, name, description)
+	self.labelInfoByType[labelType] = { name = name, description = description }
+end
+function areaLabel:EvaluateLabels()
+	local info = self.labelInfoByType[MAP_AREA_LABEL_TYPE.AREA_NAME]
+	Mock.zoneLabel = info and info.name
+end
+areaLabel:SetScript("OnUpdate", function(self)
+	self.labelInfoByType = {}
+	local zone = Mock.cursorZone
+	if zone then
+		local levels = Mock.clientZoneLevels[zone.mapID]
+		self:SetLabel(MAP_AREA_LABEL_TYPE.AREA_NAME, levels and (zone.name .. " (" .. levels[1] .. "-" .. levels[2] .. ")") or zone.name)
+	end
+	self:EvaluateLabels()
+end)
+local areaLabelProvider = { Label = areaLabel }
+function areaLabelProvider:GetMap() return WorldMapFrame end
+areaLabel.dataProvider = areaLabelProvider
+WorldMapFrame.dataProviders[areaLabelProvider] = true
+WorldMapFrame.areaLabel = areaLabel
+function WorldMapFrame:IsCanvasMouseFocus() return Mock.cursorZone ~= nil end
+function WorldMapFrame:GetNormalizedCursorPosition() return 0.5, 0.5 end
+Mock.clientZoneLevels = {}
+-- The explored pieces the client lists, by map: Mock.explored[uiMapID] = { fileDataID, ... }.
+Mock.explored = {}
+C_MapExplorationInfo = {
+	GetExploredMapTextures = function(mapID)
+		local list = {}
+		for _, file in ipairs(Mock.explored[mapID] or {}) do list[#list + 1] = { fileDataIDs = { file } } end
+		return list
+	end,
+}
+QuestDifficultyColors = { difficult = { r = 1, g = 0.82, b = 0 } }
 function WorldMapFrame:EnumeratePinsByTemplate(template)
 	local list, index = self:ActivePins(template), 0
 	return function()
@@ -677,6 +731,17 @@ C_Map = {
 		if not map or map.continent ~= continentID then return nil end
 		local x, y = world:GetXY()
 		return mapID, CreateVector2D((x - map.left) / map.width, (y - map.top) / map.height)
+	end,
+	-- The zone under the map's cursor (Mock.cursorZone), and the levels the client knows for one.
+	GetMapInfoAtPosition = function(mapID)
+		local zone = Mock.cursorZone
+		if zone then return { mapID = zone.mapID, name = zone.name, mapType = 3 } end
+		return { mapID = mapID, name = "Map " .. mapID }
+	end,
+	GetMapLevels = function(mapID)
+		local levels = Mock.clientZoneLevels[mapID]
+		if levels then return levels[1], levels[2], 0, 0 end
+		return 0, 0, 0, 0
 	end,
 	CanSetUserWaypointOnMap = function(mapID) return Mock.maps[mapID] ~= nil end,
 	SetUserWaypoint = function(point) Mock.userWaypoint = point end,
