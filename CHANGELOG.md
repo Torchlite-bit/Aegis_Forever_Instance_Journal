@@ -12,6 +12,15 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.26.8]
+
+### Changed
+- **A new logo**: the Aegis shield and wings round an open journal, in a ring of runes. It is
+  the journal's icon in the AddOns list and heads the README. The client may keep showing the
+  old icon until the game is restarted.
+
+---
+
 ## [0.26.7]
 
 ### Changed
