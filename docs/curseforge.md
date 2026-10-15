@@ -2,8 +2,8 @@
 
 The text for the journal's CurseForge project page. CurseForge's upload API sends only files,
 so the description is pasted by hand: on the project, **Description → Edit**, switch the
-editor to **Markdown**, and paste the block below over the old text. Uploads themselves are
-automatic: each new `## Version` merged to `main` goes to CurseForge once
+editor to **Markdown**, and paste the block below over the old text. Its pictures are the
+project's own gallery images, on CurseForge's server. Uploads themselves are automatic: each new `## Version` merged to `main` goes to CurseForge once
 (`.github/workflows/release.yml`, `Tools/curseforge_upload.py`).
 
 ## Project description
@@ -17,7 +17,7 @@ automatic: each new `## Version` merged to `main` goes to CurseForge once
 
 *🚧 A work in progress: Forever's own dungeons, raids and reputations fill in as they open and as players record them.*
 
-![The journal open on City of Dalaran](https://raw.githubusercontent.com/Torchlite-bit/Aegis_Forever_Instance_Journal/main/docs/images/journal-city-of-dalaran.jpg)
+![The Dungeons tab](https://media.forgecdn.net/attachments/2059/698/screenshot-2026-10-15-142215-png.png)
 
 ### What's in it
 
@@ -28,8 +28,10 @@ automatic: each new `## Version` merged to `main` goes to CurseForge once
 - 🔍 **Search** across everything
 - 🔴 **Record tab** and **Log Reader**: help fill in Forever's journal
 
-![A boss's abilities](https://raw.githubusercontent.com/Torchlite-bit/Aegis_Forever_Instance_Journal/main/docs/images/boss-abilities.jpg)
-![The Hall of Thanes map](https://raw.githubusercontent.com/Torchlite-bit/Aegis_Forever_Instance_Journal/main/docs/images/map-hall-of-thanes.jpg)
+![A boss's abilities](https://media.forgecdn.net/attachments/2059/704/screenshot-2026-10-15-142526-png.png)
+![City of Dalaran's map, with the map legend](https://media.forgecdn.net/attachments/2059/700/screenshot-2026-10-15-142325-png.png)
+![The Reputation tab](https://media.forgecdn.net/attachments/2059/707/screenshot-2026-10-15-142604-png.png)
+![Show unexplored areas, in the world map's filter menu](https://media.forgecdn.net/attachments/2059/729/screenshot-2026-10-15-143503-png.png)
 
 ### Help fill in the journal
 
