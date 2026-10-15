@@ -31,9 +31,9 @@ class DiscordPost(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.folder, ignore_errors=True)
 
-    def run_main(self, env):
+    def run_main(self, env, *flags):
         out = io.StringIO()
-        with mock.patch.dict(os.environ, env, clear=True), mock.patch.object(sys, "argv", ["x", self.folder]), \
+        with mock.patch.dict(os.environ, env, clear=True), mock.patch.object(sys, "argv", ["x", self.folder] + list(flags)), \
                 contextlib.redirect_stdout(out):
             code = discord_post.main()
         return code, out.getvalue()
@@ -67,6 +67,51 @@ class DiscordPost(unittest.TestCase):
         with open(os.path.join(self.folder, "discord.txt"), encoding="utf-8") as handle:
             self.assertIn("999", handle.read())
         self.assertNotIn(HOOK, out, "the address is never printed")
+
+    def test_a_later_push_edits_the_versions_post(self):
+        with open(os.path.join(self.folder, "discord.txt"), "w", encoding="utf-8") as handle:
+            handle.write("Posted to Discord as message 1234567890123.\n")
+        with mock.patch.object(discord_post, "post") as post:
+            code, out = self.run_main({"DISCORD_WEBHOOK_URL": HOOK, "DISCORD_THREAD_ID": "555",
+                                       "DISCORD_PING_ROLE_ID": "4242"}, "--edit")
+        self.assertEqual(code, 0)
+        webhook, body, thread_id, message_id = post.call_args[0]
+        self.assertEqual((webhook, thread_id, message_id), (HOOK, "555", "1234567890123"))
+        self.assertIn("New: boss portraits", body["embeds"][0]["description"])
+        for key in ("username", "avatar_url", "content"):
+            self.assertNotIn(key, body, "an edit keeps the poster and pings no one again")
+        self.assertEqual(body["allowed_mentions"], {"parse": []})
+        self.assertIn("Updated v0.27.0", out)
+        self.assertNotIn(HOOK, out)
+
+    def test_an_edit_needs_the_post(self):
+        with mock.patch.object(discord_post, "post") as post:
+            with self.assertRaises(SystemExit):
+                self.run_main({"DISCORD_WEBHOOK_URL": HOOK}, "--edit")
+        post.assert_not_called()
+
+    def test_the_opening_message_is_rewritten_from_the_file(self):
+        with mock.patch.object(discord_post, "post", return_value="555") as post, \
+                mock.patch.object(sys, "argv", ["x", "--opening"]), \
+                mock.patch.dict(os.environ, {"DISCORD_WEBHOOK_URL": HOOK, "DISCORD_THREAD_ID": "555"}, clear=True), \
+                contextlib.redirect_stdout(io.StringIO()) as out:
+            self.assertEqual(discord_post.main(), 0)
+        webhook, body, thread_id, message_id = post.call_args[0]
+        self.assertEqual((thread_id, message_id), ("555", "555"), "the opening message's id is the post's own")
+        self.assertTrue(post.call_args[1]["soft"], "a refusal never stops the release")
+        with open(discord_post.OPENING_FILE, encoding="utf-8") as handle:
+            self.assertEqual(body["content"], handle.read().strip())
+        self.assertLessEqual(len(body["content"]), discord_post.OPENING_MAX)
+        self.assertEqual(body["allowed_mentions"], {"parse": []})
+        self.assertIn("Updated the forum post's opening message", out.getvalue())
+
+    def test_a_refused_opening_edit_lets_the_release_go_on(self):
+        with mock.patch.object(discord_post, "post", return_value=None), \
+                mock.patch.object(sys, "argv", ["x", "--opening"]), \
+                mock.patch.dict(os.environ, {"DISCORD_WEBHOOK_URL": HOOK, "DISCORD_THREAD_ID": "555"}, clear=True), \
+                contextlib.redirect_stdout(io.StringIO()) as out:
+            self.assertEqual(discord_post.main(), 0)
+        self.assertIn("only the webhook that made the post", out.getvalue())
 
     def test_into_the_addons_forum_post(self):
         with mock.patch.object(discord_post, "post", return_value="1") as post:
@@ -116,6 +161,15 @@ class DiscordPost(unittest.TestCase):
             discord_post.post(HOOK, {"embeds": []}, "555")
         self.assertTrue(seen["url"].endswith("?wait=true&thread_id=555"))
         self.assertTrue(seen["agent"].startswith("DiscordBot ("))
+
+        def fake_patch(req, timeout):
+            seen["url"], seen["method"] = req.full_url, req.get_method()
+            return Answer(b'{"id": "88"}')
+
+        with mock.patch("urllib.request.urlopen", fake_patch):
+            discord_post.post(HOOK, {"embeds": []}, "555", "88")
+        self.assertEqual(seen["method"], "PATCH")
+        self.assertTrue(seen["url"].endswith("/messages/88?thread_id=555"), "an edit goes to the message, in its thread")
 
 
 if __name__ == "__main__":
