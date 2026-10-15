@@ -2050,18 +2050,23 @@ check(not page:IsShown() and reputation:IsShown(), "switching tabs closes an ope
 -- Reputation tab
 ------------------------------------------------------------------------------------------
 
--- Rewards come only from captured quartermasters: only the Azeroth Commerce Authority's ship so
--- far (Data/Reputation/Captured.lua), so every other faction waits for one
+-- Confirmed rewards come only from captured quartermasters: the Azeroth Commerce Authority's and
+-- Durotar Supply and Logistics' so far (Data/Reputation/Captured.lua). Every other faction lists the
+-- rewards the game's item data gives (Data/Reputation/Listed.lua), unconfirmed until its
+-- quartermaster is captured
 do
 	local waiting = 0
 	for _, faction in ipairs(ns.GetFactions()) do
 		if not ns.FactionCaptured(faction) then waiting = waiting + 1 end
 	end
-	check(waiting == 22, "no faction has rewards before its quartermaster is captured, got " .. (23 - waiting))
-	check(buttonNamed(reputation, "Booty Bay").Count:GetText() == "Not captured yet"
-		and buttonNamed(reputation, "Durotar Supply and Logistics").Count:GetText() == "Coming soon"
-		and buttonNamed(reputation, "Azeroth Commerce Authority").Count:GetText():match("^%d+ rewards$"),
-		"a card says so: a Forever faction is still to come, any other waits for its quartermaster")
+	check(waiting == 21, "no faction has confirmed rewards before its quartermaster is captured, got " .. (23 - waiting))
+	check(rawget(buttonNamed(reputation, "Booty Bay"), "Count") == nil
+		and ns.Reputation:RewardCount(ns.GetInstance("Faction21")) == 6 and not ns.FactionCaptured(ns.GetInstance("Faction21")),
+		"cards show no count; Booty Bay lists six unconfirmed rewards")
+	check(buttonNamed(reputation, "Durotar Supply and Logistics").Forever:IsShown()
+		and buttonNamed(reputation, "Azeroth Commerce Authority").Forever:IsShown()
+		and not buttonNamed(reputation, "Booty Bay").Forever:IsShown(),
+		"Forever's own factions wear its emblem, as its dungeons do")
 	check(not reputation.Capture:IsEnabled() and reputation.CaptureStatus:GetText() == "Open a quartermaster's shop to capture their wares.",
 		"Capture waits for a shop to be open")
 end
@@ -2081,6 +2086,13 @@ ns.AddCapturedVendors({ { npcID = 10857, name = "Argent Quartermaster Lightspark
 	{ itemID = 22703, faction = "Argent Dawn", reaction = 8, cost = "2 Arcane Crystal" },
 } } })
 ns.FactionSelect:Refresh(reputation)
+do
+	local argentDawn, unconfirmed = ns.GetInstance("Faction529"), 0
+	for _, standing in ipairs(argentDawn.bosses) do
+		for _, row in ipairs(standing.loot) do if row.listed then unconfirmed = unconfirmed + 1 end end
+	end
+	check(ns.FactionCaptured(argentDawn) and unconfirmed == 0, "the capture confirms every listed reward it finds")
+end
 
 -- A card per faction, by name
 local cards = visibleButtons(reputation)
@@ -2089,7 +2101,7 @@ check(cards[1] == "Argent Dawn" and cards[23] == "Zandalar Tribe", "factions in 
 check(not reputation.Empty:IsShown(), "no empty message")
 local argent = buttonNamed(reputation, "Argent Dawn")
 check(argent.Standing:GetText() == "Honored" and argent.Standing._textColor[3] == 0.95, "the player's standing, Honored blue")
-check(argent.Count:GetText() == "22 rewards", "reward count: " .. argent.Count:GetText())
+check(ns.Reputation:RewardCount(argent.faction) == 22, "Argent Dawn's 22 rewards")
 check(argent.Crest:GetTexture() == "Interface\\Icons\\INV_Misc_Token_ArgentDawn" and argent.Crest._maskTextures,
 	"the faction's crest, rounded")
 check(argent.Rim._maskTextures and argent.Edge._maskTextures and argent.Rim._width == argent.Crest._width + 6,
@@ -2098,8 +2110,8 @@ local function centre(texture) local p = texture._points[1]; return p[1] .. p[3]
 check(centre(argent.Rim) == centre(argent.Crest) and centre(argent.Edge) == centre(argent.Crest), "rim, edge and crest share a centre")
 check(reputation.Scroll.scrollBarX == 6, "the grid's scroll bar in the backdrop's gutter, where retail puts it")
 check(buttonNamed(reputation, "Booty Bay").Standing:GetText() == "Not met", "a faction the player has not met")
-check(buttonNamed(reputation, "Durotar Supply and Logistics").Count:GetText() == "Coming soon"
-	and buttonNamed(reputation, "Azeroth Commerce Authority").Count:GetText():match("^%d+ rewards$"), "counts per faction, once captured")
+check(ns.FactionCaptured(ns.GetInstance("Faction2587")) and ns.FactionCaptured(ns.GetInstance("Faction2586")),
+	"both Merchant's Favor factions captured")
 argent:_RunScript("OnEnter")
 check(GameTooltip._text == "Argent Dawn", "card tooltip names the faction")
 do
@@ -2118,7 +2130,8 @@ for _, faction in ipairs(ns.GetFactions()) do
 end
 check(foreverFactions == 10 and ns.GetInstance("Faction2740").forever and not ns.GetInstance("Faction529").forever,
 	"the ten new factions are known, got " .. foreverFactions)
-check(rawget(argent, "Forever") == nil, "faction cards carry no Forever mark")
+check(not argent.Forever:IsShown() and buttonNamed(reputation, "Kirin Tor").Forever:IsShown(),
+	"the emblem only on the factions Forever added")
 
 -- A crest the client lacks gives way to the faction's best reward
 Mock.missingFiles["Interface\\Icons\\NoSuchCrest"] = true
@@ -2230,15 +2243,23 @@ Mock.Fire("UPDATE_FACTION")
 check(standingBox.Label:GetText() == "Your standing: Revered" and standingButtons[3].Reached:IsShown(), "standing moves on")
 check(lootRows()[12].Boss._textColor[2] == 0.42, "Revered rewards turn green")
 
--- A faction with nothing captured: its page asks for its quartermaster
+-- A faction with nothing captured: its page lists what the game's data gives, and asks for its quartermaster
 do
 	ns.Journal:OpenInstance(ns.GetInstance("Faction21"))
 	local soon = page.ComingSoon
-	check(soon:IsShown() and soon.Title:GetText() == "Not captured yet" and soon.Text:GetText() == ns.L.REP_NOT_CAPTURED_TEXT
-		and soon._points[1][3] == -(6 + 15 + 55 + 15), "Booty Bay: no rewards yet, and how to capture them, beneath the standing")
-	ns.Journal:OpenInstance(ns.GetInstance("Faction2740"))
+	check(soon:IsShown() and soon.Title:GetText() == "Not captured yet" and soon.Text:GetText() == ns.L.REP_LISTED_TEXT
+		and soon._points[1][3] == -(6 + 3 * 70 + 15 + 55 + 15) and #lootRows() == 6
+		and not tostring(lootRows()[1].ArmorType:GetText() or ""):find("%d"),
+		"Booty Bay: its six unconfirmed rewards, without prices, and how to confirm them, beneath the standing")
+	-- One with nothing listed either
+	local kirinTor = ns.GetInstance("Faction2740")
+	local listed = kirinTor.bosses
+	kirinTor.bosses = {}
+	ns.Journal:OpenInstance(ns.GetInstance("Faction21"))
+	ns.Journal:OpenInstance(kirinTor)
 	check(soon:IsShown() and soon.Title:GetText() == "Coming soon" and soon.Text:GetText() == ns.L.REP_COMING_SOON_TEXT,
-		"a Forever faction: coming soon")
+		"a Forever faction with nothing listed: coming soon")
+	kirinTor.bosses = listed
 	f.Tabs[3]:Click()
 end
 
@@ -2260,12 +2281,12 @@ do
 	check(vendor and vendor.items[159] and vendor.items[290101].cost == "1 Pristine Black Diamond + 30 Honor Points"
 		and vendor.items[290102].price == 45000, "everything it sells is kept, with each ware's price and other costs")
 	local booty = ns.GetInstance("Faction21")
-	check(ns.FactionCaptured(booty) and #booty.bosses == 2 and booty.bosses[1].reaction == 6 and booty.bosses[2].reaction == 7,
-		"the wares that need a standing join the faction at once")
+	check(ns.FactionCaptured(booty) and #booty.bosses == 3 and booty.bosses[2].reaction == 6 and booty.bosses[3].reaction == 7
+		and #booty.bosses[2].loot == 3, "the wares that need a standing join the faction at once, beside its listed ones")
 	check(reputation.CaptureStatus:GetText() == "Lorekeeper Lydros: 2 wares for Booty Bay, 2 new."
-		and buttonNamed(reputation, "Booty Bay").Count:GetText() == "2 rewards", "and the tab says what was captured")
+		and ns.Reputation:RewardCount(booty) == 8, "and the tab says what was captured")
 	reputation.Capture:Click()
-	check(#booty.bosses[1].loot == 1 and reputation.CaptureStatus:GetText():find("0 new", 1, true), "capturing again adds nothing twice")
+	check(#booty.bosses[2].loot == 3 and reputation.CaptureStatus:GetText():find("0 new", 1, true), "capturing again adds nothing twice")
 	Mock.Fire("MERCHANT_CLOSED")
 	check(not reputation.Capture:IsEnabled(), "the shop closed: Capture waits again")
 	check(ns.Recorder:Export():find("\nVENDOR;14368;Lorekeeper Lydros;", 1, true)
@@ -2288,18 +2309,22 @@ do
 		return status
 	end
 	local function Costs(amount, currency) return { { amount, currency, true } } end
-	-- The build's capture names the Authority on wares paid in Merchant's Favor (made-up wares here,
-	-- so the build's own do not count)
-	check(ns.FactionCaptured(commerce), "the build's capture of the Authority's quartermasters")
+	-- The build's captures place every ware of both factions paid in Merchant's Favor: by a ware of
+	-- the same vendor that names its faction, or by the vendors beside it
+	-- (the Authority's count includes the Type menu's five made-up wares above)
+	check(ns.FactionCaptured(commerce) and ns.Reputation:RewardCount(commerce) == 183 + 5
+		and ns.Reputation:RewardCount(ns.GetInstance("Faction2587")) == 183,
+		"the build's captures: the Authority's quartermasters and Durotar Supply and Logistics'")
+	-- Merchant's Favor buys for both, so it says nothing: a lone vendor's wares (made-up ones here)
+	-- wait for a ware that names their faction
 	local status = Shop(990010, "Fizzy Testgear", 0.1045, 0.7435, {
 		{ itemID = 290301, name = "Schematic: Test Waistwrap", price = 0,
 			lines = { "Requires Engineering (175)", "Requires Friendly with this faction." }, costs = Costs(180, "Merchant's Favor") },
 		{ itemID = 290302, name = "Schematic: Test Tabs", price = 0, lines = { "Requires Neutral with this faction." },
 			costs = Costs(45, "Merchant's Favor") },
 	})
-	check(status == "Fizzy Testgear: 2 wares for Azeroth Commerce Authority, 2 new."
-		and commerce.bosses[1].reaction == 4 and commerce.bosses[2].reaction == 5,
-		"wares naming no faction take the one their currency buys for: " .. tostring(status))
+	check(status == "Fizzy Testgear: 2 wares need a standing with a faction the game doesn't name; kept until a ware names it.",
+		"a currency two factions are paid in names neither: " .. tostring(status))
 	check(ns.Recorder:Export():find("\nVENDOR;990010;Fizzy Testgear;1455;0.1045;0.7435;290301;Schematic: Test Waistwrap;0;;5;180 Merchant's Favor", 1, true),
 		"and are copied with the standing they need")
 	-- A currency no named ware has shown yet: the wares wait for one that names their faction
@@ -2675,9 +2700,16 @@ do
 	check(vendor and vendor.name == "Lokhtos Darkbargainer" and wares == 2 and vendor.items[290001].reaction == 8
 		and vendor.items[290001].price == 120000 and vendor.place.mapID, "the wares that need a standing, with their price, and the vendor's place")
 	local exalted = standingWith(8).loot
-	Mock.Fire("MERCHANT_SHOW")
-	check(exalted[#exalted].itemID == 290001 and #standingWith(5).loot == 1,
-		"the wares join the faction's rewards at their standings, and seeing them again adds nothing twice")
+	check((function()
+		local friendly = standingWith(5).loot
+		local count = #friendly
+		Mock.Fire("MERCHANT_SHOW")
+		for _, row in ipairs(friendly) do
+			if row.itemID == 17051 then
+				return exalted[#exalted].itemID == 290001 and #friendly == count and not row.listed and row.price == 40000
+			end
+		end
+	end)(), "the wares join the faction's rewards at their standings, a listed one confirmed, and seeing them again adds nothing twice")
 	Mock.units.npc = { name = "Tharynn Bouden", guid = "Creature-0-1-2-3-66-0000" }
 	Mock.merchant = { { itemID = 2901, name = "Mining Pick", price = 81, lines = {} } }
 	Mock.Fire("MERCHANT_SHOW")
@@ -2736,7 +2768,8 @@ check(ns.Recorder:IsRecording(), "/aegis record starts recording")
 
 -- Copy: the recording as text for our Discord, under the name the player wants credited
 do
-	check(record.Link:GetText() == "https://discord.gg/Hr66t25vE7" and record.Names:GetText():find("Subtilizer", 1, true),
+	check(record.Link:GetText() == "https://discord.gg/Hr66t25vE7" and record.Names:GetText():find("Subtilizer", 1, true)
+		and record.Names:GetText():find("Genesys Firstborn", 1, true),
 		"the Discord link and the contributors")
 	Mock.Fire("QUEST_ACCEPTED", 96403)
 	state.quests[96403].title = "Important Heirlooms"

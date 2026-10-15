@@ -1,6 +1,6 @@
 <p align="center"><img src="docs/images/logo.png" alt="Aegis Instance Journal" width="220"></p>
 
-# Aegis: Forever Instance Journal (v0.27.1)
+# Aegis: Forever Instance Journal (v0.28.0)
 
 **Retail's instance journal and dungeon maps, brought to WoW: Forever.**
 
@@ -109,13 +109,16 @@ Five side tabs, as in retail, plus one:
 
 ### 🛡️ Reputation
 
-- **A card per faction** with its crest and your standing.
+- **A card per faction** with its crest and your standing, and WoW: Forever's
+  emblem on the factions it added.
 - **Each standing's rewards**, filtered like loot, with what the quartermaster asks
   for each: gold, and any other cost.
 - **Captured in game, first hand.** Open a quartermaster's shop, then press
   **Capture vendor** on the Reputation tab: every ware, its price and the standing
-  it needs join the faction at once. A faction nobody has captured yet says so,
-  and Forever's own factions say *Coming soon* until they open.
+  it needs join the faction at once.
+- **Until then, the game's own list.** A faction nobody has captured yet shows the
+  rewards the game's item data lists for it, marked *unconfirmed* and without
+  prices. A capture confirms each one it finds.
 
 ### 🔍 Search
 
@@ -230,7 +233,7 @@ and checks it; `--perf` measures it.
 
 ## Something broken?
 
-1. Check the **version** in the AddOns list (`0.27.1`) and quote it.
+1. Check the **version** in the AddOns list (`0.28.0`) and quote it.
 2. A red line under **Recent** on the Record tab says what went wrong.
    Screenshot it.
 3. Tell us on **[Discord](https://discord.gg/Hr66t25vE7)** or open an

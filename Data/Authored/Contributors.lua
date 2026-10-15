@@ -7,4 +7,5 @@ local _, ns = ...
 ]]
 ns.CONTRIBUTORS = {
 	"Subtilizer", -- Blackfathom Deeps, 2026-10-11: the first recorded run and Log Reader paste
+	"Genesys Firstborn", -- Durotar Supply and Logistics, 2026-10-15: the Crossroads quartermasters
 }
