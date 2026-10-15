@@ -2866,6 +2866,10 @@ end
 	label:_RunScript("OnUpdate")
 	check(Mock.zoneLabel == "Elwynn Forest (1-12)", "the client's own range, where it knows one, and not ours too: " .. tostring(Mock.zoneLabel))
 	Mock.clientZoneLevels[1429] = nil
+	Mock.cursorZone = { mapID = 9999, name = "Mount Hyjal" }
+	label:_RunScript("OnUpdate")
+	check(Mock.zoneLabel and Mock.zoneLabel:find("^Mount Hyjal|cff%x%x%x%x%x%x %(60%)|r$"),
+		"a Forever zone known only by its name, with a one-level range: " .. tostring(Mock.zoneLabel))
 	Mock.cursorZone = { mapID = 1453, name = "Stormwind City" }
 	label:_RunScript("OnUpdate")
 	check(Mock.zoneLabel == "Stormwind City", "a city keeps its plain name")
