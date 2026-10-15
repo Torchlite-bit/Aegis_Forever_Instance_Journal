@@ -372,7 +372,42 @@ function ns.WareFaction(vendor, ware)
 	return nil
 end
 
--- One ware joining its faction's rewards; false when its faction is not known yet.
+-- A faction's row for an item, and the standing it is under.
+local function RewardRow(faction, itemID)
+	for _, standing in ipairs(faction.bosses) do
+		for index, row in ipairs(standing.loot) do
+			if row.itemID == itemID then return row, standing, index end
+		end
+	end
+end
+
+--[[
+	Rewards as the client's item tables list them (Data/Reputation/Listed.lua), before anyone has
+	captured the faction's quartermaster: { [factionID] = { [reaction] = { itemID, ... } } }. Each
+	row is marked listed: unconfirmed, with no price or cost, until a capture finds it (AddWare).
+]]
+function ns.AddListedRewards(byFaction)
+	for _, faction in ipairs(factions) do
+		local standings = byFaction[faction.factionID]
+		if standings then
+			local reactions = {}
+			for reaction in pairs(standings) do reactions[#reactions + 1] = reaction end
+			table.sort(reactions)
+			for _, reaction in ipairs(reactions) do
+				for _, itemID in ipairs(standings[reaction]) do
+					if not HasReward(faction, itemID) then
+						local loot = StandingFor(faction, reaction).loot
+						loot[#loot + 1] = { itemID = itemID, listed = true }
+					end
+				end
+			end
+			faction.rewardCount, faction.crest = nil, nil
+		end
+	end
+end
+
+-- One ware joining its faction's rewards; false when its faction is not known yet. A listed
+-- (unconfirmed) row it matches is confirmed: it takes the ware's price, cost and standing.
 local function AddWare(vendor, ware, seen)
 	local name = ns.WareFaction(vendor, ware)
 	local faction = name and FactionNamed(name)
@@ -380,7 +415,18 @@ local function AddWare(vendor, ware, seen)
 	faction.quartermasters = faction.quartermasters or {}
 	faction.quartermasters[vendor.npcID or vendor.name] = { name = vendor.name, mapID = vendor.mapID,
 		x = vendor.x, y = vendor.y }
-	if HasReward(faction, ware.itemID) then return true, 0 end
+	local row, standing, index = RewardRow(faction, ware.itemID)
+	if row and row.listed then
+		row.listed, row.price, row.cost, row.seen = nil, ware.price, ware.cost, seen or nil
+		if standing.reaction ~= ware.reaction then
+			table.remove(standing.loot, index)
+			local loot = StandingFor(faction, ware.reaction).loot
+			loot[#loot + 1] = row
+		end
+		faction.rewardCount = nil
+		return true, 1
+	end
+	if row then return true, 0 end
 	local loot = StandingFor(faction, ware.reaction).loot
 	loot[#loot + 1] = { itemID = ware.itemID, price = ware.price, cost = ware.cost, seen = seen or nil }
 	-- Its count and crest are worked out again.
@@ -418,9 +464,21 @@ function ns.AddCapturedVendors(vendors, seen)
 	return added
 end
 
--- Whether a faction has any rewards yet; one without waits for its quartermaster to be captured.
+-- Whether a faction has any rewards confirmed by a capture; one without waits for its
+-- quartermaster, though the client's item tables may already list some (ns.FactionListed).
 function ns.FactionCaptured(faction)
-	return #faction.bosses > 0
+	for _, standing in ipairs(faction.bosses) do
+		for _, row in ipairs(standing.loot) do
+			if not row.listed then return true end
+		end
+	end
+	return false
+end
+function ns.FactionListed(faction)
+	for _, standing in ipairs(faction.bosses) do
+		if #standing.loot > 0 then return true end
+	end
+	return false
 end
 -- Whether a faction's own rewards list an item (not counting wares a vendor was seen selling).
 function ns.FactionListsItem(factionName, itemID)
@@ -428,7 +486,7 @@ function ns.FactionListsItem(factionName, itemID)
 		if faction.name == factionName then
 			for _, standing in ipairs(faction.bosses) do
 				for _, row in ipairs(standing.loot) do
-					if row.itemID == itemID and not row.seen then return true end
+					if row.itemID == itemID and not row.seen and not row.listed then return true end
 				end
 			end
 			return false

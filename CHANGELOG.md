@@ -12,6 +12,20 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.28.0] (restart)
+
+### Added
+- **Faction rewards are back, unconfirmed.** Every faction nobody has captured yet lists the
+  rewards the game's item data gives it, by standing, from Alex Atlas Loot's faction lists:
+  462 rewards across 22 factions. They show without prices, the faction's card says how many
+  are *unconfirmed*, and its page asks for a capture. Capturing a quartermaster confirms each
+  reward it finds, with its price and cost, and moves it if it needs a different standing.
+- The Azeroth Commerce Authority keeps only its captured rewards (183), not the shorter list.
+
+New file: close the game fully and start it again; `/reload` won't load it.
+
+---
+
 ## [0.27.1]
 
 ### Fixed

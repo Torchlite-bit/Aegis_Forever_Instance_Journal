@@ -637,8 +637,13 @@ local function FillBossList(page)
 		if uncaptured then
 			top = BOSS_TOP_PADDING + #list * (BOSS_BUTTON_HEIGHT + BOSS_SPACING) + BOSS_SPACING + BOSS_BUTTON_HEIGHT
 				+ BOSS_SPACING
-			soon.Title:SetText(instance.forever and L.COMING_SOON or L.REP_NOT_CAPTURED)
-			soon.Text:SetText(instance.forever and L.REP_COMING_SOON_TEXT or L.REP_NOT_CAPTURED_TEXT)
+			if ns.FactionListed(instance) then
+				soon.Title:SetText(L.REP_NOT_CAPTURED)
+				soon.Text:SetText(L.REP_LISTED_TEXT)
+			else
+				soon.Title:SetText(instance.forever and L.COMING_SOON or L.REP_NOT_CAPTURED)
+				soon.Text:SetText(instance.forever and L.REP_COMING_SOON_TEXT or L.REP_NOT_CAPTURED_TEXT)
+			end
 		else
 			soon.Title:SetText(L.COMING_SOON)
 			soon.Text:SetText(#list > 0 and L.COMING_SOON_PARTLY or L.COMING_SOON_TEXT)

@@ -13,8 +13,9 @@ tables, as wago.tools exports them.
 
 By Alex Brandson and its contributors. Its recorder and faction pages inspired the journal's
 **Record** and **Reputation** tabs: recording on the way into a dungeon, a copy to paste in
-Discord, a list of contributors, and each faction's rewards by standing. None of its code or
-data is used.
+Discord, a list of contributors, and each faction's rewards by standing. Its faction reward
+lists (made from the game's own item tables) fill the Reputation tab, marked unconfirmed,
+until a faction's quartermaster is captured in game. None of its code is used.
 
 ## Santiago Reyes's maps
 
