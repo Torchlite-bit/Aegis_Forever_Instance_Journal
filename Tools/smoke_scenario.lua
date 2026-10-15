@@ -2050,17 +2050,18 @@ check(not page:IsShown() and reputation:IsShown(), "switching tabs closes an ope
 -- Reputation tab
 ------------------------------------------------------------------------------------------
 
--- Confirmed rewards come only from captured quartermasters: only the Azeroth Commerce Authority's
--- so far (Data/Reputation/Captured.lua). Every other faction lists the rewards the game's item
--- data gives (Data/Reputation/Listed.lua), unconfirmed until its quartermaster is captured
+-- Confirmed rewards come only from captured quartermasters: the Azeroth Commerce Authority's and
+-- Durotar Supply and Logistics' so far (Data/Reputation/Captured.lua). Every other faction lists the
+-- rewards the game's item data gives (Data/Reputation/Listed.lua), unconfirmed until its
+-- quartermaster is captured
 do
 	local waiting = 0
 	for _, faction in ipairs(ns.GetFactions()) do
 		if not ns.FactionCaptured(faction) then waiting = waiting + 1 end
 	end
-	check(waiting == 22, "no faction has rewards before its quartermaster is captured, got " .. (23 - waiting))
+	check(waiting == 21, "no faction has confirmed rewards before its quartermaster is captured, got " .. (23 - waiting))
 	check(buttonNamed(reputation, "Booty Bay").Count:GetText() == "6 unconfirmed"
-		and buttonNamed(reputation, "Durotar Supply and Logistics").Count:GetText() == "2 unconfirmed"
+		and buttonNamed(reputation, "Durotar Supply and Logistics").Count:GetText():match("^%d+ rewards$")
 		and buttonNamed(reputation, "Azeroth Commerce Authority").Count:GetText():match("^%d+ rewards$"),
 		"a card says how many unconfirmed rewards a faction lists until its quartermaster is captured")
 	check(not reputation.Capture:IsEnabled() and reputation.CaptureStatus:GetText() == "Open a quartermaster's shop to capture their wares.",
@@ -2106,7 +2107,7 @@ local function centre(texture) local p = texture._points[1]; return p[1] .. p[3]
 check(centre(argent.Rim) == centre(argent.Crest) and centre(argent.Edge) == centre(argent.Crest), "rim, edge and crest share a centre")
 check(reputation.Scroll.scrollBarX == 6, "the grid's scroll bar in the backdrop's gutter, where retail puts it")
 check(buttonNamed(reputation, "Booty Bay").Standing:GetText() == "Not met", "a faction the player has not met")
-check(buttonNamed(reputation, "Durotar Supply and Logistics").Count:GetText() == "2 unconfirmed"
+check(buttonNamed(reputation, "Durotar Supply and Logistics").Count:GetText():match("^%d+ rewards$")
 	and buttonNamed(reputation, "Azeroth Commerce Authority").Count:GetText():match("^%d+ rewards$"), "counts per faction, once captured")
 argent:_RunScript("OnEnter")
 check(GameTooltip._text == "Argent Dawn", "card tooltip names the faction")
@@ -2304,18 +2305,22 @@ do
 		return status
 	end
 	local function Costs(amount, currency) return { { amount, currency, true } } end
-	-- The build's capture names the Authority on wares paid in Merchant's Favor (made-up wares here,
-	-- so the build's own do not count)
-	check(ns.FactionCaptured(commerce), "the build's capture of the Authority's quartermasters")
+	-- The build's captures place every ware of both factions paid in Merchant's Favor: by a ware of
+	-- the same vendor that names its faction, or by the vendors beside it
+	-- (the Authority's count includes the Type menu's five made-up wares above)
+	check(ns.FactionCaptured(commerce) and ns.Reputation:RewardCount(commerce) == 183 + 5
+		and ns.Reputation:RewardCount(ns.GetInstance("Faction2587")) == 183,
+		"the build's captures: the Authority's quartermasters and Durotar Supply and Logistics'")
+	-- Merchant's Favor buys for both, so it says nothing: a lone vendor's wares (made-up ones here)
+	-- wait for a ware that names their faction
 	local status = Shop(990010, "Fizzy Testgear", 0.1045, 0.7435, {
 		{ itemID = 290301, name = "Schematic: Test Waistwrap", price = 0,
 			lines = { "Requires Engineering (175)", "Requires Friendly with this faction." }, costs = Costs(180, "Merchant's Favor") },
 		{ itemID = 290302, name = "Schematic: Test Tabs", price = 0, lines = { "Requires Neutral with this faction." },
 			costs = Costs(45, "Merchant's Favor") },
 	})
-	check(status == "Fizzy Testgear: 2 wares for Azeroth Commerce Authority, 2 new."
-		and commerce.bosses[1].reaction == 4 and commerce.bosses[2].reaction == 5,
-		"wares naming no faction take the one their currency buys for: " .. tostring(status))
+	check(status == "Fizzy Testgear: 2 wares need a standing with a faction the game doesn't name; kept until a ware names it.",
+		"a currency two factions are paid in names neither: " .. tostring(status))
 	check(ns.Recorder:Export():find("\nVENDOR;990010;Fizzy Testgear;1455;0.1045;0.7435;290301;Schematic: Test Waistwrap;0;;5;180 Merchant's Favor", 1, true),
 		"and are copied with the standing they need")
 	-- A currency no named ware has shown yet: the wares wait for one that names their faction
