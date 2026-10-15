@@ -127,9 +127,9 @@ local function CreateCard(parent)
 	card.Standing = card:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 	card.Standing:SetPoint("BOTTOMLEFT", 9, 9)
 	card.Standing:SetJustifyH("LEFT")
-	card.Count = card:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-	card.Count:SetPoint("BOTTOMRIGHT", -9, 9)
-	card.Count:SetJustifyH("RIGHT")
+	-- WoW: Forever's emblem on the factions it added, where the dungeon buttons wear it.
+	card.Forever = ns.CreateForeverMark(card)
+	card.Forever:SetPoint("BOTTOMRIGHT", -6, 6)
 
 
 	card:SetScript("OnEnter", ShowTooltip)
@@ -162,19 +162,7 @@ local function SetCard(card, faction)
 		card.Standing:SetTextColor(UNKNOWN_COLOR[1], UNKNOWN_COLOR[2], UNKNOWN_COLOR[3])
 	end
 
-	if ns.FactionCaptured(faction) then
-		local count = Reputation:RewardCount(faction)
-		card.Count:SetText(count == 1 and L.REP_REWARD_ONE or string.format(L.REP_REWARDS, count))
-		card.Count:SetTextColor(1, 1, 1)
-	elseif ns.FactionListed(faction) then
-		-- Listed from the game's item data, not yet confirmed at a quartermaster.
-		card.Count:SetText(string.format(L.REP_UNCONFIRMED, Reputation:RewardCount(faction)))
-		card.Count:SetTextColor(UNKNOWN_COLOR[1], UNKNOWN_COLOR[2], UNKNOWN_COLOR[3])
-	else
-		-- Nothing captured yet: a Forever faction is still to come, any other waits for its quartermaster.
-		card.Count:SetText(faction.forever and L.COMING_SOON or L.REP_NOT_CAPTURED)
-		card.Count:SetTextColor(UNKNOWN_COLOR[1], UNKNOWN_COLOR[2], UNKNOWN_COLOR[3])
-	end
+	card.Forever:SetShown(faction.forever == true)
 end
 
 ------------------------------------------------------------------------------------------

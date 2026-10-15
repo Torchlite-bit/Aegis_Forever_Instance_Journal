@@ -109,7 +109,8 @@ Five side tabs, as in retail, plus one:
 
 ### 🛡️ Reputation
 
-- **A card per faction** with its crest and your standing.
+- **A card per faction** with its crest and your standing, and WoW: Forever's
+  emblem on the factions it added.
 - **Each standing's rewards**, filtered like loot, with what the quartermaster asks
   for each: gold, and any other cost.
 - **Captured in game, first hand.** Open a quartermaster's shop, then press

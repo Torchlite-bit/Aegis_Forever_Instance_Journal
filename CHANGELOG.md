@@ -17,13 +17,17 @@ and the version shown in the AddOns list. Quote it in bug reports.
 ### Added
 - **Faction rewards are back, unconfirmed.** Every faction nobody has captured yet lists the
   rewards the game's item data gives it, by standing: 458 rewards across 21 factions, leaving
-  out the game's test items. They show without prices, the faction's card says how many are
-  *unconfirmed*, and its page asks for a capture. Capturing a quartermaster confirms each
+  out the game's test items. They show without prices, the faction's tooltip says they're
+  unconfirmed, and its page asks for a capture. Capturing a quartermaster confirms each
   reward it finds, with its price and cost, and moves it if it needs a different standing.
 - **Durotar Supply and Logistics captured**: the Horde's Merchant's Favor quartermasters at the
   Crossroads, 9 vendors and 183 rewards with their costs, from Genesys Firstborn's recording.
 - Both captured factions, the Azeroth Commerce Authority and Durotar Supply and Logistics, keep
   only their captured rewards, not the game's shorter lists.
+
+### Changed
+- **Faction cards**: no reward count in the corner any more. The factions WoW: Forever added
+  wear its emblem there instead, as its dungeons and raids do.
 
 New file: close the game fully and start it again; `/reload` won't load it.
 

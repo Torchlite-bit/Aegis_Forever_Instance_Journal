@@ -2060,10 +2060,13 @@ do
 		if not ns.FactionCaptured(faction) then waiting = waiting + 1 end
 	end
 	check(waiting == 21, "no faction has confirmed rewards before its quartermaster is captured, got " .. (23 - waiting))
-	check(buttonNamed(reputation, "Booty Bay").Count:GetText() == "6 unconfirmed"
-		and buttonNamed(reputation, "Durotar Supply and Logistics").Count:GetText():match("^%d+ rewards$")
-		and buttonNamed(reputation, "Azeroth Commerce Authority").Count:GetText():match("^%d+ rewards$"),
-		"a card says how many unconfirmed rewards a faction lists until its quartermaster is captured")
+	check(rawget(buttonNamed(reputation, "Booty Bay"), "Count") == nil
+		and ns.Reputation:RewardCount(ns.GetInstance("Faction21")) == 6 and not ns.FactionCaptured(ns.GetInstance("Faction21")),
+		"cards show no count; Booty Bay lists six unconfirmed rewards")
+	check(buttonNamed(reputation, "Durotar Supply and Logistics").Forever:IsShown()
+		and buttonNamed(reputation, "Azeroth Commerce Authority").Forever:IsShown()
+		and not buttonNamed(reputation, "Booty Bay").Forever:IsShown(),
+		"Forever's own factions wear its emblem, as its dungeons do")
 	check(not reputation.Capture:IsEnabled() and reputation.CaptureStatus:GetText() == "Open a quartermaster's shop to capture their wares.",
 		"Capture waits for a shop to be open")
 end
@@ -2098,7 +2101,7 @@ check(cards[1] == "Argent Dawn" and cards[23] == "Zandalar Tribe", "factions in 
 check(not reputation.Empty:IsShown(), "no empty message")
 local argent = buttonNamed(reputation, "Argent Dawn")
 check(argent.Standing:GetText() == "Honored" and argent.Standing._textColor[3] == 0.95, "the player's standing, Honored blue")
-check(argent.Count:GetText() == "22 rewards", "reward count: " .. argent.Count:GetText())
+check(ns.Reputation:RewardCount(argent.faction) == 22, "Argent Dawn's 22 rewards")
 check(argent.Crest:GetTexture() == "Interface\\Icons\\INV_Misc_Token_ArgentDawn" and argent.Crest._maskTextures,
 	"the faction's crest, rounded")
 check(argent.Rim._maskTextures and argent.Edge._maskTextures and argent.Rim._width == argent.Crest._width + 6,
@@ -2107,8 +2110,8 @@ local function centre(texture) local p = texture._points[1]; return p[1] .. p[3]
 check(centre(argent.Rim) == centre(argent.Crest) and centre(argent.Edge) == centre(argent.Crest), "rim, edge and crest share a centre")
 check(reputation.Scroll.scrollBarX == 6, "the grid's scroll bar in the backdrop's gutter, where retail puts it")
 check(buttonNamed(reputation, "Booty Bay").Standing:GetText() == "Not met", "a faction the player has not met")
-check(buttonNamed(reputation, "Durotar Supply and Logistics").Count:GetText():match("^%d+ rewards$")
-	and buttonNamed(reputation, "Azeroth Commerce Authority").Count:GetText():match("^%d+ rewards$"), "counts per faction, once captured")
+check(ns.FactionCaptured(ns.GetInstance("Faction2587")) and ns.FactionCaptured(ns.GetInstance("Faction2586")),
+	"both Merchant's Favor factions captured")
 argent:_RunScript("OnEnter")
 check(GameTooltip._text == "Argent Dawn", "card tooltip names the faction")
 do
@@ -2127,7 +2130,8 @@ for _, faction in ipairs(ns.GetFactions()) do
 end
 check(foreverFactions == 10 and ns.GetInstance("Faction2740").forever and not ns.GetInstance("Faction529").forever,
 	"the ten new factions are known, got " .. foreverFactions)
-check(rawget(argent, "Forever") == nil, "faction cards carry no Forever mark")
+check(not argent.Forever:IsShown() and buttonNamed(reputation, "Kirin Tor").Forever:IsShown(),
+	"the emblem only on the factions Forever added")
 
 -- A crest the client lacks gives way to the faction's best reward
 Mock.missingFiles["Interface\\Icons\\NoSuchCrest"] = true
@@ -2280,7 +2284,7 @@ do
 	check(ns.FactionCaptured(booty) and #booty.bosses == 3 and booty.bosses[2].reaction == 6 and booty.bosses[3].reaction == 7
 		and #booty.bosses[2].loot == 3, "the wares that need a standing join the faction at once, beside its listed ones")
 	check(reputation.CaptureStatus:GetText() == "Lorekeeper Lydros: 2 wares for Booty Bay, 2 new."
-		and buttonNamed(reputation, "Booty Bay").Count:GetText() == "8 rewards", "and the tab says what was captured")
+		and ns.Reputation:RewardCount(booty) == 8, "and the tab says what was captured")
 	reputation.Capture:Click()
 	check(#booty.bosses[2].loot == 3 and reputation.CaptureStatus:GetText():find("0 new", 1, true), "capturing again adds nothing twice")
 	Mock.Fire("MERCHANT_CLOSED")
