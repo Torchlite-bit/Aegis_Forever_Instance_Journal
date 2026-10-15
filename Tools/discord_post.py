@@ -8,6 +8,8 @@ settings below differ.
     python Tools/discord_post.py dist --edit     edit that version's post to the current notes
     python Tools/discord_post.py --opening       the forum post's opening message, from
                                                  .github/discord-forum-post.md
+    python Tools/discord_post.py --new-post      open a new forum post with that text, and
+                                                 print its id for DISCORD_THREAD_ID
 
 Reads the zip and its notes from the folder (Tools/package.py writes both). Needs the
 DISCORD_WEBHOOK_URL repository secret (the channel's Integrations → Webhooks → Copy Webhook
@@ -133,6 +135,25 @@ def opening(webhook, thread_id, path):
     return 0
 
 
+def new_post(webhook, path):
+    """Opens a new post for the addon in the webhook's forum, with the opening text from the
+    file, and says its id: the DISCORD_THREAD_ID variable to set, so this webhook can keep both
+    the opening message and the changelog replies up to date."""
+    with open(path, encoding="utf-8") as handle:
+        text = handle.read().strip()
+    if len(text) > OPENING_MAX:
+        sys.exit("{} is {} characters; Discord allows {}.".format(path, len(text), OPENING_MAX))
+    body = {"thread_name": TITLE, "content": text, "username": USERNAME, "allowed_mentions": {"parse": []}}
+    if LOGO_URL:
+        body["avatar_url"] = LOGO_URL
+    # A forum post's id is its opening message's.
+    post_id = post(webhook, body)
+    print("Opened a new forum post: {}.".format(post_id))
+    print("Set the DISCORD_THREAD_ID variable to {} (Settings, Secrets and variables, Actions, Variables), "
+          "then run the workflow again: it posts this version's changelog in the new post.".format(post_id))
+    return 0
+
+
 def main():
     folder = sys.argv[1] if len(sys.argv) > 1 else "dist"
     webhook = os.environ.get("DISCORD_WEBHOOK_URL", "").strip()
@@ -147,6 +168,8 @@ def main():
         sys.exit("DISCORD_THREAD_ID should be the post's number (right-click the post, Copy Link: the last number).")
     if folder == "--opening":
         return opening(webhook, thread_id, sys.argv[2] if len(sys.argv) > 2 else OPENING_FILE)
+    if folder == "--new-post":
+        return new_post(webhook, sys.argv[2] if len(sys.argv) > 2 else OPENING_FILE)
     role_id = os.environ.get("DISCORD_PING_ROLE_ID", "").strip() or None
     if role_id and not role_id.isdigit():
         sys.exit("DISCORD_PING_ROLE_ID should be the role's number (right-click the role, Copy Role ID).")
@@ -163,9 +186,11 @@ def main():
         found = re.search(r"\d{5,}", open(marker, encoding="utf-8").read()) if os.path.exists(marker) else None
         if not found:
             sys.exit("No Discord post to edit: {} has no message id.".format(marker))
-        post(webhook, edited(body), thread_id, found.group(0))
-        print("Updated v{}'s Discord post: message {}.".format(version, found.group(0)))
-        return 0
+        if post(webhook, edited(body), thread_id, found.group(0), soft=True):
+            print("Updated v{}'s Discord post: message {}.".format(version, found.group(0)))
+            return 0
+        # Not in this post (a new forum post was opened since): this version is posted in it afresh.
+        print("v{}'s post isn't in this thread; posting it here.".format(version))
     message_id = post(webhook, body, thread_id)
     with open(os.path.join(folder, "discord.txt"), "w", encoding="utf-8") as handle:
         handle.write("Posted to Discord as message {}.\n".format(message_id))
