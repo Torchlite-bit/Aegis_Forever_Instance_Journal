@@ -101,7 +101,7 @@ Five side tabs, as in retail, plus one:
 - The map's **Quests** and **Map Legend** tabs are back, and the legend lights
   up the journal's icons.
 - **Zone level ranges**: hover a zone on a continent map and its range shows
-  after its name, coloured for your level.
+  after its name, coloured for your level, Forever's new zones included.
 - **Show unexplored areas**: tick it in the map's filter menu (the magnifying
   glass) to see the parts of a zone you haven't explored yet, a little darker.
 
@@ -222,7 +222,8 @@ Aegis_Forever_Instance_Journal/
 ├── Media/         maps, raid pictures and the journal's own textures
 ├── Locales/       every string the journal shows
 ├── Tools/         build, test and packaging scripts (never shipped)
-└── docs/          the README's pictures and the Log Reader page (never shipped)
+└── docs/          the README's pictures, the Log Reader page and the CurseForge
+                   description (never shipped)
 ```
 
 Everything is the Forever client's own API, guarded where the client withholds
