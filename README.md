@@ -42,7 +42,9 @@ and to send in your recorded runs.
 
 ### 📖 The journal
 
-<p align="center"><img src="docs/images/journal-city-of-dalaran.jpg" alt="The journal open on City of Dalaran" width="720"></p>
+| Dungeons | City of Dalaran |
+|:---:|:---:|
+| <img src="docs/images/dungeons.png" alt="The Dungeons tab, Forever's own marked with its emblem" width="430"> | <img src="docs/images/journal-city-of-dalaran.png" alt="The journal open on City of Dalaran" width="430"> |
 
 - **Retail's Encounter Journal**, rebuilt to its measurements (Blizzard's own
   doesn't load on Forever): breadcrumb bar, search box, and four tabs:
@@ -70,9 +72,9 @@ Five side tabs, as in retail, plus one:
 
 | Overview | Loot | Abilities |
 |:---:|:---:|:---:|
-| <img src="docs/images/boss-overview.jpg" alt="A boss's overview" width="280"> | <img src="docs/images/boss-loot.jpg" alt="A boss's loot" width="280"> | <img src="docs/images/boss-abilities.jpg" alt="A boss's abilities" width="280"> |
+| <img src="docs/images/boss-overview.png" alt="A boss's overview" width="280"> | <img src="docs/images/boss-loot.png" alt="A boss's loot" width="280"> | <img src="docs/images/boss-abilities.png" alt="A boss's abilities" width="280"> |
 | **Model** | **Quests** | **Quests on the map** |
-| <img src="docs/images/boss-model.jpg" alt="A boss in 3D" width="280"> | <img src="docs/images/boss-quests.jpg" alt="The dungeon's quests" width="280"> | <img src="docs/images/map-ruins-of-lordaeron.jpg" alt="Ruins of Lordaeron map with a quest mark's tooltip" width="280"> |
+| <img src="docs/images/boss-model.png" alt="A boss in 3D" width="280"> | <img src="docs/images/boss-quests.png" alt="The dungeon's quests" width="280"> | <img src="docs/images/map-ruins-of-lordaeron.jpg" alt="Ruins of Lordaeron map with a quest mark's tooltip" width="280"> |
 
 ### 🗺️ Dungeon maps
 
@@ -87,7 +89,7 @@ Five side tabs, as in retail, plus one:
 
 | The Hall of Thanes | City of Dalaran, with the map legend | Old Ironforge |
 |:---:|:---:|:---:|
-| <img src="docs/images/map-hall-of-thanes.jpg" alt="The Hall of Thanes map" width="280"> | <img src="docs/images/map-city-of-dalaran.jpg" alt="City of Dalaran map and legend" width="280"> | <img src="docs/images/map-old-ironforge.jpg" alt="Old Ironforge map" width="280"> |
+| <img src="docs/images/map-hall-of-thanes.jpg" alt="The Hall of Thanes map" width="280"> | <img src="docs/images/map-city-of-dalaran.png" alt="City of Dalaran map and legend" width="280"> | <img src="docs/images/map-old-ironforge.jpg" alt="Old Ironforge map" width="280"> |
 
 ### 🧭 World map
 
@@ -105,7 +107,9 @@ Five side tabs, as in retail, plus one:
 - **Show unexplored areas**: tick it in the map's filter menu (the magnifying
   glass) to see the parts of a zone you haven't explored yet, a little darker.
 
-<p align="center"><img src="docs/images/world-map-kalimdor.jpg" alt="Kalimdor's world map with dungeon doors, flight masters and boats, beside the quest log" width="720"></p>
+| Eastern Kingdoms, with the map legend | Riverglades: the filter menu's new choice |
+|:---:|:---:|
+| <img src="docs/images/world-map-eastern-kingdoms.png" alt="Eastern Kingdoms with dungeon doors and transports, beside the map legend" width="430"> | <img src="docs/images/world-map-unexplored.png" alt="Riverglades with Show unexplored areas ticked in the map's filter menu" width="430"> |
 
 ### 🛡️ Reputation
 
@@ -119,6 +123,10 @@ Five side tabs, as in retail, plus one:
 - **Until then, the game's own list.** A faction nobody has captured yet shows the
   rewards the game's item data lists for it, marked *unconfirmed* and without
   prices. A capture confirms each one it finds.
+
+| Factions | A faction's rewards |
+|:---:|:---:|
+| <img src="docs/images/reputation.png" alt="The Reputation tab's faction cards" width="430"> | <img src="docs/images/reputation-faction.png" alt="The Azeroth Commerce Authority's rewards by standing, with the Type menu open" width="430"> |
 
 ### 🔍 Search
 
