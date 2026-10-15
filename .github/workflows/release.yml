@@ -103,3 +103,12 @@ jobs:
             python Tools/discord_post.py dist
             if [ -f dist/discord.txt ]; then gh release upload "$TAG" dist/discord.txt --clobber; fi
           fi
+
+      # The addon's post in the releases forum opens with what the addon is and how to help:
+      # .github/discord-forum-post.md, written into that opening message on every push to main.
+      - name: Update the forum post's opening message
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_THREAD_ID: ${{ vars.DISCORD_THREAD_ID }}
+        run: python Tools/discord_post.py --opening

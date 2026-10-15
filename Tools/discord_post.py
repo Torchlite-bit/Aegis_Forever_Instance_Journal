@@ -6,6 +6,8 @@ settings below differ.
 
     python Tools/discord_post.py dist            a new version's post
     python Tools/discord_post.py dist --edit     edit that version's post to the current notes
+    python Tools/discord_post.py --opening       the forum post's opening message, from
+                                                 .github/discord-forum-post.md
 
 Reads the zip and its notes from the folder (Tools/package.py writes both). Needs the
 DISCORD_WEBHOOK_URL repository secret (the channel's Integrations → Webhooks → Copy Webhook
@@ -77,10 +79,10 @@ def edited(body):
     return body
 
 
-def post(webhook, body, thread_id=None, message_id=None):
+def post(webhook, body, thread_id=None, message_id=None, soft=False):
     """Sends it (into the thread, when given: Discord reopens an archived one) and returns the
     message's id. With a message_id, edits that message, one this webhook posted, instead.
-    Errors never include the address."""
+    Errors never include the address; a soft one is printed and returns None."""
     if message_id:
         target = webhook + "/messages/" + message_id + ("?thread_id=" + thread_id if thread_id else "")
     else:
@@ -95,12 +97,40 @@ def post(webhook, body, thread_id=None, message_id=None):
             answer = json.loads(response.read().decode("utf-8") or "{}")
     except urllib.error.HTTPError as error:
         answer = error.read().decode("utf-8", "replace")[:500]
+        if soft:
+            print("Discord answered {}: {}".format(error.code, answer))
+            return None
         if error.code == 400 and not thread_id and "thread" in answer.lower():
             sys.exit("This webhook belongs to a forum: set the DISCORD_THREAD_ID variable to this addon's post.")
         sys.exit("Discord answered {}: {}".format(error.code, answer))
     except urllib.error.URLError as error:
+        if soft:
+            print("Discord couldn't be reached: {}".format(error.reason))
+            return None
         sys.exit("Discord couldn't be reached: {}".format(error.reason))
     return answer.get("id")
+
+
+OPENING_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".github", "discord-forum-post.md")
+OPENING_MAX = 2000               # a message's own text, as the forum post's opening message has
+
+
+def opening(webhook, thread_id, path):
+    """Rewrites the forum post's opening message (its id is the post's own) to the text in the
+    file. Only the webhook that made the post may edit it: if Discord refuses, the release goes
+    on and the log says why."""
+    if not thread_id:
+        print("Opening message not updated: no DISCORD_THREAD_ID variable.")
+        return 0
+    with open(path, encoding="utf-8") as handle:
+        text = handle.read().strip()
+    if len(text) > OPENING_MAX:
+        sys.exit("{} is {} characters; Discord allows {}.".format(path, len(text), OPENING_MAX))
+    if post(webhook, {"content": text, "allowed_mentions": {"parse": []}}, thread_id, thread_id, soft=True):
+        print("Updated the forum post's opening message from {}.".format(path))
+    else:
+        print("Opening message not updated (see above). Discord lets only the webhook that made the post edit it.")
+    return 0
 
 
 def main():
@@ -115,6 +145,8 @@ def main():
     thread_id = os.environ.get("DISCORD_THREAD_ID", "").strip() or None
     if thread_id and not thread_id.isdigit():
         sys.exit("DISCORD_THREAD_ID should be the post's number (right-click the post, Copy Link: the last number).")
+    if folder == "--opening":
+        return opening(webhook, thread_id, sys.argv[2] if len(sys.argv) > 2 else OPENING_FILE)
     role_id = os.environ.get("DISCORD_PING_ROLE_ID", "").strip() or None
     if role_id and not role_id.isdigit():
         sys.exit("DISCORD_PING_ROLE_ID should be the role's number (right-click the role, Copy Role ID).")

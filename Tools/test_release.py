@@ -90,6 +90,29 @@ class DiscordPost(unittest.TestCase):
                 self.run_main({"DISCORD_WEBHOOK_URL": HOOK}, "--edit")
         post.assert_not_called()
 
+    def test_the_opening_message_is_rewritten_from_the_file(self):
+        with mock.patch.object(discord_post, "post", return_value="555") as post, \
+                mock.patch.object(sys, "argv", ["x", "--opening"]), \
+                mock.patch.dict(os.environ, {"DISCORD_WEBHOOK_URL": HOOK, "DISCORD_THREAD_ID": "555"}, clear=True), \
+                contextlib.redirect_stdout(io.StringIO()) as out:
+            self.assertEqual(discord_post.main(), 0)
+        webhook, body, thread_id, message_id = post.call_args[0]
+        self.assertEqual((thread_id, message_id), ("555", "555"), "the opening message's id is the post's own")
+        self.assertTrue(post.call_args[1]["soft"], "a refusal never stops the release")
+        with open(discord_post.OPENING_FILE, encoding="utf-8") as handle:
+            self.assertEqual(body["content"], handle.read().strip())
+        self.assertLessEqual(len(body["content"]), discord_post.OPENING_MAX)
+        self.assertEqual(body["allowed_mentions"], {"parse": []})
+        self.assertIn("Updated the forum post's opening message", out.getvalue())
+
+    def test_a_refused_opening_edit_lets_the_release_go_on(self):
+        with mock.patch.object(discord_post, "post", return_value=None), \
+                mock.patch.object(sys, "argv", ["x", "--opening"]), \
+                mock.patch.dict(os.environ, {"DISCORD_WEBHOOK_URL": HOOK, "DISCORD_THREAD_ID": "555"}, clear=True), \
+                contextlib.redirect_stdout(io.StringIO()) as out:
+            self.assertEqual(discord_post.main(), 0)
+        self.assertIn("only the webhook that made the post", out.getvalue())
+
     def test_into_the_addons_forum_post(self):
         with mock.patch.object(discord_post, "post", return_value="1") as post:
             self.run_main({"DISCORD_WEBHOOK_URL": HOOK, "DISCORD_THREAD_ID": "555"})
