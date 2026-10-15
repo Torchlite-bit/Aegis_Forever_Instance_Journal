@@ -7,6 +7,7 @@
 [![Discord](https://img.shields.io/badge/Discord-join%20us-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/Hr66t25vE7)
 [![WoW: Forever](https://img.shields.io/badge/WoW%3A%20Forever-Interface%2016001-c79c2e?style=flat-square&labelColor=555)](#install)
 [![GitHub: changelog](https://img.shields.io/badge/GitHub-changelog-24292f?style=flat-square&logo=github&logoColor=white)](CHANGELOG.md)
+[![CurseForge: download](https://img.shields.io/badge/CurseForge-download-F16436?style=flat-square&logo=curseforge&logoColor=white)](https://www.curseforge.com/wow/addons/aegis-forever-instance-journal)
 
 Press **Shift+J** and the journal you know from retail opens: every dungeon and
 raid, its bosses, loot, abilities, 3D models and quests, with maps that show
@@ -170,7 +171,9 @@ Please credit him in its description. Never alter them or remove his watermark.
 
 ## Install
 
-1. Download the newest zip from
+1. Get it from
+   [**CurseForge**](https://www.curseforge.com/wow/addons/aegis-forever-instance-journal)
+   (the CurseForge app keeps it updated), or download the newest zip from
    [**Releases**](https://github.com/Torchlite-bit/Aegis_Forever_Instance_Journal/releases).
    The folder inside is already named `Aegis_Forever_Instance_Journal`.
 2. Put the folder in `World of Warcraft/_classic_beta_/Interface/AddOns/`.
@@ -272,7 +275,9 @@ if you're planning something big.
 **Releases are automatic.** Every push to `main` publishes a release named
 after the `.toc` version, with the addon zip and that version's changelog entry.
 A push that keeps the version refreshes that release's zip. Each new version also
-goes to CurseForge, once: bump the version for CurseForge to get a new file.
+goes to CurseForge, once: bump the version for CurseForge to get a new file. Its
+changelog is posted in our Discord's releases forum, and later pushes edit that
+post to match.
 
 ## License
 
@@ -284,7 +289,7 @@ Entertainment's; this addon is not made or endorsed by Blizzard.
 
 <div align="center">
 
-**[💬 Discord](https://discord.gg/Hr66t25vE7)** · **[📜 Changelog](CHANGELOG.md)** · **[🐛 Issues](https://github.com/Torchlite-bit/Aegis_Forever_Instance_Journal/issues)** · **[📄 Credits](CREDITS.md)**
+**[💬 Discord](https://discord.gg/Hr66t25vE7)** · **[🔥 CurseForge](https://www.curseforge.com/wow/addons/aegis-forever-instance-journal)** · **[📜 Changelog](CHANGELOG.md)** · **[🐛 Issues](https://github.com/Torchlite-bit/Aegis_Forever_Instance_Journal/issues)** · **[📄 Credits](CREDITS.md)**
 
 *Aegis: Forever Instance Journal is part of the Aegis addon series. Good hunting.* ⚔️
 

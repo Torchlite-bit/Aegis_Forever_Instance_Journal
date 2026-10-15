@@ -82,8 +82,10 @@ jobs:
           fi
 
       # Each new version's changelog goes to Discord once: the release keeps a discord.txt once posted.
-      # Needs the DISCORD_WEBHOOK_URL secret (the releases forum's webhook) and the DISCORD_THREAD_ID
-      # variable (this addon's post in it); without the secret, nothing is posted.
+      # A later push that keeps the version (or "Run workflow") edits that post to the current
+      # changelog, as the release's notes are refreshed. Needs the DISCORD_WEBHOOK_URL secret (the
+      # releases forum's webhook) and the DISCORD_THREAD_ID variable (this addon's post in it);
+      # without the secret, nothing is posted.
       - name: Post the changelog to Discord
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         env:
@@ -95,7 +97,8 @@ jobs:
           RELEASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/v${{ steps.build.outputs.version }}
         run: |
           if gh release view "$TAG" --json assets --jq '.assets[].name' | grep -qx discord.txt; then
-            echo "$TAG is on Discord already."
+            gh release download "$TAG" --pattern discord.txt --dir dist --clobber
+            python Tools/discord_post.py dist --edit
           else
             python Tools/discord_post.py dist
             if [ -f dist/discord.txt ]; then gh release upload "$TAG" dist/discord.txt --clobber; fi

@@ -4,7 +4,8 @@ with a link to the GitHub release, in this addon's post in the releases forum (o
 channel the webhook belongs to). The same script serves every Aegis addon: only the four
 settings below differ.
 
-    python Tools/discord_post.py dist
+    python Tools/discord_post.py dist            a new version's post
+    python Tools/discord_post.py dist --edit     edit that version's post to the current notes
 
 Reads the zip and its notes from the folder (Tools/package.py writes both). Needs the
 DISCORD_WEBHOOK_URL repository secret (the channel's Integrations → Webhooks → Copy Webhook
@@ -16,7 +17,8 @@ is never printed. Optional:
   RELEASE_URL           the release page to link (the workflow sets it)
 
 On success it writes <folder>/discord.txt with the message's id, which the workflow keeps on the
-GitHub release so a version is announced only once.
+GitHub release so a version is announced only once. Later pushes that keep the version edit that
+message (--edit, with the release's discord.txt in the folder): the post follows the changelog.
 """
 
 import glob
@@ -65,15 +67,29 @@ def message(version, notes, release_url=None, role_id=None):
     return body
 
 
-def post(webhook, body, thread_id=None):
+def edited(body):
+    """The same message as an edit: an edit can't change the poster's name or picture, and it
+    mentions no one again."""
+    body = dict(body)
+    for key in ("username", "avatar_url", "content"):
+        body.pop(key, None)
+    body["allowed_mentions"] = {"parse": []}
+    return body
+
+
+def post(webhook, body, thread_id=None, message_id=None):
     """Sends it (into the thread, when given: Discord reopens an archived one) and returns the
-    new message's id. Errors never include the address."""
-    target = webhook + "?wait=true" + ("&thread_id=" + thread_id if thread_id else "")
+    message's id. With a message_id, edits that message, one this webhook posted, instead.
+    Errors never include the address."""
+    if message_id:
+        target = webhook + "/messages/" + message_id + ("?thread_id=" + thread_id if thread_id else "")
+    else:
+        target = webhook + "?wait=true" + ("&thread_id=" + thread_id if thread_id else "")
     req = urllib.request.Request(target, data=json.dumps(body).encode("utf-8"), headers={
         "Content-Type": "application/json",
         # Discord turns away requests without a User-Agent of this form.
         "User-Agent": "DiscordBot ({}, 1.0)".format(REPOSITORY),
-    })
+    }, method="PATCH" if message_id else "POST")
     try:
         with urllib.request.urlopen(req, timeout=60) as response:
             answer = json.loads(response.read().decode("utf-8") or "{}")
@@ -108,7 +124,17 @@ def main():
     version = re.search(r"-v([^-]+)\.zip$", zips[0]).group(1)
     with open(os.path.join(folder, "notes.md"), encoding="utf-8") as handle:
         notes = handle.read()
-    message_id = post(webhook, message(version, notes, os.environ.get("RELEASE_URL") or None, role_id), thread_id)
+    body = message(version, notes, os.environ.get("RELEASE_URL") or None, role_id)
+    if "--edit" in sys.argv[2:]:
+        # The version's post already exists: its id is in the discord.txt its release keeps.
+        marker = os.path.join(folder, "discord.txt")
+        found = re.search(r"\d{5,}", open(marker, encoding="utf-8").read()) if os.path.exists(marker) else None
+        if not found:
+            sys.exit("No Discord post to edit: {} has no message id.".format(marker))
+        post(webhook, edited(body), thread_id, found.group(0))
+        print("Updated v{}'s Discord post: message {}.".format(version, found.group(0)))
+        return 0
+    message_id = post(webhook, body, thread_id)
     with open(os.path.join(folder, "discord.txt"), "w", encoding="utf-8") as handle:
         handle.write("Posted to Discord as message {}.\n".format(message_id))
     print("Posted v{} to Discord: message {}.".format(version, message_id))
