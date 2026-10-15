@@ -1,13 +1,15 @@
 -- Each faction's rewards as the game's own item tables list them, by standing (build 1.60.1.70205).
 -- Unconfirmed: no prices or costs, and not checked at a quartermaster. A capture confirms each
--- ware it finds (Core/Registry.lua). Factions already captured are left out: theirs win.
+-- ware it finds (Core/Registry.lua). Factions already captured are left out: theirs win. Items the
+-- game's tables show are not real rewards are left out too: 4996 Test Item 1 and 1164 Sam's Tome
+-- (Argent Dawn), as ItemSparse names them.
 
 local _, ns = ...
 
 ns.AddListedRewards({
 	[529] = { -- Argent Dawn
 		[5] = { 13724 },
-		[6] = { 4996, 13482, 19446, 19442, 19216, 227896, 19328, 19203, 1164, 22014 },
+		[6] = { 13482, 19446, 19442, 19216, 227896, 19328, 19203, 22014 },
 		[7] = { 12698, 19447, 19217, 227897, 19329, 227895, 19205, 22704, 13810, 13813 },
 		[8] = { 22703 },
 	},
