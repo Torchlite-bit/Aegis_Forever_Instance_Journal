@@ -233,8 +233,8 @@ Aegis_Forever_Instance_Journal/
 ├── Media/         maps, raid pictures and the journal's own textures
 ├── Locales/       every string the journal shows
 ├── Tools/         build, test and packaging scripts (never shipped)
-└── docs/          the README's pictures, the Log Reader page and the CurseForge
-                   description (never shipped)
+└── docs/          the README's pictures, the Log Reader page, and the CurseForge
+                   description and Discord #releases post to paste (never shipped)
 ```
 
 Everything is the Forever client's own API, guarded where the client withholds
@@ -276,7 +276,7 @@ if you're planning something big.
 after the `.toc` version, with the addon zip and that version's changelog entry.
 A push that keeps the version refreshes that release's zip. Each new version also
 goes to CurseForge, once: bump the version for CurseForge to get a new file. Its
-changelog is posted in our Discord's releases forum, and later pushes edit that
+changelog is posted in our Discord's #changelogs forum, and later pushes edit that
 post to match.
 
 ## License

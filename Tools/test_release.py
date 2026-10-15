@@ -90,54 +90,17 @@ class DiscordPost(unittest.TestCase):
                 self.run_main({"DISCORD_WEBHOOK_URL": HOOK}, "--edit")
         post.assert_not_called()
 
-    def test_the_opening_message_is_rewritten_from_the_file(self):
-        with mock.patch.object(discord_post, "post", return_value="555") as post, \
-                mock.patch.object(sys, "argv", ["x", "--opening"]), \
-                mock.patch.dict(os.environ, {"DISCORD_WEBHOOK_URL": HOOK, "DISCORD_THREAD_ID": "555"}, clear=True), \
-                contextlib.redirect_stdout(io.StringIO()) as out:
-            self.assertEqual(discord_post.main(), 0)
-        webhook, body, thread_id, message_id = post.call_args[0]
-        self.assertEqual((thread_id, message_id), ("555", "555"), "the opening message's id is the post's own")
-        self.assertTrue(post.call_args[1]["soft"], "a refusal never stops the release")
-        with open(discord_post.OPENING_FILE, encoding="utf-8") as handle:
-            self.assertEqual(body["content"], handle.read().strip())
-        self.assertLessEqual(len(body["content"]), discord_post.OPENING_MAX)
-        self.assertEqual(body["allowed_mentions"], {"parse": []})
-        self.assertIn("Updated the forum post's opening message", out.getvalue())
-
-    def test_a_refused_opening_edit_lets_the_release_go_on(self):
-        with mock.patch.object(discord_post, "post", return_value=None), \
-                mock.patch.object(sys, "argv", ["x", "--opening"]), \
-                mock.patch.dict(os.environ, {"DISCORD_WEBHOOK_URL": HOOK, "DISCORD_THREAD_ID": "555"}, clear=True), \
-                contextlib.redirect_stdout(io.StringIO()) as out:
-            self.assertEqual(discord_post.main(), 0)
-        self.assertIn("only the webhook that made the post", out.getvalue())
-
-    def test_a_post_that_moved_is_posted_afresh(self):
+    def test_a_refused_edit_posts_no_second_copy(self):
         with open(os.path.join(self.folder, "discord.txt"), "w", encoding="utf-8") as handle:
             handle.write("Posted to Discord as message 1234567890123.\n")
-        with mock.patch.object(discord_post, "post", side_effect=[None, "2222222222222"]) as post:
+        with mock.patch.object(discord_post, "post", return_value=None) as post:
             code, out = self.run_main({"DISCORD_WEBHOOK_URL": HOOK, "DISCORD_THREAD_ID": "555"}, "--edit")
-        self.assertEqual(code, 0)
-        self.assertEqual(post.call_count, 2)
-        self.assertEqual(post.call_args_list[1][0][2], "555", "posted afresh in the current post")
+        self.assertEqual(code, 0, "the release goes on")
+        self.assertEqual(post.call_count, 1, "nothing is posted again")
+        self.assertTrue(post.call_args[1]["soft"])
+        self.assertIn("stays as it was", out)
         with open(os.path.join(self.folder, "discord.txt"), encoding="utf-8") as handle:
-            self.assertIn("2222222222222", handle.read(), "the new message's id replaces the old")
-
-    def test_a_new_forum_post_says_its_id(self):
-        with mock.patch.object(discord_post, "post", return_value="7777777777777") as post, \
-                mock.patch.object(sys, "argv", ["x", "--new-post"]), \
-                mock.patch.dict(os.environ, {"DISCORD_WEBHOOK_URL": HOOK}, clear=True), \
-                contextlib.redirect_stdout(io.StringIO()) as out:
-            self.assertEqual(discord_post.main(), 0)
-        webhook, body = post.call_args[0][:2]
-        self.assertEqual(len(post.call_args[0]), 2, "a new post goes to the forum, not into a thread")
-        self.assertEqual(body["thread_name"], "Aegis: Forever Instance Journal")
-        with open(discord_post.OPENING_FILE, encoding="utf-8") as handle:
-            self.assertEqual(body["content"], handle.read().strip())
-        self.assertEqual(body["allowed_mentions"], {"parse": []})
-        self.assertIn("DISCORD_THREAD_ID variable to 7777777777777", out.getvalue())
-        self.assertNotIn(HOOK, out.getvalue())
+            self.assertIn("1234567890123", handle.read(), "the marker is left alone")
 
     def test_into_the_addons_forum_post(self):
         with mock.patch.object(discord_post, "post", return_value="1") as post:

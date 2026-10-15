@@ -6,8 +6,9 @@
 # add a CHANGELOG entry) for a new release. Each new version is also uploaded to CurseForge,
 # once the CF_API_KEY secret and the CURSEFORGE_PROJECT_ID variable are set; "Run workflow"
 # on the Actions tab uploads the current version after they first are. Each new version's
-# changelog is also posted to Discord, once, into the addon's post in the releases forum, when
+# changelog is also posted to Discord, once, into the addon's post in the #changelogs forum, when
 # the DISCORD_WEBHOOK_URL secret and the DISCORD_THREAD_ID variable are set (Tools/discord_post.py).
+# The addon's post in #releases is the Aegis Tools bot's, kept up from the owner's PC, not from here.
 
 name: Test and release
 
@@ -16,11 +17,6 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
-    inputs:
-      new_forum_post:
-        description: "Open a new forum post in Discord (then set DISCORD_THREAD_ID to the id in the log)"
-        type: boolean
-        default: false
 
 permissions:
   contents: write
@@ -89,7 +85,7 @@ jobs:
       # Each new version's changelog goes to Discord once: the release keeps a discord.txt once posted.
       # A later push that keeps the version (or "Run workflow") edits that post to the current
       # changelog, as the release's notes are refreshed. Needs the DISCORD_WEBHOOK_URL secret (the
-      # releases forum's webhook) and the DISCORD_THREAD_ID variable (this addon's post in it);
+      # #changelogs forum's webhook) and the DISCORD_THREAD_ID variable (this addon's post in it);
       # without the secret, nothing is posted.
       - name: Post the changelog to Discord
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
@@ -104,26 +100,7 @@ jobs:
           if gh release view "$TAG" --json assets --jq '.assets[].name' | grep -qx discord.txt; then
             gh release download "$TAG" --pattern discord.txt --dir dist --clobber
             python Tools/discord_post.py dist --edit
-            # Posted afresh when the post moved: the new message's id replaces the old.
-            gh release upload "$TAG" dist/discord.txt --clobber
           else
             python Tools/discord_post.py dist
             if [ -f dist/discord.txt ]; then gh release upload "$TAG" dist/discord.txt --clobber; fi
           fi
-
-      # The addon's post in the releases forum opens with what the addon is and how to help:
-      # .github/discord-forum-post.md, written into that opening message on every push to main.
-      - name: Update the forum post's opening message
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-        env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          DISCORD_THREAD_ID: ${{ vars.DISCORD_THREAD_ID }}
-        run: python Tools/discord_post.py --opening
-
-      # "Run workflow" with the box ticked: this webhook opens a new post for the addon, so it
-      # can edit the opening message too. Its id is in the log, for the DISCORD_THREAD_ID variable.
-      - name: Open a new forum post in Discord
-        if: github.event_name == 'workflow_dispatch' && inputs.new_forum_post
-        env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-        run: python Tools/discord_post.py --new-post

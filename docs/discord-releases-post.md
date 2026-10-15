@@ -1,3 +1,12 @@
+# Discord: the #releases post
+
+The text of the journal's post in the Discord server's **#releases** forum: what it is, how to
+help, and where to get it. That post belongs to the Aegis Tools bot, so neither GitHub nor the
+release workflow can change it: paste the block below into it by hand, or update it with the
+Aegis Discord tools from the owner's PC. Each version's changelog goes to the journal's post in
+**#changelogs** by itself (`Tools/discord_post.py`). Keep it under Discord's 2,000 characters.
+
+```text
 ## ⚔️ Aegis: Forever Instance Journal
 Retail's instance journal and dungeon maps, brought to WoW: Forever. Press **Shift+J**.
 
@@ -22,3 +31,4 @@ Put the `Aegis_Forever_Instance_Journal` folder in `_classic_beta_\Interface\Add
 What's new: <https://github.com/Torchlite-bit/Aegis_Forever_Instance_Journal/blob/main/CHANGELOG.md>
 
 🗺️ Forever's dungeon maps are by **Santiago Reyes**. Support his work: <https://www.patreon.com/c/SantiagoReyesMaps>
+```
