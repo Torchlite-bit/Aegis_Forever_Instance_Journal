@@ -1,5 +1,4 @@
--- Each faction's rewards as the client's item tables list them, by standing, as Alex Atlas Loot
--- gathered them (its FactionDB, build 1.60.1.70205; the data, not the code, used with Alex's OK).
+-- Each faction's rewards as the game's own item tables list them, by standing (build 1.60.1.70205).
 -- Unconfirmed: no prices or costs, and not checked at a quartermaster. A capture confirms each
 -- ware it finds (Core/Registry.lua). Factions already captured are left out: theirs win.
 
