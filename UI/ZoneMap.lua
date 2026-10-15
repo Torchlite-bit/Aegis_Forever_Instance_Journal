@@ -24,13 +24,14 @@ local TILE_SIZE = 256
 -- Level ranges
 ------------------------------------------------------------------------------------------
 
--- A zone's level range, and whether the client knows it (its own label then shows it).
-function ZoneMap:Levels(mapID)
+-- A zone's level range, and whether the client knows it (its own label then shows it). Our
+-- ranges are by uiMapID, or by the zone's name for Forever's zones not yet known by ID.
+function ZoneMap:Levels(mapID, name)
 	if C_Map.GetMapLevels then
 		local ok, low, high = pcall(C_Map.GetMapLevels, mapID)
 		if ok and low and high and low > 0 and high > 0 then return low, high, true end
 	end
-	local range = ns.ZONE_LEVELS[mapID]
+	local range = ns.ZONE_LEVELS[mapID] or (name and ns.ZONE_LEVELS_BY_NAME[name])
 	if range then return range[1], range[2], false end
 end
 
@@ -63,7 +64,7 @@ local function OnLabelUpdate(label)
 	local zone = mapID and x and C_Map.GetMapInfoAtPosition(mapID, x, y)
 	-- Only a zone the client named plainly: with its own range, the name already differs.
 	if not zone or zone.mapID == mapID or info.name ~= zone.name then return end
-	local low, high, clientShows = ZoneMap:Levels(zone.mapID)
+	local low, high, clientShows = ZoneMap:Levels(zone.mapID, zone.name)
 	if not low or clientShows then return end
 	label:SetLabel(MAP_AREA_LABEL_TYPE.AREA_NAME, zone.name .. ZoneMap:LevelText(low, high), info.description,
 		info.nameColor, info.descriptionColor, info.textureInfo)

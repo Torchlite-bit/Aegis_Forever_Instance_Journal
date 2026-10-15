@@ -45,4 +45,14 @@ ns.ZONE_LEVELS = {
 	[1435] = { 35, 45 }, -- Swamp of Sorrows
 	[1436] = { 10, 20 }, -- Westfall
 	[1437] = { 20, 30 }, -- Wetlands
+	-- Forever's own
+	[2548] = { 36, 44 }, -- Riverglades
+}
+
+-- Forever's zones whose uiMapID we don't know yet, by the name the map gives them; ranges from
+-- the game, as Torchlite read them (2026-10-14).
+ns.ZONE_LEVELS_BY_NAME = {
+	["Riverglades"] = { 36, 44 },
+	["Mount Hyjal"] = { 60, 60 },
+	["Shen'dralas"] = { 35, 45 },
 }

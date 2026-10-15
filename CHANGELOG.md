@@ -12,6 +12,14 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.27.1]
+
+### Fixed
+- Forever's own zones show their level ranges on the world map too: Riverglades 36-44,
+  Mount Hyjal 60 and Shen'dralas 35-45.
+
+---
+
 ## [0.27.0] (restart)
 
 ### Added
