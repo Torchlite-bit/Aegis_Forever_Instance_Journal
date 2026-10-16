@@ -49,6 +49,14 @@ The pictures of Onyxia's Lair and of the dungeons that have none of their own
 `Tools/make_raid_art.py`) are cut from Lionel Schramm's paintings for Mysteries of Azeroth
 (Turtle WoW), used with his permission.
 
+## Staree4ok's Russian translation
+
+The journal in Russian is Staree4ok's work: its interface (`Locales/ruRU.lua`) and its
+content, the dungeons', raids' and factions' names, bosses, abilities, quests and places
+(`Locales/ruRU_content.lua`). It was contributed in
+[pull request #25](https://github.com/Torchlite-bit/Aegis_Forever_Instance_Journal/pull/25) and
+shows on a client set to Russian.
+
 ## Claude AI
 
 This addon was created with the help of Claude AI, Anthropic's assistant.

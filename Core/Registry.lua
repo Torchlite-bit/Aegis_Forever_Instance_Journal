@@ -113,7 +113,7 @@ end
 
 local function FindBoss(instance, name)
 	for _, boss in ipairs(instance.bosses) do
-		if boss.name == name then return boss end
+		if boss.name == name or boss.enName == name then return boss end
 	end
 	return nil
 end
@@ -298,7 +298,7 @@ end
 
 local function FactionNamed(name)
 	for _, faction in ipairs(factions) do
-		if faction.name == name then return faction end
+		if faction.name == name or faction.enName == name then return faction end
 	end
 	return nil
 end
@@ -483,7 +483,7 @@ end
 -- Whether a faction's own rewards list an item (not counting wares a vendor was seen selling).
 function ns.FactionListsItem(factionName, itemID)
 	for _, faction in ipairs(factions) do
-		if faction.name == factionName then
+		if faction.name == factionName or faction.enName == factionName then
 			for _, standing in ipairs(faction.bosses) do
 				for _, row in ipairs(standing.loot) do
 					if row.itemID == itemID and not row.seen and not row.listed then return true end
@@ -629,3 +629,142 @@ function ns.GetFactions()
 	end
 	return factionList
 end
+
+--[[
+	Lays a translation of the content over the data, once every data file has loaded: names and
+	text are swapped in place, looked up by their English words (Locales/ruRU_content.lua). An
+	English client has no such tables, and nothing is changed.
+
+	A boss, an add or an instance keeps its English name as enName: what the journal matches and
+	records by (a fight the client names, a faction a ware's tooltip names, a recording sent in)
+	still finds it. The lookup tables are let go once used.
+]]
+function ns.ApplyLocale()
+	local L = ns.L
+	if not (L.INSTANCE_NAMES or L.BOSS_NAMES or L.STRINGS or L.FACTION_NAMES or L.SUBMAP_NAMES) then return end
+	local instanceNames = L.INSTANCE_NAMES
+	local locations = L.INSTANCE_LOCATIONS
+	local descriptions = L.INSTANCE_DESCRIPTIONS
+	local factionNames = L.FACTION_NAMES
+	local subMapNames = L.SUBMAP_NAMES
+	local trash = L.TRASH_DROPS
+	local bossNames = L.BOSS_NAMES
+	local abilityNames = L.ABILITY_NAMES
+	local strings = L.STRINGS
+
+	-- Free text (a description, a note, an ability's own words, quest text), looked up as written.
+	local function Tr(text)
+		if type(text) == "string" and strings then return strings[text] or text end
+		return text
+	end
+	local function TrBossName(name)
+		if type(name) ~= "string" or not bossNames then return name end
+		return bossNames[name] or name
+	end
+	local function TrAbility(ability)
+		if type(ability) ~= "table" then return end
+		if ability.name and abilityNames then ability.name = abilityNames[ability.name] or ability.name end
+		if ability.text then ability.text = Tr(ability.text) end
+	end
+	local function TrBoss(boss)
+		boss.enName = boss.enName or boss.name
+		if trash and (boss.trash or boss.name == "Trash Drops") then
+			boss.name = trash
+		else
+			boss.name = TrBossName(boss.name)
+		end
+		if boss.description then boss.description = Tr(boss.description) end
+		if boss.fightNote then boss.fightNote = Tr(boss.fightNote) end
+		if boss.area then boss.area = Tr(boss.area) end
+		if boss.notes then
+			for index, note in ipairs(boss.notes) do boss.notes[index] = Tr(note) end
+		end
+		for _, ability in ipairs(boss.abilities or {}) do TrAbility(ability) end
+		for _, extra in ipairs(boss.extraAbilities or {}) do
+			if extra.title then extra.title = Tr(extra.title) end
+			if extra.description then extra.description = Tr(extra.description) end
+		end
+		for _, stage in ipairs(boss.stages or {}) do
+			if stage.title then stage.title = Tr(stage.title) end
+			if stage.description then stage.description = Tr(stage.description) end
+			for _, ability in ipairs(stage.abilities or {}) do TrAbility(ability) end
+		end
+		for _, add in ipairs(boss.adds or {}) do
+			if type(add) == "table" then
+				add.enName = add.enName or add.name
+				add.name = TrBossName(add.name)
+				for _, ability in ipairs(add.abilities or {}) do TrAbility(ability) end
+			end
+		end
+		-- Reputation wares carry a cost ("200 Merchant's Favor"); the item's own name is the client's.
+		for _, row in ipairs(boss.loot or {}) do
+			if row.cost then row.cost = Tr(row.cost) end
+		end
+	end
+	local function TrQuest(quest)
+		if quest.name then quest.name = Tr(quest.name) end
+		if quest.objective then quest.objective = Tr(quest.objective) end
+		if quest.note then quest.note = Tr(quest.note) end
+		if quest.pickup then quest.pickup = Tr(quest.pickup) end
+		if quest.turnin then quest.turnin = Tr(quest.turnin) end
+		if quest.startMap and quest.startMap.label then quest.startMap.label = Tr(quest.startMap.label) end
+		for _, key in ipairs({ "startItem", "startObject" }) do
+			local entry = quest[key]
+			if entry then
+				if entry.name then entry.name = Tr(entry.name) end
+				if entry.note then entry.note = Tr(entry.note) end
+			end
+		end
+		for _, prerequisite in ipairs(quest.prerequisites or {}) do
+			if prerequisite.name then prerequisite.name = Tr(prerequisite.name) end
+			-- A step the journal has no quest of its own for carries its own card's words.
+			if prerequisite.objective then prerequisite.objective = Tr(prerequisite.objective) end
+			if prerequisite.pickup then prerequisite.pickup = Tr(prerequisite.pickup) end
+			if prerequisite.turnin then prerequisite.turnin = Tr(prerequisite.turnin) end
+			if prerequisite.note then prerequisite.note = Tr(prerequisite.note) end
+			local point = prerequisite.startMap
+			if point and point.label then point.label = Tr(point.label) end
+			local item = prerequisite.startItem
+			if item then
+				if item.name then item.name = Tr(item.name) end
+				if item.note then item.note = Tr(item.note) end
+			end
+		end
+	end
+
+	for _, instance in ipairs(instances) do
+		instance.enName = instance.enName or instance.name
+		if instance.kind == "faction" then
+			local name = factionNames and factionNames[instance.factionID]
+			if name then instance.name = name end
+		else
+			local name = instanceNames and instanceNames[instance.key]
+			if name then instance.name = name end
+			local location = locations and locations[instance.key]
+			instance.location = location or Tr(instance.location)
+			local description = descriptions and descriptions[instance.key]
+			instance.description = description or Tr(instance.description)
+		end
+		for _, boss in ipairs(instance.bosses or {}) do TrBoss(boss) end
+		for _, quest in ipairs(instance.quests or {}) do TrQuest(quest) end
+	end
+	if subMapNames then
+		for _, subMap in ipairs(subMaps) do
+			local name = subMapNames[subMap.key]
+			if name then subMap.name = name end
+		end
+	end
+	for _, spot in ipairs(transports) do
+		if spot.area then spot.area = Tr(spot.area) end
+		for index, destination in ipairs(spot.to or {}) do spot.to[index] = Tr(destination) end
+		-- A route's note ("Skyborne only") is kept under its destination: under the new name now.
+		if spot.notes then
+			local notes = {}
+			for destination, note in pairs(spot.notes) do notes[Tr(destination)] = Tr(note) end
+			spot.notes = notes
+		end
+	end
+	L.STRINGS, L.BOSS_NAMES, L.ABILITY_NAMES = nil, nil, nil
+	DataChanged()
+end
+

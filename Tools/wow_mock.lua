@@ -10,6 +10,12 @@
 local Mock = { chat = {}, frames = {}, bindings = {}, created = 0, xmlTemplates = {} }
 WOWMOCK = Mock
 
+-- The client's language: English, unless the runner asks for another (WOWMOCK_LOCALE).
+Mock.locale = WOWMOCK_LOCALE or "enUS"
+function GetLocale() return Mock.locale end
+-- An error the addon hands to the client's error handler fails the test, as it would show in game.
+function geterrorhandler() return function(message) error(message, 0) end end
+
 -- Templates the probe reported missing on Forever 1.60.1.
 Mock.missingTemplates = {
 	ItemButtonTemplate = true, EncounterItemTemplate = true, CharacterFrameTabButtonTemplate = true,
