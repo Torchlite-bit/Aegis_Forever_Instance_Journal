@@ -3,9 +3,10 @@ local L = ns.L
 
 --[[
 	A tab on Forever's character panel, in the column of its own side tabs (Character,
-	Reputation, Skills, Honor, Currency, Statistics), that opens the Gear Finder's stat weights in
-	a window over the panel's right-hand pane, where its stats are: the weights to read and
-	change (UI/WeightsEditor.lua), and a button that opens the Gear Finder itself.
+	Reputation, Skills, Honor, Currency, Statistics). Like those, it turns the panel to a page:
+	the Character page, with the Gear Finder's stat weights in a window where its stats are (the
+	weights to read and change, UI/WeightsEditor.lua, and a button that opens the Gear Finder).
+	Another tab, or the panel closed, puts the stats back.
 
 	The tab is made from the same Blizzard template as the panel's own (LargeSideTabButtonTemplate)
 	and parented to their column, so it looks and moves as they do, but it is kept out of the
@@ -257,12 +258,12 @@ function CharacterTab:Window()
 	window:SetScript("OnShow", function()
 		CharacterTab:PlaceWindow()
 		window.Editor:Refresh()
-		if self.tab and self.tab.SetChecked then self.tab:SetChecked(true) end
+		CharacterTab:CheckTabs()
 	end)
 	-- Closed with the panel, and when the player turns to another of its pages.
 	window:SetScript("OnHide", function()
 		window:Hide()
-		if self.tab and self.tab.SetChecked then self.tab:SetChecked(false) end
+		CharacterTab:CheckTabs()
 	end)
 	if type(CharacterFrame.ShowSubFrame) == "function" then
 		hooksecurefunc(CharacterFrame, "ShowSubFrame", function() window:Hide() end)
@@ -277,7 +278,30 @@ function CharacterTab:Window()
 			if window:IsShown() then CharacterTab:PlaceWindow() end
 		end)
 	end
+	-- The panel marks the Character tab whenever it lays itself out again: this one stays marked.
+	if type(CharacterFrame.RefreshDisplay) == "function" then
+		hooksecurefunc(CharacterFrame, "RefreshDisplay", function()
+			if window:IsShown() then CharacterTab:CheckTabs() end
+		end)
+	end
 	return window
+end
+
+--[[
+	One tab marked, as with the panel's own: this one while the weights show, otherwise the one of
+	the page shown. SetChecked only changes how a tab looks (SidePanelTabButtonMixin): nothing of
+	Blizzard's is written, so nothing is tainted.
+]]
+function CharacterTab:CheckTabs()
+	local shown = self.window and self.window:IsShown() or false
+	if self.tab and self.tab.SetChecked then self.tab:SetChecked(shown) end
+	local column = CharacterFrame and CharacterFrame.ModeTabs
+	if not column then return end
+	for _, own in ipairs(BlizzardTabs(column)) do
+		if type(own.SetChecked) == "function" and own.frameName ~= nil then
+			own:SetChecked(not shown and own.frameName == CharacterFrame.activeSubframe)
+		end
+	end
 end
 
 --[[
@@ -332,10 +356,29 @@ function CharacterTab:Describe()
 	return out
 end
 
--- What the tab does: the window, open or closed.
-function CharacterTab:Toggle()
+--[[
+	What the tab does: the Character page, with the weights where its stats are. Clicked again, it
+	stays so.
+
+	The page is turned as ToggleCharacter turns it on an open panel (ShowSubFrame, then
+	RefreshDisplay), but not through ToggleCharacter: with the gamepad UI on, that also moves the
+	gamepad's cursor and rebinds its buttons, which addon code may not do in combat. What
+	ShowSubFrame writes, Blizzard's own code writes again the next time it turns the page.
+
+	A pane folded away is left so, with the window over the panel's edge: unfolding it from here
+	would leave the panel's folded state written by an addon until /reload, and the panel opened
+	in combat with the gamepad UI would then be blocked. Its own button unfolds it.
+]]
+function CharacterTab:Select()
 	local window = self:Window()
-	window:SetShown(not window:IsShown())
+	if PaperDollFrame and not PaperDollFrame:IsShown() and not PaperDollFrame.hidden
+		and type(CharacterFrame.ShowSubFrame) == "function" then
+		CharacterFrame:ShowSubFrame("PaperDollFrame")
+		if type(CharacterFrame.RefreshDisplay) == "function" then CharacterFrame:RefreshDisplay() end
+	end
+	window:Show()
+	self:PlaceWindow()
+	self:CheckTabs()
 end
 
 -- The Gear Finder itself, in the panel's place: the journal opens where the panel stands, so the
@@ -384,11 +427,11 @@ function CharacterTab:Create()
 
 	if tab.SetCustomOnMouseUpHandler then
 		tab:SetCustomOnMouseUpHandler(function(_, button, upInside)
-			if button == "LeftButton" and upInside ~= false then CharacterTab:Toggle() end
+			if button == "LeftButton" and upInside ~= false then CharacterTab:Select() end
 		end)
 	else
 		tab:SetScript("OnMouseUp", function(_, button)
-			if button == "LeftButton" then CharacterTab:Toggle() end
+			if button == "LeftButton" then CharacterTab:Select() end
 		end)
 	end
 
