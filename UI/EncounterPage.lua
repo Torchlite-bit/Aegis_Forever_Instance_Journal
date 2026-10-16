@@ -207,6 +207,8 @@ local function CreateLevelBadge(button, holder)
 	end
 	badge:SetPoint("CENTER", button, "LEFT", PORTRAIT.x + LEVEL_BADGE_OFFSET, -LEVEL_BADGE_OFFSET)
 	badge.Text = holder:CreateFontString(nil, "OVERLAY", ns.Font("WhiteLargeNumberFont", "NumberFontNormal"))
+	-- Text and textures share the sublevels: the number above its circle.
+	badge.Text:SetDrawLayer("OVERLAY", 2)
 	badge.Text:SetPoint("CENTER", badge, "CENTER", 0, -0.5)
 	return badge
 end
@@ -991,9 +993,8 @@ function EncounterPage:PaintLevels()
 	end
 end
 
--- A new level changes what each boss's level means; the client has the new one a moment later.
+-- A new level changes what each boss's level means. PLAYER_LEVEL_UP comes before the client has
+-- the new level; PLAYER_LEVEL_CHANGED, after.
 local levelEvents = CreateFrame("Frame")
-ns.RegisterEvents(levelEvents, "PLAYER_LEVEL_UP")
-levelEvents:SetScript("OnEvent", function()
-	C_Timer.After(0, function() EncounterPage:PaintLevels() end)
-end)
+ns.RegisterEvents(levelEvents, "PLAYER_LEVEL_CHANGED")
+levelEvents:SetScript("OnEvent", function() EncounterPage:PaintLevels() end)

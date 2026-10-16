@@ -345,7 +345,7 @@ function WeightsEditor:Create(parent, options)
 	end)
 	bottom = bottom + BUTTON_HEIGHT + 2
 
-	-- Above them, whether the Gear Finder's tooltips show what items add (UI/GearPanel.lua).
+	-- Above them, whether items' tooltips show what they are worth (UI/ItemTooltip.lua).
 	editor.ShowGains = ns.CreateFrameWithTemplate("CheckButton", nil, editor, "UICheckButtonTemplate")
 	editor.ShowGains:SetSize(24, 24)
 	editor.ShowGains:SetPoint("BOTTOMLEFT", editor, "BOTTOM", -HEADER_WIDTH / 2 - 2, bottom)
@@ -356,7 +356,6 @@ function WeightsEditor:Create(parent, options)
 	editor.ShowGains:SetScript("OnClick", function(self)
 		ns.PlaySoundKit(self:GetChecked() and "IG_MAINMENU_OPTION_CHECKBOX_ON" or "IG_MAINMENU_OPTION_CHECKBOX_OFF")
 		ns.GearPanel.SetShowsGains(self:GetChecked())
-		for _, other in ipairs(editors) do other.ShowGains:SetChecked(ns.GearPanel.ShowsGains()) end
 	end)
 	bottom = bottom + 24
 
@@ -420,6 +419,11 @@ function WeightsEditor:Refresh(editor)
 	editor.ShowGains:SetChecked(ns.GearPanel.ShowsGains())
 	local menu = rawget(editor, "Spec")
 	if menu then ns.GearPanel.UpdateSpecMenu(menu) end
+end
+
+-- Each editor's box, after the setting changed here or in the journal's options.
+function WeightsEditor:SyncShowGains()
+	for _, editor in ipairs(editors) do editor.ShowGains:SetChecked(ns.GearPanel.ShowsGains()) end
 end
 
 -- Every editor showing follows a change of weights, spec, level or talents.

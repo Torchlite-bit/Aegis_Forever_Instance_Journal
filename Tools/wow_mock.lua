@@ -151,16 +151,26 @@ function Region:RegisterEvent(event) self._events[event] = true end
 function Region:UnregisterEvent(event) self._events[event] = nil end
 function Region:IsEventRegistered(event) return self._events[event] == true end
 
-function Region:CreateTexture(name, layer, template)
+function Region:CreateTexture(name, layer, template, subLevel)
 	CheckTemplates(template)
 	local texture = NewRegion("Texture", name, self)
 	rawset(texture, "_layer", layer)
+	rawset(texture, "_subLevel", subLevel or 0)
 	return texture
 end
-function Region:CreateFontString(name, _, template)
+function Region:CreateFontString(name, layer, template)
 	CheckTemplates(template)
-	return NewRegion("FontString", name, self)
+	local text = NewRegion("FontString", name, self)
+	rawset(text, "_layer", layer)
+	rawset(text, "_subLevel", 0)
+	return text
 end
+-- Text and textures share a layer's sublevels: the higher is drawn on top.
+function Region:SetDrawLayer(layer, subLevel)
+	rawset(self, "_layer", layer)
+	rawset(self, "_subLevel", subLevel or 0)
+end
+function Region:GetDrawLayer() return self._layer, self._subLevel end
 function Region:CreateMaskTexture(name) return NewRegion("MaskTexture", name, self) end
 
 local function ButtonTexture(self, key, texture)
@@ -1033,6 +1043,47 @@ function GameTooltip:SetInventoryItem(unit, slot)
 end
 -- A bag's item: Mock.bagItems["bag:slot"] = { itemID, guid }.
 Mock.bagItems = {}
+C_Container = C_Container or {}
+function C_Container.GetContainerItemLink(bag, slot)
+	local item = Mock.bagItems[bag .. ":" .. slot]
+	return item and ItemLink(item[1]) or nil
+end
+-- The bags (ContainerFrameCombinedBags): its item buttons, each with its bag and slot
+-- (Mock.BagButton), drawn again by UpdateItems as the client's are.
+ContainerFrameCombinedBags = CreateFrame("Frame", "ContainerFrameCombinedBags", UIParent)
+ContainerFrameCombinedBags._buttons = {}
+ContainerFrameCombinedBags:Hide()
+function ContainerFrameCombinedBags:UpdateItems() end
+function ContainerFrameCombinedBags:EnumerateValidItems() return ipairs(self._buttons) end
+function Mock.BagButton(bag, slot)
+	local button = CreateFrame("Button", nil, ContainerFrameCombinedBags)
+	button:SetID(slot)
+	function button:GetBagID() return bag end
+	table.insert(ContainerFrameCombinedBags._buttons, button)
+	return button
+end
+-- The loot window: its rows (Mock.LootRow), each an item button for a loot slot, in a scroll box.
+Mock.lootRows = {}
+LootFrame = CreateFrame("Frame", "LootFrame", UIParent)
+LootFrame:Hide()
+LootFrame.ScrollBox = { ForEachFrame = function(_, callback) for _, row in ipairs(Mock.lootRows) do callback(row) end end }
+function Mock.LootRow(slot)
+	local row = CreateFrame("Frame", nil, LootFrame)
+	row.Item = CreateFrame("Button", nil, row)
+	function row:GetSlotIndex() return slot end
+	table.insert(Mock.lootRows, row)
+	return row
+end
+LOOT_SLOT_ITEM = 1
+function GetLootSlotType(slot) return Mock.lootSlots[slot] and Mock.lootSlots[slot].link and 1 or 0 end
+-- Group loot rolls: GroupLootFrame1-4, each with its item's icon; the item by roll (Mock.rolls).
+Mock.rolls = {}
+function GetLootRollItemLink(rollID) return Mock.rolls[rollID] end
+for index = 1, 4 do
+	local frame = CreateFrame("Frame", "GroupLootFrame" .. index, UIParent)
+	frame.IconFrame = CreateFrame("Button", nil, frame)
+	frame:Hide()
+end
 function GameTooltip:SetBagItem(bag, slot)
 	local item = Mock.bagItems[bag .. ":" .. slot]
 	if item then ShowItem(self, ItemLink(item[1]), item[2], "GetBagItem", bag, slot) end

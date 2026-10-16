@@ -317,6 +317,8 @@ do
 		and badge._atlas == "UI-HUD-UnitFrame-SmallCircle" and x > 33.5 and y < 0
 		and math.abs(math.sqrt((x - 33.5) ^ 2 + y ^ 2) - 27) < 1,
 		"the boss's level in the target frame's badge, on the portrait's rim at the bottom right")
+	check(badge.Text._layer == badge._layer and badge.Text._subLevel > badge._subLevel,
+		"the number drawn above its circle, not under it")
 	local LevelColor = Page.LevelColor
 	local function Same(level, r, g, b)
 		local cr, cg, cb = LevelColor(level)
@@ -333,7 +335,7 @@ do
 	GetCreatureDifficultyColor = nil
 	-- Turned off in the journal's options (Options > AddOns), the badges go at once, and come back
 	local category, boxes = Mock.settingsCategory, Mock.settings
-	check(category and category.name == ns.L.OPTIONS_TITLE and #category.controls == 2
+	check(category and category.name == ns.L.OPTIONS_TITLE and #category.controls == 3
 		and boxes.AEGIS_JOURNAL_BOSS_LEVELS and boxes.AEGIS_JOURNAL_BOSS_LEVELS:GetValue() == true
 		and boxes.AEGIS_JOURNAL_BOSS_LEVELS.tooltip == ns.L.OPTIONS_BOSS_LEVELS_TIP,
 		"the journal's page in the game's options, the boss levels shown")
@@ -350,15 +352,13 @@ do
 	check(Mock.openedSettings == category:GetID(), "/aegis options opens it")
 	-- A level up repaints them for the new level
 	Mock.level = 25
-	Mock.Fire("PLAYER_LEVEL_UP", 25)
-	Mock.RunTimers(0)
+	Mock.Fire("PLAYER_LEVEL_CHANGED", 20, 25)
 	local now = badge.Text._textColor
 	r, g, b = LevelColor(17)
 	check(now[1] == r and now[2] == g and now[3] == b and Same(17, 0.25, 0.75, 0.25) == false,
 		"a new level recolours them")
 	Mock.level = 20
-	Mock.Fire("PLAYER_LEVEL_UP", 20)
-	Mock.RunTimers(0)
+	Mock.Fire("PLAYER_LEVEL_CHANGED", 25, 20)
 end
 
 -- Side tabs on the instance overview
@@ -2675,8 +2675,11 @@ local record = f.Panels[5]
 f.Tabs[5]:Click()
 check(record:IsShown(), "Record tab shows its panel")
 check(not ns.Recorder:IsRecording() and record.Toggle:GetText() == "Start Recording", "starts stopped")
+-- The upgrade arrows watch the loot window whether recording or not (UI/UpgradeArrows.lua).
 local function listening(event)
-	for _, frame in ipairs(Mock.frames) do if frame._events[event] then return true end end
+	for _, frame in ipairs(Mock.frames) do
+		if frame._events[event] and frame ~= ns.UpgradeArrows.events then return true end
+	end
 	return false
 end
 check(not listening("LOOT_OPENED") and not listening("QUEST_DETAIL"), "stopped, the recorder does not listen to the game")
@@ -3589,18 +3592,75 @@ end)()
 			local left = type(line) == "string" and line:match("^(.-)\t")
 			if left and left:sub(-#label) == label then count = count + 1 end
 		end
-		check(back.entry and count == 1 and Upgraded(finderLines) and Has(finderLines, "Worth ")
-			and not Has(finderLines, "Gear Finder ("), "the Gear Finder's tooltips: each spec's line once, and what it adds")
+		check(back.entry and count == 1 and Upgraded(finderLines) and not Has(finderLines, "Worth ")
+			and not Has(finderLines, "Gear Finder (") and not Has(finderLines, "Other upgrades")
+			and Has(finderLines, ns.L.GEAR_TIP_CELL_CLICK),
+			"the Gear Finder's tooltips as plain as Pawn's: the item, each spec's line once, where it drops, the click")
+		-- The gain it shows for its own spec is the one the Gear Finder found (a second ring's, over
+		-- the other); another frame's tooltip weighs the item afresh.
+		local owner, given = CreateFrame("Button"), { score = 50, usable = true, delta = 9, share = 77, minLevel = 1 }
+		ns.ItemTooltip:UseCompare(owner, Mock.ItemLink(CAPE), given)
+		GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
+		GameTooltip:SetHyperlink(Mock.ItemLink(CAPE))
+		local givenRow = Row(GameTooltip._lines, label)
+		check(givenRow and givenRow:find("+77%", 1, true) and givenRow:sub(-4) == "  50",
+			"the Gear Finder's own gain for its spec: " .. tostring(givenRow))
+		check(not Row(TipLines(Mock.ItemLink(CAPE)), label):find("+77%", 1, true), "and only on its own tooltip")
+		ns.ItemTooltip:UseCompare(owner, nil)
+		local found = back.entry.compare
+		back.entry.compare = setmetatable({ share = 66 }, { __index = found })
+		back:_RunScript("OnEnter")
+		local cellRow = Row(GameTooltip._lines, label)
+		back.entry.compare = found
+		check(cellRow and cellRow:find("+66%", 1, true), "a Gear Finder cell's tooltip shows the gain the cell found: " .. tostring(cellRow))
 		ns.GearPanel.SetShowsGains(false)
 		check(not Row(TipLines(Mock.ItemLink(CAPE)), label), "the Show stat weights in tooltips box turns them off")
 		back:_RunScript("OnEnter")
-		check(not Row(GameTooltip._lines, label) and not Has(GameTooltip._lines, "Worth "), "the Gear Finder's too")
+		check(not Row(GameTooltip._lines, label), "the Gear Finder's too")
 		ns.GearPanel.SetShowsGains(true)
 		local other = { _lines = {}, AddLine = GameTooltip.AddLine, AddDoubleLine = GameTooltip.AddDoubleLine }
 		for _, callback in ipairs(Mock.tooltipPostCalls[Enum.TooltipDataType.Item]) do
 			callback(other, { hyperlink = Mock.ItemLink(CAPE) })
 		end
 		check(#other._lines == 0, "another tooltip that shows an item, not one of the client's own, is left alone")
+	end
+
+	-- Pawn's green arrows: on an upgrade in the bags, in the loot window and on a roll
+	do
+		local UA = ns.UpgradeArrows
+		local bagCape, bagRobe, bagWorn = Mock.BagButton(0, 1), Mock.BagButton(0, 2), Mock.BagButton(0, 3)
+		Mock.bagItems["0:1"], Mock.bagItems["0:2"], Mock.bagItems["0:3"] = { CAPE }, { ROBE }, { WORN_CAPE }
+		ContainerFrameCombinedBags:Show()
+		ContainerFrameCombinedBags:UpdateItems()
+		check(UA:Marked(bagCape) and not UA:Marked(bagRobe) and not UA:Marked(bagWorn),
+			"an upgrade in the bags gets the green arrow; one the class cannot use, or no better, does not")
+		Mock.lootSlots = { { link = Mock.ItemLink(CAPE), name = "Cape" }, { link = Mock.ItemLink(WORN_CAPE), name = "Old" } }
+		local lootRows = { Mock.LootRow(1), Mock.LootRow(2) }
+		LootFrame:Show()
+		Mock.Fire("LOOT_OPENED")
+		Mock.RunTimers(0)
+		check(UA:Marked(lootRows[1].Item) and not UA:Marked(lootRows[2].Item), "and in the loot window")
+		Mock.rolls[7] = Mock.ItemLink(CAPE)
+		GroupLootFrame1.rollID = 7
+		GroupLootFrame1:Show()
+		check(UA:Marked(GroupLootFrame1.IconFrame), "and on a roll")
+		Mock.settings.AEGIS_JOURNAL_UPGRADE_ARROWS:SetValue(false)
+		check(not UA:Marked(bagCape) and not UA:Marked(lootRows[1].Item) and not UA:Marked(GroupLootFrame1.IconFrame),
+			"turned off in the options: gone everywhere at once")
+		Mock.settings.AEGIS_JOURNAL_UPGRADE_ARROWS:SetValue(true)
+		check(UA:Marked(bagCape) and UA:Marked(GroupLootFrame1.IconFrame), "and back")
+		-- Once it is worn, the copy in the bags is no upgrade
+		Mock.worn[15] = CAPE
+		Mock.Fire("PLAYER_EQUIPMENT_CHANGED")
+		check(not UA:Marked(bagCape), "the item put on: the arrow on its twin in the bags goes")
+		Mock.worn[15] = WORN_CAPE
+		Mock.Fire("PLAYER_EQUIPMENT_CHANGED")
+		GroupLootFrame1:Hide()
+		LootFrame:Hide()
+		ContainerFrameCombinedBags:Hide()
+		Mock.lootSlots, Mock.lootRows, Mock.rolls = {}, {}, {}
+		Mock.bagItems["0:1"], Mock.bagItems["0:2"], Mock.bagItems["0:3"] = nil, nil, nil
+		ContainerFrameCombinedBags._buttons = {}
 	end
 	Mock.RunTimers(1)
 
@@ -3915,20 +3975,22 @@ end)()
 		-- The box under the weights: the tooltips without what items are worth and add, and back
 		local function GainLine()
 			back:_RunScript("OnEnter")
-			local spec, worth = false, false
 			for _, line in ipairs(GameTooltip._lines or {}) do
-				if type(line) == "string" then
-					local left = line:match("^(.-)\t")
-					spec = spec or (left ~= nil and left:sub(-#IS:SpecLabel(IS:Spec())) == IS:SpecLabel(IS:Spec()))
-					worth = worth or line:find("Worth ", 1, true) ~= nil
-				end
+				local left = type(line) == "string" and line:match("^(.-)\t")
+				if left and left:sub(-#IS:SpecLabel(IS:Spec())) == IS:SpecLabel(IS:Spec()) then return true end
 			end
-			return spec and worth
+			return false
 		end
-		check(editor.ShowGains:GetChecked() and GainLine(), "each spec's worth and the gain in the Gear Finder's tooltips, the box ticked")
+		check(editor.ShowGains:GetChecked() and GainLine(), "each spec's worth in the Gear Finder's tooltips, the box ticked")
 		editor.ShowGains:SetChecked(false)
 		editor.ShowGains:_RunScript("OnClick")
-		check(ns.db.hideGearTipGains and not GainLine(), "unticked: the tooltips leave out what items are worth and add")
+		check(ns.db.hideGearTipGains and not GainLine(), "unticked: the tooltips leave out what items are worth")
+		-- The same box in the journal's options follows, and the editor's follows the options'
+		check(Mock.settings.AEGIS_JOURNAL_ITEM_TIPS:GetValue() == false, "the options' box says the same")
+		Mock.settings.AEGIS_JOURNAL_ITEM_TIPS:SetValue(true)
+		check(editor.ShowGains:GetChecked(), "ticked in the options: the editor's box follows at once")
+		Mock.settings.AEGIS_JOURNAL_ITEM_TIPS:SetValue(false)
+		check(not editor.ShowGains:GetChecked(), "and unticked")
 		editor.ShowGains:SetChecked(true)
 		editor.ShowGains:_RunScript("OnClick")
 		check(not ns.db.hideGearTipGains and GainLine(), "ticked again: back")

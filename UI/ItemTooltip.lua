@@ -101,6 +101,26 @@ local function IsWorn(tooltip, data)
 end
 
 --[[
+	The Gear Finder's tooltips show the gain it found for its own spec (UI/GearPanel.lua): on its
+	second ring or trinket cell, the gain over the other, stronger one, as the cell itself says. Kept
+	by the frame the tooltip belongs to, for that item only.
+]]
+local givenCompare = setmetatable({}, { __mode = "k" })
+
+function ItemTooltip:UseCompare(owner, link, compare)
+	givenCompare[owner] = link and { link = link, compare = compare } or nil
+end
+
+-- Whether an item is an upgrade for the player, by the Gear Finder's spec: the green arrows on
+-- items in the bags, the loot window and rolls (UI/UpgradeArrows.lua).
+function ItemTooltip:IsUpgrade(link)
+	local IS = ns.ItemScore
+	local compare = IS:Compare(link)
+	return compare ~= nil and compare.usable and compare.delta ~= nil and compare.delta > 0.0001
+		and compare.minLevel <= IS:Level() + ns.GearFinder.AHEAD
+end
+
+--[[
 	The lines for an item, one per spec it is worth something to, in the class's order:
 	{ label, value = "145", gain = "+4.2%" or nil, level = 24 or nil }; nil when there are none.
 	A gain is an upgrade as the Gear Finder counts one: worn within its few levels ahead (`level`
@@ -110,8 +130,12 @@ function ItemTooltip:Lines(link, tooltip, data)
 	local IS = ns.ItemScore
 	local rows, worn = {}, nil
 	local reach = IS:Level() + ns.GearFinder.AHEAD
+	local owner = tooltip and tooltip.GetOwner and tooltip:GetOwner()
+	local given = owner and givenCompare[owner]
+	if given and given.link ~= link then given = nil end
+	local current = IS:Spec()
 	for _, spec in ipairs(IS:Specs()) do
-		local compare = IS:Compare(link, IS:Weights(spec.key))
+		local compare = (given and spec.key == current) and given.compare or IS:Compare(link, IS:Weights(spec.key))
 		-- What the class cannot use, or what goes in no slot, is so for every spec.
 		if not compare or not compare.usable then return nil end
 		if compare.score > 0 then

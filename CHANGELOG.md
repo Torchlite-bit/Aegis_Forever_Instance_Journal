@@ -34,10 +34,12 @@ and the version shown in the AddOns list. Quote it in bug reports.
   adds to your gear when it beats what you wear (with the level, for gear a few levels ahead).
 - **Show stat weights in tooltips**, a box under the stat weights: untick it and items'
   tooltips, the Gear Finder's too, leave out what each item is worth and adds to your gear.
+- **Green arrows on upgrades**, as Pawn marks them: in your bags, in the loot window and on loot
+  rolls, an item that is an upgrade for your spec has the bags' green arrow at its corner.
 - **Boss levels on the boss list**: each boss's level on its portrait, in the target frame's
   badge, coloured from grey to red by how hard the boss is for you.
 - **The journal's options**, in the game's Options under AddOns (or `/aegis options`): boss
-  levels and stat weights in tooltips can each be turned off.
+  levels, stat weights in tooltips and the green arrows can each be turned off.
 - **The Gear Finder and its stat weights in Russian**, with every spec's name and unit, by
   Staree4ok. The new top 3 picker is still in English for now.
 
@@ -49,6 +51,8 @@ and the version shown in the AddOns list. Quote it in bug reports.
   Wetlands quests).
 - The Log Reader page keeps a boss's spells when the game calls him neutral (the Relic Guardian).
 - The Gear Finder no longer suggests a unique ring or trinket you already wear in the other slot.
+- **The Gear Finder's tooltips are as plain as Pawn's**: the item, what it is worth to each spec,
+  where it drops and a short hint, without the slot's other upgrades or the long lines.
 
 ### Fixed
 - The loot's class filter was missing the Druid.

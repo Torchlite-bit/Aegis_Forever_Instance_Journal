@@ -21,6 +21,9 @@ local CHECKBOXES = {
 	{ variable = "AEGIS_JOURNAL_ITEM_TIPS", name = "WEIGHTS_SHOW_GAINS", tip = "WEIGHTS_SHOW_GAINS_TIP",
 		get = function() return ns.GearPanel.ShowsGains() end,
 		set = function(shown) ns.GearPanel.SetShowsGains(shown) end },
+	{ variable = "AEGIS_JOURNAL_UPGRADE_ARROWS", name = "OPTIONS_ARROWS", tip = "OPTIONS_ARROWS_TIP",
+		get = function() return ns.UpgradeArrows.Shows() end,
+		set = function(shown) ns.UpgradeArrows.SetShows(shown) end },
 }
 
 function Options:Register()
