@@ -64,29 +64,39 @@ end
 -- The tooltips beside another that show what is worn, to compare with.
 local SHOWS_WORN = { "ShoppingTooltip1", "ShoppingTooltip2", "ItemRefShoppingTooltip1", "ItemRefShoppingTooltip2" }
 
+-- Whether the client was asked to show one of the player's own slots (retail's tooltip info:
+-- the getter it was filled by, and that getter's unit and slot).
+local function ShowsPlayerSlot(tooltip)
+	local ok, info = pcall(function() return tooltip.GetPrimaryTooltipInfo and tooltip:GetPrimaryTooltipInfo() end)
+	if not (ok and type(info) == "table") then info = rawget(tooltip, "info") end
+	if type(info) ~= "table" or info.getterName ~= "GetInventoryItem" or type(info.getterArgs) ~= "table" then
+		return false
+	end
+	return info.getterArgs[1] == "player" and type(info.getterArgs[2]) == "number"
+end
+
 --[[
 	Whether the tooltip shows an item the player wears, the one others are measured against:
 	the very copy, not another of the same item (a second ring, the same green "of the Monkey"
-	rather than "of the Bear"). The client names each copy (its guid) where it has one, in the
-	bags and on the character sheet; for a link in chat or at a merchant, the same link as one worn.
+	rather than "of the Bear"). The client names each copy (its guid) in the bags and on the
+	character sheet; without one, the sheet's own slots still say so. A link in chat, a drop or a
+	merchant's ware is the item, not the copy worn, and is weighed as the Gear Finder weighs it.
 ]]
 local FIRST_SLOT, LAST_SLOT = 1, 19
-local function IsWorn(tooltip, link, data)
+local function IsWorn(tooltip, data)
 	for _, name in ipairs(SHOWS_WORN) do
 		if _G[name] == tooltip then return true end
 	end
 	local guid = data and data.guid
 	if ns.IsSecret(guid) or type(guid) ~= "string" then guid = nil end
-	local byCopy = guid and C_Item and C_Item.GetItemGUID and ItemLocation and ItemLocation.CreateFromEquipmentSlot
-	for slot = FIRST_SLOT, LAST_SLOT do
-		if byCopy then
+	if guid and C_Item and C_Item.GetItemGUID and ItemLocation and ItemLocation.CreateFromEquipmentSlot then
+		for slot = FIRST_SLOT, LAST_SLOT do
 			local ok, worn = pcall(C_Item.GetItemGUID, ItemLocation:CreateFromEquipmentSlot(slot))
 			if ok and not ns.IsSecret(worn) and worn == guid then return true end
-		elseif GetInventoryItemLink("player", slot) == link then
-			return true
 		end
+		return false
 	end
-	return false
+	return ShowsPlayerSlot(tooltip)
 end
 
 --[[
@@ -100,7 +110,7 @@ function ItemTooltip:Lines(link, tooltip, data)
 	if not compare or not compare.usable or compare.score <= 0 then return nil end
 	local lines = { value = ns.GearPanel.Points(compare.score) }
 	if compare.delta and compare.delta > 0.0001 and compare.minLevel <= IS:Level() + ns.GearFinder.AHEAD
-		and not IsWorn(tooltip, link, data) then
+		and not IsWorn(tooltip, data) then
 		lines.upgrade = ns.GearPanel.GainText(compare)
 		if compare.later then lines.level = compare.minLevel end
 	end

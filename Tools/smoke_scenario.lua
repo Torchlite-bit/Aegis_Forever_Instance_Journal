@@ -3389,7 +3389,14 @@ end)()
 		lines = GameTooltip._lines
 		check(IS:Compare(Mock.ItemLink(RING_X)).delta > 0 and Has(lines, label .. "\t") and not Has(lines, "Upgrade:"),
 			"a worn ring better than the other is not called an upgrade, on the character sheet")
-		check(not Has(TipLines(Mock.ItemLink(RING_X)), "Upgrade:"), "nor in a link of the very same ring")
+		Mock.noItemGUIDs = true
+		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+		GameTooltip:SetInventoryItem("player", 12)
+		check(Has(GameTooltip._lines, label .. "	") and not Has(GameTooltip._lines, "Upgrade:"),
+			"nor by a client that names no copies: the sheet's own slot says it")
+		Mock.noItemGUIDs = nil
+		-- A link of the same ring, or the same ring dropping, is the item, as the Gear Finder weighs it
+		check(Has(TipLines(Mock.ItemLink(RING_X)), "Upgrade:"), "a link or drop of that ring: a second one, an upgrade")
 		-- Another copy of it is one, over the weaker ring: in the bags, or another green of the same name
 		Mock.bagItems["0:1"] = { RING_X, "Item-bag-0-1" }
 		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
@@ -3405,6 +3412,12 @@ end)()
 		local unique = IS:Compare(Mock.ItemLink(RING_X))
 		check(unique.slot == 12 and unique.delta == 0 and not Has(GameTooltip._lines, "Upgrade:"),
 			"a unique ring worn already can only take its own place: no upgrade, here or in the Gear Finder")
+		Mock.itemLines[RING_X] = { "Unique (2)" }
+		IS:Forget()
+		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+		GameTooltip:SetBagItem(0, 1)
+		check(IS:Compare(Mock.ItemLink(RING_X)).slot == 11 and Has(GameTooltip._lines, "Upgrade:"),
+			"two may be had of a Unique (2) ring, and worn: still an upgrade")
 		Mock.itemLines[RING_X], Mock.bagItems["0:1"] = nil, nil
 		Mock.worn[11], Mock.worn[12] = nil, nil
 		IS:Forget()

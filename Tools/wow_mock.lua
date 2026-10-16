@@ -991,9 +991,13 @@ TooltipDataProcessor = {
 function Mock.WornGUID(slot) return Mock.worn[slot] and ("Item-worn-" .. slot .. "-" .. Mock.worn[slot]) or nil end
 ItemLocation = { CreateFromEquipmentSlot = function(_, slot) return { equipmentSlotIndex = slot } end }
 C_Item.GetItemGUID = function(location) return Mock.WornGUID(location.equipmentSlotIndex) end
-local function ShowItem(tooltip, link, guid)
+-- What the tooltip was asked to show: retail's tooltip info, its getter and the getter's arguments.
+-- Mock.noItemGUIDs leaves the guids out, as a client without them would.
+local function ShowItem(tooltip, link, guid, getterName, ...)
 	tooltip._link = link
+	tooltip.info = { getterName = getterName or "GetHyperlink", getterArgs = { ... } }
 	tooltip._lines[#tooltip._lines + 1] = Mock.itemNames[ItemIDOf(link)] or link
+	if Mock.noItemGUIDs then guid = nil end
 	local data = { type = Enum.TooltipDataType.Item, id = ItemIDOf(link), hyperlink = link, guid = guid }
 	for _, callback in ipairs(Mock.tooltipPostCalls[Enum.TooltipDataType.Item] or {}) do callback(tooltip, data) end
 end
@@ -1001,14 +1005,15 @@ function GameTooltip:SetHyperlink(link) ShowItem(self, link) end
 function GameTooltip:SetItemByID(itemID) ShowItem(self, ItemLink(itemID)) end
 function GameTooltip:SetInventoryItem(unit, slot)
 	local link = GetInventoryItemLink(unit, slot)
-	if link then ShowItem(self, link, unit == "player" and Mock.WornGUID(slot) or nil) end
+	if link then ShowItem(self, link, unit == "player" and Mock.WornGUID(slot) or nil, "GetInventoryItem", unit, slot) end
 end
 -- A bag's item: Mock.bagItems["bag:slot"] = { itemID, guid }.
 Mock.bagItems = {}
 function GameTooltip:SetBagItem(bag, slot)
 	local item = Mock.bagItems[bag .. ":" .. slot]
-	if item then ShowItem(self, ItemLink(item[1]), item[2]) end
+	if item then ShowItem(self, ItemLink(item[1]), item[2], "GetBagItem", bag, slot) end
 end
+function GameTooltip:GetPrimaryTooltipInfo() return self.info end
 function GameTooltip:GetItem()
 	if self._link then return Mock.itemNames[ItemIDOf(self._link)] or "Item", self._link end
 end

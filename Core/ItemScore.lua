@@ -215,14 +215,16 @@ local function LevelLine(minLevel)
 	return string.format(ITEM_MIN_LEVEL or "Requires Level %d", minLevel or 0)
 end
 local EQUIP_PREFIX = "^" .. (ITEM_SPELL_TRIGGER_ONEQUIP or "Equip:"):gsub("%p", "%%%0") .. "%s*(.+)$"
--- "Unique", "Unique (2)", "Unique-Equipped": only one may be worn.
-local UNIQUE_PREFIXES = {}
-for _, words in ipairs({ ITEM_UNIQUE or "Unique", ITEM_UNIQUE_EQUIPPABLE or "Unique-Equipped" }) do
-	UNIQUE_PREFIXES[#UNIQUE_PREFIXES + 1] = "^" .. words:gsub("%p", "%%%0")
-end
+-- Only one may be worn: "Unique", "Unique-Equipped", or a limit of one ("Unique (1)",
+-- "Unique-Equipped: Rings (1)"). "Unique (2)" lets two be had, and worn.
+local UNIQUE_WORDS = { ITEM_UNIQUE or "Unique", ITEM_UNIQUE_EQUIPPABLE or "Unique-Equipped" }
 local function IsUniqueLine(text)
-	for _, prefix in ipairs(UNIQUE_PREFIXES) do
-		if text:find(prefix) then return true end
+	for _, words in ipairs(UNIQUE_WORDS) do
+		if text == words then return true end
+		if text:sub(1, #words) == words then
+			local limit = tonumber(text:match("%((%d+)%)%s*$"))
+			if limit then return limit == 1 end
+		end
 	end
 	return false
 end
