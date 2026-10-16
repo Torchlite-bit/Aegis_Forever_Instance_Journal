@@ -104,6 +104,7 @@ local function Points(value)
 	if value >= 10 then return tostring(math.floor(value + 0.5)) end
 	return string.format("%.1f", value)
 end
+GearPanel.Points = Points
 
 --[[
 	"+4.2%", "+12%": what an upgrade adds to everything worn. While nothing worn is worth
@@ -169,7 +170,8 @@ local function ShowCompare()
 end
 
 -- Whether the Gear Finder's tooltips say what each item adds to the gear worn, and list the slot's
--- other upgrades: the player's choice for every character, shown unless turned off.
+-- other upgrades, and every item's tooltip what it is worth (UI/ItemTooltip.lua): the player's
+-- choice for every character, shown unless turned off.
 function GearPanel.ShowsGains()
 	return not (ns.db and ns.db.hideGearTipGains)
 end
@@ -182,6 +184,8 @@ end
 -- `owner` does, `picked` that the player chose it for its slot.
 local function ShowEntryTooltip(owner, entry, anchor, others, clickText, picked)
 	local gains = GearPanel.ShowsGains()
+	-- Its own lines say what the item is worth: not the ones every item's tooltip has (UI/ItemTooltip.lua).
+	owner.gearFinderTip = true
 	GameTooltip:SetOwner(owner, anchor or "ANCHOR_RIGHT")
 	GameTooltip:SetHyperlink(entry.link)
 	GameTooltip:AddLine(" ")

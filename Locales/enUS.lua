@@ -115,7 +115,10 @@ L.WEIGHTS_NOT_PAWN = "That isn't a Pawn scale. In Pawn, choose Export and copy a
 L.WEIGHTS_OTHER_CLASS = "That scale is for a %s, not for this character's class."
 L.WEIGHTS_FOR = "For"
 L.WEIGHTS_SHOW_GAINS = "Show upgrades in tooltips"
-L.WEIGHTS_SHOW_GAINS_TIP = "In the Gear Finder's tooltips, what each item adds to your gear by these weights, and the slot's other upgrades. For all your characters."
+L.WEIGHTS_SHOW_GAINS_TIP = "On every item's tooltip, what it is worth by these weights and what it adds to your gear; in the Gear Finder's, the slot's other upgrades too. For all your characters."
+-- Under an item on its tooltip: the spec's name, the item's worth by its weights beside it.
+L.ITEM_TIP_VALUE = "Gear Finder (%s)"
+L.ITEM_TIP_UPGRADE = "Upgrade: %s to your gear"
 L.GEAR_WHY_CUSTOM = "%s (your weights)"
 L.GEAR_UNIT_POINTS = "points"
 -- The specs' names and the units their weights count in are the generated weights' own English

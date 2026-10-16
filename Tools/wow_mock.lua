@@ -448,7 +448,8 @@ ScrollUtil = { InitScrollFrameWithScrollBar = function() end }
 function ScrollFrame_OnLoad(scroll) scroll.ScrollBar = CreateFrame("EventFrame", nil, scroll) end
 GameTooltip = CreateFrame("GameTooltip", "GameTooltip")
 GameTooltip._lines = {}
-function GameTooltip:SetOwner() self._lines = {} end
+function GameTooltip:SetOwner(owner) self._lines, self._owner, self._link = {}, owner, nil end
+function GameTooltip:GetOwner() return self._owner end
 function GameTooltip:AddLine(text) self._lines[#self._lines + 1] = text end
 -- A two-column line is kept as "left<tab>right".
 function GameTooltip:AddDoubleLine(left, right) self._lines[#self._lines + 1] = left .. "\t" .. right end
@@ -973,6 +974,33 @@ Mock.worn = {}
 function GetInventoryItemLink(unit, slot)
 	local itemID = unit == "player" and Mock.worn[slot]
 	return itemID and ItemLink(itemID) or nil
+end
+
+-- Retail's tooltip data: an item tooltip runs the item post-calls once its lines are in, with
+-- the data's id and link, as the client's TooltipDataProcessor does.
+Enum = Enum or {}
+Enum.TooltipDataType = { Item = 0, Spell = 1, Unit = 2 }
+Mock.tooltipPostCalls = {}
+TooltipDataProcessor = {
+	AddTooltipPostCall = function(dataType, callback)
+		Mock.tooltipPostCalls[dataType] = Mock.tooltipPostCalls[dataType] or {}
+		table.insert(Mock.tooltipPostCalls[dataType], callback)
+	end,
+}
+local function ShowItem(tooltip, link)
+	tooltip._link = link
+	tooltip._lines[#tooltip._lines + 1] = Mock.itemNames[ItemIDOf(link)] or link
+	local data = { type = Enum.TooltipDataType.Item, id = ItemIDOf(link), hyperlink = link }
+	for _, callback in ipairs(Mock.tooltipPostCalls[Enum.TooltipDataType.Item] or {}) do callback(tooltip, data) end
+end
+function GameTooltip:SetHyperlink(link) ShowItem(self, link) end
+function GameTooltip:SetItemByID(itemID) ShowItem(self, ItemLink(itemID)) end
+function GameTooltip:SetInventoryItem(unit, slot)
+	local link = GetInventoryItemLink(unit, slot)
+	if link then ShowItem(self, link) end
+end
+function GameTooltip:GetItem()
+	if self._link then return Mock.itemNames[ItemIDOf(self._link)] or "Item", self._link end
 end
 function GetInventoryItemTexture(unit, slot)
 	local itemID = unit == "player" and Mock.worn[slot]

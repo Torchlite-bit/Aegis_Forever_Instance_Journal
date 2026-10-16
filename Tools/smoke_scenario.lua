@@ -3358,6 +3358,49 @@ end)()
 	CanDualWield, IsPlayerSpell, IsSpellKnown, C_SpellBook = nil, isPlayerSpell, isSpellKnown, spellBook
 	IS:Forget()
 	check(not IS:CanDualWield(), "and not when none says so")
+
+	-- Every item's tooltip: its worth by the weights, and the green arrow when it beats what is worn
+	do
+		local function TipLines(link, owner)
+			GameTooltip:SetOwner(owner or UIParent, "ANCHOR_RIGHT")
+			GameTooltip:SetHyperlink(link)
+			return GameTooltip._lines
+		end
+		local function Has(lines, text)
+			for _, line in ipairs(lines) do
+				if type(line) == "string" and line:find(text, 1, true) then return line end
+			end
+		end
+		local label = string.format(ns.L.ITEM_TIP_VALUE, IS:SpecLabel(IS:Spec()))
+		local cape = IS:Compare(Mock.ItemLink(CAPE))
+		local lines = TipLines(Mock.ItemLink(CAPE))
+		check(cape.delta > 0 and Has(lines, label .. "\t" .. ns.GearPanel.Points(cape.score))
+			and Has(lines, string.format(ns.L.ITEM_TIP_UPGRADE, ns.GearPanel.GainText(cape))),
+			"an item's tooltip: its worth to the spec, and the upgrade it makes to what is worn")
+		lines = TipLines(Mock.ItemLink(WORN_CAPE))
+		check(Has(lines, label .. "\t") and not Has(lines, "Upgrade:"), "what is worn: its worth, no upgrade")
+		check(not Has(TipLines(Mock.ItemLink(ROBE)), label), "nothing for an item the class cannot use")
+		check(not Has(TipLines(Mock.ItemLink(CUFFS)), label), "nor for one worth nothing to the spec")
+		-- The stronger of two rings worn is measured against the weaker, but is no upgrade on itself
+		Mock.worn[11], Mock.worn[12] = RING_B, RING_X
+		IS:Forget()
+		lines = TipLines(Mock.ItemLink(RING_X))
+		check(IS:Compare(Mock.ItemLink(RING_X)).delta > 0 and Has(lines, label .. "\t") and not Has(lines, "Upgrade:"),
+			"a worn ring better than the other is not called an upgrade")
+		Mock.worn[11], Mock.worn[12] = nil, nil
+		IS:Forget()
+		local finder = CreateFrame("Button")
+		finder.gearFinderTip = true
+		check(not Has(TipLines(Mock.ItemLink(CAPE), finder), label), "the Gear Finder's own tooltips say it themselves")
+		ns.GearPanel.SetShowsGains(false)
+		check(not Has(TipLines(Mock.ItemLink(CAPE)), label), "the Show upgrades in tooltips box turns them off")
+		ns.GearPanel.SetShowsGains(true)
+		local other = { _lines = {}, AddLine = GameTooltip.AddLine, AddDoubleLine = GameTooltip.AddDoubleLine }
+		for _, callback in ipairs(Mock.tooltipPostCalls[Enum.TooltipDataType.Item]) do
+			callback(other, { hyperlink = Mock.ItemLink(CAPE) })
+		end
+		check(#other._lines == 0, "another tooltip that shows an item, not one of the client's own, is left alone")
+	end
 	Mock.RunTimers(1)
 
 	-- Wearing an upgrade: it is no longer one
@@ -3683,6 +3726,14 @@ end)()
 		editor.ShowGains:SetChecked(true)
 		editor.ShowGains:_RunScript("OnClick")
 		check(not ns.db.hideGearTipGains and GainLine(), "ticked again: back")
+		local valueLines = 0
+		local valueLabel = string.format(ns.L.ITEM_TIP_VALUE, IS:SpecLabel(IS:Spec())) .. "\t"
+		for _, line in ipairs(GameTooltip._lines) do
+			if type(line) == "string" and line:find(valueLabel, 1, true) then
+				valueLines = valueLines + 1
+			end
+		end
+		check(valueLines == 0, "and without the line every other item's tooltip gets")
 
 		-- The window closes when the panel turns to another page; its button opens the Gear Finder
 		CharacterFrame:ShowSubFrame("ReputationFrame")

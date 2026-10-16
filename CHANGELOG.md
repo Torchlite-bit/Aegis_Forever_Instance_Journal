@@ -28,8 +28,11 @@ and the version shown in the AddOns list. Quote it in bug reports.
   off; and the Highland Horror's roots, which Blessing of Freedom breaks.
 - **"You will also receive"** on a quest's page, for the items that come with the choice, and
   how many of each item you get.
-- **Show upgrades in tooltips**, a box under the stat weights: untick it and the Gear Finder's
-  tooltips leave out what each item adds to your gear and the slot's other upgrades.
+- **The Gear Finder's stat weights on every item's tooltip**, as Pawn shows its scales: in your
+  bags, on the character sheet, in loot, at merchants and in chat links, what the item is worth
+  to your spec, and a green arrow with what it adds to your gear when it beats what you wear.
+- **Show upgrades in tooltips**, a box under the stat weights: untick it and items' tooltips,
+  the Gear Finder's too, leave out what each item is worth and adds to your gear.
 - **The Gear Finder and its stat weights in Russian**, with every spec's name and unit, by
   Staree4ok. The new top 3 picker is still in English for now.
 

@@ -109,6 +109,7 @@ UI\EncounterPage.lua
 UI\RecordPanel.lua
 UI\WeightsEditor.lua
 UI\GearPanel.lua
+UI\ItemTooltip.lua
 UI\CharacterTab.lua
 UI\Search.lua
 UI\Journal.lua
