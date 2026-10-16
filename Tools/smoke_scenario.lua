@@ -733,6 +733,20 @@ do
 	check(slamText and slamText:find("Hits 25-30, first cast at 4s, then every 12s", 1, true),
 		"recorded numbers read plainly: " .. tostring(slamText))
 end
+-- The quests checked against the site's dungeon lists: Forever's new ones, a quest of several wings in
+-- each, class quests marked for their class, and the required levels Forever changed
+do
+	local function Quest(key, questID)
+		for _, quest in ipairs(ns.GetInstance(key).quests) do
+			if quest.questID == questID then return quest end
+		end
+	end
+	check(Quest("WailingCaverns", 1500) and Quest("WailingCaverns", 914).requiredLevel == 10
+		and Quest("DireMaulEast", 7483) and Quest("DireMaulNorth", 7483) and Quest("DireMaulWest", 7483)
+		and Quest("DireMaulEast", 5526) and Quest("TempleOfAtalHakkar", 8232).classOnly == "HUNTER"
+		and Quest("HallOfThanes", 96403).faction == "Alliance" and Quest("BlackrockDepths", 4341).prerequisites[1].questID == 3701,
+		"the quests the site lists for each dungeon, Forever's changes to them, and the class quests done inside")
+end
 -- A recorded run of Excavation Site: each boss's encounter id and spells, the Relic Guardian's though
 -- the game calls him neutral, and the spiders that were fighting the dig nearby left out of the adds
 do
@@ -936,7 +950,8 @@ ns.Recorder:GetState().quests[96395] = nil
 -- A Horde character sees only the quests open to them
 Mock.faction = "Horde"
 Mock.Fire("QUEST_LOG_UPDATE")
-check(#questRows() == 2, "Horde sees the two quests open to both factions, got " .. #questRows())
+check(#questRows() == 1 and questRows()[1].quest.questID == 96395,
+	"Horde sees only the quest open to both factions (Important Heirlooms is the Alliance's), got " .. #questRows())
 Mock.faction = "Alliance"
 tabs[1]:Click()
 check(page.Bosses:IsShown() and not page.QuestList:IsShown(), "leaving the quests brings the boss list back")
@@ -1258,8 +1273,9 @@ do
 	-- A Horde character sees only the marks of the quests open to them
 	Mock.faction = "Horde"
 	ironforge = marksOn(1455)
-	check(ironforge[96403] and not ironforge[96394], "the Horde keep the quest open to both, not the Alliance's")
+	check(not ironforge[96403] and not ironforge[96394], "the Horde see neither of the Alliance's quests in Ironforge")
 	Mock.faction = "Alliance"
+	check(marksOn(1455)[96403], "and the Alliance see Important Heirlooms there")
 	-- A quest two wings list (the Cathedral's Herod quests, in the Armory too) has one mark
 	local raleigh = 0
 	for _, entry in ipairs(ns.QuestMap:MarksOn(1424)) do

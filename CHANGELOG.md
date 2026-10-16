@@ -12,6 +12,21 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.31.1]
+
+### Added
+- **74 dungeon quests** the journal lacked, after checking every dungeon's quests against
+  foreverchanges.pro's lists: chain steps given far from the dungeon (Gnomeregan, Uldaman,
+  Blackrock Depths and Spire), Forever's new ones in Wailing Caverns, Blackrock Depths and the
+  Ruins of Lordaeron, Dire Maul's librams, the Sunken Temple's class quests and more.
+- **Excavation Site: Wetlands, from a recorded run**: each boss's spells (the Relic Guardian's
+  Knock Away is his threat drop; Shadetooth's roar fears up to three players), their areas and
+  the entrance. Thank you, Genesys Firstborn.
+
+### Changed
+- **18 quests' levels or side**, to Forever's: mostly the level they open at.
+- The Log Reader page keeps a boss's spells when the game calls him neutral (the Relic Guardian).
+
 ## [0.31.0]
 
 ### Added
