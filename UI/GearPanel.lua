@@ -99,23 +99,23 @@ end
 -- Words
 ------------------------------------------------------------------------------------------
 
---[[
-	"+4.2%", "+12%": what an upgrade adds to everything worn. While nothing worn is worth
-	anything to the spec (a fresh character), the plain gain: "+31".
-]]
-local function GainText(compare)
-	local share = compare.share
-	if not share then return string.format("+%d", math.floor((compare.delta or 0) + 0.5)) end
-	if share < 9.95 then return string.format("+%.1f%%", share) end
-	return string.format("+%d%%", math.floor(share + 0.5))
-end
-GearPanel.GainText = GainText
-
 -- A gain in the spec's own unit: "31", or "0.8" when it is that small.
 local function Points(value)
 	if value >= 10 then return tostring(math.floor(value + 0.5)) end
 	return string.format("%.1f", value)
 end
+
+--[[
+	"+4.2%", "+12%": what an upgrade adds to everything worn. While nothing worn is worth
+	anything to the spec (a fresh character), the plain gain: "+31", "+0.4".
+]]
+local function GainText(compare)
+	local share = compare.share
+	if not share then return "+" .. Points(compare.delta or 0) end
+	if share < 9.95 then return string.format("+%.1f%%", share) end
+	return string.format("+%d%%", math.floor(share + 0.5))
+end
+GearPanel.GainText = GainText
 
 -- Who drops it: the boss, or the dungeon's trash.
 local function SourceName(entry)
@@ -143,7 +143,8 @@ local function AddGainLines(compare)
 	local IS = ns.ItemScore
 	local spec = IS:Spec()
 	local data = ns.GEAR_WEIGHTS[IS:Class()]
-	local unit = data and data[spec] and data[spec].unit or ""
+	-- The journal's weights count in one stat (attack power, healing...); a player's own in points.
+	local unit = (not IS:CustomWeights(spec) and data and data[spec] and data[spec].unit) or L.GEAR_UNIT_POINTS
 	GameTooltip:AddLine(string.format(L.GEAR_TIP_GAIN, IS:SpecLabel(spec), GainText(compare)),
 		GAIN_COLOR[1], GAIN_COLOR[2], GAIN_COLOR[3])
 	-- What it replaces: a two-hander takes the off hand's place too.
@@ -472,8 +473,13 @@ local function CreateSide(panel)
 		side.Divider:Hide()
 	end
 
+	-- What the pane shows: the suggested dungeon, or the stat weights (GearPanel:ShowWeights).
+	local content = CreateFrame("Frame", nil, side)
+	content:SetAllPoints()
+	side.Suggestion = content
+
 	-- "Suggested dungeon", on the sheet's category bar.
-	side.Header = CreateFrame("Frame", nil, side)
+	side.Header = CreateFrame("Frame", nil, content)
 	side.Header:SetSize(197, 40)
 	side.Header:SetPoint("TOP", 0, -8)
 	side.Header.Background = side.Header:CreateTexture(nil, "BACKGROUND")
@@ -484,11 +490,11 @@ local function CreateSide(panel)
 	side.Header.Title:SetText(L.GEAR_SUGGESTED)
 
 	-- The dungeon, as its button on the Dungeons tab: a click opens it.
-	side.Dungeon = ns.CreateInstanceButton(side)
+	side.Dungeon = ns.CreateInstanceButton(content)
 	side.Dungeon:SetPoint("TOP", side.Header, "BOTTOM", 0, -4)
 
 	-- "5 upgrades here", in the sheet's item-level box.
-	side.Count = CreateFrame("Frame", nil, side)
+	side.Count = CreateFrame("Frame", nil, content)
 	side.Count:SetSize(ROW_WIDTH, 29)
 	side.Count:SetPoint("TOP", side.Dungeon, "BOTTOM", 0, -4)
 	side.Count.Background = side.Count:CreateTexture(nil, "BORDER")
@@ -500,15 +506,15 @@ local function CreateSide(panel)
 
 	side.Rows = {}
 	for index = 1, SIDE_ROWS do
-		local row = CreateRow(side, index)
+		local row = CreateRow(content, index)
 		row:SetPoint("TOP", index == 1 and side.Count or side.Rows[index - 1], "BOTTOM", 0, index == 1 and -2 or 0)
 		side.Rows[index] = row
 	end
 
 	-- The other dungeons with upgrades.
-	side.Previous = CreatePageButton(side, -1)
-	side.Next = CreatePageButton(side, 1)
-	side.Of = side:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	side.Previous = CreatePageButton(content, -1)
+	side.Next = CreatePageButton(content, 1)
+	side.Of = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	side.Of:SetPoint("TOP", side.Rows[SIDE_ROWS], "BOTTOM", 0, -12)
 	side.Previous:SetPoint("RIGHT", side.Of, "LEFT", -6, 0)
 	side.Next:SetPoint("LEFT", side.Of, "RIGHT", 6, 0)
@@ -521,7 +527,7 @@ local function CreateSide(panel)
 		end)
 	end
 
-	side.None = side:CreateFontString(nil, "OVERLAY", "GameFontDisable")
+	side.None = content:CreateFontString(nil, "OVERLAY", "GameFontDisable")
 	side.None:SetPoint("TOP", side.Header, "BOTTOM", 0, -40)
 	side.None:SetWidth(RIGHT_WIDTH - 2 * SIDE_X)
 	side.None:SetText(L.GEAR_NONE)
@@ -578,6 +584,7 @@ local function SpecText()
 	local spec, why = IS:Spec()
 	if not spec then return "" end
 	local label = IS:SpecLabel(spec)
+	if IS:CustomWeights(spec) then return string.format(L.GEAR_WHY_CUSTOM, label) end
 	if why == "talents" then return string.format(L.GEAR_WHY_TALENTS, label) end
 	if why == "levelling" then return string.format(L.GEAR_WHY_LEVELLING, label) end
 	return label
@@ -588,16 +595,16 @@ local function AutomaticText()
 	return string.format(L.GEAR_AUTO, IS:SpecLabel(IS:AutoSpec()))
 end
 
--- In the left pane's top right corner, where the character panel's reputation page has its filter.
-local function CreateSpecMenu(panel)
+--[[
+	The spec menu: automatic, then the class's specs; with `onEdit`, a last entry that opens the
+	stat weights. Built for the Gear Finder tab and the weights editors alike.
+]]
+function GearPanel.CreateSpecMenu(parent, width, onEdit)
 	local IS = ns.ItemScore
-	local right = -(EDGE + RIGHT_WIDTH + 14)
-	panel.ScoringLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	if ns.HasTemplate("WowStyle1DropdownTemplate") then
-		local ok, dropdown = pcall(CreateFrame, "DropdownButton", nil, panel, "WowStyle1DropdownTemplate")
+		local ok, dropdown = pcall(CreateFrame, "DropdownButton", nil, parent, "WowStyle1DropdownTemplate")
 		if ok and dropdown and dropdown.SetupMenu then
-			dropdown:SetWidth(190)
-			dropdown:SetPoint("TOPRIGHT", right, -16)
+			dropdown:SetWidth(width)
 			dropdown:SetupMenu(function(_, rootDescription)
 				rootDescription:CreateRadio(AutomaticText(),
 					function() return IS:PickedSpec() == nil end, function() IS:SetSpec(nil) end)
@@ -605,18 +612,19 @@ local function CreateSpecMenu(panel)
 					rootDescription:CreateRadio(spec.label,
 						function() return IS:PickedSpec() == spec.key end, function() IS:SetSpec(spec.key) end)
 				end
+				if onEdit then
+					rootDescription:CreateDivider()
+					rootDescription:CreateButton(L.WEIGHTS_EDIT, onEdit)
+				end
 			end)
 			-- The closed menu says why: "Retribution, while levelling".
 			if dropdown.SetSelectionText then dropdown:SetSelectionText(function() return SpecText() end) end
-			panel.ScoringLabel:SetPoint("RIGHT", dropdown, "LEFT", -8, 0)
-			panel.ScoringLabel:SetText(L.GEAR_SCORING)
 			return dropdown
 		end
 	end
 	-- Older menu system, for a client without the modern dropdown.
-	local dropdown = CreateFrame("Frame", nil, panel, "UIDropDownMenuTemplate")
-	dropdown:SetPoint("TOPRIGHT", right + 15, -12)
-	UIDropDownMenu_SetWidth(dropdown, 170)
+	local dropdown = CreateFrame("Frame", nil, parent, "UIDropDownMenuTemplate")
+	UIDropDownMenu_SetWidth(dropdown, width - 20)
 	UIDropDownMenu_Initialize(dropdown, function()
 		local info = UIDropDownMenu_CreateInfo()
 		info.text = AutomaticText()
@@ -630,9 +638,36 @@ local function CreateSpecMenu(panel)
 			info.func = function() IS:SetSpec(spec.key) end
 			UIDropDownMenu_AddButton(info)
 		end
+		if onEdit then
+			info = UIDropDownMenu_CreateInfo()
+			info.text = L.WEIGHTS_EDIT
+			info.notCheckable = true
+			info.func = onEdit
+			UIDropDownMenu_AddButton(info)
+		end
 	end)
 	dropdown.legacy = true
-	panel.ScoringLabel:SetPoint("RIGHT", dropdown, "LEFT", 8, 2)
+	return dropdown
+end
+
+-- After a change: the closed menu's words, and its ticks.
+function GearPanel.UpdateSpecMenu(dropdown)
+	if dropdown.GenerateMenu then pcall(dropdown.GenerateMenu, dropdown) end
+	if dropdown.legacy then UIDropDownMenu_SetText(dropdown, SpecText()) end
+end
+
+-- In the left pane's top right corner, where the character panel's reputation page has its filter.
+local function CreateSpecMenu(panel)
+	local right = -(EDGE + RIGHT_WIDTH + 14)
+	panel.ScoringLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	local dropdown = GearPanel.CreateSpecMenu(panel, 190, function() GearPanel:ShowWeights(panel, true) end)
+	if dropdown.legacy then
+		dropdown:SetPoint("TOPRIGHT", right + 15, -12)
+		panel.ScoringLabel:SetPoint("RIGHT", dropdown, "LEFT", 8, 2)
+	else
+		dropdown:SetPoint("TOPRIGHT", right, -16)
+		panel.ScoringLabel:SetPoint("RIGHT", dropdown, "LEFT", -8, 0)
+	end
 	panel.ScoringLabel:SetText(L.GEAR_SCORING)
 	return dropdown
 end
@@ -676,6 +711,8 @@ function GearPanel:Build(panel)
 	-- Shown again and again in one frame (a journal toggled quickly), it still searches once.
 	panel:HookScript("OnShow", function()
 		panel.suggestIndex = 1
+		-- Opened anew, the tab shows its upgrades; /aegis weights turns it to the weights after.
+		if rawget(panel.Side, "EditorHolder") then GearPanel:ShowWeights(panel, false) end
 		if panel.searchPending then return end
 		panel.searchPending = true
 		C_Timer.After(0, function()
@@ -684,6 +721,26 @@ function GearPanel:Build(panel)
 		end)
 	end)
 	self.panel = panel
+end
+
+--[[
+	The right pane's other face: the stat weights (UI/WeightsEditor.lua), built when first shown,
+	above the ranged slot; Back returns to the suggested dungeon.
+]]
+function GearPanel:ShowWeights(panel, shown)
+	local side = panel.Side
+	if shown and not rawget(side, "Editor") then
+		local holder = CreateFrame("Frame", nil, side)
+		holder:SetPoint("TOPLEFT")
+		holder:SetPoint("BOTTOMRIGHT", 0, PANE_HEIGHT - (FIRST_ROW + 7 * ROW_STEP) + 8)
+		side.Editor = ns.WeightsEditor:Create(holder, {
+			extra = { text = L.WEIGHTS_BACK, onClick = function() GearPanel:ShowWeights(panel, false) end },
+		})
+		side.EditorHolder = holder
+	end
+	if rawget(side, "EditorHolder") then side.EditorHolder:SetShown(shown) end
+	side.Suggestion:SetShown(not shown)
+	if shown then side.Editor:Refresh() end
 end
 
 function GearPanel:Redraw(panel)
@@ -705,6 +762,5 @@ function GearPanel:Redraw(panel)
 		status = status .. " " .. (missing == 1 and L.GEAR_LOADING_ONE or string.format(L.GEAR_LOADING, missing))
 	end
 	panel.Status:SetText(status)
-	if panel.Spec and panel.Spec.GenerateMenu then pcall(panel.Spec.GenerateMenu, panel.Spec) end
-	if panel.Spec and panel.Spec.legacy then UIDropDownMenu_SetText(panel.Spec, SpecText()) end
+	if panel.Spec then GearPanel.UpdateSpecMenu(panel.Spec) end
 end

@@ -67,10 +67,26 @@ local STAT_KEYS = {
 	ITEM_MOD_BLOCK_VALUE_SHORT = "BLOCK VALUE", ITEM_MOD_SHIELD_BLOCK_VALUE_SHORT = "BLOCK VALUE",
 	ITEM_MOD_MANA_SHORT = "MANA", ITEM_MOD_HEALTH_SHORT = "HEALTH",
 	ITEM_MOD_SPELL_PENETRATION_SHORT = "SPELL PENETRATION",
-	-- Known, and worth nothing to any spec: resistances, health per 5.
-	RESISTANCE1_NAME = false, RESISTANCE2_NAME = false, RESISTANCE3_NAME = false, RESISTANCE4_NAME = false,
-	RESISTANCE5_NAME = false, RESISTANCE6_NAME = false, ITEM_MOD_HEALTH_REGEN_SHORT = false,
-	ITEM_MOD_HEALTH_REGENERATION_SHORT = false,
+	-- Worth nothing in the journal's own weights, but a player's may give them some.
+	RESISTANCE1_NAME = "HOLY RESISTANCE", RESISTANCE2_NAME = "FIRE RESISTANCE", RESISTANCE3_NAME = "NATURE RESISTANCE",
+	RESISTANCE4_NAME = "FROST RESISTANCE", RESISTANCE5_NAME = "SHADOW RESISTANCE", RESISTANCE6_NAME = "ARCANE RESISTANCE",
+	ITEM_MOD_HEALTH_REGEN_SHORT = "HEALTH PER 5", ITEM_MOD_HEALTH_REGENERATION_SHORT = "HEALTH PER 5",
+}
+
+--[[
+	Every stat a weight can be given, grouped as the character panel groups its own: what the
+	weights editor (UI/WeightsEditor.lua) lists.
+]]
+ItemScore.STAT_GROUPS = {
+	{ key = "PRIMARY", stats = { "STRENGTH", "AGILITY", "STAMINA", "INTELLECT", "SPIRIT" } },
+	{ key = "WEAPONS", stats = { "DPS", "RANGED DPS", "ATTACK POWER", "RANGED ATTACK POWER", "FERAL ATTACK POWER", "HIT",
+		"CRIT", "RANGED CRIT", "HASTE", "RANGED HASTE" } },
+	{ key = "SPELLS", stats = { "SPELL POWER", "SPELL DAMAGE", "HEALING", "SPELL HIT", "SPELL CRIT", "HOLY CRIT",
+		"HOLY DAMAGE", "FIRE DAMAGE", "FROST DAMAGE", "NATURE DAMAGE", "SHADOW DAMAGE", "ARCANE DAMAGE",
+		"SPELL PENETRATION", "MANA", "MANA PER 5", "CASTING REGEN" } },
+	{ key = "DEFENSE", stats = { "ARMOR", "HEALTH", "HEALTH PER 5", "DEFENSE", "DODGE", "PARRY", "BLOCK", "BLOCK VALUE" } },
+	{ key = "RESISTANCE", stats = { "HOLY RESISTANCE", "FIRE RESISTANCE", "NATURE RESISTANCE", "FROST RESISTANCE",
+		"SHADOW RESISTANCE", "ARCANE RESISTANCE" } },
 }
 
 -- Names the client gave that the journal does not know yet, for /aegis gearscan.
@@ -108,6 +124,7 @@ local LINE_PATTERNS = {
 	{ "attack power by " .. NUMBER, "ATTACK POWER" },
 	{ "%+" .. NUMBER .. " attack power", "ATTACK POWER" },
 	{ NUMBER .. " mana per 5 sec", "MANA PER 5" },
+	{ "restores " .. NUMBER .. " health", "HEALTH PER 5" },
 	{ "defense %+" .. NUMBER, "DEFENSE" },
 	{ "defense rating by " .. NUMBER, "DEFENSE" },
 	{ "chance to dodge an attack by " .. NUMBER, "DODGE" },
@@ -378,12 +395,171 @@ function ItemScore:SpecLabel(spec)
 	return data and data[spec] and data[spec].label or spec
 end
 
--- The weights in use: the levelling set below 60 (tanks have one set).
-function ItemScore:Weights(spec)
+-- The journal's own weights for a spec: the levelling set below 60 (tanks have one set).
+function ItemScore:DefaultWeights(spec)
 	local data = ns.GEAR_WEIGHTS[self:Class()]
 	local entry = data and data[spec or self:Spec()]
 	if not entry then return {} end
 	return (self:Level() < MAX_LEVEL and entry.leveling) or entry.max
+end
+
+--[[
+	The player's own weights for a spec, kept per character; nil while the journal's are used.
+	Either changes made in the editor, { overrides = { [stat] = weight } }, laid over the journal's
+	weights of the moment (so its level-60 set still takes over at 60), or a scale brought from
+	Pawn, { weights = {...}, source = its name }, which stands in for them whole.
+]]
+function ItemScore:CustomWeights(spec)
+	local custom = Settings().custom
+	return custom and custom[spec or self:Spec()] or nil
+end
+
+-- The journal's weights with the player's changes laid over them, kept until anything changes.
+local merged = {}
+
+-- The weights in use: the player's own for the spec, else the journal's.
+function ItemScore:Weights(spec)
+	spec = spec or self:Spec()
+	local custom = self:CustomWeights(spec)
+	if not custom then return self:DefaultWeights(spec) end
+	if custom.weights then return custom.weights end
+	local defaults = self:DefaultWeights(spec)
+	local kept = merged[spec]
+	if kept and kept.defaults == defaults then return kept.weights end
+	local weights = {}
+	for key, value in pairs(defaults) do weights[key] = value end
+	for key, value in pairs(custom.overrides or {}) do weights[key] = value end
+	merged[spec] = { defaults = defaults, weights = weights }
+	return weights
+end
+
+local function SameWeights(a, b)
+	for key, value in pairs(a) do
+		if math.abs(value - (b[key] or 0)) > 1e-9 then return false end
+	end
+	for key, value in pairs(b) do
+		if a[key] == nil and value ~= 0 then return false end
+	end
+	return true
+end
+
+--[[
+	One weight changed for a spec: an override on the journal's weights, let go when it is set
+	back to theirs, or a change to a scale brought from Pawn.
+]]
+function ItemScore:SetWeight(spec, stat, value)
+	local settings = Settings()
+	settings.custom = settings.custom or {}
+	local set = settings.custom[spec]
+	if set and set.weights then
+		set.weights[stat] = value ~= 0 and value or nil
+		if SameWeights(set.weights, self:DefaultWeights(spec)) then settings.custom[spec] = nil end
+	else
+		set = set or {}
+		set.overrides = set.overrides or {}
+		local default = self:DefaultWeights(spec)[stat] or 0
+		set.overrides[stat] = math.abs(value - default) > 1e-9 and value or nil
+		settings.custom[spec] = next(set.overrides) and set or nil
+	end
+	self:Changed()
+end
+
+-- Back to the journal's weights for a spec.
+function ItemScore:ResetWeights(spec)
+	local custom = Settings().custom
+	if custom then custom[spec] = nil end
+	self:Changed()
+end
+
+-- A weight worth keeping: a number, and not an absurd one (Pawn marks what a class cannot use
+-- with -1000000).
+local function SaneWeight(value)
+	return type(value) == "number" and value == value and math.abs(value) < 1e6
+end
+ItemScore.SaneWeight = SaneWeight
+
+--[[
+	Pawn's scale tags, as its Export gives them: ( Pawn: v1: "Name": Class=Warrior, Strength=1, ... ).
+	Stat names are read in either of the spellings Pawn's tags use, without regard to case. One may
+	stand for more than one of the journal's stats: Pawn's spell damage is that of "damage and
+	healing" gear as well as of damage-only gear. `false`: known, and nothing an item here carries.
+]]
+local PAWN_STATS = {
+	strength = "STRENGTH", agility = "AGILITY", stamina = "STAMINA", intellect = "INTELLECT", spirit = "SPIRIT",
+	armor = "ARMOR", bonusarmor = "ARMOR",
+	ap = "ATTACK POWER", attackpower = "ATTACK POWER", rap = "RANGED ATTACK POWER", rangedap = "RANGED ATTACK POWER",
+	rangedattackpower = "RANGED ATTACK POWER", feralap = "FERAL ATTACK POWER",
+	hit = "HIT", hitrating = "HIT", meleehit = "HIT", crit = "CRIT", critrating = "CRIT", meleecrit = "CRIT",
+	rangedcrit = "RANGED CRIT", haste = "HASTE", hasterating = "HASTE", meleehaste = "HASTE", rangedhaste = "RANGED HASTE",
+	spellpower = { "SPELL POWER", "SPELL DAMAGE" }, spelldamage = { "SPELL DAMAGE", "SPELL POWER" }, healing = "HEALING",
+	spellhit = "SPELL HIT", spellhitrating = "SPELL HIT", spellcrit = "SPELL CRIT", spellcritrating = "SPELL CRIT",
+	holyspelldamage = "HOLY DAMAGE", firespelldamage = "FIRE DAMAGE", frostspelldamage = "FROST DAMAGE",
+	naturespelldamage = "NATURE DAMAGE", shadowspelldamage = "SHADOW DAMAGE", arcanespelldamage = "ARCANE DAMAGE",
+	spellpenetration = "SPELL PENETRATION", mana = "MANA", mp5 = "MANA PER 5", health = "HEALTH", hp5 = "HEALTH PER 5",
+	defense = "DEFENSE", defenserating = "DEFENSE", dodge = "DODGE", dodgerating = "DODGE", parry = "PARRY",
+	parryrating = "PARRY", block = "BLOCK", blockrating = "BLOCK", blockvalue = "BLOCK VALUE",
+	holyresist = "HOLY RESISTANCE", fireresist = "FIRE RESISTANCE", natureresist = "NATURE RESISTANCE",
+	frostresist = "FROST RESISTANCE", shadowresist = "SHADOW RESISTANCE", arcaneresist = "ARCANE RESISTANCE",
+	metasocketeffect = false, redsocket = false, yellowsocket = false, bluesocket = false, prismaticsocket = false,
+}
+-- Weapon damage, which adds up in Pawn: every weapon's Dps, a melee weapon's MeleeDps and that of
+-- its hand, a ranged weapon's RangedDps. The journal has no off hand's own.
+local PAWN_DPS = { dps = true, meleedps = true, rangeddps = true, mainhanddps = true, onehanddps = true,
+	twohanddps = true, offhanddps = true }
+-- What a tag says about itself rather than a stat.
+local PAWN_SETTINGS = { class = true, spec = true, speedbaseline = true }
+
+--[[
+	The weights in a Pawn scale tag, its name, the stat names it has that the journal doesn't know,
+	and the class it says it is for; nil when the text holds no tag, or no stat the journal knows.
+]]
+function ItemScore:ParsePawn(text)
+	if type(text) ~= "string" then return nil end
+	local name, body = text:match('%(%s*Pawn%s*:%s*v%d+%s*:%s*"([^"]*)"%s*:(.-)%)')
+	if not body then return nil end
+	local weights, unknown, dps, found, class = {}, {}, {}, 0, nil
+	for pair in body:gmatch("[^,]+") do
+		local key, value = pair:match("^%s*([%w_]+)%s*=%s*(.-)%s*$")
+		if key then
+			local lower, number = key:lower(), tonumber(value)
+			local stat = PAWN_STATS[lower]
+			if lower == "class" then
+				class = value
+			elseif PAWN_DPS[lower] then
+				if SaneWeight(number) then dps[lower], found = number, found + 1 end
+			elseif stat and SaneWeight(number) then
+				for _, target in ipairs(type(stat) == "table" and stat or { stat }) do
+					weights[target] = math.max(weights[target] or number, number)
+				end
+				found = found + 1
+			elseif stat == nil and not PAWN_SETTINGS[lower] then
+				unknown[#unknown + 1] = key
+			end
+		end
+	end
+	if found == 0 then return nil end
+	local hand = math.max(dps.mainhanddps or 0, dps.onehanddps or 0, dps.twohanddps or 0)
+	weights.DPS = (dps.dps or 0) + (dps.meleedps or 0) + hand
+	weights["RANGED DPS"] = (dps.dps or 0) + (dps.rangeddps or 0)
+	for stat, value in pairs(weights) do
+		if value == 0 then weights[stat] = nil end
+	end
+	return weights, name, unknown, class
+end
+
+--[[
+	A Pawn scale tag as a spec's weights: true, the scale's name and the names left out. False,
+	and the class the tag is for, when that is another class than the player's.
+]]
+function ItemScore:ImportPawn(spec, text)
+	local weights, name, unknown, class = self:ParsePawn(text)
+	if not weights then return false end
+	if class and class ~= "" and class:upper():gsub("[%s_]", "") ~= self:Class() then return false, nil, nil, class end
+	local settings = Settings()
+	settings.custom = settings.custom or {}
+	settings.custom[spec] = { weights = weights, source = name ~= "" and name or nil }
+	self:Changed()
+	return true, name, unknown
 end
 
 function ItemScore:ScoreStats(stats, weights)
@@ -519,6 +695,7 @@ function ItemScore:OnChange(callback)
 end
 
 function ItemScore:Changed()
+	wipe(merged)
 	for _, callback in ipairs(listeners) do callback() end
 end
 

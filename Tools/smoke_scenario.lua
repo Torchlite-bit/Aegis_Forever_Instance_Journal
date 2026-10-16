@@ -3298,41 +3298,158 @@ end)()
 		and page.Loot.revealedItemID == trashItem, "and opens the dungeon's own loot page on it")
 	Mock.itemsCached[trashItem], Mock.itemStats[trashItem] = nil, nil
 
-	-- The character panel's side tab, below the last of its own that shows
-	check(not ns.CharacterTab:Create() and not ns.CharacterTab.tab, "no character panel with side tabs: no tab")
-	local column = CreateFrame("Frame", "CharacterFrameModeTabs", UIParent)
-	column.Tabs = { CreateFrame("Frame", nil, column), CreateFrame("Frame", nil, column) }
-	column.Tabs[2]:Hide()
-	_G.CharacterFrame = CreateFrame("Frame", "CharacterFrame", UIParent)
-	CharacterFrame.ModeTabs = column
-	local layouts = 0
-	CharacterFrame.UpdateTabLayout = function() layouts = layouts + 1 end
-	check(ns.CharacterTab:Create(), "a tab on the character panel's side")
-	local tab = ns.CharacterTab.tab
-	check(tab:GetParent() == column and select(2, tab:GetPoint(1)) == column.Tabs[1] and tab.tooltipText == "Gear Finder"
-		and tab.Icon:GetTexture() == "Interface\\Icons\\INV_Helmet_08", "under the last tab shown: a helmet, called Gear Finder")
-	local listed = false
-	for _, other in ipairs(column.Tabs) do if other == tab then listed = true end end
-	check(not listed and #column.Tabs == 2, "kept out of the panel's own list of tabs")
-	column.Tabs[2]:Show()
-	CharacterFrame:UpdateTabLayout()
-	check(layouts == 1 and select(2, tab:GetPoint(1)) == column.Tabs[2], "and placed again when the panel lays out its tabs")
-	ns.Journal:SelectTab(1)
-	f:Hide()
-	tab.customMouseUpHandler(tab, "RightButton", true)
-	tab.customMouseUpHandler(tab, "LeftButton", false)
-	check(not f:IsShown(), "a right click, or a press let go outside it, opens nothing")
-	CharacterFrame:Show()
-	tab.customMouseUpHandler(tab, "LeftButton", true)
-	Mock.RunTimers(1)
-	check(f:IsShown() and f.selectedTab == 4 and gear:IsShown() and not CharacterFrame:IsShown(),
-		"a click opens the Gear Finder tab in the character panel's place")
-	Mock.inCombat = true
-	CharacterFrame:Show()
-	tab.customMouseUpHandler(tab, "LeftButton", true)
-	check(CharacterFrame:IsShown() and f:IsShown(), "in combat the panel is left alone, and the journal opens over it")
-	Mock.inCombat = nil
-	_G.CharacterFrame, _G.CharacterFrameModeTabs = nil, nil
+	-- The character panel's side tab: the first place under the panel's own, and its stat weights
+	;(function()
+		check(not ns.CharacterTab:Create() and not ns.CharacterTab.tab, "no character panel with side tabs: no tab")
+		local column = CreateFrame("Frame", "CharacterFrameModeTabs", UIParent)
+		column.Tabs = { CreateFrame("Frame", nil, column), CreateFrame("Frame", nil, column) }
+		column.Tabs[2]:Hide()
+		_G.CharacterFrame = CreateFrame("Frame", "CharacterFrame", UIParent)
+		CharacterFrame.ModeTabs = column
+		CharacterFrame.RightPaneHost = CreateFrame("Frame", nil, CharacterFrame)
+		local layouts = 0
+		CharacterFrame.UpdateTabLayout = function() layouts = layouts + 1 end
+		CharacterFrame.ShowSubFrame = function() end
+		CharacterFrame.OnModeTabClicked = function() end
+		CharacterFrame.RefreshRightPane = function() end
+		-- Another addon's tab already in that place, and one more of its own hung under it
+		local theirs = CreateFrame("Frame", nil, column)
+		theirs:SetPoint("TOPLEFT", column.Tabs[1], "BOTTOMLEFT", 0, -2)
+		local theirsNext = CreateFrame("Frame", nil, column)
+		theirsNext:SetPoint("TOPLEFT", theirs, "BOTTOMLEFT", 0, -2)
+		check(ns.CharacterTab:Create(), "a tab on the character panel's side")
+		local tab = ns.CharacterTab.tab
+		check(tab:GetParent() == column and select(2, tab:GetPoint(1)) == column.Tabs[1] and tab.tooltipText == "Gear Finder"
+			and tab.Icon:GetTexture() == "Interface\\Icons\\INV_Helmet_08", "the first place under the panel's own tabs: a helmet")
+		check(select(2, theirs:GetPoint(1)) == tab and select(2, theirsNext:GetPoint(1)) == theirs,
+			"another addon's tab there moves down under it, with the one hung under that")
+		local listed = false
+		for _, other in ipairs(column.Tabs) do if other == tab then listed = true end end
+		check(not listed and #column.Tabs == 2, "kept out of the panel's own list of tabs")
+		column.Tabs[2]:Show()
+		CharacterFrame:UpdateTabLayout()
+		check(layouts == 1 and select(2, tab:GetPoint(1)) == column.Tabs[2] and select(2, theirs:GetPoint(1)) == tab,
+			"placed again when the panel lays out its tabs, the other still under it")
+
+		-- Its click: the stat weights, over the panel's stats
+		CharacterFrame:Show()
+		tab.customMouseUpHandler(tab, "RightButton", true)
+		tab.customMouseUpHandler(tab, "LeftButton", false)
+		check(not (ns.CharacterTab.window and ns.CharacterTab.window:IsShown()), "a right click, or a press let go outside it, opens nothing")
+		tab.customMouseUpHandler(tab, "LeftButton", true)
+		local window = ns.CharacterTab.window
+		check(window and window:IsShown() and window:GetParent() == CharacterFrame and window:GetFrameStrata() == "HIGH"
+			and select(2, window:GetPoint(1)) == CharacterFrame.RightPaneHost,
+			"a click shows the stat weights over the panel's stats, above its detail panes")
+		-- The pane folded away while it shows: over the panel's edge, below the button that unfolds it
+		CharacterFrame.RightPaneHost:Hide()
+		CharacterFrame:RefreshRightPane()
+		local point, relative, _, _, y = window:GetPoint(1)
+		check(point == "TOPRIGHT" and relative == CharacterFrame and y == -56, "the pane folded away: the window follows")
+		CharacterFrame.RightPaneHost:Show()
+		CharacterFrame:RefreshRightPane()
+		check(select(2, window:GetPoint(1)) == CharacterFrame.RightPaneHost, "and back over the pane unfolded")
+		local editor = window.Editor
+		local strength = editor.Rows[1]
+		check(#editor.Rows == 45 and strength.stat == "STRENGTH" and strength.Label:GetText() == "Strength:"
+			and strength.Value:GetText() == "2.16" and editor.Source:GetText() == ns.L.WEIGHTS_SOURCE_LEVELLING,
+			"every stat, grouped as the panel groups its own, with the spec's weight: " .. tostring(strength.Value:GetText()))
+		-- A weight typed in: the player's own, in green, scored at once
+		strength.Value:SetText("3")
+		strength.Value:_RunScript("OnEnterPressed")
+		check(IS:Weights().STRENGTH == 3 and IS:DefaultWeights().STRENGTH == 2.16 and IS:CustomWeights("Arms")
+			and strength.Value._textColor[1] < 0.5 and editor.Source:GetText() == ns.L.WEIGHTS_SOURCE_CUSTOM,
+			"a weight changed is the player's own, shown green")
+		strength.Value:SetText("lots")
+		strength.Value:_RunScript("OnEnterPressed")
+		check(strength.Value:GetText() == "3" and IS:Weights().STRENGTH == 3, "what isn't a number is put back")
+		strength.Value:SetText("2,16")
+		strength.Value:_RunScript("OnEnterPressed")
+		check(not IS:CustomWeights("Arms") and IS:Weights() == IS:DefaultWeights(), "changed back, the journal's weights again")
+		editor.Rows[2].Value:SetText("5")
+		editor.Rows[2].Value:_RunScript("OnEnterPressed")
+		check(IS:CustomWeights("Arms") and editor.Reset._disabledState == false, "another change, and Reset to undo it")
+		editor.Reset:Click()
+		check(not IS:CustomWeights("Arms") and editor.Reset._disabledState == true, "Reset: the journal's weights")
+		-- A change made while levelling stays a change: at 60 the journal's level-60 weights apply under it
+		editor.Rows[2].Value:SetText("5")
+		editor.Rows[2].Value:_RunScript("OnEnterPressed")
+		Mock.level = 60
+		IS:Forget()
+		check(IS:Weights().AGILITY == 5 and IS:Weights().HIT == ns.GEAR_WEIGHTS.WARRIOR.Arms.max.HIT,
+			"a weight changed while levelling still applies at 60, over the journal's level-60 weights")
+		Mock.level = 15
+		IS:Forget()
+		editor.Reset:Click()
+
+		-- A Pawn scale tag
+		local TAG = '( Pawn: v1: "Arms PvE": Class=Warrior, Spec=1, Strength=1, Agility=0.65, HitRating=1.4, Ap=0.45, '
+			.. 'MeleeDps=3.2, Hp5=0, MetaSocketEffect=36, FooBar=2 )'
+		local weights, name, unknown = IS:ParsePawn(TAG)
+		check(weights and name == "Arms PvE" and weights.STRENGTH == 1 and weights.AGILITY == 0.65 and weights.HIT == 1.4
+			and weights["ATTACK POWER"] == 0.45 and weights.DPS == 3.2 and weights["HEALTH PER 5"] == nil
+			and #unknown == 1 and unknown[1] == "FooBar", "a Pawn scale tag read: its weights, its name, what it has that isn't known")
+		check(IS:ParsePawn("not a scale") == nil, "text that isn't one is no scale")
+		local caster = IS:ParsePawn('( Pawn: v1: "Frost": Class=Mage, SpellDamage=1, Intellect=0.4, Dps=2, Spirit=1e999 )')
+		check(caster["SPELL POWER"] == 1 and caster["SPELL DAMAGE"] == 1 and caster.DPS == 2 and caster["RANGED DPS"] == 2
+			and caster.SPIRIT == nil, "spell damage counts for damage-and-healing gear too, weapon damage for wands, nothing absurd")
+		check(not IS:ImportPawn("Arms", '( Pawn: v1: "Frost": Class=Mage, SpellDamage=1 )') and not IS:CustomWeights("Arms"),
+			"a scale for another class is not taken")
+		editor.Pawn:Click()
+		check(editor.Import:IsShown() and not editor.Scroll:IsShown(), "Pawn... asks for the tag")
+		editor.Import.Box:SetText("hello")
+		editor.Import.Import:Click()
+		check(editor.Message:GetText() == ns.L.WEIGHTS_NOT_PAWN and not IS:CustomWeights("Arms"), "and says when the text isn't one")
+		editor.Import.Box:SetText(TAG)
+		editor.Import.Import:Click()
+		check(IS:Weights().STRENGTH == 1 and IS:Weights().HIT == 1.4 and editor.Scroll:IsShown()
+			and editor.Source:GetText() == string.format(ns.L.WEIGHTS_SOURCE_PAWN, "Arms PvE")
+			and editor.Message:GetText():find("FooBar", 1, true), "a scale brought in, and what of it wasn't used said: "
+			.. tostring(editor.Message:GetText()))
+		-- A weight with more in it than the box shows is left alone when the box is passed through
+		IS:ImportPawn("Arms", '( Pawn: v1: "Fine": Strength=1, Agility=0.68691 )')
+		local agility = editor.Rows[2]
+		check(agility.Value:GetText() == "0.6869", "four decimals shown: " .. tostring(agility.Value:GetText()))
+		agility.Value:_RunScript("OnEditFocusGained")
+		agility.Value:_RunScript("OnEditFocusLost")
+		check(IS:Weights().AGILITY == 0.68691, "and nothing changed by passing through it")
+		editor.Reset:Click()
+
+		-- The window closes when the panel turns to another page; its button opens the Gear Finder
+		CharacterFrame:ShowSubFrame("ReputationFrame")
+		check(not window:IsShown(), "another page of the panel closes it")
+		tab.customMouseUpHandler(tab, "LeftButton", true)
+		CharacterFrame:OnModeTabClicked(column.Tabs[1])
+		check(not window:IsShown(), "as does any of its tabs, the page already shown among them")
+		tab.customMouseUpHandler(tab, "LeftButton", true)
+		ns.Journal:SelectTab(1)
+		f:Hide()
+		editor.Extra:Click()
+		Mock.RunTimers(1)
+		check(f:IsShown() and f.selectedTab == 4 and gear:IsShown() and not CharacterFrame:IsShown(),
+			"Open the Gear Finder: the journal in the panel's place")
+		Mock.inCombat = true
+		CharacterFrame:Show()
+		ns.CharacterTab:Open()
+		check(CharacterFrame:IsShown() and f:IsShown(), "in combat the panel is left alone, and the journal opens over it")
+		Mock.inCombat = nil
+
+		-- The same weights in the Gear Finder tab, from its spec menu or /aegis weights
+		local buttons = gear.Spec._menu and gear.Spec._menu.buttons or {}
+		check(buttons[1] and buttons[1].text == ns.L.WEIGHTS_EDIT, "the spec menu offers the stat weights")
+		SlashCmdList.AEGISJOURNAL("weights")
+		local side = gear.Side
+		check(f.selectedTab == 4 and side.Editor and side.EditorHolder:IsShown() and not side.Suggestion:IsShown()
+			and #side.Editor.Rows == 45, "/aegis weights: the Gear Finder tab with its weights")
+		side.Editor.Extra:Click()
+		check(side.Suggestion:IsShown() and not side.EditorHolder:IsShown(), "Back: the suggested dungeon again")
+		SlashCmdList.AEGISJOURNAL("weights")
+		f:Hide()
+		ns.Journal:ShowGear()
+		check(side.Suggestion:IsShown() and not side.EditorHolder:IsShown(), "opened again, the tab shows its upgrades")
+		check(ns.GearPanel.GainText({ delta = 0.4 }) == "+0.4", "a small gain with nothing worn of worth: not '+0'")
+		_G.CharacterFrame, _G.CharacterFrameModeTabs = nil, nil
+	end)()
 
 	-- /aegis gearscan saves what the client says about the worn gear and nearby drops
 	SlashCmdList.AEGISJOURNAL("gearscan")

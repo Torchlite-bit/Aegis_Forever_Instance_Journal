@@ -96,6 +96,9 @@ SlashCmdList.AEGISJOURNAL = function(message)
 		ns.TravelMap:Capture(rest)
 	elseif command == "gear" then
 		ns.Journal:ShowGear()
+	elseif command == "weights" then
+		ns.Journal:ShowGear()
+		ns.GearPanel:ShowWeights(ns.GearPanel.panel, true)
 	elseif command == "gearscan" then
 		ns.GearFinder:Scan()
 	else
