@@ -25,8 +25,7 @@ and the version shown in the AddOns list. Quote it in bug reports.
 - **What can be dispelled on the way**, on the boss each pack leads to: the Marsh Skulkers'
   Muculent Rot, the Thicket Hunters' Infected Wound, the Dragonmaw Thaumaturgists' Curse of
   Weakness and the spider trail's poison and Highland Venom, with the classes that can take each
-  off; and the Highland Horror's roots, which Blessing of Freedom breaks. The Thicket Hunter's
-  Infected Wound in Shadetooth's fight is marked as a disease, with who can take it off.
+  off; and the Highland Horror's roots, which Blessing of Freedom breaks.
 
 - **The Gear Finder and its stat weights in Russian**, with every spec's name and unit, by
   Staree4ok. The new top 3 picker is still in English for now.

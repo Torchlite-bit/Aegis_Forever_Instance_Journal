@@ -774,8 +774,8 @@ do
 	check(bosses["Saltspine"].encounterID == 3480 and guardian.encounterID == 3482 and Spell(guardian, 10101)
 		and Spell(guardian, 8374) and Spell(guardian, 8374).every[1] == 9 and Spell(guardian, 8374).text,
 		"Excavation Site's encounter ids, and the Relic Guardian's spells with their written text and recorded numbers")
-	check(AddIDs(bosses["Saltspine"]) == "" and AddIDs(bosses["Shadetooth"]) == "260800,260801",
-		"the spiders fighting the dig nearby are not taken for adds: " .. AddIDs(bosses["Shadetooth"]))
+	check(AddIDs(bosses["Saltspine"]) == "" and AddIDs(bosses["Shadetooth"]) == "",
+		"the creatures that cast in the fights are the thicket's and the dig's, not listed as adds: " .. AddIDs(bosses["Shadetooth"]))
 	-- What the creatures on the way put on players, and who can take it off, on the boss they lead to
 	local function Extra(boss, title)
 		for _, entry in ipairs(boss.extraAbilities or {}) do
@@ -787,17 +787,18 @@ do
 		and Extra(bosses["Highland Horror"], "Curse of Weakness") and Spell(bosses["Highland Horror"], 1316480)
 		and Extra(guardian, "Poison on the spider trail") and venom and venom.description:find("Cure Disease", 1, true),
 		"each boss notes the debuffs of the creatures on the way to him, and who can take them off")
-	-- An add's spell from the recorded run, marked and written by hand: the Thicket Hunter's disease
+	-- Shadetooth's page: the Thicket Hunters' disease noted, and nothing more of the thicket's raptors
 	local shadetooth = bosses["Shadetooth"]
 	ns.Journal:OpenBoss(dig, shadetooth)
 	tabs[3]:Click()
-	local wound
+	local wound, raptors = nil, 0
 	for _, header in ipairs(shownHeaders()) do
-		if header.Button.Title:GetText() == "Infected Wound" then wound = header end
+		local title = header.Button.Title:GetText()
+		if title == "Infected Wound" then wound = header end
+		if title == "Raptors in the grass" or title == "The wave before him" or title == "Thicket Hunter" then raptors = raptors + 1 end
 	end
-	check(wound and (wound.Description:GetText() or ""):find("Cure Disease", 1, true)
-		and shadetooth.spellFlags[3427][2] == "Disease",
-		"the Thicket Hunter's Infected Wound says it's a disease and who can take it off")
+	check(wound and (wound.Description:GetText() or ""):find("Cure Disease", 1, true) and raptors == 0,
+		"Infected Wound says it's a disease and who can take it off; the raptor notes and adds are gone")
 end
 ns.Journal:OpenBoss(thanes, magmatus)
 local magmatusHeaders = shownHeaders()

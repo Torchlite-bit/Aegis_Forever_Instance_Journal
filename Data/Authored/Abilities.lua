@@ -776,22 +776,13 @@ ns.AmendInstance("ExcavationSiteWetlands", { bosses = {
 				text = "Late in the fight he enrages and hits harder: keep the tank's health up to the end." },
 		},
 		extraAbilities = {
-			{ title = "Raptors in the grass", icon = ICONS .. "ability_druid_rake", flags = { "Bleed" },
-				description = "Small raptors jump out of the grass as you walk through it and make you bleed." },
-			{ title = "The wave before him", icon = ICONS .. "ability_hunter_pet_raptor", flags = { "Important", "Damage" },
-				description = "Kill every raptor of the wave before he arrives. One group wiped on its first try with Shadetooth and several raptors on it at once." },
 			{ title = "Infected Wound", icon = ICONS .. "ability_creature_disease_03", flags = { "Healer", "Disease" },
 				description = "The Thicket Hunters, raptors on the way to him and in his fight, give players Infected Wound, a disease. "
 					.. "Paladins (Purify or Cleanse), priests and shamans (Cure Disease) can take it off." },
 		},
 		fightNote = "Kill the raptor matriarch in the tall grass. A wave of raptors comes when she dies, and Shadetooth runs in once they are dead.",
-		notAdds = { [260803] = true },
-		-- The spells of his adds, which only the recorded run lists
-		spellFlags = { [3427] = { "Healer", "Disease" } },
-		spellText = {
-			[3427] = "A disease: the player takes more physical damage for 5 minutes. Paladins (Purify or Cleanse), "
-				.. "priests and shamans (Cure Disease) can take it off.",
-		},
+		-- The raptors that cast in his fight are the thicket's, noted above: not listed as his adds.
+		notAdds = { [260800] = true, [260801] = true, [260803] = true },
 	},
 	["Highland Horror"] = {
 		abilities = {
