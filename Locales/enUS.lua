@@ -15,7 +15,7 @@ L.BINDING_TOGGLE = "Toggle Instance Journal"
 L.KEY_CLAIMED = "Shift+J now opens the Instance Journal."
 L.KEY_TAKEN = "Shift+J is already bound to %s. Choose a key under Key Bindings > AddOns > Toggle Instance Journal."
 L.POSITION_RESET = "Window position reset."
-L.SLASH_HELP = "/aegis opens the journal. /aegis record starts or stops recording. /aegis reset moves the window back to its default place. /aegis perf measures the journal's memory and speed. /aegis where and /aegis taxi report where you stand and the flight points on your map. /aegis travel saves a boat, zeppelin, tram or portal for the world map. /aegis items finds the listed items the server knows nothing of."
+L.SLASH_HELP = "/aegis opens the journal. /aegis record starts or stops recording. /aegis reset moves the window back to its default place. /aegis perf measures the journal's memory and speed. /aegis where and /aegis taxi report where you stand and the flight points on your map. /aegis travel saves a boat, zeppelin, tram or portal for the world map. /aegis items finds the listed items the server knows nothing of. /aegis gear opens the Gear Finder, /aegis weights its stat weights; /aegis gearscan saves what it reads from your gear, for checking its scoring."
 L.ITEMS_START = "Asking the server about the %d items the journal lists. The answer comes in about %d seconds; carry on as you like."
 L.ITEMS_SCANNING = "Still asking the server; the answer comes in a moment."
 L.ITEMS_DONE = "Of %d items, the server knows nothing of %d: most likely they are not in Forever yet. The journal hides them until the server or a recorded run confirms them. The full list goes in the saved file at your next /reload or logout."
@@ -44,6 +44,88 @@ L.EMPTY_REPUTATION = "No faction rewards are known yet."
 L.EMPTY_BRACKET = "Nothing in this level range."
 
 L.TAB_RECORD = "Record"
+L.TAB_GEAR = "Gear Finder"
+
+-- The Gear Finder (Core/GearFinder.lua, UI/GearPanel.lua, UI/CharacterTab.lua).
+L.GEAR_TITLE = "Gear Finder"
+L.GEAR_PREVIEW = "Preview"
+L.GEAR_NO_UPGRADE = "No upgrade found"
+L.GEAR_LOOKING = "Looking in %d dungeons."
+L.GEAR_LOOKING_ONE = "Looking in 1 dungeon."
+L.GEAR_LOADING = "%d items still loading."
+L.GEAR_LOADING_ONE = "1 item still loading."
+L.GEAR_SCORING = "Scoring for"
+L.GEAR_AUTO = "Automatic: %s"
+L.GEAR_WHY_TALENTS = "%s (talents)"
+L.GEAR_WHY_LEVELLING = "%s (levelling)"
+L.GEAR_SUGGESTED = "Suggested dungeon"
+L.GEAR_UPGRADES_HERE = "%d upgrades here"
+L.GEAR_UPGRADE_HERE = "1 upgrade here"
+L.GEAR_MORE_SLOTS = "and %d more"
+L.GEAR_DUNGEON_OF = "%d of %d"
+L.GEAR_NONE = "No upgrades in the dungeons near your level."
+L.GEAR_TIP_GAIN = "Gear Finder (%s): %s to your gear"
+L.GEAR_TIP_OVER = "Worth %s %s more than %s."
+L.GEAR_TIP_OVER_BOTH = "Worth %s %s more than %s and %s."
+L.GEAR_TIP_EMPTY = "Worth %s %s, in a slot you have nothing in."
+L.GEAR_TIP_LATER = "You can wear it at level %d."
+L.GEAR_TIP_CLICK = "Click to open its loot in the journal; shift-click to link it."
+L.GEAR_TIP_MORE = "Other upgrades for this slot:"
+L.GEAR_TIP_NONE = "No upgrade for this slot in the dungeons near your level."
+L.GEAR_CHAR_BUTTON = "Gear Finder"
+L.GEAR_CHAR_BUTTON_TIP = "Your stat weights, and the best upgrades waiting for you in the journal's dungeons."
+L.GEAR_SCAN_DONE = "Gear scan saved: %d worn items and %d dungeon drops. Log out or /reload to write it to the saved file."
+L.GEAR_SCAN_ERRORS = "%d items could not be read; what went wrong is saved with the scan."
+L.GEAR_SCAN_LOADING = "Some drops are still loading: wait a few seconds and type /aegis gearscan again for more."
+L.GEAR_SLOT_FINGER1 = "Finger 1"
+L.GEAR_SLOT_FINGER2 = "Finger 2"
+L.GEAR_SLOT_TRINKET1 = "Trinket 1"
+L.GEAR_SLOT_TRINKET2 = "Trinket 2"
+
+-- Stat weights (Core/ItemScore.lua, UI/WeightsEditor.lua).
+L.WEIGHTS_TITLE = "Stat Weights"
+L.WEIGHTS_EDIT = "Edit stat weights..."
+L.WEIGHTS_SOURCE_DEFAULT = "The journal's weights"
+L.WEIGHTS_SOURCE_LEVELLING = "The journal's weights, while levelling"
+L.WEIGHTS_SOURCE_CUSTOM = "Your own weights"
+L.WEIGHTS_SOURCE_PAWN = "Your weights, from Pawn: %s"
+L.WEIGHTS_TIP = "How much one point of each stat is worth to this spec. Click a weight to change it; your own weights show in green and are kept for this character."
+L.WEIGHTS_RESET = "Reset"
+L.WEIGHTS_RESET_TIP = "Back to the journal's weights for this spec."
+L.WEIGHTS_PAWN = "Pawn..."
+L.WEIGHTS_PAWN_TIP = "Bring in a scale from Pawn."
+L.WEIGHTS_PAWN_HELP = "In Pawn, pick the scale, choose Export, copy the text, and paste it here."
+L.WEIGHTS_IMPORT = "Import"
+L.WEIGHTS_CANCEL = "Cancel"
+L.WEIGHTS_BACK = "Back"
+L.WEIGHTS_OPEN_FINDER = "Open the Gear Finder"
+L.WEIGHTS_IMPORTED = "Imported %d weights from %s."
+L.WEIGHTS_UNUSED = "Not used: %s."
+L.WEIGHTS_NOT_PAWN = "That isn't a Pawn scale. In Pawn, choose Export and copy all of its text."
+L.WEIGHTS_OTHER_CLASS = "That scale is for a %s, not for this character's class."
+L.WEIGHTS_FOR = "For"
+L.GEAR_WHY_CUSTOM = "%s (your weights)"
+L.GEAR_UNIT_POINTS = "points"
+L.WEIGHT_GROUPS = {
+	PRIMARY = "Primary Attributes", WEAPONS = "Weapons", SPELLS = "Spells", DEFENSE = "Defense",
+	RESISTANCE = "Resistances",
+}
+L.STAT_NAMES = {
+	STRENGTH = "Strength", AGILITY = "Agility", STAMINA = "Stamina", INTELLECT = "Intellect", SPIRIT = "Spirit",
+	DPS = "Weapon DPS", ["RANGED DPS"] = "Ranged Weapon DPS", ["ATTACK POWER"] = "Attack Power",
+	["RANGED ATTACK POWER"] = "Ranged Attack Power", ["FERAL ATTACK POWER"] = "Feral Attack Power", HIT = "Hit",
+	CRIT = "Critical Strike", ["RANGED CRIT"] = "Ranged Critical", HASTE = "Attack Speed", ["RANGED HASTE"] = "Ranged Speed",
+	["SPELL POWER"] = "Damage and Healing", ["SPELL DAMAGE"] = "Spell Damage", HEALING = "Healing", ["SPELL HIT"] = "Spell Hit",
+	["SPELL CRIT"] = "Spell Critical", ["HOLY CRIT"] = "Holy Critical", ["HOLY DAMAGE"] = "Holy Damage",
+	["FIRE DAMAGE"] = "Fire Damage", ["FROST DAMAGE"] = "Frost Damage", ["NATURE DAMAGE"] = "Nature Damage",
+	["SHADOW DAMAGE"] = "Shadow Damage", ["ARCANE DAMAGE"] = "Arcane Damage", ["SPELL PENETRATION"] = "Spell Penetration",
+	MANA = "Mana", ["MANA PER 5"] = "Mana per 5 sec", ["CASTING REGEN"] = "Regen While Casting",
+	ARMOR = "Armor", HEALTH = "Health", ["HEALTH PER 5"] = "Health per 5 sec", DEFENSE = "Defense", DODGE = "Dodge",
+	PARRY = "Parry", BLOCK = "Block", ["BLOCK VALUE"] = "Block Value",
+	["HOLY RESISTANCE"] = "Holy Resistance", ["FIRE RESISTANCE"] = "Fire Resistance",
+	["NATURE RESISTANCE"] = "Nature Resistance", ["FROST RESISTANCE"] = "Frost Resistance",
+	["SHADOW RESISTANCE"] = "Shadow Resistance", ["ARCANE RESISTANCE"] = "Arcane Resistance",
+}
 L.RECORD_START = "Start Recording"
 L.RECORD_STOP = "Stop Recording"
 L.RECORD_CLEAR = "Clear"

@@ -1,6 +1,6 @@
 <p align="center"><img src="docs/images/logo.png" alt="Aegis Instance Journal" width="220"></p>
 
-# Aegis: Forever Instance Journal (v0.28.0)
+# Aegis: Forever Instance Journal (v0.30.0)
 
 **Retail's instance journal and dungeon maps, brought to WoW: Forever.**
 
@@ -30,7 +30,7 @@ and to send in your recorded runs.
 
 ## Contents
 
-- [What it does](#what-it-does): the journal, boss pages, maps, reputation, search and the Record tab
+- [What it does](#what-it-does): the journal, boss pages, maps, reputation, the Gear Finder, search and the Record tab
 - [Santiago Reyes's maps](#santiago-reyess-maps)
 - [Install](#install) · [Using it](#using-it)
 - [A few honest notes](#a-few-honest-notes)
@@ -48,8 +48,8 @@ and to send in your recorded runs.
 | <img src="docs/images/dungeons.png" alt="The Dungeons tab, Forever's own marked with its emblem" width="430"> | <img src="docs/images/journal-city-of-dalaran.png" alt="The journal open on City of Dalaran" width="430"> |
 
 - **Retail's Encounter Journal**, rebuilt to its measurements (Blizzard's own
-  doesn't load on Forever): breadcrumb bar, search box, and four tabs:
-  **Dungeons · Raids · Reputation · Record**.
+  doesn't load on Forever): breadcrumb bar, search box, and five tabs:
+  **Dungeons · Raids · Reputation · Gear Finder · Record**.
 - **35 dungeons**: the classics from Ragefire Chasm to Stratholme, Forever's own
   (The Hall of Thanes, Ruins of Lordaeron, Excavation Site: Wetlands, City of
   Dalaran), and the five Blizzard has announced.
@@ -129,6 +129,23 @@ Five side tabs, as in retail, plus one:
 |:---:|:---:|
 | <img src="docs/images/reputation.png" alt="The Reputation tab's faction cards" width="430"> | <img src="docs/images/reputation-faction.png" alt="The Azeroth Commerce Authority's rewards by standing, with the Type menu open" width="430"> |
 
+### 🎯 Gear Finder
+
+- **The best upgrade for every slot** waiting in the dungeons near your level, laid
+  out like your character sheet: each marked with what it adds to all the gear you
+  wear, and where it drops. A click opens its loot.
+- **The dungeon that holds the most of them**, and the others with upgrades, one
+  click apart.
+- **Scored for your spec**: the one your talents say, or one you pick. Change any
+  **stat weight** in game, or **bring in a scale from Pawn**; your weights are kept
+  for each character.
+- **On the character panel too**: its own tab opens your stat weights over the
+  stats, with a button to the Gear Finder.
+
+| Gear Finder | Stat weights on the character panel |
+|:---:|:---:|
+| <img src="docs/images/gear-finder.png" alt="The Gear Finder tab: an upgrade for each slot and the suggested dungeon" width="430"> | <img src="docs/images/gear-finder-weights.png" alt="The Stat Weights window over the character panel's stats" width="430"> |
+
 ### 🔍 Search
 
 Three letters find dungeons, bosses, abilities, loot, quests and factions. A
@@ -193,6 +210,7 @@ the folder to exactly `Aegis_Forever_Instance_Journal`**: GitHub's ZIP unpacks a
 |---|---|
 | **Shift+J** or `/aegis` | Open or close the journal |
 | `/aegis record` | Start or stop recording |
+| `/aegis gear` · `/aegis weights` | Open the Gear Finder · its stat weights |
 | `/aegis travel boat Auberdine` | Mark a boat, zeppelin, airship, tram or portal where you stand |
 | `/aegis travel list` · `/aegis travel undo` | What you've marked · take back the last one |
 | `/aegis where` | Print exactly where you stand |

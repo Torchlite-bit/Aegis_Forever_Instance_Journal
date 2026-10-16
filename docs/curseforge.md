@@ -3,7 +3,8 @@
 The text for the journal's CurseForge project page. CurseForge's upload API sends only files,
 so the description is pasted by hand: on the project, **Description → Edit**, switch the
 editor to **Markdown**, and paste the block below over the old text. Its pictures are the
-project's own gallery images, on CurseForge's server. Uploads themselves are automatic: each new `## Version` merged to `main` goes to CurseForge once
+project's own gallery images, on CurseForge's server: a new one goes up to the gallery first, and
+its address goes in the text. Uploads themselves are automatic: each new `## Version` merged to `main` goes to CurseForge once
 (`.github/workflows/release.yml`, `Tools/curseforge_upload.py`).
 
 ## Project description
@@ -25,12 +26,16 @@ project's own gallery images, on CurseForge's server. Uploads themselves are aut
 - 🗺️ **Dungeon maps** with boss pins; the bosses you've killed are crossed out
 - 🧭 **World map**: every dungeon door, flight masters, boats and zeppelins, quest marks, **zone level ranges** coloured for your level, and **unexplored areas** on request
 - 🛡️ **Reputation**: every faction's rewards by standing. Captured quartermasters give exact prices; the rest show the game's own list, marked unconfirmed
+- 🎯 **Gear Finder**: the best upgrade for every slot in the dungeons near your level, and the dungeon with the most of them. Scored for your spec, with **stat weights you can change** or bring in from **Pawn**, on the journal's tab or the character panel's
 - 🔍 **Search** across everything
+- 🇷🇺 **In Russian** on a Russian game client, translated by **Staree4ok**
 - 🔴 **Record tab** and **Log Reader**: help fill in Forever's journal
 
 ![A boss's abilities](https://media.forgecdn.net/attachments/2059/704/screenshot-2026-10-15-142526-png.png)
 ![City of Dalaran's map, with the map legend](https://media.forgecdn.net/attachments/2059/700/screenshot-2026-10-15-142325-png.png)
 ![The Reputation tab](https://media.forgecdn.net/attachments/2059/707/screenshot-2026-10-15-142604-png.png)
+![The Gear Finder](https://media.forgecdn.net/attachments/2062/932/screenshot-2026-10-16-090853-png.png)
+![Stat weights on the character panel](https://media.forgecdn.net/attachments/2062/931/screenshot-2026-10-16-090815-png.png)
 ![Show unexplored areas, in the world map's filter menu](https://media.forgecdn.net/attachments/2059/729/screenshot-2026-10-15-143503-png.png)
 
 ### Help fill in the journal

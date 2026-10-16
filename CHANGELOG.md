@@ -12,6 +12,29 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.30.0] (restart)
+
+### Added
+- **Gear Finder**, a new tab: the best upgrade waiting for each slot in the dungeons that
+  start no more than three levels above you, laid out like your character sheet. Each shows
+  what it adds to all the gear you wear and where it drops; one you can wear in a few levels
+  shows that level in red. A click opens its loot. The dungeon holding the most upgrades is
+  suggested, and the others are a click apart.
+- **Scored for your spec**: the one your talents say, or one you pick, with Aegis: Pathfinder's
+  stat weights (one set while levelling, another at 60).
+- **Stat weights you can change**, kept for each character and spec: click a weight and type a
+  new one; yours show in green, and **Reset** brings the journal's back. Or bring in a scale
+  from **Pawn**: paste what its Export gives.
+- **A tab on the character panel** opens your stat weights over the panel's stats, with a button
+  to the Gear Finder. It takes the first place under the panel's own tabs; another addon's tab
+  found there moves down under it.
+- `/aegis gear` and `/aegis weights`. `/aegis gearscan` saves what the Gear Finder reads from
+  your gear, so its scoring can be checked against Forever's own words.
+
+### Changed
+- **Record is now the last tab**, after Gear Finder. The journal still reopens on the tab you
+  last had open.
+
 ## [0.29.1]
 
 ### Changed

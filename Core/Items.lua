@@ -170,6 +170,7 @@ end
 	and a row should not say "Retrieving" for ever.
 ]]
 local GIVE_UP_SECONDS = 15
+Items.GIVE_UP_SECONDS = GIVE_UP_SECONDS
 local infoCache = {}
 
 local function Describe(info)

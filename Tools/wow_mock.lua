@@ -252,8 +252,23 @@ function Region:GetFrameStrata()
 end
 function Region:SetDesaturated(desaturated) self._desaturated = desaturated end
 function Region:SetMask(mask) self._mask = mask end
-function Region:SetTextColor(...) self._textColor = { ... } end
-function Region:GetStringWidth() return #(self._text or "") * 7 end
+-- As strict as the client: the fourth value, if any, is the alpha, a number.
+-- Blizzard's side tabs (SidePanelTabButtonMixin) keep the handler their mouse-up calls.
+function Region:SetCustomOnMouseUpHandler(handler) self.customMouseUpHandler = handler end
+function Region:SetTextColor(...)
+	local a = select(4, ...)
+	if a ~= nil and type(a) ~= "number" then
+		error("bad argument #5 to 'SetTextColor' (Usage: self:SetTextColor(colorR, colorG, colorB [, a]))", 2)
+	end
+	self._textColor = { ... }
+end
+-- As the client draws it: no wider than a width set on it. The unbounded width is the words' own.
+function Region:GetUnboundedStringWidth() return #(self._text or "") * 7 end
+function Region:GetStringWidth()
+	local width = self:GetUnboundedStringWidth()
+	if (self._width or 0) > 0 then return math.min(width, self._width) end
+	return width
+end
 function Region:GetStringHeight()
 	local lines = 1
 	for _ in string.gmatch(self._text or "", "\n") do lines = lines + 1 end
@@ -369,7 +384,36 @@ C_AddOns = {
 }
 function UpdateAddOnMemoryUsage() Mock.memoryUpdated = true end
 function debugprofilestop() return os.clock() * 1000 end
-C_Timer = { After = function(_, callback) callback() end, NewTicker = function() return { Cancel = function() end } end }
+--[[
+	Timers run at once, unless a test defers them (Mock.deferTimers = true): then each waits in
+	Mock.timers until Mock.RunTimers(seconds) moves the clock on past it, in the order they fall
+	due, as the client runs them.
+]]
+Mock.timers = {}
+C_Timer = {
+	After = function(delay, callback)
+		if Mock.deferTimers then
+			Mock.timers[#Mock.timers + 1] = { due = Mock.time + (delay or 0), callback = callback }
+		else
+			callback()
+		end
+	end,
+	NewTicker = function() return { Cancel = function() end } end,
+}
+function Mock.RunTimers(seconds)
+	local stop = Mock.time + (seconds or 0)
+	while true do
+		local index
+		for i, timer in ipairs(Mock.timers) do
+			if timer.due <= stop and (not index or timer.due < Mock.timers[index].due) then index = i end
+		end
+		if not index then break end
+		local timer = table.remove(Mock.timers, index)
+		Mock.time = math.max(Mock.time, timer.due)
+		timer.callback()
+	end
+	Mock.time = stop
+end
 -- Runs the hook after the original, as the client does.
 function hooksecurefunc(target, name, hook)
 	if type(target) == "string" then target, name, hook = _G, target, name end
@@ -888,19 +932,58 @@ C_ToyBox = { GetToyInfo = function(itemID) if Mock.toys[itemID] then return item
 -- The client's name for each item class, as GetItemInfoInstant gives it.
 local ITEM_CLASS_NAMES = { [0] = "Consumable", [1] = "Container", [2] = "Weapon", [4] = "Armor", [7] = "Trade Goods",
 	[9] = "Recipe", [12] = "Quest", [15] = "Miscellaneous" }
+-- An item asked about by id or by link.
+local function ItemIDOf(item)
+	if type(item) == "number" then return item end
+	return tonumber(tostring(item or ""):match("item:(%d+)"))
+end
+local function ItemLink(itemID) return "|cff0070dd|Hitem:" .. itemID .. "::::::::|h[Item]|h|r" end
+Mock.ItemLink = ItemLink
+-- The Gear Finder's items: stats as C_Item.GetItemStats names them (Mock.itemStats[itemID]), the
+-- level each needs (Mock.itemMinLevels) and their tooltip lines after the name
+-- (Mock.itemLines[itemID] = { "text" or { text, red = true }, ... }), and the id the client
+-- gives an item's tooltip data, where a test gives one (Mock.tooltipDataIDs[itemID]).
+Mock.itemStats, Mock.itemMinLevels, Mock.itemLines, Mock.tooltipDataIDs = {}, {}, {}, {}
 C_Item = {
 	GetItemInfoInstant = function(itemID)
 		local entry = Mock.itemInstant[itemID] or { "INVTYPE_CHEST", 4, 1, "Cloth" }
 		return itemID, ITEM_CLASS_NAMES[entry[2]], entry[4], entry[1], 134400 + itemID % 7, entry[2], entry[3]
 	end,
 	-- A cached item's name: Mock.itemNames[itemID] where a test gives one, else "Cached <id>".
-	GetItemInfo = function(itemID)
-		if not Mock.itemsCached[itemID] then return nil end
-		return Mock.itemNames[itemID] or ("Cached " .. itemID), "|cff0070dd|Hitem:" .. itemID .. "::::::::|h[Item]|h|r", 3
+	GetItemInfo = function(item)
+		local itemID = ItemIDOf(item)
+		if not itemID or not Mock.itemsCached[itemID] then return nil end
+		local entry = Mock.itemInstant[itemID] or { "INVTYPE_CHEST", 4, 1, "Cloth" }
+		return Mock.itemNames[itemID] or ("Cached " .. itemID), ItemLink(itemID), 3, 20,
+			Mock.itemMinLevels[itemID] or 1, ITEM_CLASS_NAMES[entry[2]], entry[4], 1, entry[1]
 	end,
+	GetItemStats = function(link)
+		local stats = Mock.itemStats[ItemIDOf(link)]
+		if not stats then return {} end
+		local copy = {}
+		for key, value in pairs(stats) do copy[key] = value end
+		return copy
+	end,
+	IsItemDataCachedByID = function(itemID) return Mock.itemsCached[itemID] == true end,
 	RequestLoadItemDataByID = function(itemID) Mock.itemsRequested[itemID] = true end,
 	GetItemQualityColor = function() return 0, 0.44, 0.87, "ff0070dd" end,
 }
+-- What the player wears: Mock.worn[inventorySlot] = itemID.
+Mock.worn = {}
+function GetInventoryItemLink(unit, slot)
+	local itemID = unit == "player" and Mock.worn[slot]
+	return itemID and ItemLink(itemID) or nil
+end
+function GetInventoryItemTexture(unit, slot)
+	local itemID = unit == "player" and Mock.worn[slot]
+	return itemID and 134400 + itemID % 7 or nil
+end
+function GetInventoryItemQuality(unit, slot)
+	return unit == "player" and Mock.worn[slot] and 2 or nil
+end
+-- Spells the player knows, by id (674 is Dual Wield).
+Mock.knownSpells = {}
+function IsPlayerSpell(spellID) return Mock.knownSpells[spellID] == true end
 -- Spells: what the client knows; anything unlisted is an instant with no description yet.
 Mock.spells = {
 	[13860] = { name = "Mind Blast", iconID = 136224, castTime = 1500,
@@ -958,6 +1041,19 @@ function GetMerchantItemCostItem(index, costIndex)
 	return 134400, cost[1], "|cffffffff|Hitem:1::|h[" .. cost[2] .. "]|h|r", nil
 end
 C_TooltipInfo = {
+	GetHyperlink = function(link)
+		local itemID = ItemIDOf(link)
+		if not itemID or not Mock.itemsCached[itemID] then return nil end
+		local lines = { { leftText = Mock.itemNames[itemID] or ("Cached " .. itemID) } }
+		for _, line in ipairs(Mock.itemLines[itemID] or {}) do
+			if type(line) == "table" then
+				lines[#lines + 1] = { leftText = line[1], leftColor = line.red and { r = 1, g = 0.13, b = 0.13 } or nil }
+			else
+				lines[#lines + 1] = { leftText = line }
+			end
+		end
+		return { lines = lines, dataInstanceID = Mock.tooltipDataIDs[itemID] }
+	end,
 	GetMerchantItem = function(index)
 		local ware = Mock.merchant[index]
 		if not ware then return nil end
