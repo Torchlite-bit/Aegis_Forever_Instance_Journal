@@ -882,19 +882,50 @@ C_ToyBox = { GetToyInfo = function(itemID) if Mock.toys[itemID] then return item
 -- The client's name for each item class, as GetItemInfoInstant gives it.
 local ITEM_CLASS_NAMES = { [0] = "Consumable", [1] = "Container", [2] = "Weapon", [4] = "Armor", [7] = "Trade Goods",
 	[9] = "Recipe", [12] = "Quest", [15] = "Miscellaneous" }
+-- An item asked about by id or by link.
+local function ItemIDOf(item)
+	if type(item) == "number" then return item end
+	return tonumber(tostring(item or ""):match("item:(%d+)"))
+end
+local function ItemLink(itemID) return "|cff0070dd|Hitem:" .. itemID .. "::::::::|h[Item]|h|r" end
+Mock.ItemLink = ItemLink
+-- The Gear Finder's items: stats as C_Item.GetItemStats names them (Mock.itemStats[itemID]), the
+-- level each needs (Mock.itemMinLevels) and their tooltip lines after the name
+-- (Mock.itemLines[itemID] = { "text" or { text, red = true }, ... }).
+Mock.itemStats, Mock.itemMinLevels, Mock.itemLines = {}, {}, {}
 C_Item = {
 	GetItemInfoInstant = function(itemID)
 		local entry = Mock.itemInstant[itemID] or { "INVTYPE_CHEST", 4, 1, "Cloth" }
 		return itemID, ITEM_CLASS_NAMES[entry[2]], entry[4], entry[1], 134400 + itemID % 7, entry[2], entry[3]
 	end,
 	-- A cached item's name: Mock.itemNames[itemID] where a test gives one, else "Cached <id>".
-	GetItemInfo = function(itemID)
-		if not Mock.itemsCached[itemID] then return nil end
-		return Mock.itemNames[itemID] or ("Cached " .. itemID), "|cff0070dd|Hitem:" .. itemID .. "::::::::|h[Item]|h|r", 3
+	GetItemInfo = function(item)
+		local itemID = ItemIDOf(item)
+		if not itemID or not Mock.itemsCached[itemID] then return nil end
+		local entry = Mock.itemInstant[itemID] or { "INVTYPE_CHEST", 4, 1, "Cloth" }
+		return Mock.itemNames[itemID] or ("Cached " .. itemID), ItemLink(itemID), 3, 20,
+			Mock.itemMinLevels[itemID] or 1, ITEM_CLASS_NAMES[entry[2]], entry[4], 1, entry[1]
 	end,
+	GetItemStats = function(link)
+		local stats = Mock.itemStats[ItemIDOf(link)]
+		if not stats then return {} end
+		local copy = {}
+		for key, value in pairs(stats) do copy[key] = value end
+		return copy
+	end,
+	IsItemDataCachedByID = function(itemID) return Mock.itemsCached[itemID] == true end,
 	RequestLoadItemDataByID = function(itemID) Mock.itemsRequested[itemID] = true end,
 	GetItemQualityColor = function() return 0, 0.44, 0.87, "ff0070dd" end,
 }
+-- What the player wears: Mock.worn[inventorySlot] = itemID.
+Mock.worn = {}
+function GetInventoryItemLink(unit, slot)
+	local itemID = unit == "player" and Mock.worn[slot]
+	return itemID and ItemLink(itemID) or nil
+end
+-- Spells the player knows, by id (674 is Dual Wield).
+Mock.knownSpells = {}
+function IsPlayerSpell(spellID) return Mock.knownSpells[spellID] == true end
 -- Spells: what the client knows; anything unlisted is an instant with no description yet.
 Mock.spells = {
 	[13860] = { name = "Mind Blast", iconID = 136224, castTime = 1500,
@@ -952,6 +983,19 @@ function GetMerchantItemCostItem(index, costIndex)
 	return 134400, cost[1], "|cffffffff|Hitem:1::|h[" .. cost[2] .. "]|h|r", nil
 end
 C_TooltipInfo = {
+	GetHyperlink = function(link)
+		local itemID = ItemIDOf(link)
+		if not itemID or not Mock.itemsCached[itemID] then return nil end
+		local lines = { { leftText = Mock.itemNames[itemID] or ("Cached " .. itemID) } }
+		for _, line in ipairs(Mock.itemLines[itemID] or {}) do
+			if type(line) == "table" then
+				lines[#lines + 1] = { leftText = line[1], leftColor = line.red and { r = 1, g = 0.13, b = 0.13 } or nil }
+			else
+				lines[#lines + 1] = { leftText = line }
+			end
+		end
+		return { lines = lines }
+	end,
 	GetMerchantItem = function(index)
 		local ware = Mock.merchant[index]
 		if not ware then return nil end

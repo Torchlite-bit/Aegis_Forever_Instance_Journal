@@ -16,6 +16,8 @@ Core\Items.lua
 Core\Reputation.lua
 Core\Recorder.lua
 Core\Perf.lua
+Core\ItemScore.lua
+Core\GearFinder.lua
 
 Data\Authored\LevelBrackets.lua
 Data\Authored\ZoneLevels.lua
@@ -56,6 +58,7 @@ Data\Reputation\Captured.lua
 Data\Travel\KnownTransports.lua
 Data\Generated\Unconfirmed.lua
 Data\Generated\MapOverlays.lua
+Data\Generated\GearWeights.lua
 Data\Authored\TheDeadmines.lua
 Data\Authored\RagefireChasm.lua
 Data\Authored\WailingCaverns.lua
@@ -101,5 +104,6 @@ UI\QuestsPanel.lua
 UI\QuestMap.lua
 UI\EncounterPage.lua
 UI\RecordPanel.lua
+UI\GearPanel.lua
 UI\Search.lua
 UI\Journal.lua

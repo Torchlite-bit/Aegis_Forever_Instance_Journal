@@ -94,6 +94,10 @@ SlashCmdList.AEGISJOURNAL = function(message)
 		ns.Perf:Items()
 	elseif command == "travel" then
 		ns.TravelMap:Capture(rest)
+	elseif command == "gear" then
+		ns.Journal:ShowGear()
+	elseif command == "gearscan" then
+		ns.GearFinder:Scan()
 	else
 		ns.Print(L.SLASH_HELP)
 	end

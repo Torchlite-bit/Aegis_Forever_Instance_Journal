@@ -26,6 +26,7 @@ local TABS = {
 	{ key = "raids", title = L.TAB_RAIDS, empty = L.EMPTY_RAIDS, kind = "raid" },
 	{ key = "reputation", title = L.TAB_REPUTATION, empty = L.EMPTY_REPUTATION, factions = true },
 	{ key = "record", title = L.TAB_RECORD, empty = "", record = true },
+	{ key = "gear", title = L.TAB_GEAR, empty = "", gear = true },
 }
 
 local frame
@@ -112,6 +113,7 @@ local function CreatePanel(parent, info)
 	panel.key = info.key
 	if info.kind then ns.InstanceSelect:Build(panel, info.kind) end
 	if info.factions then ns.FactionSelect:Build(panel) end
+	if info.gear then ns.GearPanel:Build(panel) end
 	return panel
 end
 
@@ -256,6 +258,17 @@ end
 
 function Journal:Show()
 	GetFrame():Show()
+end
+
+-- Opens the journal on its Gear tab (the Gear Finder).
+function Journal:ShowGear()
+	for index, info in ipairs(TABS) do
+		if info.gear then
+			GetFrame():Show()
+			self:SelectTab(index)
+			return
+		end
+	end
 end
 
 function Journal:IsShown()

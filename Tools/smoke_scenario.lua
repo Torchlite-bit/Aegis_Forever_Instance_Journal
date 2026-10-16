@@ -2932,4 +2932,135 @@ end
 	WorldMapFrame:Hide()
 end)()
 
+-- The Gear Finder: the best upgrade per slot from the dungeons near the player's level, a level-15
+-- warrior here, in Ragefire Chasm's drops (only the items described below are known to the client)
+;(function()
+	local IS, GF = ns.ItemScore, ns.GearFinder
+	local level, class = Mock.level, Mock.playerClass
+	Mock.level, Mock.playerClass = 15, "WARRIOR"
+	local CAPE, CUFFS, FELBLADE, CROSSBOW, ROBE, SCEPTER, WORN_CAPE = 14149, 14148, 14145, 272999, 14150, 272996, 990301
+	Mock.itemInstant[CAPE] = { "INVTYPE_CLOAK", 4, 1, "Cloth" }
+	Mock.itemInstant[WORN_CAPE] = { "INVTYPE_CLOAK", 4, 1, "Cloth" }
+	Mock.itemInstant[CUFFS] = { "INVTYPE_WRIST", 4, 1, "Cloth" }
+	Mock.itemInstant[FELBLADE] = { "INVTYPE_WEAPON", 2, 7, "One-Handed Swords" }
+	Mock.itemInstant[CROSSBOW] = { "INVTYPE_RANGED", 2, 18, "Crossbows" }
+	Mock.itemInstant[ROBE] = { "INVTYPE_ROBE", 4, 1, "Cloth" }
+	Mock.itemInstant[SCEPTER] = { "INVTYPE_WEAPON", 2, 4, "One-Handed Maces" }
+	Mock.itemNames[CAPE], Mock.itemNames[FELBLADE], Mock.itemNames[CROSSBOW] = "Subterranean Cape", "Cursed Felblade", "Barbaric Crossbow"
+	Mock.itemStats[CAPE] = { ITEM_MOD_AGILITY_SHORT = 3, ITEM_MOD_STAMINA_SHORT = 2, RESISTANCE0_NAME = 15, ITEM_MOD_NEW_THING = 4 }
+	Mock.itemStats[WORN_CAPE] = { ITEM_MOD_STAMINA_SHORT = 1, RESISTANCE0_NAME = 10 }
+	Mock.itemStats[CUFFS] = { RESISTANCE2_NAME = 5 }
+	Mock.itemStats[FELBLADE] = { ITEM_MOD_DAMAGE_PER_SECOND_SHORT = 8.5, ITEM_MOD_STRENGTH_SHORT = 3 }
+	Mock.itemLines[FELBLADE] = { "One-Hand", "+3 Strength", "Equip: Improves your chance to get a critical strike by 1%.",
+		"Use: Increases attack power by 200 for 20 sec.", "(1) Set: Improves your chance to hit by 2%." }
+	Mock.itemStats[CROSSBOW] = { ITEM_MOD_DAMAGE_PER_SECOND_SHORT = 5 }
+	Mock.itemMinLevels[CROSSBOW], Mock.itemMinLevels[SCEPTER] = 17, 25
+	Mock.itemStats[ROBE] = { ITEM_MOD_STAMINA_SHORT = 20 }
+	Mock.itemLines[ROBE] = { { "Classes: Priest", red = true } }
+	Mock.itemStats[SCEPTER] = { ITEM_MOD_STRENGTH_SHORT = 30 }
+	for _, itemID in ipairs({ CAPE, WORN_CAPE, CUFFS, FELBLADE, CROSSBOW, ROBE, SCEPTER }) do Mock.itemsCached[itemID] = true end
+	Mock.worn = { [15] = WORN_CAPE }
+	IS:Forget()
+
+	-- Reading an item: the client's stats, the Equip: lines it leaves out, never a Use: or set line
+	local blade = IS:Read(Mock.ItemLink(FELBLADE))
+	check(blade.stats.DPS == 8.5 and blade.stats.STRENGTH == 3 and blade.stats.CRIT == 1 and not blade.stats.HIT
+		and not blade.stats["ATTACK POWER"], "the client's stats, plus the crit of an Equip: line; not a Use: or set line")
+	check(IS:Read(Mock.ItemLink(CROSSBOW)).stats["RANGED DPS"] == 5, "a ranged weapon's damage counts as ranged")
+	check(IS:Read(Mock.ItemLink(ROBE)).usable == false, "a red line (another class's) makes it unusable")
+	check(IS.unknownKeys.ITEM_MOD_NEW_THING or not IS:Read(Mock.ItemLink(CAPE)).stats.ITEM_MOD_NEW_THING,
+		"a stat name the journal doesn't know is noted for /aegis gearscan")
+	check(IS.unknownKeys.ITEM_MOD_NEW_THING, "and the scan can name it")
+	local spec, why = IS:Spec()
+	check(spec == "Arms" and why == "levelling" and IS:Weights().STRENGTH == 2.16,
+		"a warrior with no talents read is scored as Arms, with the levelling weights")
+
+	-- The Gear tab
+	ns.Journal:ShowGear()
+	local gear = f.Panels[5]
+	check(f.Tabs[5]:GetText() == "Gear" and gear:IsShown() and f.selectedTab == 5, "the journal's fifth tab, Gear, opens on it")
+	local function Cell(key)
+		for _, cell in ipairs(gear.Cells) do
+			if cell.def.key == key then return cell end
+		end
+	end
+	local back, main, ranged = Cell("back"), Cell("mainhand"), Cell("ranged")
+	check(back.entry and back.entry.itemID == CAPE and back.Gain:GetText() == "+268%",
+		"the cape beats the worn one by its weighted stats: " .. tostring(back.Gain:GetText()))
+	check(main.entry and main.entry.itemID == FELBLADE and main.Gain:GetText() == "Empty slot"
+		and main.Where:GetText() == "Ragefire Chasm \194\183 Taragaman the Hungerer", "an empty slot's upgrade, and where it drops")
+	check(ranged.entry and ranged.entry.itemID == CROSSBOW and ranged.Where:GetText():find("at level 17", 1, true),
+		"one the player can wear in two levels says so")
+	check(not Cell("wrist").entry and Cell("wrist").Name:GetText() == "No upgrade found",
+		"fire resistance is worth nothing to Arms: no upgrade")
+	check(not Cell("chest").entry, "a robe for another class is left out")
+	local scepter
+	for _, cell in ipairs(GF:Cells()) do
+		for _, entry in ipairs(cell.entries) do if entry.itemID == SCEPTER then scepter = true end end
+	end
+	check(not scepter, "an item more than three levels above the player is left out")
+	local suggestions = GF:Suggest()
+	check(gear.Card.Name:GetText() == "Ragefire Chasm" and gear.Card.Count:GetText() == "3 upgrades here"
+		and suggestions[1].instance.key == "RagefireChasm", "the suggested dungeon: Ragefire Chasm, three upgrades")
+	local _, loadingBefore, looked = GF:Results()
+	check(looked == #GF:Dungeons() and gear.Status:GetText():find(string.format(ns.L.GEAR_LOOKING, looked), 1, true) == 1,
+		"the footer says where it looked: " .. gear.Status:GetText())
+	-- A drop the client has never described: asked for, counted as loading, weighed when it comes
+	local NEW_RING = 990777
+	local taragaman = ns.GetInstance("RagefireChasm").bosses[2]
+	table.insert(taragaman.loot, { itemID = NEW_RING })
+	Mock.itemInstant[NEW_RING] = { "INVTYPE_FINGER", 4, 0, "Miscellaneous" }
+	Mock.itemStats[NEW_RING] = { ITEM_MOD_STRENGTH_SHORT = 4 }
+	GF:Refresh()
+	check(Mock.itemsRequested[NEW_RING] and select(2, GF:Results()) == loadingBefore + 1
+		and gear.Status:GetText():find(string.format(ns.L.GEAR_LOADING, loadingBefore + 1), 1, true),
+		"a drop not described yet is asked for, and the footer counts it as loading: " .. gear.Status:GetText())
+	Mock.itemsCached[NEW_RING] = true
+	Mock.Fire("GET_ITEM_INFO_RECEIVED", NEW_RING)
+	check(Cell("finger1").entry and Cell("finger1").entry.itemID == NEW_RING and not Cell("finger2").entry,
+		"when it arrives it is weighed: a ring for the first finger only, never both")
+	table.remove(taragaman.loot)
+
+	-- Another spec: a tank's single set of weights
+	IS:SetSpec("Protection")
+	check(IS:Spec() == "Protection" and select(2, IS:Spec()) == "picked" and IS:Weights() == ns.GEAR_WEIGHTS.WARRIOR.Protection.max,
+		"a spec picked from the menu is scored, a tank with its one set")
+	IS:SetSpec(nil)
+	check(IS:Spec() == "Arms", "back to automatic")
+
+	-- Dual wield: a one-hander is weighed against the weaker hand
+	Mock.knownSpells[674] = true
+	IS:Forget()
+	check(IS:CanDualWield(), "dual wield known from the spellbook")
+	Mock.knownSpells[674] = nil
+	IS:Forget()
+
+	-- Clicking an upgrade opens its boss's loot
+	main:Click()
+	check(page:IsShown() and page.boss and page.boss.name == "Taragaman the Hungerer" and page.tab == Page.TAB_LOOT,
+		"an upgrade opens its boss on the Loot tab")
+
+	-- The character sheet's button
+	_G.PaperDollItemsFrame = CreateFrame("Frame", "PaperDollItemsFrame", UIParent)
+	_G.CharacterMainHandSlot = CreateFrame("Button", "CharacterMainHandSlot", _G.PaperDollItemsFrame)
+	check(ns.GearPanel:AttachCharacterButton() and ns.GearPanel.characterButton:GetParent() == _G.PaperDollItemsFrame,
+		"a button on the character sheet, beside the weapons")
+	ns.GearPanel.characterButton:Click()
+	check(f:IsShown() and f.selectedTab == 5 and gear:IsShown(), "which opens the Gear tab")
+
+	-- /aegis gearscan saves what the client says about the worn gear and nearby drops
+	SlashCmdList.AEGISJOURNAL("gearscan")
+	local scan = ns.db.gearScan
+	check(scan and scan.class == "WARRIOR" and scan.level == 15 and #scan.worn == 1 and scan.worn[1].raw.ITEM_MOD_STAMINA_SHORT == 1
+		and #scan.drops > 0 and scan.spec == "Arms", "the scan keeps the worn gear's raw stats and some drops")
+	local named = false
+	for _, key in ipairs(scan.unknownKeys) do if key == "ITEM_MOD_NEW_THING" then named = true end end
+	check(named, "and the stat names the journal doesn't know")
+
+	ns.Journal:SelectTab(1)
+	f:Hide()
+	Mock.level, Mock.playerClass, Mock.worn = level, class, {}
+	IS:Forget()
+end)()
+
 return string.format("All %d checks passed.", checks)

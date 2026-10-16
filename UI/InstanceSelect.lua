@@ -21,6 +21,19 @@ local FALLBACK_ART = "Interface\\EncounterJournal\\UI-EJ-LOREBG-Default"
 
 local panels = {}
 
+-- An instance's picture, as its button shows it (also the Gear Finder's suggested dungeon).
+function ns.SetInstanceArt(texture, instance)
+	if instance.buttonImage then
+		-- Blizzard's own button picture, cut as EncounterInstanceButtonTemplate cuts it.
+		texture:SetTexture(instance.buttonImage)
+		texture:SetTexCoord(0, 0.68359375, 0, 0.7421875)
+	else
+		local coords = instance.buttonArtCoords or DEFAULT_ART_COORDS
+		texture:SetTexture(instance.buttonArt or FALLBACK_ART)
+		texture:SetTexCoord(coords[1], coords[2], coords[3], coords[4])
+	end
+end
+
 local function SelectedBracket()
 	return ns.LEVEL_BRACKETS[ns.charDB.levelBracket or 1] or ns.LEVEL_BRACKETS[1]
 end
@@ -75,15 +88,7 @@ local function SetButtonInstance(button, instance)
 	button.Untested:ClearAllPoints()
 	button.Untested:SetPoint("BOTTOMRIGHT", instance.forever and -31 or -7, 7)
 
-	if instance.buttonImage then
-		-- Blizzard's own button picture, cut as EncounterInstanceButtonTemplate cuts it.
-		button.Art:SetTexture(instance.buttonImage)
-		button.Art:SetTexCoord(0, 0.68359375, 0, 0.7421875)
-	else
-		local coords = instance.buttonArtCoords or DEFAULT_ART_COORDS
-		button.Art:SetTexture(instance.buttonArt or FALLBACK_ART)
-		button.Art:SetTexCoord(coords[1], coords[2], coords[3], coords[4])
-	end
+	ns.SetInstanceArt(button.Art, instance)
 
 	if instance.levelMin and instance.levelMax and instance.levelMin ~= instance.levelMax then
 		button.Range:SetText(instance.levelMin .. "-" .. instance.levelMax)
