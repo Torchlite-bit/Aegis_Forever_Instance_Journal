@@ -13,8 +13,9 @@ local L = ns.L
 	  boss.extraAbilities  abilities with no spell id ({ title, icon, description, flags })
 	  boss.adds            the creatures that fight beside it, with their spells (recorded runs)
 	Names and icons of spells come from the client, descriptions from the ability's text where
-	written, else the client. Role alerts come from the ability's flags, then boss.spellFlags where written by hand,
-	and otherwise from the spell itself. boss.fightNote, above the tree,
+	written, then boss.spellText (for the spells of the boss's adds, which only recorded runs
+	list), else the client. Role alerts come from the ability's flags, then boss.spellFlags where
+	written by hand, and otherwise from the spell itself. boss.fightNote, above the tree,
 	says how the fight begins where that is unusual.
 ]]
 
@@ -137,7 +138,7 @@ local function SpellSection(boss, row)
 	local written = row.flags or boss.spellFlags and boss.spellFlags[spellID]
 	local stats = StatsLine(row)
 	-- What the ability does in the fight, where written down, over the spell's own tooltip text.
-	local body = row.text or description or L.ABILITY_LOADING
+	local body = row.text or (boss.spellText and boss.spellText[spellID]) or description or L.ABILITY_LOADING
 	return {
 		key = "spell:" .. spellID,
 		spellID = spellID,

@@ -787,6 +787,17 @@ do
 		and Extra(bosses["Highland Horror"], "Curse of Weakness") and Spell(bosses["Highland Horror"], 1316480)
 		and Extra(guardian, "Poison on the spider trail") and venom and venom.description:find("Cure Disease", 1, true),
 		"each boss notes the debuffs of the creatures on the way to him, and who can take them off")
+	-- An add's spell from the recorded run, marked and written by hand: the Thicket Hunter's disease
+	local shadetooth = bosses["Shadetooth"]
+	ns.Journal:OpenBoss(dig, shadetooth)
+	tabs[3]:Click()
+	local wound
+	for _, header in ipairs(shownHeaders()) do
+		if header.Button.Title:GetText() == "Infected Wound" then wound = header end
+	end
+	check(wound and (wound.Description:GetText() or ""):find("Cure Disease", 1, true)
+		and shadetooth.spellFlags[3427][2] == "Disease",
+		"the Thicket Hunter's Infected Wound says it's a disease and who can take it off")
 end
 ns.Journal:OpenBoss(thanes, magmatus)
 local magmatusHeaders = shownHeaders()

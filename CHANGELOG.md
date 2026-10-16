@@ -25,7 +25,8 @@ and the version shown in the AddOns list. Quote it in bug reports.
 - **What can be dispelled on the way**, on the boss each pack leads to: the Marsh Skulkers'
   Muculent Rot, the Thicket Hunters' Infected Wound, the Dragonmaw Thaumaturgists' Curse of
   Weakness and the spider trail's poison and Highland Venom, with the classes that can take each
-  off; and the Highland Horror's roots, which Blessing of Freedom breaks.
+  off; and the Highland Horror's roots, which Blessing of Freedom breaks. The Thicket Hunter's
+  Infected Wound in Shadetooth's fight is marked as a disease, with who can take it off.
 
 ### Changed
 - **18 quests' levels or side**, to Forever's: mostly the level they open at.
