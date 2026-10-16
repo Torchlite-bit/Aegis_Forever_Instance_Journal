@@ -1,6 +1,6 @@
 <p align="center"><img src="docs/images/logo.png" alt="Aegis Instance Journal" width="220"></p>
 
-# Aegis: Forever Instance Journal (v0.30.0)
+# Aegis: Forever Instance Journal (v0.30.1)
 
 **Retail's instance journal and dungeon maps, brought to WoW: Forever.**
 
@@ -139,8 +139,8 @@ Five side tabs, as in retail, plus one:
 - **Scored for your spec**: the one your talents say, or one you pick. Change any
   **stat weight** in game, or **bring in a scale from Pawn**; your weights are kept
   for each character.
-- **On the character panel too**: its own tab opens your stat weights over the
-  stats, with a button to the Gear Finder.
+- **On the character panel too**: its own tab turns the panel to your character,
+  with your stat weights where the stats are, and a button to the Gear Finder.
 
 | Gear Finder | Stat weights on the character panel |
 |:---:|:---:|

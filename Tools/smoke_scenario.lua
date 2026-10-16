@@ -3320,15 +3320,41 @@ end)()
 		check(not ns.CharacterTab:Create() and not ns.CharacterTab.tab, "no character panel with side tabs: no tab")
 		local column = CreateFrame("Frame", "CharacterFrameModeTabs", UIParent)
 		column.Tabs = { CreateFrame("Frame", "CharacterFrameModeTab1", column), CreateFrame("Frame", "CharacterFrameModeTab2", column) }
+		column.Tabs[1].frameName, column.Tabs[2].frameName = "PaperDollFrame", "ReputationFrame"
 		column.Tabs[2]:Hide()
 		_G.CharacterFrame = CreateFrame("Frame", "CharacterFrame", UIParent)
 		CharacterFrame.ModeTabs = column
 		CharacterFrame.RightPaneHost = CreateFrame("Frame", nil, CharacterFrame)
 		local layouts = 0
 		CharacterFrame.UpdateTabLayout = function() layouts = layouts + 1 end
-		CharacterFrame.ShowSubFrame = function() end
-		CharacterFrame.OnModeTabClicked = function() end
-		CharacterFrame.RefreshRightPane = function() end
+		-- Two of its pages, and what turns it from one to another and marks their tabs, as
+		-- Blizzard_UIPanels_Game/Camelot/CharacterFrame.lua does
+		_G.PaperDollFrame = CreateFrame("Frame", "PaperDollFrame", CharacterFrame)
+		_G.ReputationFrame = CreateFrame("Frame", "ReputationFrame", CharacterFrame)
+		CharacterFrame.ShowSubFrame = function(self, name)
+			self.activeSubframe = name
+			PaperDollFrame:SetShown(name == "PaperDollFrame")
+			ReputationFrame:SetShown(name == "ReputationFrame")
+		end
+		CharacterFrame.RefreshDisplay = function(self)
+			for _, own in ipairs(column.Tabs) do
+				if own.frameName then own:SetChecked(own.frameName == self.activeSubframe) end
+			end
+		end
+		_G.ToggleCharacter = function(name)
+			if not _G[name]:IsShown() then CharacterFrame:ShowSubFrame(name) end
+			CharacterFrame:RefreshDisplay()
+		end
+		CharacterFrame.OnModeTabClicked = function(_, own) ToggleCharacter(own.frameName, true) end
+		CharacterFrame.RefreshRightPane = function(self) self.RightPaneHost:SetShown(not self.rightPaneCollapsed) end
+		CharacterFrame.IsRightPaneCollapsed = function(self) return self.rightPaneCollapsed == true end
+		CharacterFrame.SetRightPaneCollapsed = function(self, collapsed)
+			self.rightPaneCollapsed = collapsed
+			self:RefreshRightPane()
+			self:RefreshDisplay()
+		end
+		CharacterFrame:ShowSubFrame("ReputationFrame")
+		CharacterFrame:RefreshDisplay()
 		-- Another addon's tab already in that place, put in the panel's own list of tabs, and one more
 		-- of its own hung under it
 		local theirs = CreateFrame("Frame", "OtherAddonTab", column)
@@ -3356,24 +3382,43 @@ end)()
 		end
 		check(oursSeen, "the column described for /aegis gearscan, with what each tab hangs from")
 
-		-- Its click: the stat weights, over the panel's stats
+		-- Its click: the Character page, with the stat weights where its stats are
 		CharacterFrame:Show()
 		tab.customMouseUpHandler(tab, "RightButton", true)
 		tab.customMouseUpHandler(tab, "LeftButton", false)
-		check(not (ns.CharacterTab.window and ns.CharacterTab.window:IsShown()), "a right click, or a press let go outside it, opens nothing")
+		check(not (ns.CharacterTab.window and ns.CharacterTab.window:IsShown()) and ReputationFrame:IsShown(),
+			"a right click, or a press let go outside it, does nothing")
 		tab.customMouseUpHandler(tab, "LeftButton", true)
 		local window = ns.CharacterTab.window
 		check(window and window:IsShown() and window:GetParent() == CharacterFrame and window:GetFrameStrata() == "HIGH"
 			and select(2, window:GetPoint(1)) == CharacterFrame.RightPaneHost,
 			"a click shows the stat weights over the panel's stats, above its detail panes")
-		-- The pane folded away while it shows: over the panel's edge, below the button that unfolds it
-		CharacterFrame.RightPaneHost:Hide()
-		CharacterFrame:RefreshRightPane()
+		check(PaperDollFrame:IsShown() and not ReputationFrame:IsShown() and CharacterFrame.activeSubframe == "PaperDollFrame",
+			"from another page, the panel turns to the Character page")
+		check(tab:GetChecked() and not column.Tabs[1]:GetChecked() and not column.Tabs[2]:GetChecked(),
+			"this tab marked, none of the panel's own")
+		tab.customMouseUpHandler(tab, "LeftButton", true)
+		CharacterFrame:RefreshDisplay()
+		check(window:IsShown() and tab:GetChecked() and not column.Tabs[1]:GetChecked(),
+			"clicked again, the weights stay; the panel laid out again leaves this tab marked")
+		-- The pane folded away takes the weights with it, as it takes the stats; the tab unfolds it
+		CharacterFrame:SetRightPaneCollapsed(true)
+		check(not window:IsShown() and not tab:GetChecked() and column.Tabs[1]:GetChecked(),
+			"the pane folded away: the weights go with it, the Character tab marked again")
+		tab.customMouseUpHandler(tab, "LeftButton", true)
+		check(not CharacterFrame:IsRightPaneCollapsed() and window:IsShown()
+			and select(2, window:GetPoint(1)) == CharacterFrame.RightPaneHost, "the tab unfolds the pane for them")
+		-- In combat the panel's size is left alone: the window over its edge, below the button that unfolds it
+		CharacterFrame:SetRightPaneCollapsed(true)
+		Mock.inCombat = true
+		tab.customMouseUpHandler(tab, "LeftButton", true)
 		local point, relative, _, _, y = window:GetPoint(1)
-		check(point == "TOPRIGHT" and relative == CharacterFrame and y == -56, "the pane folded away: the window follows")
-		CharacterFrame.RightPaneHost:Show()
-		CharacterFrame:RefreshRightPane()
-		check(select(2, window:GetPoint(1)) == CharacterFrame.RightPaneHost, "and back over the pane unfolded")
+		check(CharacterFrame:IsRightPaneCollapsed() and window:IsShown() and point == "TOPRIGHT" and relative == CharacterFrame
+			and y == -56, "in combat the pane stays folded, and the window lies over the panel's edge")
+		Mock.inCombat = nil
+		CharacterFrame:SetRightPaneCollapsed(false)
+		check(window:IsShown() and select(2, window:GetPoint(1)) == CharacterFrame.RightPaneHost,
+			"and goes over the pane once it is unfolded")
 		local editor = window.Editor
 		local strength = editor.Rows[1]
 		check(#editor.Rows == 45 and strength.stat == "STRENGTH" and strength.Label:GetText() == "Strength:"
@@ -3442,10 +3487,12 @@ end)()
 
 		-- The window closes when the panel turns to another page; its button opens the Gear Finder
 		CharacterFrame:ShowSubFrame("ReputationFrame")
-		check(not window:IsShown(), "another page of the panel closes it")
+		CharacterFrame:RefreshDisplay()
+		check(not window:IsShown() and not tab:GetChecked() and column.Tabs[2]:GetChecked(), "another page of the panel closes it")
 		tab.customMouseUpHandler(tab, "LeftButton", true)
 		CharacterFrame:OnModeTabClicked(column.Tabs[1])
-		check(not window:IsShown(), "as does any of its tabs, the page already shown among them")
+		check(not window:IsShown() and PaperDollFrame:IsShown() and column.Tabs[1]:GetChecked() and not tab:GetChecked(),
+			"as does any of its tabs, the page already shown among them: the Character tab gives the stats back")
 		tab.customMouseUpHandler(tab, "LeftButton", true)
 		ns.Journal:SelectTab(1)
 		f:Hide()
@@ -3474,6 +3521,7 @@ end)()
 		check(side.Suggestion:IsShown() and not side.EditorHolder:IsShown(), "opened again, the tab shows its upgrades")
 		check(ns.GearPanel.GainText({ delta = 0.4 }) == "+0.4", "a small gain with nothing worn of worth: not '+0'")
 		_G.CharacterFrame, _G.CharacterFrameModeTabs = nil, nil
+		_G.PaperDollFrame, _G.ReputationFrame, _G.ToggleCharacter = nil, nil, nil
 	end)()
 
 	-- /aegis gearscan saves what the client says about the worn gear and nearby drops
