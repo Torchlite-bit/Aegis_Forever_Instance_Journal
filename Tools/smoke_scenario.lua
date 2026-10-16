@@ -3384,11 +3384,49 @@ end)()
 		-- The stronger of two rings worn is measured against the weaker, but is no upgrade on itself
 		Mock.worn[11], Mock.worn[12] = RING_B, RING_X
 		IS:Forget()
-		lines = TipLines(Mock.ItemLink(RING_X))
+		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+		GameTooltip:SetInventoryItem("player", 12)
+		lines = GameTooltip._lines
 		check(IS:Compare(Mock.ItemLink(RING_X)).delta > 0 and Has(lines, label .. "\t") and not Has(lines, "Upgrade:"),
-			"a worn ring better than the other is not called an upgrade")
+			"a worn ring better than the other is not called an upgrade, on the character sheet")
+		check(not Has(TipLines(Mock.ItemLink(RING_X)), "Upgrade:"), "nor in a link of the very same ring")
+		-- Another copy of it is one, over the weaker ring: in the bags, or another green of the same name
+		Mock.bagItems["0:1"] = { RING_X, "Item-bag-0-1" }
+		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+		GameTooltip:SetBagItem(0, 1)
+		check(Has(GameTooltip._lines, "Upgrade:"), "a second copy of the better ring, in the bags, is an upgrade over the other")
+		local variant = Mock.ItemLink(RING_X):gsub("::::::::", ":::::1017:::")
+		check(Has(TipLines(variant), "Upgrade:"), "and so is the same green with another suffix")
+		-- Unless only one may be worn
+		Mock.itemLines[RING_X] = { "Unique" }
+		IS:Forget()
+		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+		GameTooltip:SetBagItem(0, 1)
+		local unique = IS:Compare(Mock.ItemLink(RING_X))
+		check(unique.slot == 12 and unique.delta == 0 and not Has(GameTooltip._lines, "Upgrade:"),
+			"a unique ring worn already can only take its own place: no upgrade, here or in the Gear Finder")
+		Mock.itemLines[RING_X], Mock.bagItems["0:1"] = nil, nil
 		Mock.worn[11], Mock.worn[12] = nil, nil
 		IS:Forget()
+		-- An item for later: an upgrade within the Gear Finder's few levels ahead, saying when; not past them
+		local bow = IS:Compare(Mock.ItemLink(CROSSBOW))
+		check(bow.later and bow.delta > 0 and Has(TipLines(Mock.ItemLink(CROSSBOW)),
+			string.format(ns.L.ITEM_TIP_UPGRADE_LATER, 17, ns.GearPanel.GainText(bow))),
+			"an upgrade two levels ahead says the level it is worn at")
+		lines = TipLines(Mock.ItemLink(SCEPTER))
+		check(IS:Compare(Mock.ItemLink(SCEPTER)).delta > 0 and Has(lines, label .. "\t") and not Has(lines, "Upgrade"),
+			"one ten levels ahead is given its worth, not called an upgrade")
+		-- The Gear Finder's cell for a slot with no upgrade: what is worn, with its worth
+		back:_RunScript("OnEnter")
+		Mock.worn[15] = CAPE
+		Mock.Fire("PLAYER_EQUIPMENT_CHANGED")
+		Mock.RunTimers(1)
+		back:_RunScript("OnEnter")
+		check(not back.entry and Has(GameTooltip._lines, label .. "\t"),
+			"a Gear Finder cell that showed an upgrade, and now what is worn, gives its worth too")
+		Mock.worn[15] = WORN_CAPE
+		Mock.Fire("PLAYER_EQUIPMENT_CHANGED")
+		Mock.RunTimers(1)
 		local finder = CreateFrame("Button")
 		finder.gearFinderTip = true
 		check(not Has(TipLines(Mock.ItemLink(CAPE), finder), label), "the Gear Finder's own tooltips say it themselves")

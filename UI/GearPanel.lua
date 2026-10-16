@@ -257,7 +257,8 @@ local function ShowCellTooltip(cell)
 		ShowEntryTooltip(cell, entry, anchor, cell.others, L.GEAR_TIP_CELL_CLICK, cell.picked)
 		return
 	end
-	-- No upgrade: what is worn, as the sheet's own slot shows it.
+	-- No upgrade: what is worn, as the sheet's own slot shows it, with what it is worth.
+	cell.gearFinderTip = nil
 	GameTooltip:SetOwner(cell, anchor)
 	local slotID = cell.def.slot
 	if GetInventoryItemLink("player", slotID) then

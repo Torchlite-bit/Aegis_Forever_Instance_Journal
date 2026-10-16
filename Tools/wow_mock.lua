@@ -987,17 +987,27 @@ TooltipDataProcessor = {
 		table.insert(Mock.tooltipPostCalls[dataType], callback)
 	end,
 }
-local function ShowItem(tooltip, link)
+-- Each copy of an item has its own guid: a worn one's names its slot (Mock.WornGUID).
+function Mock.WornGUID(slot) return Mock.worn[slot] and ("Item-worn-" .. slot .. "-" .. Mock.worn[slot]) or nil end
+ItemLocation = { CreateFromEquipmentSlot = function(_, slot) return { equipmentSlotIndex = slot } end }
+C_Item.GetItemGUID = function(location) return Mock.WornGUID(location.equipmentSlotIndex) end
+local function ShowItem(tooltip, link, guid)
 	tooltip._link = link
 	tooltip._lines[#tooltip._lines + 1] = Mock.itemNames[ItemIDOf(link)] or link
-	local data = { type = Enum.TooltipDataType.Item, id = ItemIDOf(link), hyperlink = link }
+	local data = { type = Enum.TooltipDataType.Item, id = ItemIDOf(link), hyperlink = link, guid = guid }
 	for _, callback in ipairs(Mock.tooltipPostCalls[Enum.TooltipDataType.Item] or {}) do callback(tooltip, data) end
 end
 function GameTooltip:SetHyperlink(link) ShowItem(self, link) end
 function GameTooltip:SetItemByID(itemID) ShowItem(self, ItemLink(itemID)) end
 function GameTooltip:SetInventoryItem(unit, slot)
 	local link = GetInventoryItemLink(unit, slot)
-	if link then ShowItem(self, link) end
+	if link then ShowItem(self, link, unit == "player" and Mock.WornGUID(slot) or nil) end
+end
+-- A bag's item: Mock.bagItems["bag:slot"] = { itemID, guid }.
+Mock.bagItems = {}
+function GameTooltip:SetBagItem(bag, slot)
+	local item = Mock.bagItems[bag .. ":" .. slot]
+	if item then ShowItem(self, ItemLink(item[1]), item[2]) end
 end
 function GameTooltip:GetItem()
 	if self._link then return Mock.itemNames[ItemIDOf(self._link)] or "Item", self._link end

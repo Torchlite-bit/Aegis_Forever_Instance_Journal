@@ -24,6 +24,7 @@ local GearFinder = {}
 ns.GearFinder = GearFinder
 
 local AHEAD = 3              -- dungeons and items up to this many levels above the player
+GearFinder.AHEAD = AHEAD
 local REFRESH_DELAY = 0.5    -- seconds to gather item answers before weighing again
 GearFinder.TOP_PICKS = 3     -- a slot's upgrades the player can pick from
 

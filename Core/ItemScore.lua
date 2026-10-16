@@ -215,12 +215,23 @@ local function LevelLine(minLevel)
 	return string.format(ITEM_MIN_LEVEL or "Requires Level %d", minLevel or 0)
 end
 local EQUIP_PREFIX = "^" .. (ITEM_SPELL_TRIGGER_ONEQUIP or "Equip:"):gsub("%p", "%%%0") .. "%s*(.+)$"
+-- "Unique", "Unique (2)", "Unique-Equipped": only one may be worn.
+local UNIQUE_PREFIXES = {}
+for _, words in ipairs({ ITEM_UNIQUE or "Unique", ITEM_UNIQUE_EQUIPPABLE or "Unique-Equipped" }) do
+	UNIQUE_PREFIXES[#UNIQUE_PREFIXES + 1] = "^" .. words:gsub("%p", "%%%0")
+end
+local function IsUniqueLine(text)
+	for _, prefix in ipairs(UNIQUE_PREFIXES) do
+		if text:find(prefix) then return true end
+	end
+	return false
+end
 
 local readCache, linkOfData = {}, {}
 
 --[[
-	Everything about an item a score needs: { stats, equipLoc, minLevel, usable, link }, or nil
-	while the client has not described it. Kept per link: stats never change, though the client
+	Everything about an item a score needs: { stats, equipLoc, minLevel, usable, unique, link },
+	or nil while the client has not described it. Kept per link: stats never change, though the client
 	may describe its Equip: lines later (TOOLTIP_DATA_UPDATE), and then it is read again.
 	`usable` is false when its tooltip has a red line other than the level it needs (armour or
 	weapon the class cannot use, a class it is not for).
@@ -259,6 +270,7 @@ function ItemScore:Read(link)
 			if (line.red and text ~= levelLine and not text:find("^Requires Level")) or line.rightRed then
 				item.usable = false
 			end
+			if IsUniqueLine(text) then item.unique = true end
 			local equip = text:match(EQUIP_PREFIX)
 			if equip then
 				ReadLine(equip, item.stats, given, LINE_PATTERNS)
@@ -639,6 +651,16 @@ end
 -- Rings and trinkets: two slots, and a second upgrade replaces the other one.
 local PAIRED = { INVTYPE_FINGER = true, INVTYPE_TRINKET = true }
 
+-- Which of these slots wears the same item (by its id), if one does.
+function ItemScore:WornSlot(link, slots)
+	local itemID = ns.ItemIDFromLink(link)
+	if not itemID then return nil end
+	for _, slot in ipairs(slots or EQUIPMENT_SLOTS) do
+		if ns.ItemIDFromLink(GetInventoryItemLink("player", slot)) == itemID then return slot end
+	end
+	return nil
+end
+
 --[[
 	How an item compares with what is worn, for these weights: { score, slot, worn (its score),
 	delta, pct (nil against an empty slot or one worth nothing), alsoSlot (the off hand a two-hander
@@ -679,11 +701,17 @@ function ItemScore:Compare(link, weights, total)
 		out.slot, out.noCompare = OFFHAND, true
 		return out
 	else
-		-- The slot it would replace: the weaker of those it fits.
+		-- The slot it would replace: the weaker of those it fits. A unique item worn already can only
+		-- take its own place: a second one cannot go beside it.
+		local own = item.unique and self:WornSlot(link, slots)
 		local scores = {}
 		for index, slot in ipairs(slots) do
 			scores[index] = self:Worn(slot, weights)
-			if not out.slot or scores[index] < out.worn then out.slot, out.worn = slot, scores[index] end
+			if own then
+				if slot == own then out.slot, out.worn = slot, scores[index] end
+			elseif not out.slot or scores[index] < out.worn then
+				out.slot, out.worn = slot, scores[index]
+			end
 		end
 		if twoHanded and out.slot == OFFHAND then out.slot, out.worn = MAINHAND, mainScore end
 		if PAIRED[loc] then

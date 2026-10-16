@@ -119,6 +119,7 @@ L.WEIGHTS_SHOW_GAINS_TIP = "On every item's tooltip, what it is worth by these w
 -- Under an item on its tooltip: the spec's name, the item's worth by its weights beside it.
 L.ITEM_TIP_VALUE = "Gear Finder (%s)"
 L.ITEM_TIP_UPGRADE = "Upgrade: %s to your gear"
+L.ITEM_TIP_UPGRADE_LATER = "Upgrade at level %d: %s to your gear"
 L.GEAR_WHY_CUSTOM = "%s (your weights)"
 L.GEAR_UNIT_POINTS = "points"
 -- The specs' names and the units their weights count in are the generated weights' own English

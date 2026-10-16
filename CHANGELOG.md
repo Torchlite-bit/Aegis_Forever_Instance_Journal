@@ -30,7 +30,8 @@ and the version shown in the AddOns list. Quote it in bug reports.
   how many of each item you get.
 - **The Gear Finder's stat weights on every item's tooltip**, as Pawn shows its scales: in your
   bags, on the character sheet, in loot, at merchants and in chat links, what the item is worth
-  to your spec, and a green arrow with what it adds to your gear when it beats what you wear.
+  to your spec, and a green arrow with what it adds to your gear when it beats what you wear
+  (with the level, for gear a few levels ahead).
 - **Show upgrades in tooltips**, a box under the stat weights: untick it and items' tooltips,
   the Gear Finder's too, leave out what each item is worth and adds to your gear.
 - **The Gear Finder and its stat weights in Russian**, with every spec's name and unit, by
@@ -43,6 +44,7 @@ and the version shown in the AddOns list. Quote it in bug reports.
   needed first that only lead the way there (Seeking Caitlin, Young Crocolisk Skins, Rethiel's
   Wetlands quests).
 - The Log Reader page keeps a boss's spells when the game calls him neutral (the Relic Guardian).
+- The Gear Finder no longer suggests a unique ring or trinket you already wear in the other slot.
 
 ## [0.31.0]
 

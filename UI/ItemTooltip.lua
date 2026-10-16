@@ -61,28 +61,48 @@ local function ShownLink(tooltip, data)
 	return link
 end
 
--- Whether the player wears this item: then it is what others are measured against.
+-- The tooltips beside another that show what is worn, to compare with.
+local SHOWS_WORN = { "ShoppingTooltip1", "ShoppingTooltip2", "ItemRefShoppingTooltip1", "ItemRefShoppingTooltip2" }
+
+--[[
+	Whether the tooltip shows an item the player wears, the one others are measured against:
+	the very copy, not another of the same item (a second ring, the same green "of the Monkey"
+	rather than "of the Bear"). The client names each copy (its guid) where it has one, in the
+	bags and on the character sheet; for a link in chat or at a merchant, the same link as one worn.
+]]
 local FIRST_SLOT, LAST_SLOT = 1, 19
-local function IsWorn(link)
-	local itemID = link:match("item:(%d+)")
-	if not itemID then return false end
+local function IsWorn(tooltip, link, data)
+	for _, name in ipairs(SHOWS_WORN) do
+		if _G[name] == tooltip then return true end
+	end
+	local guid = data and data.guid
+	if ns.IsSecret(guid) or type(guid) ~= "string" then guid = nil end
+	local byCopy = guid and C_Item and C_Item.GetItemGUID and ItemLocation and ItemLocation.CreateFromEquipmentSlot
 	for slot = FIRST_SLOT, LAST_SLOT do
-		local worn = GetInventoryItemLink("player", slot)
-		if worn and worn:match("item:(%d+)") == itemID then return true end
+		if byCopy then
+			local ok, worn = pcall(C_Item.GetItemGUID, ItemLocation:CreateFromEquipmentSlot(slot))
+			if ok and not ns.IsSecret(worn) and worn == guid then return true end
+		elseif GetInventoryItemLink("player", slot) == link then
+			return true
+		end
 	end
 	return false
 end
 
 --[[
-	The lines for an item: { value = "145", upgrade = "+4.2%" or nil }, or nil when it gets none.
-	An item worn, or an off hand beside a two-hander, is only given its worth.
+	The lines for an item: { value = "145", upgrade = "+4.2%" or nil, level = 24 or nil }, or nil
+	when it gets none. An upgrade, as the Gear Finder counts one: worn within its few levels
+	ahead (`level` when not yet), and not the item worn itself or an off hand beside a two-hander.
 ]]
-function ItemTooltip:Lines(link)
-	local compare = ns.ItemScore:Compare(link)
+function ItemTooltip:Lines(link, tooltip, data)
+	local IS = ns.ItemScore
+	local compare = IS:Compare(link)
 	if not compare or not compare.usable or compare.score <= 0 then return nil end
 	local lines = { value = ns.GearPanel.Points(compare.score) }
-	if compare.delta and compare.delta > 0 and not IsWorn(link) then
+	if compare.delta and compare.delta > 0.0001 and compare.minLevel <= IS:Level() + ns.GearFinder.AHEAD
+		and not IsWorn(tooltip, link, data) then
 		lines.upgrade = ns.GearPanel.GainText(compare)
+		if compare.later then lines.level = compare.minLevel end
 	end
 	return lines
 end
@@ -95,14 +115,15 @@ local function OnItem(tooltip, data)
 	local owner = tooltip.GetOwner and tooltip:GetOwner()
 	if type(owner) == "table" and rawget(owner, "gearFinderTip") then return end
 	local link = ShownLink(tooltip, data)
-	local lines = link and ItemTooltip:Lines(link)
+	local lines = link and ItemTooltip:Lines(link, tooltip, data)
 	if not lines then return end
 	local IS = ns.ItemScore
 	tooltip:AddDoubleLine(string.format(L.ITEM_TIP_VALUE, IS:SpecLabel(IS:Spec())), lines.value,
 		VALUE_COLOR[1], VALUE_COLOR[2], VALUE_COLOR[3], 1, 1, 1)
 	if lines.upgrade then
-		tooltip:AddLine(Arrow() .. string.format(L.ITEM_TIP_UPGRADE, lines.upgrade), GAIN_COLOR[1], GAIN_COLOR[2],
-			GAIN_COLOR[3])
+		local text = lines.level and string.format(L.ITEM_TIP_UPGRADE_LATER, lines.level, lines.upgrade)
+			or string.format(L.ITEM_TIP_UPGRADE, lines.upgrade)
+		tooltip:AddLine(Arrow() .. text, GAIN_COLOR[1], GAIN_COLOR[2], GAIN_COLOR[3])
 	end
 end
 
