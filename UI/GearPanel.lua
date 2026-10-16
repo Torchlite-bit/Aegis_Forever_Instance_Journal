@@ -168,19 +168,30 @@ local function ShowCompare()
 	end
 end
 
+-- Whether the Gear Finder's tooltips say what each item adds to the gear worn, and list the slot's
+-- other upgrades: the player's choice for every character, shown unless turned off.
+function GearPanel.ShowsGains()
+	return not (ns.db and ns.db.hideGearTipGains)
+end
+
+function GearPanel.SetShowsGains(shown)
+	ns.db.hideGearTipGains = not shown or nil
+end
+
 -- An upgrade's tooltip: the item, what it adds, where it drops; `clickText` says what a click on
 -- `owner` does, `picked` that the player chose it for its slot.
 local function ShowEntryTooltip(owner, entry, anchor, others, clickText, picked)
+	local gains = GearPanel.ShowsGains()
 	GameTooltip:SetOwner(owner, anchor or "ANCHOR_RIGHT")
 	GameTooltip:SetHyperlink(entry.link)
 	GameTooltip:AddLine(" ")
-	AddGainLines(entry.compare)
+	if gains then AddGainLines(entry.compare) end
 	GameTooltip:AddLine(entry.instance.name .. " \194\183 " .. SourceName(entry), 1, 0.82, 0)
 	if entry.compare.later then GameTooltip:AddLine(string.format(L.GEAR_TIP_LATER, entry.compare.minLevel), 1, 0.2, 0.2) end
 	if picked then GameTooltip:AddLine(L.GEAR_TIP_PICKED, 1, 0.82, 0) end
 	-- The next best for the slot, so a pick isn't the only thing it says.
 	local listed = 0
-	for _, other in ipairs(others or {}) do
+	for _, other in ipairs(gains and others or {}) do
 		if other.itemID ~= entry.itemID and listed < 3 then
 			if listed == 0 then GameTooltip:AddLine(L.GEAR_TIP_MORE, 0.75, 0.75, 0.75) end
 			GameTooltip:AddDoubleLine((other.info.name or other.link) .. " (" .. other.instance.name .. ")",

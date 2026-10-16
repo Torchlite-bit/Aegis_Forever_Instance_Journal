@@ -343,11 +343,27 @@ function WeightsEditor:Create(parent, options)
 		ns.ItemScore:ResetWeights(SpecNow())
 		editor:SetMessage("")
 	end)
+	bottom = bottom + BUTTON_HEIGHT + 2
+
+	-- Above them, whether the Gear Finder's tooltips show what items add (UI/GearPanel.lua).
+	editor.ShowGains = ns.CreateFrameWithTemplate("CheckButton", nil, editor, "UICheckButtonTemplate")
+	editor.ShowGains:SetSize(24, 24)
+	editor.ShowGains:SetPoint("BOTTOMLEFT", editor, "BOTTOM", -HEADER_WIDTH / 2 - 2, bottom)
+	editor.ShowGains.Label = editor:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	editor.ShowGains.Label:SetPoint("LEFT", editor.ShowGains, "RIGHT", 2, 1)
+	editor.ShowGains.Label:SetText(L.WEIGHTS_SHOW_GAINS)
+	Tooltip(editor.ShowGains, L.WEIGHTS_SHOW_GAINS, L.WEIGHTS_SHOW_GAINS_TIP)
+	editor.ShowGains:SetScript("OnClick", function(self)
+		ns.PlaySoundKit(self:GetChecked() and "IG_MAINMENU_OPTION_CHECKBOX_ON" or "IG_MAINMENU_OPTION_CHECKBOX_OFF")
+		ns.GearPanel.SetShowsGains(self:GetChecked())
+		for _, other in ipairs(editors) do other.ShowGains:SetChecked(ns.GearPanel.ShowsGains()) end
+	end)
+	bottom = bottom + 24
 
 	-- The list, between the words at the top and the buttons, with the panel's thin bar.
 	editor.Scroll = ns.CreateScrollFrame(editor, 5, -5, 5)
 	editor.Scroll:SetPoint("TOP", editor.Message, "BOTTOM", -6, -6)
-	editor.Scroll:SetPoint("BOTTOM", editor, "BOTTOM", -6, bottom + BUTTON_HEIGHT + 8)
+	editor.Scroll:SetPoint("BOTTOM", editor, "BOTTOM", -6, bottom + 6)
 	editor.Scroll:SetWidth(HEADER_WIDTH)
 	BuildList(editor)
 	BuildImport(editor)
@@ -356,6 +372,8 @@ function WeightsEditor:Create(parent, options)
 		self.Scroll:Hide()
 		self.Pawn:Hide()
 		self.Reset:Hide()
+		self.ShowGains:Hide()
+		self.ShowGains.Label:Hide()
 		self:SetMessage("")
 		self.Import:Show()
 		self.Import.Box:SetFocus()
@@ -366,6 +384,8 @@ function WeightsEditor:Create(parent, options)
 		self.Scroll:Show()
 		self.Pawn:Show()
 		self.Reset:Show()
+		self.ShowGains:Show()
+		self.ShowGains.Label:Show()
 		self:Refresh()
 	end
 	function editor:Refresh()
@@ -397,6 +417,7 @@ function WeightsEditor:Refresh(editor)
 	end
 	editor.Source:SetText(SourceText(spec))
 	editor.Reset:SetEnabled(IS:CustomWeights(spec) ~= nil)
+	editor.ShowGains:SetChecked(ns.GearPanel.ShowsGains())
 	local menu = rawget(editor, "Spec")
 	if menu then ns.GearPanel.UpdateSpecMenu(menu) end
 end

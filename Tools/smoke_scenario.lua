@@ -3650,6 +3650,22 @@ end)()
 		check(IS:Weights().AGILITY == 0.68691, "and nothing changed by passing through it")
 		editor.Reset:Click()
 
+		-- The box under the weights: the Gear Finder's tooltips without what items add, and back
+		local function GainLine()
+			back:_RunScript("OnEnter")
+			for _, line in ipairs(GameTooltip._lines or {}) do
+				if type(line) == "string" and line:find("Gear Finder (", 1, true) then return true end
+			end
+			return false
+		end
+		check(editor.ShowGains:GetChecked() and GainLine(), "upgrades shown in the Gear Finder's tooltips, the box ticked")
+		editor.ShowGains:SetChecked(false)
+		editor.ShowGains:_RunScript("OnClick")
+		check(ns.db.hideGearTipGains and not GainLine(), "unticked: the tooltips leave out what items add")
+		editor.ShowGains:SetChecked(true)
+		editor.ShowGains:_RunScript("OnClick")
+		check(not ns.db.hideGearTipGains and GainLine(), "ticked again: back")
+
 		-- The window closes when the panel turns to another page; its button opens the Gear Finder
 		CharacterFrame:ShowSubFrame("ReputationFrame")
 		CharacterFrame:RefreshDisplay()

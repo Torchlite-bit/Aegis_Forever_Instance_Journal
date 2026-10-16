@@ -27,6 +27,8 @@ and the version shown in the AddOns list. Quote it in bug reports.
   Weakness and the spider trail's poison and Highland Venom, with the classes that can take each
   off; and the Highland Horror's roots, which Blessing of Freedom breaks.
 
+- **Show upgrades in tooltips**, a box under the stat weights: untick it and the Gear Finder's
+  tooltips leave out what each item adds to your gear and the slot's other upgrades.
 - **The Gear Finder and its stat weights in Russian**, with every spec's name and unit, by
   Staree4ok. The new top 3 picker is still in English for now.
 

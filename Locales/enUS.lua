@@ -114,6 +114,8 @@ L.WEIGHTS_UNUSED = "Not used: %s."
 L.WEIGHTS_NOT_PAWN = "That isn't a Pawn scale. In Pawn, choose Export and copy all of its text."
 L.WEIGHTS_OTHER_CLASS = "That scale is for a %s, not for this character's class."
 L.WEIGHTS_FOR = "For"
+L.WEIGHTS_SHOW_GAINS = "Show upgrades in tooltips"
+L.WEIGHTS_SHOW_GAINS_TIP = "In the Gear Finder's tooltips, what each item adds to your gear by these weights, and the slot's other upgrades. For all your characters."
 L.GEAR_WHY_CUSTOM = "%s (your weights)"
 L.GEAR_UNIT_POINTS = "points"
 -- The specs' names and the units their weights count in are the generated weights' own English
