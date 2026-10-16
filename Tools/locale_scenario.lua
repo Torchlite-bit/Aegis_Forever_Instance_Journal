@@ -125,6 +125,16 @@ for _, kind in ipairs({ "dungeon", "raid", "faction" }) do
 end
 check(opened > 100, "every boss page opens in Russian: " .. opened)
 check(#ns.Search:Find(ragefire.name) > 0, "search finds a dungeon by its Russian name")
+
+-- The Excavation Site's quests, corrected by hand over the guides': their notes and where each
+-- starts, still in Russian.
+local english = {}
+for _, quest in ipairs(ns.GetInstance("ExcavationSiteWetlands").quests) do
+	for _, text in ipairs({ quest.note or "", quest.startMap and quest.startMap.label or "" }) do
+		if text ~= "" and not IsRussian(text) then english[#english + 1] = quest.questID .. ": " .. text end
+	end
+end
+check(#english == 0, "the Excavation Site's quest notes and starting places in Russian: " .. table.concat(english, "; "))
 f:Hide()
 
 return string.format("All %d Russian checks passed (%d strings; %d of %d boss names in Russian).",

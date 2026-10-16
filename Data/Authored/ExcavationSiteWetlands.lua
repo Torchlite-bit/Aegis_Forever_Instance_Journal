@@ -66,12 +66,12 @@ ns.AmendInstance("ExcavationSiteWetlands", {
 
 	-- Where each quest is given and handed in, and which quests it needs, as the site's quest pages
 	-- give them (2026-10-16). Seeking Caitlin, Young Crocolisk Skins and Rethiel's Wetlands quests
-	-- lead to these but are not needed for them.
+	-- lead to these but are not needed for them. The labels where each starts are the ones
+	-- Locales/ruRU_content.lua translates already.
 	questPatches = {
 		[95647] = {
 			prerequisites = {},
 			startMap = { mapID = 1437, x = 0.118, y = 0.586, label = "Caitlin Grassman, Menethil Harbor" },
-			note = "Seeking Caitlin, from Llana in Ashenvale, sends you to Caitlin; this leads to Heartwoven.",
 		},
 		[95795] = {
 			prerequisites = { { questID = 95772, name = "Songblade Search" } },
@@ -79,7 +79,7 @@ ns.AmendInstance("ExcavationSiteWetlands", {
 		},
 		[98824] = {
 			prerequisites = { { questID = 95810, name = "Lost Relic Carry" } },
-			startMap = { mapID = 1437, x = 0.388, y = 0.522, label = "Prospector Whelgar, Whelgar's Excavation Site" },
+			startMap = { mapID = 1437, x = 0.388, y = 0.522, label = "Prospector Whelgar, Whelgar's Excavation Site, Wetlands" },
 			endMap = { mapID = 1455, x = 0.696, y = 0.186, label = "High Explorer Magellas, Hall of Explorers" },
 		},
 		[98823] = {
@@ -95,10 +95,10 @@ ns.AmendInstance("ExcavationSiteWetlands", {
 		[95697] = { endMap = { mapID = 1454, x = 0.574, y = 0.534, label = "Borstan, The Drag, Orgrimmar" } },
 		[98815] = {
 			prerequisites = {},
-			startMap = { mapID = 1437, x = 0.086, y = 0.556, label = "James Halloran, Menethil Harbor" },
+			startMap = { mapID = 1437, x = 0.086, y = 0.556, label = "James Halloran — Menethil Harbor" },
 			endMap = { mapID = 1437, x = 0.086, y = 0.556, label = "James Halloran, Menethil Harbor" },
 		},
-		[95772] = { startMap = { mapID = 1433, x = 0.308, y = 0.466, label = "Dorin Songblade, Lakeshire" } },
+		[95772] = { startMap = { mapID = 1433, x = 0.308, y = 0.466, label = "Dorin Songblade — Redridge Mountains" } },
 		[95646] = {
 			prerequisites = {},
 			endMap = { mapID = 1437, x = 0.562, y = 0.404, label = "Rethiel the Greenwarden" },
