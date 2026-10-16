@@ -2933,11 +2933,18 @@ end
 end)()
 
 -- The Gear Finder: the best upgrade per slot from the dungeons near the player's level, a level-15
--- warrior here, in Ragefire Chasm's drops (only the items described below are known to the client)
+-- warrior here, in Ragefire Chasm's drops (only the items described below are known to the client).
+-- Its timers wait on the mock's clock here, as the client's do (Mock.RunTimers).
 ;(function()
 	local IS, GF = ns.ItemScore, ns.GearFinder
-	local level, class = Mock.level, Mock.playerClass
+	local level, class, clock = Mock.level, Mock.playerClass, Mock.time
 	Mock.level, Mock.playerClass = 15, "WARRIOR"
+	Mock.deferTimers = true
+	local requests, request = 0, C_Item.RequestLoadItemDataByID
+	C_Item.RequestLoadItemDataByID = function(itemID)
+		requests = requests + 1
+		request(itemID)
+	end
 	local CAPE, CUFFS, FELBLADE, CROSSBOW, ROBE, SCEPTER, WORN_CAPE = 14149, 14148, 14145, 272999, 14150, 272996, 990301
 	Mock.itemInstant[CAPE] = { "INVTYPE_CLOAK", 4, 1, "Cloth" }
 	Mock.itemInstant[WORN_CAPE] = { "INVTYPE_CLOAK", 4, 1, "Cloth" }
@@ -2954,6 +2961,7 @@ end)()
 	Mock.itemLines[FELBLADE] = { "One-Hand", "+3 Strength", "Equip: Improves your chance to get a critical strike by 1%.",
 		"Use: Increases attack power by 200 for 20 sec.", "(1) Set: Improves your chance to hit by 2%." }
 	Mock.itemStats[CROSSBOW] = { ITEM_MOD_DAMAGE_PER_SECOND_SHORT = 5 }
+	Mock.itemLines[CROSSBOW] = { { "Requires Level 17", red = true } }
 	Mock.itemMinLevels[CROSSBOW], Mock.itemMinLevels[SCEPTER] = 17, 25
 	Mock.itemStats[ROBE] = { ITEM_MOD_STAMINA_SHORT = 20 }
 	Mock.itemLines[ROBE] = { { "Classes: Priest", red = true } }
@@ -2967,6 +2975,7 @@ end)()
 	check(blade.stats.DPS == 8.5 and blade.stats.STRENGTH == 3 and blade.stats.CRIT == 1 and not blade.stats.HIT
 		and not blade.stats["ATTACK POWER"], "the client's stats, plus the crit of an Equip: line; not a Use: or set line")
 	check(IS:Read(Mock.ItemLink(CROSSBOW)).stats["RANGED DPS"] == 5, "a ranged weapon's damage counts as ranged")
+	check(IS:Read(Mock.ItemLink(CROSSBOW)).usable, "the red level line of an item for later is no reason to leave it out")
 	check(IS:Read(Mock.ItemLink(ROBE)).usable == false, "a red line (another class's) makes it unusable")
 	check(IS.unknownKeys.ITEM_MOD_NEW_THING or not IS:Read(Mock.ItemLink(CAPE)).stats.ITEM_MOD_NEW_THING,
 		"a stat name the journal doesn't know is noted for /aegis gearscan")
@@ -2975,10 +2984,80 @@ end)()
 	check(spec == "Arms" and why == "levelling" and IS:Weights().STRENGTH == 2.16,
 		"a warrior with no talents read is scored as Arms, with the levelling weights")
 
-	-- The Gear tab
+	-- The classic Equip: wordings
+	local WORDS, SPELLS, LATER, LATE = 990780, 990781, 990782, 990783
+	for _, itemID in ipairs({ WORDS, SPELLS, LATER, LATE }) do
+		Mock.itemInstant[itemID] = { "INVTYPE_NECK", 4, 0, "Miscellaneous" }
+		Mock.itemsCached[itemID] = true
+	end
+	Mock.itemLines[WORDS] = { "Equip: +24 ranged Attack Power.", "Equip: +140 Attack Power in Cat, Bear, and Dire Bear forms only.",
+		"Equip: +81 Attack Power when fighting Undead.", "Equip: Increases damage done by magical spells and effects by up to 12.",
+		"Equip: Increases damage done by Shadow spells and effects by up to 7.",
+		"Equip: Allows 15% of your Mana regeneration to continue while casting.",
+		"Equip: Decreases the magical resistances of your spell targets by 10." }
+	local words = IS:Read(Mock.ItemLink(WORDS)).stats
+	check(words["RANGED ATTACK POWER"] == 24 and words["FERAL ATTACK POWER"] == 140 and not words["ATTACK POWER"]
+		and words["SPELL DAMAGE"] == 12 and words["SHADOW DAMAGE"] == 7 and words["CASTING REGEN"] == 15
+		and words["SPELL PENETRATION"] == 10, "the classic Equip: lines: ranged and feral attack power, none for fighting "
+		.. "undead, magical and shadow spell damage, regeneration while casting, spell penetration")
+	-- A stat the client gave is not counted again from its line, under another of its names
+	Mock.itemStats[SPELLS] = { ITEM_MOD_SPELL_DAMAGE_DONE_SHORT = 20, ITEM_MOD_SPELL_HEALING_DONE_SHORT = 20 }
+	Mock.itemLines[SPELLS] = { "Equip: Increases damage and healing done by magical spells and effects by up to 20." }
+	local spells = IS:Read(Mock.ItemLink(SPELLS)).stats
+	check(spells["SPELL DAMAGE"] == 20 and spells.HEALING == 20 and not spells["SPELL POWER"],
+		"a damage and healing line the client gave already counts once")
+	-- The level line in the client's own language
+	Mock.itemMinLevels[LATER] = 17
+	Mock.itemLines[LATER] = { { "Ben\195\182tigt Stufe 17", red = true } }
+	ITEM_MIN_LEVEL = "Ben\195\182tigt Stufe %d"
+	check(IS:Read(Mock.ItemLink(LATER)).usable, "the red level line is read in the client's own language")
+	ITEM_MIN_LEVEL = nil
+	-- An item read before its tooltip came is read again; and when the client says more came
+	Mock.itemLines[LATE] = { "Equip: Improves your chance to get a critical strike by 1%." }
+	local getHyperlink = C_TooltipInfo.GetHyperlink
+	C_TooltipInfo.GetHyperlink = function() return nil end
+	local early = IS:Read(Mock.ItemLink(LATE))
+	C_TooltipInfo.GetHyperlink = getHyperlink
+	Mock.tooltipDataIDs[LATE] = 4242
+	check(early and not early.stats.CRIT and IS:Read(Mock.ItemLink(LATE)).stats.CRIT == 1,
+		"an item read before the client had its tooltip is read again")
+	Mock.itemLines[LATE] = { "Equip: Improves your chance to get a critical strike by 2%." }
+	check(IS:Read(Mock.ItemLink(LATE)).stats.CRIT == 1, "once read, it is kept")
+	Mock.Fire("TOOLTIP_DATA_UPDATE", 4242)
+	check(IS:Read(Mock.ItemLink(LATE)).stats.CRIT == 2, "until the client says more of its tooltip came")
+
+	-- Talents: the tree with the most points, each answer matched to its tree by its id
+	local talents, traits = C_ClassTalents, C_Traits
+	C_ClassTalents = { GetActiveConfigID = function() return 7 end }
+	C_Traits = {
+		GetConfigInfo = function() return { treeIDs = { 70 } } end,
+		GetGroupDisplayInfoByTreeID = function()
+			return { { groupID = 1, displayName = "Arms" }, { groupID = 2, displayName = "Fury" },
+				{ groupID = 3, displayName = "Protection" } }
+		end,
+		GetGroupCurrencyInfo = function()
+			return { { traitNodeGroupID = 2, currencyInfos = { { spent = 31 } } },
+				{ traitNodeGroupID = 1, currencyInfos = { { spent = 5 } } } }
+		end,
+	}
+	check(IS:TalentSpec("WARRIOR") == "Fury" and select(2, IS:Spec()) == "talents",
+		"the spec from the talents: the tree with the most points, matched by id, not by order")
+	C_ClassTalents, C_Traits = talents, traits
+
+	-- The Gear tab: searched on the next frame, its unknown drops asked for five at a time
+	local taragaman = ns.GetInstance("RagefireChasm").bosses[2]
+	for itemID = 990800, 990811 do table.insert(taragaman.loot, { itemID = itemID }) end
 	ns.Journal:ShowGear()
 	local gear = f.Panels[5]
 	check(f.Tabs[5]:GetText() == "Gear" and gear:IsShown() and f.selectedTab == 5, "the journal's fifth tab, Gear, opens on it")
+	check(requests == 0, "and searches on the next frame, not while it opens")
+	Mock.RunTimers(0)
+	local firstAsks = requests
+	Mock.RunTimers(0.1)
+	check(firstAsks == 5 and requests == 10, "drops never described are asked for five at a time: "
+		.. firstAsks .. ", then " .. requests - firstAsks)
+	Mock.RunTimers(40)
+	for _ = 990800, 990811 do table.remove(taragaman.loot) end
 	local function Cell(key)
 		for _, cell in ipairs(gear.Cells) do
 			if cell.def.key == key then return cell end
@@ -2989,6 +3068,7 @@ end)()
 		"the cape beats the worn one by its weighted stats: " .. tostring(back.Gain:GetText()))
 	check(main.entry and main.entry.itemID == FELBLADE and main.Gain:GetText() == "Empty slot"
 		and main.Where:GetText() == "Ragefire Chasm \194\183 Taragaman the Hungerer", "an empty slot's upgrade, and where it drops")
+	check(main.Name._textColor and #main.Name._textColor == 3, "its name in its quality's colour")
 	check(ranged.entry and ranged.entry.itemID == CROSSBOW and ranged.Where:GetText():find("at level 17", 1, true),
 		"one the player can wear in two levels says so")
 	check(not Cell("wrist").entry and Cell("wrist").Name:GetText() == "No upgrade found",
@@ -3002,23 +3082,34 @@ end)()
 	local suggestions = GF:Suggest()
 	check(gear.Card.Name:GetText() == "Ragefire Chasm" and gear.Card.Count:GetText() == "3 upgrades here"
 		and suggestions[1].instance.key == "RagefireChasm", "the suggested dungeon: Ragefire Chasm, three upgrades")
-	local _, loadingBefore, looked = GF:Results()
-	check(looked == #GF:Dungeons() and gear.Status:GetText():find(string.format(ns.L.GEAR_LOOKING, looked), 1, true) == 1,
-		"the footer says where it looked: " .. gear.Status:GetText())
+	local _, waiting, looked = GF:Results()
+	check(looked == #GF:Dungeons() and waiting == 0 and gear.Status:GetText() == string.format(ns.L.GEAR_LOOKING, looked),
+		"the footer says where it looked, and nothing is left loading once the server has had its time: "
+		.. gear.Status:GetText())
+
 	-- A drop the client has never described: asked for, counted as loading, weighed when it comes
-	local NEW_RING = 990777
-	local taragaman = ns.GetInstance("RagefireChasm").bosses[2]
+	local NEW_RING, NEVER = 990777, 990778
 	table.insert(taragaman.loot, { itemID = NEW_RING })
 	Mock.itemInstant[NEW_RING] = { "INVTYPE_FINGER", 4, 0, "Miscellaneous" }
 	Mock.itemStats[NEW_RING] = { ITEM_MOD_STRENGTH_SHORT = 4 }
 	GF:Refresh()
-	check(Mock.itemsRequested[NEW_RING] and select(2, GF:Results()) == loadingBefore + 1
-		and gear.Status:GetText():find(string.format(ns.L.GEAR_LOADING, loadingBefore + 1), 1, true),
-		"a drop not described yet is asked for, and the footer counts it as loading: " .. gear.Status:GetText())
+	check(select(2, GF:Results()) == 1 and gear.Status:GetText():find(ns.L.GEAR_LOADING_ONE, 1, true),
+		"a drop not described yet counts as loading: " .. gear.Status:GetText())
+	Mock.RunTimers(0)
+	check(Mock.itemsRequested[NEW_RING], "and is asked for")
 	Mock.itemsCached[NEW_RING] = true
 	Mock.Fire("GET_ITEM_INFO_RECEIVED", NEW_RING)
+	Mock.RunTimers(0.5)
 	check(Cell("finger1").entry and Cell("finger1").entry.itemID == NEW_RING and not Cell("finger2").entry,
 		"when it arrives it is weighed: a ring for the first finger only, never both")
+	table.remove(taragaman.loot)
+	-- One the server never describes stops counting once the journal gives up on it
+	table.insert(taragaman.loot, { itemID = NEVER })
+	GF:Refresh()
+	check(select(2, GF:Results()) == 1, "one never answered counts as loading at first")
+	Mock.RunTimers(ns.Items.GIVE_UP_SECONDS + 2)
+	check(select(2, GF:Results()) == 0 and not gear.Status:GetText():find(ns.L.GEAR_LOADING_ONE, 1, true),
+		"and no longer once the journal has given up on it: " .. gear.Status:GetText())
 	table.remove(taragaman.loot)
 
 	-- Another spec: a tank's single set of weights
@@ -3027,18 +3118,153 @@ end)()
 		"a spec picked from the menu is scored, a tank with its one set")
 	IS:SetSpec(nil)
 	check(IS:Spec() == "Arms", "back to automatic")
+	Mock.RunTimers(1)
+	-- The spec menu: automatic, then the class's specs; a pick is ticked at once
+	local radios = gear.Spec._menu and gear.Spec._menu.radios or {}
+	local protection
+	for _, radio in ipairs(radios) do if radio.text == "Protection" then protection = radio end end
+	check(#radios == 4 and radios[1].text == "Automatic: Arms" and radios[1].isSelected() and protection
+		and not protection.isSelected(), "the spec menu: automatic (Arms), then each of the class's specs")
+	protection.setSelected()
+	check(protection.isSelected() and not radios[1].isSelected() and IS:Spec() == "Protection", "a pick is ticked at once")
+	radios[1].setSelected()
+	Mock.RunTimers(1)
 
-	-- Dual wield: a one-hander is weighed against the weaker hand
+	-- Rings: the second cell is what beats the other ring worn, measured against that one
+	local RING_A, RING_B, RING_X, RING_Y = 990790, 990791, 990792, 990793
+	for _, itemID in ipairs({ RING_A, RING_B, RING_X, RING_Y }) do
+		Mock.itemInstant[itemID] = { "INVTYPE_FINGER", 4, 0, "Miscellaneous" }
+		Mock.itemsCached[itemID] = true
+	end
+	Mock.itemStats[RING_A], Mock.itemStats[RING_B] = { ITEM_MOD_STRENGTH_SHORT = 5 }, { ITEM_MOD_STRENGTH_SHORT = 14 }
+	Mock.itemStats[RING_X], Mock.itemStats[RING_Y] = { ITEM_MOD_STRENGTH_SHORT = 19 }, { ITEM_MOD_STRENGTH_SHORT = 9 }
+	table.insert(taragaman.loot, { itemID = RING_X })
+	table.insert(taragaman.loot, { itemID = RING_Y })
+	Mock.worn[11], Mock.worn[12] = RING_A, RING_B
+	Mock.Fire("PLAYER_EQUIPMENT_CHANGED")
+	Mock.RunTimers(1)
+	local finger1, finger2 = Cell("finger1"), Cell("finger2")
+	check(finger1.entry and finger1.entry.itemID == RING_X and not finger2.entry,
+		"two rings worn: the better drop replaces the weaker, and a drop below the other is no upgrade")
+	Mock.itemStats[RING_Y] = { ITEM_MOD_STRENGTH_SHORT = 16 }
+	IS:Forget()
+	Mock.RunTimers(1)
+	check(finger2.entry and finger2.entry.itemID == RING_Y and finger2.Gain:GetText() == "+14%",
+		"one beating the stronger ring too fills the second cell, measured against it: " .. tostring(finger2.Gain:GetText()))
+	local listsY = false
+	for _, other in ipairs(finger1.others or {}) do if other.itemID == RING_Y then listsY = true end end
+	check(not listsY, "and the first cell does not list it among its own")
+	-- One ring worn and a finger free: one cell fills it
+	Mock.worn[11], Mock.worn[12] = RING_B, nil
+	Mock.itemStats[RING_Y] = { ITEM_MOD_STRENGTH_SHORT = 9 }
+	IS:Forget()
+	Mock.RunTimers(1)
+	check(finger1.entry and finger1.entry.itemID == RING_X and finger1.Gain:GetText() == "Empty slot" and not finger2.entry,
+		"a finger free: the best ring fills it, and one weaker than the worn ring is no upgrade")
+	-- A ring worth nothing to the spec is replaced by what the drop adds, not called an empty slot
+	Mock.itemStats[RING_A] = { RESISTANCE2_NAME = 10 }
+	Mock.worn[11], Mock.worn[12] = RING_A, RING_B
+	IS:Forget()
+	Mock.RunTimers(1)
+	check(finger1.entry and finger1.entry.itemID == RING_X
+		and finger1.Gain:GetText() == string.format("+%.1f", 19 * IS:Weights().STRENGTH),
+		"a worn ring worth nothing: the gain is the score added, not 'Empty slot': " .. tostring(finger1.Gain:GetText()))
+	table.remove(taragaman.loot)
+	table.remove(taragaman.loot)
+	Mock.worn[11], Mock.worn[12] = nil, nil
+	Mock.Fire("PLAYER_EQUIPMENT_CHANGED")
+	Mock.RunTimers(1)
+
+	-- Dual wield: an off-hand weapon is only for those who can wield two
+	local DAGGER = 990794
+	Mock.itemInstant[DAGGER] = { "INVTYPE_WEAPONOFFHAND", 2, 15, "Daggers" }
+	Mock.itemsCached[DAGGER], Mock.itemStats[DAGGER] = true, { ITEM_MOD_DAMAGE_PER_SECOND_SHORT = 6 }
+	check(IS:Compare(Mock.ItemLink(DAGGER)).usable == false, "an off-hand weapon is no upgrade to one who cannot dual wield")
 	Mock.knownSpells[674] = true
 	IS:Forget()
-	check(IS:CanDualWield(), "dual wield known from the spellbook")
+	check(IS:CanDualWield() and IS:Compare(Mock.ItemLink(DAGGER)).usable, "and is to one who can")
 	Mock.knownSpells[674] = nil
+	local isPlayerSpell, isSpellKnown, spellBook = IsPlayerSpell, IsSpellKnown, C_SpellBook
+	IsPlayerSpell, IsSpellKnown = nil, nil
+	C_SpellBook = { IsSpellKnown = function(spellID) return spellID == 674 end }
 	IS:Forget()
+	check(IS:CanDualWield(), "dual wield known from the spellbook when the client's old spell checks are gone")
+	C_SpellBook = nil
+	CanDualWield = function() return true end
+	IS:Forget()
+	check(IS:CanDualWield(), "or from the client's own answer")
+	CanDualWield, IsPlayerSpell, IsSpellKnown, C_SpellBook = nil, isPlayerSpell, isSpellKnown, spellBook
+	IS:Forget()
+	check(not IS:CanDualWield(), "and not when none says so")
+	Mock.RunTimers(1)
 
-	-- Clicking an upgrade opens its boss's loot
+	-- Wearing an upgrade: it is no longer one
+	Mock.worn[15] = CAPE
+	Mock.Fire("PLAYER_EQUIPMENT_CHANGED")
+	Mock.RunTimers(1)
+	check(not back.entry, "wearing the cape: no upgrade left for the back")
+	Mock.worn[15] = WORN_CAPE
+	Mock.Fire("PLAYER_EQUIPMENT_CHANGED")
+	Mock.RunTimers(1)
+
+	-- More dungeons with upgrades: the arrows go through them, and round
+	local other
+	for _, instance in ipairs(GF:Dungeons()) do
+		for _, boss in ipairs(instance.bosses or {}) do
+			if not other and instance.key ~= "RagefireChasm" and not boss.trash and boss.loot then
+				other = { instance = instance, boss = boss }
+			end
+		end
+	end
+	local BOOTS = 990795
+	Mock.itemInstant[BOOTS] = { "INVTYPE_FEET", 4, 3, "Mail" }
+	Mock.itemsCached[BOOTS], Mock.itemStats[BOOTS] = true, { ITEM_MOD_STRENGTH_SHORT = 3 }
+	table.insert(other.boss.loot, { itemID = BOOTS })
+	GF:Refresh()
+	check(gear.Card.Name:GetText() == "Ragefire Chasm" and gear.Card.Next:IsShown(), "two dungeons with upgrades: arrows")
+	gear.Card.Next:Click()
+	check(gear.Card.Name:GetText() == other.instance.name, "the next dungeon: " .. tostring(gear.Card.Name:GetText()))
+	gear.Card.Next:Click()
+	check(gear.Card.Name:GetText() == "Ragefire Chasm", "and round to the first")
+	gear.Card.Previous:Click()
+	check(gear.Card.Name:GetText() == other.instance.name, "and back round to the last")
+	table.remove(other.boss.loot)
+
+	-- Clicking an upgrade opens its boss's loot, past a loot filter that would hide it
+	ns.charDB.lootFilters.slot = "FEET"
 	main:Click()
-	check(page:IsShown() and page.boss and page.boss.name == "Taragaman the Hungerer" and page.tab == Page.TAB_LOOT,
-		"an upgrade opens its boss on the Loot tab")
+	Mock.RunTimers(2)
+	check(page:IsShown() and page.boss and page.boss.name == "Taragaman the Hungerer" and page.tab == Page.TAB_LOOT
+		and f.selectedTab == 1, "an upgrade opens its boss on the Loot tab, under Dungeons")
+	check(page.Loot.revealedItemID == FELBLADE and ns.charDB.lootFilters.slot == "ALL",
+		"its row shown, though the loot filter would have hidden it")
+	-- A trash drop opens the dungeon's own loot, as a search result does: one of a nearby dungeon's,
+	-- described here with strength enough to beat anything in its slot
+	local trashInstance, trashItem
+	for _, instance in ipairs(GF:Dungeons()) do
+		for _, boss in ipairs(instance.bosses or {}) do
+			for _, row in ipairs(boss.trash and boss.loot or {}) do
+				local info = not trashItem and type(row.itemID) == "number" and ns.Items:Get(row.itemID, row)
+				if info and info.kind == "EQUIPMENT" and ns.Items:ClassCanUse("WARRIOR", info) then
+					trashInstance, trashItem = instance, row.itemID
+				end
+			end
+		end
+	end
+	Mock.itemsCached[trashItem], Mock.itemStats[trashItem] = true, { ITEM_MOD_STRENGTH_SHORT = 40 }
+	ns.Journal:ShowGear()
+	Mock.RunTimers(1)
+	local trashCell
+	for _, cell in ipairs(gear.Cells) do
+		if cell.entry and cell.entry.itemID == trashItem then trashCell = cell end
+	end
+	check(trashCell and trashCell.Where:GetText() == trashInstance.name .. " \194\183 " .. ns.L.LOOT_TRASH,
+		"a trash drop says it drops from the dungeon's trash: " .. tostring(trashCell and trashCell.Where:GetText()))
+	trashCell:Click()
+	Mock.RunTimers(2)
+	check(page:IsShown() and page.instance == trashInstance and not page.boss and page.tab == Page.TAB_LOOT
+		and page.Loot.revealedItemID == trashItem, "and opens the dungeon's own loot page on it")
+	Mock.itemsCached[trashItem], Mock.itemStats[trashItem] = nil, nil
 
 	-- The character sheet's button
 	_G.PaperDollItemsFrame = CreateFrame("Frame", "PaperDollItemsFrame", UIParent)
@@ -3046,6 +3272,7 @@ end)()
 	check(ns.GearPanel:AttachCharacterButton() and ns.GearPanel.characterButton:GetParent() == _G.PaperDollItemsFrame,
 		"a button on the character sheet, beside the weapons")
 	ns.GearPanel.characterButton:Click()
+	Mock.RunTimers(1)
 	check(f:IsShown() and f.selectedTab == 5 and gear:IsShown(), "which opens the Gear tab")
 
 	-- /aegis gearscan saves what the client says about the worn gear and nearby drops
@@ -3059,7 +3286,10 @@ end)()
 
 	ns.Journal:SelectTab(1)
 	f:Hide()
-	Mock.level, Mock.playerClass, Mock.worn = level, class, {}
+	Mock.RunTimers(60)
+	Mock.deferTimers, Mock.timers = false, {}
+	C_Item.RequestLoadItemDataByID = request
+	Mock.level, Mock.playerClass, Mock.worn, Mock.time = level, class, {}, clock
 	IS:Forget()
 end)()
 

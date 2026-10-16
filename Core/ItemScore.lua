@@ -79,7 +79,9 @@ ItemScore.unknownKeys = {}
 --[[
 	The "Equip:" lines, in the journal's own words for the classic wording: a pattern (on the
 	line in lower case) and the stat it gives. The first match on a line wins; specific before
-	general. School damage takes the school from the line.
+	general. School damage takes the school from the line, and a word that is no school
+	("magical") goes on to the next pattern. `false`: the line is known and worth nothing, as
+	attack power against one kind of creature.
 ]]
 local SCHOOLS = { holy = "HOLY DAMAGE", fire = "FIRE DAMAGE", frost = "FROST DAMAGE", nature = "NATURE DAMAGE",
 	shadow = "SHADOW DAMAGE", arcane = "ARCANE DAMAGE" }
@@ -95,7 +97,13 @@ local LINE_PATTERNS = {
 	{ "healing done by spells and effects by up to " .. NUMBER, "HEALING" },
 	{ "damage done by (%a+) spells and effects by up to " .. NUMBER, "SCHOOL" },
 	{ "damage done by magical spells and effects by up to " .. NUMBER, "SPELL DAMAGE" },
+	{ "allows " .. NUMBER .. "%% of your mana regeneration to continue while casting", "CASTING REGEN" },
+	{ "magical resistances of your spell targets by " .. NUMBER, "SPELL PENETRATION" },
+	{ "attack power when fighting", false },
+	{ "attack power by " .. NUMBER .. " when fighting", false },
+	{ "^%+" .. NUMBER .. " ranged attack power", "RANGED ATTACK POWER" },
 	{ "ranged attack power by " .. NUMBER, "RANGED ATTACK POWER" },
+	{ "^%+" .. NUMBER .. " attack power in cat", "FERAL ATTACK POWER" },
 	{ "attack power by " .. NUMBER .. " in cat", "FERAL ATTACK POWER" },
 	{ "attack power by " .. NUMBER, "ATTACK POWER" },
 	{ "%+" .. NUMBER .. " attack power", "ATTACK POWER" },
@@ -124,6 +132,30 @@ local function Add(stats, keys, value)
 	end
 end
 
+--[[
+	Which stats the client gave, so a line does not count one again. Spell damage, spell power and
+	healing are one stat here: the client may name a "damage and healing" line either way.
+]]
+local SAME_STAT = { ["SPELL DAMAGE"] = "SPELL", ["SPELL POWER"] = "SPELL", HEALING = "SPELL" }
+
+local function MarkGiven(given, keys)
+	if type(keys) == "table" then
+		for _, key in ipairs(keys) do given[SAME_STAT[key] or key] = true end
+	else
+		given[SAME_STAT[keys] or keys] = true
+	end
+end
+
+local function IsGiven(given, keys)
+	if type(keys) == "table" then
+		for _, key in ipairs(keys) do
+			if given[SAME_STAT[key] or key] then return true end
+		end
+		return false
+	end
+	return given[SAME_STAT[keys] or keys] == true
+end
+
 -- Whether a line is red, as the tooltip shows what the player cannot use.
 local function IsRed(color)
 	if not color then return false end
@@ -132,7 +164,8 @@ local function IsRed(color)
 	return (r or 0) > 0.9 and (g or 1) < 0.2 and (b or 1) < 0.2
 end
 
--- The item's tooltip lines: { text, red, rightRed }, from the client's tooltip data.
+-- The item's tooltip lines: { text, red, rightRed }, from the client's tooltip data, and the
+-- data's id, which the client names again when more of it comes in.
 local function TooltipLines(link)
 	if not (C_TooltipInfo and C_TooltipInfo.GetHyperlink) then return nil end
 	local ok, data = pcall(C_TooltipInfo.GetHyperlink, link)
@@ -142,7 +175,7 @@ local function TooltipLines(link)
 		if line.leftText == nil and TooltipUtil and TooltipUtil.SurfaceArgs then pcall(TooltipUtil.SurfaceArgs, line) end
 		out[index] = { text = line.leftText or "", red = IsRed(line.leftColor), rightRed = IsRed(line.rightColor) }
 	end
-	return out
+	return out, data.dataInstanceID
 end
 
 -- The stats one line gives, unless the client gave them already.
@@ -150,21 +183,28 @@ local function ReadLine(text, stats, given, patterns)
 	local lower = text:lower()
 	for _, pattern in ipairs(patterns) do
 		local a, b = lower:match(pattern[1])
-		if a then
-			local key, value = pattern[2], tonumber(b or a)
-			if key == "SCHOOL" then key, value = SCHOOLS[a], tonumber(b) end
-			local first = type(key) == "table" and key[1] or key
-			if key and value and not given[first] then Add(stats, key, value) end
+		local key, value = pattern[2], tonumber(b or a)
+		if a and key == "SCHOOL" then key, value = SCHOOLS[a], tonumber(b) end
+		if a and key ~= nil then
+			if key and value and not IsGiven(given, key) then Add(stats, key, value) end
 			return
 		end
 	end
 end
 
-local readCache = {}
+-- The client's own words, in its language: the level line, which is red until the player has
+-- that level, and the start of an Equip: line.
+local function LevelLine(minLevel)
+	return string.format(ITEM_MIN_LEVEL or "Requires Level %d", minLevel or 0)
+end
+local EQUIP_PREFIX = "^" .. (ITEM_SPELL_TRIGGER_ONEQUIP or "Equip:"):gsub("%p", "%%%0") .. "%s*(.+)$"
+
+local readCache, linkOfData = {}, {}
 
 --[[
 	Everything about an item a score needs: { stats, equipLoc, minLevel, usable, link }, or nil
-	while the client has not described it. Kept per link: stats never change.
+	while the client has not described it. Kept per link: stats never change, though the client
+	may describe its Equip: lines later (TOOLTIP_DATA_UPDATE), and then it is read again.
 	`usable` is false when its tooltip has a red line other than the level it needs (armour or
 	weapon the class cannot use, a class it is not for).
 ]]
@@ -187,19 +227,22 @@ function ItemScore:Read(link)
 				local key = STAT_KEYS[clientKey]
 				if key then
 					Add(item.stats, key, value)
-					given[type(key) == "table" and key[1] or key] = true
+					MarkGiven(given, key)
 				elseif key == nil then
 					self.unknownKeys[clientKey] = true
 				end
 			end
 		end
 	end
-	local lines = TooltipLines(link)
+	local lines, dataID = TooltipLines(link)
+	local levelLine = LevelLine(item.minLevel)
 	for index, line in ipairs(lines or {}) do
 		if index > 1 then
 			local text = line.text
-			if (line.red and not text:find("^Requires Level")) or line.rightRed then item.usable = false end
-			local equip = text:match("^Equip:%s*(.+)$")
+			if (line.red and text ~= levelLine and not text:find("^Requires Level")) or line.rightRed then
+				item.usable = false
+			end
+			local equip = text:match(EQUIP_PREFIX)
 			if equip then
 				ReadLine(equip, item.stats, given, LINE_PATTERNS)
 			elseif not haveStats then
@@ -211,8 +254,26 @@ function ItemScore:Read(link)
 	if RANGED_WEAPON[equipLoc or ""] and item.stats.DPS then
 		item.stats["RANGED DPS"], item.stats.DPS = item.stats.DPS, nil
 	end
-	readCache[link] = item
+	-- Without its tooltip it is read again next time: the client may not have it yet.
+	if lines then
+		readCache[link] = item
+		if dataID then linkOfData[dataID] = link end
+	end
 	return item
+end
+
+-- The client described more of an item's tooltip: read it again. True if it was one of ours.
+function ItemScore:TooltipUpdated(dataID)
+	if dataID == nil then
+		-- Something, unnamed: everything is read again at the next search, without asking for one.
+		wipe(readCache)
+		wipe(linkOfData)
+		return false
+	end
+	local link = linkOfData[dataID]
+	if not link then return false end
+	linkOfData[dataID], readCache[link] = nil, nil
+	return true
 end
 
 ------------------------------------------------------------------------------------------
@@ -263,10 +324,14 @@ function ItemScore:TalentSpec(classFile)
 		if type(groups) ~= "table" then return nil end
 		local ids = {}
 		for index, group in ipairs(groups) do ids[index] = group.groupID end
-		local spent = C_Traits.GetGroupCurrencyInfo(configID, ids)
+		-- Each answer names its group, as the client's own talent frame matches them.
+		local byGroup = {}
+		for _, info in ipairs(C_Traits.GetGroupCurrencyInfo(configID, ids) or {}) do
+			if info.traitNodeGroupID then byGroup[info.traitNodeGroupID] = info end
+		end
 		local best, bestPoints = nil, 0
-		for index, group in ipairs(groups) do
-			local info = spent and spent[index]
+		for _, group in ipairs(groups) do
+			local info = byGroup[group.groupID]
 			local points = info and info.currencyInfos and info.currencyInfos[1] and info.currencyInfos[1].spent or 0
 			if points > bestPoints then
 				local name = TREE_SPEC[group.displayName] or (group.displayName or ""):gsub("%s", "")
@@ -320,12 +385,16 @@ end
 
 local dualWield
 
+-- The client's own answer, else the Dual Wield spell. IsPlayerSpell and IsSpellKnown are only
+-- the client's fallbacks for old addons, there only while those are loaded.
 function ItemScore:CanDualWield()
 	if dualWield == nil then
 		local known = false
-		for _, check in ipairs({ IsPlayerSpell, IsSpellKnown, C_SpellBook and C_SpellBook.IsSpellKnown }) do
+		local checks = { CanDualWield, C_SpellBook and C_SpellBook.IsSpellKnown, IsPlayerSpell, IsSpellKnown }
+		for index = 1, 4 do
+			local check = checks[index]
 			if not known and type(check) == "function" then
-				local ok, result = pcall(check, DUAL_WIELD_SPELL)
+				local ok, result = pcall(check, check ~= CanDualWield and DUAL_WIELD_SPELL or nil)
 				known = ok and result == true
 			end
 		end
@@ -342,10 +411,23 @@ function ItemScore:Worn(slot, weights)
 	return self:ScoreStats(item.stats, weights), item, link
 end
 
+-- Whether every worn item has been described: one that hasn't yet scores 0 for now.
+function ItemScore:WornKnown()
+	for slot = HEAD, RANGED do
+		local link = GetInventoryItemLink("player", slot)
+		if link and not self:Read(link) then return false end
+	end
+	return true
+end
+
+-- Rings and trinkets: two slots, and a second upgrade replaces the other one.
+local PAIRED = { INVTYPE_FINGER = true, INVTYPE_TRINKET = true }
+
 --[[
 	How an item compares with what is worn, for these weights: { score, slot, worn (its score),
-	delta, pct (nil against an empty slot), emptySlot, usable, later, minLevel, noCompare }, or nil
-	when it can't be read yet or goes in no slot.
+	delta, pct (nil against an empty slot or one worth nothing), emptySlot, usable, later,
+	minLevel, noCompare }, or nil when it can't be read yet or goes in no slot. A ring or trinket
+	also says the other slot of the two: otherSlot, otherWorn, otherEmpty.
 ]]
 function ItemScore:Compare(link, weights)
 	weights = weights or self:Weights()
@@ -357,6 +439,8 @@ function ItemScore:Compare(link, weights)
 	local loc = item.equipLoc
 	local slots = SLOTS[loc]
 	if loc == "INVTYPE_WEAPON" and self:CanDualWield() then slots = { MAINHAND, OFFHAND } end
+	-- An off-hand weapon is for those who can wield two: the tooltip does not say so in red.
+	if loc == "INVTYPE_WEAPONOFFHAND" and not self:CanDualWield() then out.usable = false end
 	local mainScore, mainItem = self:Worn(MAINHAND, weights)
 	local twoHanded = mainItem and mainItem.equipLoc == "INVTYPE_2HWEAPON"
 
@@ -369,11 +453,17 @@ function ItemScore:Compare(link, weights)
 		return out
 	else
 		-- The slot it would replace: the weaker of those it fits.
-		for _, slot in ipairs(slots) do
-			local worn = self:Worn(slot, weights)
-			if not out.slot or worn < out.worn then out.slot, out.worn = slot, worn end
+		local scores = {}
+		for index, slot in ipairs(slots) do
+			scores[index] = self:Worn(slot, weights)
+			if not out.slot or scores[index] < out.worn then out.slot, out.worn = slot, scores[index] end
 		end
 		if twoHanded and out.slot == OFFHAND then out.slot, out.worn = MAINHAND, mainScore end
+		if PAIRED[loc] then
+			local other = out.slot == slots[1] and 2 or 1
+			out.otherSlot, out.otherWorn = slots[other], scores[other]
+			out.otherEmpty = GetInventoryItemLink("player", out.otherSlot) == nil
+		end
 	end
 	out.emptySlot = GetInventoryItemLink("player", out.slot) == nil
 	out.delta = score - out.worn
@@ -400,14 +490,28 @@ end
 function ItemScore:Forget()
 	dualWield = nil
 	wipe(readCache)
+	wipe(linkOfData)
 	self:Changed()
 end
 
+-- Tooltip answers come in bursts: one change for all that came in this long.
+local TOOLTIP_DELAY = 0.5
+local tooltipQueued = false
+
 local events = CreateFrame("Frame")
-ns.RegisterEvents(events, "PLAYER_EQUIPMENT_CHANGED", "PLAYER_LEVEL_UP", "SPELLS_CHANGED", "TRAIT_CONFIG_UPDATED")
-events:SetScript("OnEvent", function(_, event)
+ns.RegisterEvents(events, "PLAYER_EQUIPMENT_CHANGED", "PLAYER_LEVEL_UP", "SPELLS_CHANGED", "TRAIT_CONFIG_UPDATED",
+	"TOOLTIP_DATA_UPDATE")
+events:SetScript("OnEvent", function(_, event, dataID)
 	if not ns.charDB then return end
-	if event == "PLAYER_EQUIPMENT_CHANGED" or event == "TRAIT_CONFIG_UPDATED" then
+	if event == "TOOLTIP_DATA_UPDATE" then
+		if ItemScore:TooltipUpdated(dataID) and not tooltipQueued then
+			tooltipQueued = true
+			C_Timer.After(TOOLTIP_DELAY, function()
+				tooltipQueued = false
+				ItemScore:Changed()
+			end)
+		end
+	elseif event == "PLAYER_EQUIPMENT_CHANGED" or event == "TRAIT_CONFIG_UPDATED" then
 		ItemScore:Changed()
 	else
 		ItemScore:Forget()

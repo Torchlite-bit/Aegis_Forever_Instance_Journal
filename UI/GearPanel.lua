@@ -45,15 +45,21 @@ local function EmptySlotTexture(inv)
 	return "Interface\\PaperDoll\\UI-Backpack-EmptySlot"
 end
 
--- "+54%", or what a slot with nothing worn gains.
+-- "+54%"; for a slot with nothing worn, that; against an item worth nothing, the score it adds.
 local function GainText(compare)
+	if compare.emptySlot then return L.GEAR_EMPTY_SLOT end
 	if compare.pct then return string.format("+%d%%", math.floor(compare.pct + 0.5)) end
-	return L.GEAR_EMPTY_SLOT
+	return string.format("+%.1f", compare.delta or 0)
+end
+
+-- Who drops it: the boss, or the dungeon's trash.
+local function SourceName(entry)
+	return entry.boss.trash and L.LOOT_TRASH or entry.boss.name
 end
 
 -- "The Deadmines · Captain Greenskin", and when the item waits for a level, that too.
 local function WhereText(entry)
-	local text = entry.instance.name .. " \194\183 " .. entry.boss.name
+	local text = entry.instance.name .. " \194\183 " .. SourceName(entry)
 	if entry.compare.later then text = text .. " " .. LATER_COLOR .. string.format(L.GEAR_AT_LEVEL, entry.compare.minLevel) .. "|r" end
 	return text
 end
@@ -69,12 +75,12 @@ local function ShowCellTooltip(cell)
 	GameTooltip:SetHyperlink(entry.link)
 	local spec = ns.ItemScore:SpecLabel((ns.ItemScore:Spec()))
 	GameTooltip:AddLine(" ")
-	if entry.compare.pct then
-		GameTooltip:AddLine(string.format(L.GEAR_TIP_GAIN, spec, GainText(entry.compare)), GAIN_COLOR[1], GAIN_COLOR[2], GAIN_COLOR[3])
-	else
+	if entry.compare.emptySlot then
 		GameTooltip:AddLine(string.format(L.GEAR_TIP_EMPTY, spec), GAIN_COLOR[1], GAIN_COLOR[2], GAIN_COLOR[3])
+	else
+		GameTooltip:AddLine(string.format(L.GEAR_TIP_GAIN, spec, GainText(entry.compare)), GAIN_COLOR[1], GAIN_COLOR[2], GAIN_COLOR[3])
 	end
-	GameTooltip:AddLine(entry.instance.name .. " \194\183 " .. entry.boss.name, 1, 1, 1)
+	GameTooltip:AddLine(entry.instance.name .. " \194\183 " .. SourceName(entry), 1, 1, 1)
 	if entry.compare.later then GameTooltip:AddLine(string.format(L.GEAR_TIP_LATER, entry.compare.minLevel), 1, 0.82, 0) end
 	-- The next best for the slot, so a pick isn't the only thing it says.
 	local others = 0
@@ -90,10 +96,17 @@ local function ShowCellTooltip(cell)
 	GameTooltip:Show()
 end
 
+-- Opens the item where the journal lists it, as a search result opens: trash drops on the
+-- dungeon's own loot page, past any loot filter that would hide it.
 local function OpenEntry(entry)
 	ns.PlaySoundKit("IG_ABILITY_PAGE_TURN")
-	ns.Journal:OpenBoss(entry.instance, entry.boss)
+	if entry.boss.trash then
+		ns.Journal:OpenInstance(entry.instance)
+	else
+		ns.Journal:OpenBoss(entry.instance, entry.boss)
+	end
 	ns.EncounterPage:SetTab(ns.Journal:Page(), ns.EncounterPage.TAB_LOOT)
+	ns.LootPanel:Reveal(entry.itemID)
 end
 
 local function CreateCell(panel, def, width)
@@ -145,7 +158,8 @@ local function SetCell(cell, shown, entries)
 		cell.Icon:SetDesaturated(false)
 		cell.Icon:SetAlpha(1)
 		cell.Name:SetText(shown.info.name or "")
-		cell.Name:SetTextColor(ns.Items:QualityColor(shown.info.quality))
+		local r, g, b = ns.Items:QualityColor(shown.info.quality)
+		cell.Name:SetTextColor(r, g, b)
 		cell.Gain:SetText(GainText(shown.compare))
 		cell.Where:SetText(WhereText(shown))
 		cell.Where:SetTextColor(1, 1, 1)
@@ -277,6 +291,17 @@ local function PickSpec(spec)
 	ns.ItemScore:SetSpec(spec)
 end
 
+-- The spec picked from the menu, nil for automatic; read each time, never kept.
+local function PickedSpec()
+	return (ns.charDB.gearFinder or {}).spec
+end
+
+-- What automatic would score: the talents' spec, else the levelling one.
+local function AutomaticLabel()
+	local IS = ns.ItemScore
+	return IS:SpecLabel(IS:TalentSpec(IS:Class()) or (ns.GEAR_WEIGHTS[IS:Class()] or {}).levelling or "")
+end
+
 local function CreateSpecMenu(panel)
 	panel.ScoringLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	if ns.HasTemplate("WowStyle1DropdownTemplate") then
@@ -286,14 +311,11 @@ local function CreateSpecMenu(panel)
 			dropdown:SetPoint("TOPRIGHT", -25, -16)
 			dropdown:SetupMenu(function(_, rootDescription)
 				local IS = ns.ItemScore
-				local automatic = (ns.charDB.gearFinder or {}).spec == nil
-				rootDescription:CreateRadio(string.format(L.GEAR_AUTO, IS:SpecLabel(IS:TalentSpec(IS:Class())
-					or (ns.GEAR_WEIGHTS[IS:Class()] or {}).levelling or "")),
-					function() return (ns.charDB.gearFinder or {}).spec == nil end, function() PickSpec(nil) end)
+				rootDescription:CreateRadio(string.format(L.GEAR_AUTO, AutomaticLabel()),
+					function() return PickedSpec() == nil end, function() PickSpec(nil) end)
 				for _, spec in ipairs(IS:Specs()) do
 					rootDescription:CreateRadio(spec.label,
-						function() return not automatic and (ns.charDB.gearFinder or {}).spec == spec.key end,
-						function() PickSpec(spec.key) end)
+						function() return PickedSpec() == spec.key end, function() PickSpec(spec.key) end)
 				end
 			end)
 			if dropdown.SetDefaultText then dropdown:SetDefaultText(SpecText()) end
@@ -309,14 +331,14 @@ local function CreateSpecMenu(panel)
 	UIDropDownMenu_Initialize(dropdown, function()
 		local IS = ns.ItemScore
 		local info = UIDropDownMenu_CreateInfo()
-		info.text = string.format(L.GEAR_AUTO, SpecText())
-		info.checked = (ns.charDB.gearFinder or {}).spec == nil
+		info.text = string.format(L.GEAR_AUTO, AutomaticLabel())
+		info.checked = PickedSpec() == nil
 		info.func = function() PickSpec(nil) end
 		UIDropDownMenu_AddButton(info)
 		for _, spec in ipairs(IS:Specs()) do
 			info = UIDropDownMenu_CreateInfo()
 			info.text = spec.label
-			info.checked = (ns.charDB.gearFinder or {}).spec == spec.key
+			info.checked = PickedSpec() == spec.key
 			info.func = function() PickSpec(spec.key) end
 			UIDropDownMenu_AddButton(info)
 		end
@@ -354,9 +376,12 @@ function GearPanel:Build(panel)
 	ns.GearFinder:OnUpdate(function()
 		if panel:IsVisible() then GearPanel:Redraw(panel) end
 	end)
+	-- Searched on the next frame: a journal opened straight onto another page hides this at once.
 	panel:HookScript("OnShow", function()
 		panel.suggestIndex = 1
-		ns.GearFinder:Refresh()
+		C_Timer.After(0, function()
+			if panel:IsVisible() then ns.GearFinder:Refresh() end
+		end)
 	end)
 	self.panel = panel
 end
@@ -376,7 +401,9 @@ function GearPanel:Redraw(panel)
 
 	local _, missing, looked = finder:Results()
 	local status = looked == 1 and L.GEAR_LOOKING_ONE or string.format(L.GEAR_LOOKING, looked)
-	if missing > 0 then status = status .. " " .. string.format(L.GEAR_LOADING, missing) end
+	if missing > 0 then
+		status = status .. " " .. (missing == 1 and L.GEAR_LOADING_ONE or string.format(L.GEAR_LOADING, missing))
+	end
 	panel.Status:SetText(status)
 	if panel.Spec and panel.Spec.SetDefaultText then panel.Spec:SetDefaultText(SpecText()) end
 	if panel.Spec and panel.Spec.GenerateMenu then pcall(panel.Spec.GenerateMenu, panel.Spec) end

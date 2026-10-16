@@ -55,8 +55,8 @@ local results, missing, looked = {}, 0, 0
 
 --[[
 	Items the client has never described are asked for a few at a time, as Pathfinder asks: some
-	servers drop a client that asks for too many at once. One the client has already is read at
-	once.
+	servers drop a client that asks for too many at once. A search only fills the queue; the
+	asking starts on the next frame. One the client has already is read at once.
 ]]
 local LOAD_BATCH, LOAD_EVERY = 5, 0.1
 local loadQueue, asked, loading = {}, {}, false
@@ -66,7 +66,7 @@ local function LoadStep()
 		local nextItem = table.remove(loadQueue, 1)
 		if not nextItem then
 			loading = false
-			GearFinder:Queue()
+			if GearFinder.IsShowing() then GearFinder:Queue() end
 			return
 		end
 		ns.Items:Get(nextItem.itemID, nextItem.row)
@@ -89,7 +89,7 @@ local function Info(itemID, row)
 		loadQueue[#loadQueue + 1] = { itemID = itemID, row = row }
 		if not loading then
 			loading = true
-			LoadStep()
+			C_Timer.After(0, LoadStep)
 		end
 	end
 	return nil
@@ -103,6 +103,12 @@ function GearFinder:Dungeons()
 		if (instance.levelMin or 0) <= level + AHEAD and not instance.comingSoon then out[#out + 1] = instance end
 	end
 	return out
+end
+
+-- Upgrades in order: the biggest gain first.
+local function ByGain(a, b)
+	if a.compare.delta ~= b.compare.delta then return a.compare.delta > b.compare.delta end
+	return a.itemID < b.itemID
 end
 
 --[[
@@ -147,36 +153,75 @@ function GearFinder:Find()
 			end
 		end
 	end
-	for _, list in pairs(bySlot) do
-		table.sort(list, function(a, b)
-			if a.compare.delta ~= b.compare.delta then return a.compare.delta > b.compare.delta end
-			return a.itemID < b.itemID
-		end)
-	end
+	-- Worn gear the client has not described yet counts nothing for now, and is waited for too.
+	if not IS:WornKnown() then missing = missing + 1 end
+	for _, list in pairs(bySlot) do table.sort(list, ByGain) end
 	results = bySlot
+	self:Recheck()
 	return results, missing
+end
+
+--[[
+	Items the server never answers stop counting as loading once Core/Items.lua gives up on them,
+	which it decides when they are next looked at: so a search still waiting for some looks
+	again after that time, once, while anyone is looking.
+]]
+local recheckQueued = false
+function GearFinder:Recheck()
+	if missing == 0 or recheckQueued then return end
+	recheckQueued = true
+	C_Timer.After(ns.Items.GIVE_UP_SECONDS + 1, function()
+		recheckQueued = false
+		if missing > 0 and GearFinder.IsShowing() then GearFinder:Queue() end
+	end)
 end
 
 function GearFinder:Results()
 	return results, missing, looked
 end
 
--- What an upgrade is worth when dungeons are ranked: its %, or for an empty slot EMPTY_WORTH.
+-- What an upgrade is worth when dungeons are ranked: its %, or EMPTY_WORTH for a slot with
+-- nothing in it, or nothing worth anything to the spec.
 function GearFinder.Worth(entry)
-	local compare = entry.compare
-	if compare.pct then return compare.pct end
-	return compare.emptySlot and EMPTY_WORTH or 0
+	return entry.compare.pct or EMPTY_WORTH
 end
 
-local function FirstBut(list, itemID)
+-- The list without one item.
+local function Without(list, itemID)
+	if not itemID then return list end
+	local out = {}
 	for _, entry in ipairs(list) do
-		if entry.itemID ~= itemID then return entry end
+		if entry.itemID ~= itemID then out[#out + 1] = entry end
 	end
+	return out
+end
+
+--[[
+	The second cell of a pair (rings, trinkets). The first cell's pick takes the weaker of the
+	two slots, so what is left must beat the other worn one, and is measured against that.
+]]
+local function SecondOf(list, first)
+	local out = {}
+	for _, entry in ipairs(list) do
+		local compare = entry.compare
+		if entry ~= first and compare.otherSlot and compare.score - compare.otherWorn > 0.0001 then
+			local again = {}
+			for key, value in pairs(compare) do again[key] = value end
+			again.slot, again.worn, again.emptySlot = compare.otherSlot, compare.otherWorn, compare.otherEmpty
+			again.delta = compare.score - compare.otherWorn
+			again.pct = compare.otherWorn > 0 and again.delta / compare.otherWorn * 100 or nil
+			out[#out + 1] = { itemID = entry.itemID, link = entry.link, info = entry.info, instance = entry.instance,
+				boss = entry.boss, compare = again }
+		end
+	end
+	table.sort(out, ByGain)
+	return out
 end
 
 --[[
 	The cells: { def (from CELLS), entries (its slot's upgrades, best first), shown (the one it
-	shows, or nil) }. Two cells of one slot (rings, trinkets) never show the same item.
+	shows, or nil) }. Two cells of one slot (rings, trinkets) never show the same item, and
+	neither lists the other's.
 ]]
 function GearFinder:Cells()
 	local out, firstOf = {}, {}
@@ -185,7 +230,9 @@ function GearFinder:Cells()
 		local cell = { def = def, entries = list }
 		if def.second then
 			local first = firstOf[def.group]
-			cell.shown = FirstBut(list, first and first.shown and first.shown.itemID)
+			cell.entries = SecondOf(list, first and first.shown)
+			cell.shown = cell.entries[1]
+			if first and cell.shown then first.entries = Without(list, cell.shown.itemID) end
 		else
 			cell.shown = list[1]
 			firstOf[def.group] = cell
@@ -329,14 +376,20 @@ function GearFinder:Scan()
 		local link = GetInventoryItemLink("player", slot)
 		if link then scan.worn[#scan.worn + 1] = Sample(link, "slot " .. slot) end
 	end
-	local level = IS:Level()
+	-- Drops the client has described already; the rest are asked for a few at a time, as a
+	-- search asks, for the next scan.
+	local level, waiting = IS:Level(), 0
 	for _, instance in ipairs(self:Dungeons()) do
 		if (instance.levelMax or 0) >= level - 5 then
 			for _, boss in ipairs(instance.bosses or {}) do
 				for _, row in ipairs(boss.loot or {}) do
-					local info = type(row.itemID) == "number" and #scan.drops < SCAN_ITEMS and ns.Items:Get(row.itemID, row)
-					if info and info.kind == "EQUIPMENT" and info.link then
-						scan.drops[#scan.drops + 1] = Sample(info.link, instance.name .. " / " .. boss.name)
+					if type(row.itemID) == "number" and #scan.drops < SCAN_ITEMS then
+						local info = Info(row.itemID, row)
+						if not info or info.pending then
+							waiting = waiting + 1
+						elseif info.kind == "EQUIPMENT" and info.link then
+							scan.drops[#scan.drops + 1] = Sample(info.link, instance.name .. " / " .. boss.name)
+						end
 					end
 				end
 			end
@@ -345,4 +398,5 @@ function GearFinder:Scan()
 	for key in pairs(IS.unknownKeys) do scan.unknownKeys[#scan.unknownKeys + 1] = key end
 	ns.db.gearScan = scan
 	ns.Print(string.format(L.GEAR_SCAN_DONE, #scan.worn, #scan.drops))
+	if waiting > 0 and #scan.drops < SCAN_ITEMS then ns.Print(L.GEAR_SCAN_LOADING) end
 end

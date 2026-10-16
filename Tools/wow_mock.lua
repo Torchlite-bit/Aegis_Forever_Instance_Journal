@@ -246,7 +246,14 @@ function Region:GetFrameStrata()
 end
 function Region:SetDesaturated(desaturated) self._desaturated = desaturated end
 function Region:SetMask(mask) self._mask = mask end
-function Region:SetTextColor(...) self._textColor = { ... } end
+-- As strict as the client: the fourth value, if any, is the alpha, a number.
+function Region:SetTextColor(...)
+	local a = select(4, ...)
+	if a ~= nil and type(a) ~= "number" then
+		error("bad argument #5 to 'SetTextColor' (Usage: self:SetTextColor(colorR, colorG, colorB [, a]))", 2)
+	end
+	self._textColor = { ... }
+end
 function Region:GetStringWidth() return #(self._text or "") * 7 end
 function Region:GetStringHeight()
 	local lines = 1
@@ -363,7 +370,36 @@ C_AddOns = {
 }
 function UpdateAddOnMemoryUsage() Mock.memoryUpdated = true end
 function debugprofilestop() return os.clock() * 1000 end
-C_Timer = { After = function(_, callback) callback() end, NewTicker = function() return { Cancel = function() end } end }
+--[[
+	Timers run at once, unless a test defers them (Mock.deferTimers = true): then each waits in
+	Mock.timers until Mock.RunTimers(seconds) moves the clock on past it, in the order they fall
+	due, as the client runs them.
+]]
+Mock.timers = {}
+C_Timer = {
+	After = function(delay, callback)
+		if Mock.deferTimers then
+			Mock.timers[#Mock.timers + 1] = { due = Mock.time + (delay or 0), callback = callback }
+		else
+			callback()
+		end
+	end,
+	NewTicker = function() return { Cancel = function() end } end,
+}
+function Mock.RunTimers(seconds)
+	local stop = Mock.time + (seconds or 0)
+	while true do
+		local index
+		for i, timer in ipairs(Mock.timers) do
+			if timer.due <= stop and (not index or timer.due < Mock.timers[index].due) then index = i end
+		end
+		if not index then break end
+		local timer = table.remove(Mock.timers, index)
+		Mock.time = math.max(Mock.time, timer.due)
+		timer.callback()
+	end
+	Mock.time = stop
+end
 -- Runs the hook after the original, as the client does.
 function hooksecurefunc(target, name, hook)
 	if type(target) == "string" then target, name, hook = _G, target, name end
@@ -891,8 +927,9 @@ local function ItemLink(itemID) return "|cff0070dd|Hitem:" .. itemID .. ":::::::
 Mock.ItemLink = ItemLink
 -- The Gear Finder's items: stats as C_Item.GetItemStats names them (Mock.itemStats[itemID]), the
 -- level each needs (Mock.itemMinLevels) and their tooltip lines after the name
--- (Mock.itemLines[itemID] = { "text" or { text, red = true }, ... }).
-Mock.itemStats, Mock.itemMinLevels, Mock.itemLines = {}, {}, {}
+-- (Mock.itemLines[itemID] = { "text" or { text, red = true }, ... }), and the id the client
+-- gives an item's tooltip data, where a test gives one (Mock.tooltipDataIDs[itemID]).
+Mock.itemStats, Mock.itemMinLevels, Mock.itemLines, Mock.tooltipDataIDs = {}, {}, {}, {}
 C_Item = {
 	GetItemInfoInstant = function(itemID)
 		local entry = Mock.itemInstant[itemID] or { "INVTYPE_CHEST", 4, 1, "Cloth" }
@@ -994,7 +1031,7 @@ C_TooltipInfo = {
 				lines[#lines + 1] = { leftText = line }
 			end
 		end
-		return { lines = lines }
+		return { lines = lines, dataInstanceID = Mock.tooltipDataIDs[itemID] }
 	end,
 	GetMerchantItem = function(index)
 		local ware = Mock.merchant[index]
