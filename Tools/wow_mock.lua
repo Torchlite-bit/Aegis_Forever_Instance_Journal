@@ -262,7 +262,13 @@ function Region:SetTextColor(...)
 	end
 	self._textColor = { ... }
 end
-function Region:GetStringWidth() return #(self._text or "") * 7 end
+-- As the client draws it: no wider than a width set on it. The unbounded width is the words' own.
+function Region:GetUnboundedStringWidth() return #(self._text or "") * 7 end
+function Region:GetStringWidth()
+	local width = self:GetUnboundedStringWidth()
+	if (self._width or 0) > 0 then return math.min(width, self._width) end
+	return width
+end
 function Region:GetStringHeight()
 	local lines = 1
 	for _ in string.gmatch(self._text or "", "\n") do lines = lines + 1 end

@@ -453,6 +453,7 @@ function GearFinder:Scan()
 	-- The character panel's side tabs, ours among them, and what each hangs from.
 	local ok, tabs = pcall(function() return ns.CharacterTab and ns.CharacterTab:Describe() end)
 	scan.tabs = {}
+	if not ok then scan.errors[#scan.errors + 1] = "tabs: " .. tostring(tabs) end
 	for index, entry in ipairs(ok and tabs or {}) do scan.tabs[index] = PlainTable(entry) end
 	-- The character panel's art the Gear Finder tab borrows, at the sizes this client has it.
 	scan.atlases = {}

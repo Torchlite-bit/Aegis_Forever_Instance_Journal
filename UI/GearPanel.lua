@@ -346,13 +346,17 @@ local function CreateCell(panel, def)
 	return cell
 end
 
--- The second line's words, as wide as they need and no wider than the gain leaves them.
+-- The second line's words, as wide as they need and no wider than the gain leaves them. They are
+-- measured unbounded: GetStringWidth stops at the width the last words were given, so a longer
+-- dungeon name would be cut to it.
 local function SetSource(cell, text, gain)
 	cell.Gain:SetText(gain or "")
 	cell.Source:SetText(text)
 	local room = cell.textWidth - ((gain and gain ~= "") and ((cell.Gain:GetStringWidth() or 0) + 6) or 0)
-	cell.Source:SetWidth(math.max(1, math.min(cell.Source:GetStringWidth() or room, room)))
+	local measure = cell.Source.GetUnboundedStringWidth or cell.Source.GetStringWidth
+	cell.Source:SetWidth(math.max(1, math.min(measure(cell.Source) or room, room)))
 end
+GearPanel.SetSource = SetSource
 
 local function SetIcon(cell, texture, quality)
 	cell.Icon:SetTexture(texture or cell.emptyTexture)

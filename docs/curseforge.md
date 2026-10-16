@@ -3,8 +3,8 @@
 The text for the journal's CurseForge project page. CurseForge's upload API sends only files,
 so the description is pasted by hand: on the project, **Description → Edit**, switch the
 editor to **Markdown**, and paste the block below over the old text. Its pictures are the
-project's own gallery images, on CurseForge's server: upload a new one to the gallery first and put its
-address in place of the GEAR_FINDER_IMAGE_URL / STAT_WEIGHTS_IMAGE_URL marks. Uploads themselves are automatic: each new `## Version` merged to `main` goes to CurseForge once
+project's own gallery images, on CurseForge's server: a new one goes up to the gallery first, and
+its address goes in the text. Uploads themselves are automatic: each new `## Version` merged to `main` goes to CurseForge once
 (`.github/workflows/release.yml`, `Tools/curseforge_upload.py`).
 
 ## Project description
@@ -34,8 +34,8 @@ address in place of the GEAR_FINDER_IMAGE_URL / STAT_WEIGHTS_IMAGE_URL marks. Up
 ![A boss's abilities](https://media.forgecdn.net/attachments/2059/704/screenshot-2026-10-15-142526-png.png)
 ![City of Dalaran's map, with the map legend](https://media.forgecdn.net/attachments/2059/700/screenshot-2026-10-15-142325-png.png)
 ![The Reputation tab](https://media.forgecdn.net/attachments/2059/707/screenshot-2026-10-15-142604-png.png)
-![The Gear Finder](GEAR_FINDER_IMAGE_URL)
-![Stat weights on the character panel](STAT_WEIGHTS_IMAGE_URL)
+![The Gear Finder](https://media.forgecdn.net/attachments/2062/932/screenshot-2026-10-16-090853-png.png)
+![Stat weights on the character panel](https://media.forgecdn.net/attachments/2062/931/screenshot-2026-10-16-090815-png.png)
 ![Show unexplored areas, in the world map's filter menu](https://media.forgecdn.net/attachments/2059/729/screenshot-2026-10-15-143503-png.png)
 
 ### Help fill in the journal

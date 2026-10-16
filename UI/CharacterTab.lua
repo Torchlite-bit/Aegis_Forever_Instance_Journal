@@ -100,16 +100,21 @@ end
 -- addon may have parented a tab shown only with one of them.
 local PAGES = { "PaperDollFrame", "ReputationFrame", "TokenFrame", "PVPRankFrame", "SkillsFrame", "StatisticsFrame" }
 
--- What else is shown in the column, on the panel or on its pages: not Blizzard's tabs, not this one.
-local function OtherFrames(tab, column)
-	local blizzard = {}
-	for _, own in ipairs(BlizzardTabs(column)) do blizzard[own] = true end
+-- Where a tab can hang: the column, the panel and its pages.
+local function TabParents(column)
 	local parents = { column, CharacterFrame }
 	for _, name in ipairs(PAGES) do
 		if type(_G[name]) == "table" and _G[name].GetChildren then parents[#parents + 1] = _G[name] end
 	end
+	return parents
+end
+
+-- What else is shown in the column, on the panel or on its pages: not Blizzard's tabs, not this one.
+local function OtherFrames(tab, column)
+	local blizzard = {}
+	for _, own in ipairs(BlizzardTabs(column)) do blizzard[own] = true end
 	local others = {}
-	for _, parent in ipairs(parents) do
+	for _, parent in ipairs(TabParents(column)) do
 		for _, child in ipairs({ parent:GetChildren() }) do
 			if child ~= tab and child ~= column and not blizzard[child] and child:IsShown() then
 				others[#others + 1] = child
@@ -276,8 +281,10 @@ function CharacterTab:Window()
 end
 
 --[[
-	What the column holds, for /aegis gearscan: each shown frame in it or on the panel, in order
-	from the top, with what it hangs from.
+	What the column holds, for /aegis gearscan: each shown frame in it, or beside it on the panel
+	or its pages, in order from the top, with what it hangs from. A value the client keeps secret
+	is saved as "<secret>", never added or compared, and a frame that can't be read is saved with
+	its error, so one frame doesn't empty the list.
 ]]
 function CharacterTab:Describe()
 	local column = CharacterFrame and CharacterFrame.ModeTabs
@@ -285,19 +292,39 @@ function CharacterTab:Describe()
 	local blizzard, listed = {}, {}
 	for _, own in ipairs(BlizzardTabs(column)) do blizzard[own] = true end
 	for _, entry in ipairs(column.Tabs or {}) do listed[entry] = true end
+	local function Plain(value)
+		if ns.IsSecret(value) then return "<secret>" end
+		return value
+	end
+	local function Number(value)
+		value = Plain(value)
+		return type(value) == "number" and value or nil
+	end
 	local function Name(frame)
+		frame = Plain(frame)
 		if frame == nil then return nil end
-		local name = type(frame) == "table" and type(frame.GetName) == "function" and frame:GetName()
+		local name = type(frame) == "table" and type(frame.GetName) == "function" and Plain(frame:GetName())
 		return name or tostring(frame)
 	end
+	local columnLeft = Number(column:GetLeft()) or 0
 	local out = {}
-	for _, parent in ipairs({ column, CharacterFrame }) do
+	for _, parent in ipairs(TabParents(column)) do
 		for _, child in ipairs({ parent:GetChildren() }) do
-			if child:IsShown() and (parent == column or math.abs((child:GetLeft() or -999) - (column:GetLeft() or 0)) <= 4) then
+			local ok, entry = pcall(function()
+				if Plain(child:IsShown()) ~= true then return nil end
+				local left = Number(child:GetLeft())
+				if parent ~= column and not (left and math.abs(left - columnLeft) <= 4) then return nil end
 				local point, relative, relativePoint, x, y = child:GetPoint(1)
-				out[#out + 1] = { name = Name(child), parent = Name(parent), blizzard = blizzard[child] or false,
-					listed = listed[child] or false, ours = child == self.tab, top = child:GetTop(), left = child:GetLeft(),
-					point = point, relative = Name(relative), relativePoint = relativePoint, x = x, y = y }
+				return { name = Name(child), parent = Name(parent), blizzard = blizzard[child] or false,
+					listed = listed[child] or false, ours = child == self.tab, top = Number(child:GetTop()), left = left,
+					point = Plain(point), relative = Name(relative), relativePoint = Plain(relativePoint),
+					x = Plain(x), y = Plain(y) }
+			end)
+			if not ok then
+				local named, name = pcall(Name, child)
+				out[#out + 1] = { name = named and name or nil, parent = Name(parent), error = tostring(entry) }
+			elseif entry then
+				out[#out + 1] = entry
 			end
 		end
 	end

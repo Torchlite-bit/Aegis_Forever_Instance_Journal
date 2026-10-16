@@ -3091,6 +3091,18 @@ end)()
 		"one the player can wear in two levels shows that level on its icon")
 	check(not Cell("wrist").entry and Cell("wrist").Name:GetText() == "Wrist" and Cell("wrist").Source:GetText() == "No upgrade found"
 		and not Cell("wrist").Arrow:IsShown(), "fire resistance is worth nothing to Arms: no upgrade, the slot's name instead")
+	do
+		-- A cell's words grow back after shorter ones, up to the room the gain leaves them.
+		local cell = Cell("wrist")
+		ns.GearPanel.SetSource(cell, "Uldaman", "+4%")
+		local short = cell.Source:GetWidth()
+		ns.GearPanel.SetSource(cell, "Blackrock Depths", "+4%")
+		local long = cell.Source:GetWidth()
+		ns.GearPanel.SetSource(cell, string.rep("Scarlet Monastery ", 4), "+4%")
+		check(short == 7 * 7 and long == 16 * 7 and cell.Source:GetWidth() == cell.textWidth - (3 * 7 + 6),
+			"a longer dungeon name is not cut to the last one's width: " .. tostring(short) .. ", " .. tostring(long))
+		ns.GearPanel.SetSource(cell, "No upgrade found")
+	end
 	check(not Cell("chest").entry, "a robe for another class is left out")
 	local scepter
 	for _, cell in ipairs(GF:Cells()) do
