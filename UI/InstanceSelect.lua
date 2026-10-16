@@ -97,6 +97,9 @@ local function SetButtonInstance(button, instance)
 	end
 end
 
+-- The same button elsewhere: the Gear Finder's suggested dungeon.
+ns.CreateInstanceButton, ns.SetInstanceButton = CreateInstanceButton, SetButtonInstance
+
 ------------------------------------------------------------------------------------------
 -- Level dropdown
 ------------------------------------------------------------------------------------------

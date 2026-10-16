@@ -140,12 +140,17 @@ check(drowned and drowned.untested and drowned.levelMin == 35 and #drowned.bosse
 check(ns.GetInstance("ShapersTerrace").untested and ns.GetInstance("CityOfDalaran").untested
 	and not ns.GetInstance("TheDeadmines").untested, "untested dungeons are marked, tested ones are not")
 
--- Open with the key binding's function
+-- Open with the key binding's function, as a character who last had Record open when it was the
+-- fourth tab: it reopens on Record, now the fifth
+ns.charDB.lastTab = 4
 AegisJournal_Toggle()
 local f = AegisJournalFrame
 check(f and f:IsShown(), "journal opens")
 check(f._title == "Instance Journal", "title set")
-check(f.selectedTab == 1, "Dungeons tab selected first")
+check(f.selectedTab == 5 and f.Panels[5]:IsShown() and ns.charDB.lastTab == "record",
+	"a tab saved by its place reopens as the same tab, saved by its name from then on")
+f.Tabs[1]:Click()
+check(f.selectedTab == 1, "Dungeons tab selected")
 
 local dungeons, raids, reputation = f.Panels[1], f.Panels[2], f.Panels[3]
 check(dungeons:IsShown() and not raids:IsShown() and not reputation:IsShown(), "only the Dungeons panel shows")
@@ -2039,7 +2044,10 @@ do
 end
 f.Tabs[3]:Click()
 check(reputation:IsShown(), "Reputation tab shows its panel")
-check(ns.charDB.lastTab == 3, "last tab remembered")
+check(ns.charDB.lastTab == "reputation", "last tab remembered, by its name")
+check(ns.Journal:SavedTabIndex(4) == 5 and ns.Journal:SavedTabIndex(5) == 4 and ns.Journal:SavedTabIndex("record") == 5
+	and ns.Journal:SavedTabIndex(nil) == 1 and ns.Journal:SavedTabIndex(9) == 1 and ns.Journal:SavedTabIndex("gone") == 1,
+	"a tab saved by its place before Gear Finder came in reopens as the same tab")
 dungeons.Buttons[1]:Click()
 check(f.selectedTab == 1 and f.Tabs and page:IsShown(), "opening a dungeon from another tab brings Dungeons forward")
 local dungeonTab = page.tab
@@ -2512,8 +2520,8 @@ check(Mock.bindings["SHIFT-J"] == "SOMETHING_ELSE", "player's own binding is lef
 ------------------------------------------------------------------------------------------
 
 AegisJournal_Toggle()
-local record = f.Panels[4]
-f.Tabs[4]:Click()
+local record = f.Panels[5]
+f.Tabs[5]:Click()
 check(record:IsShown(), "Record tab shows its panel")
 check(not ns.Recorder:IsRecording() and record.Toggle:GetText() == "Start Recording", "starts stopped")
 local function listening(event)
@@ -3044,12 +3052,13 @@ end)()
 		"the spec from the talents: the tree with the most points, matched by id, not by order")
 	C_ClassTalents, C_Traits = talents, traits
 
-	-- The Gear tab: searched on the next frame, its unknown drops asked for five at a time
+	-- The Gear Finder tab: searched on the next frame, its unknown drops asked for five at a time
 	local taragaman = ns.GetInstance("RagefireChasm").bosses[2]
 	for itemID = 990800, 990811 do table.insert(taragaman.loot, { itemID = itemID }) end
 	ns.Journal:ShowGear()
-	local gear = f.Panels[5]
-	check(f.Tabs[5]:GetText() == "Gear" and gear:IsShown() and f.selectedTab == 5, "the journal's fifth tab, Gear, opens on it")
+	local gear = f.Panels[4]
+	check(f.Tabs[4]:GetText() == "Gear Finder" and gear:IsShown() and f.selectedTab == 4 and f.Tabs[5]:GetText() == "Record",
+		"the journal's fourth tab, Gear Finder, opens on it; Record comes last")
 	check(requests == 0, "and searches on the next frame, not while it opens")
 	Mock.RunTimers(0)
 	local firstAsks = requests
@@ -3064,24 +3073,30 @@ end)()
 		end
 	end
 	local back, main, ranged = Cell("back"), Cell("mainhand"), Cell("ranged")
-	check(back.entry and back.entry.itemID == CAPE and back.Gain:GetText() == "+268%",
-		"the cape beats the worn one by its weighted stats: " .. tostring(back.Gain:GetText()))
-	check(main.entry and main.entry.itemID == FELBLADE and main.Gain:GetText() == "Empty slot"
-		and main.Where:GetText() == "Ragefire Chasm \194\183 Taragaman the Hungerer", "an empty slot's upgrade, and where it drops")
+	check(back.entry and back.entry.itemID == CAPE and back.Gain:GetText() == "+268%" and back.Arrow:IsShown(),
+		"the cape, marked as an upgrade, adds to all the gear worn (the old cape alone): " .. tostring(back.Gain:GetText()))
+	local share = main.entry and main.entry.compare.share
+	check(main.entry and main.entry.itemID == FELBLADE and main.entry.compare.emptySlot and share
+		and main.Gain:GetText() == string.format("+%d%%", math.floor(share + 0.5)) and main.Source:GetText() == "Ragefire Chasm",
+		"an empty slot's upgrade: what it adds to the gear worn, and the dungeon it drops in")
 	check(main.Name._textColor and #main.Name._textColor == 3, "its name in its quality's colour")
-	check(ranged.entry and ranged.entry.itemID == CROSSBOW and ranged.Where:GetText():find("at level 17", 1, true),
-		"one the player can wear in two levels says so")
-	check(not Cell("wrist").entry and Cell("wrist").Name:GetText() == "No upgrade found",
-		"fire resistance is worth nothing to Arms: no upgrade")
+	check(ns.GearPanel.GainText({ share = 4.24, delta = 3 }) == "+4.2%" and ns.GearPanel.GainText({ share = 12.4 }) == "+12%"
+		and ns.GearPanel.GainText({ delta = 31.2 }) == "+31", "small gains with a decimal, big ones without, a bare gain with nothing worn")
+	check(ranged.entry and ranged.entry.itemID == CROSSBOW and ranged.Level:GetText() == 17,
+		"one the player can wear in two levels shows that level on its icon")
+	check(not Cell("wrist").entry and Cell("wrist").Name:GetText() == "Wrist" and Cell("wrist").Source:GetText() == "No upgrade found"
+		and not Cell("wrist").Arrow:IsShown(), "fire resistance is worth nothing to Arms: no upgrade, the slot's name instead")
 	check(not Cell("chest").entry, "a robe for another class is left out")
 	local scepter
 	for _, cell in ipairs(GF:Cells()) do
 		for _, entry in ipairs(cell.entries) do if entry.itemID == SCEPTER then scepter = true end end
 	end
 	check(not scepter, "an item more than three levels above the player is left out")
-	local suggestions = GF:Suggest()
-	check(gear.Card.Name:GetText() == "Ragefire Chasm" and gear.Card.Count:GetText() == "3 upgrades here"
+	local suggestions, side = GF:Suggest(), gear.Side
+	check(side.Dungeon.Name:GetText() == "Ragefire Chasm" and side.Count.Text:GetText() == "3 upgrades here"
 		and suggestions[1].instance.key == "RagefireChasm", "the suggested dungeon: Ragefire Chasm, three upgrades")
+	check(side.Rows[1].Label:GetText() == "Back" and side.Rows[1].Value:GetText() == "+268%" and side.Rows[3]:IsShown()
+		and not side.Rows[4]:IsShown() and side.Rows[1].entry.itemID == CAPE, "each listed by its slot, with what it adds")
 	local _, waiting, looked = GF:Results()
 	check(looked == #GF:Dungeons() and waiting == 0 and gear.Status:GetText() == string.format(ns.L.GEAR_LOOKING, looked),
 		"the footer says where it looked, and nothing is left loading once the server has had its time: "
@@ -3149,8 +3164,11 @@ end)()
 	Mock.itemStats[RING_Y] = { ITEM_MOD_STRENGTH_SHORT = 16 }
 	IS:Forget()
 	Mock.RunTimers(1)
-	check(finger2.entry and finger2.entry.itemID == RING_Y and finger2.Gain:GetText() == "+14%",
-		"one beating the stronger ring too fills the second cell, measured against it: " .. tostring(finger2.Gain:GetText()))
+	local second = finger2.entry and finger2.entry.compare
+	check(second and finger2.entry.itemID == RING_Y and second.slot == 12
+		and math.abs(second.delta - 2 * IS:Weights().STRENGTH) < 1e-9 and math.abs(second.share - second.delta / second.total * 100) < 1e-9
+		and finger2.Gain:GetText() == ns.GearPanel.GainText(second),
+		"one beating the stronger ring too fills the second cell, measured against that ring: " .. tostring(finger2.Gain:GetText()))
 	local listsY = false
 	for _, other in ipairs(finger1.others or {}) do if other.itemID == RING_Y then listsY = true end end
 	check(not listsY, "and the first cell does not list it among its own")
@@ -3159,16 +3177,28 @@ end)()
 	Mock.itemStats[RING_Y] = { ITEM_MOD_STRENGTH_SHORT = 9 }
 	IS:Forget()
 	Mock.RunTimers(1)
-	check(finger1.entry and finger1.entry.itemID == RING_X and finger1.Gain:GetText() == "Empty slot" and not finger2.entry,
-		"a finger free: the best ring fills it, and one weaker than the worn ring is no upgrade")
+	check(finger2.entry and finger2.entry.itemID == RING_X and finger2.entry.compare.emptySlot and not finger1.entry
+		and finger1.Source:GetText() == "No upgrade found",
+		"a finger free: the best ring fills it, in its own cell, and one weaker than the worn ring is no upgrade")
+	-- The stronger ring on the first finger: each pick in the cell of the ring it replaces
+	Mock.worn[11], Mock.worn[12] = RING_B, RING_A
+	Mock.itemStats[RING_Y] = { ITEM_MOD_STRENGTH_SHORT = 16 }
+	IS:Forget()
+	Mock.RunTimers(1)
+	check(finger2.entry and finger2.entry.itemID == RING_X and finger2.entry.compare.slot == 12
+		and finger1.entry and finger1.entry.itemID == RING_Y and finger1.entry.compare.slot == 11,
+		"the weaker ring on the second finger: its replacement shows there, the next one on the first")
+	Mock.itemStats[RING_Y] = { ITEM_MOD_STRENGTH_SHORT = 9 }
 	-- A ring worth nothing to the spec is replaced by what the drop adds, not called an empty slot
 	Mock.itemStats[RING_A] = { RESISTANCE2_NAME = 10 }
 	Mock.worn[11], Mock.worn[12] = RING_A, RING_B
 	IS:Forget()
 	Mock.RunTimers(1)
-	check(finger1.entry and finger1.entry.itemID == RING_X
-		and finger1.Gain:GetText() == string.format("+%.1f", 19 * IS:Weights().STRENGTH),
-		"a worn ring worth nothing: the gain is the score added, not 'Empty slot': " .. tostring(finger1.Gain:GetText()))
+	local worthless = finger1.entry and finger1.entry.compare
+	check(worthless and finger1.entry.itemID == RING_X and worthless.slot == 11 and not worthless.emptySlot and not worthless.pct
+		and worthless.share and finger1.Gain:GetText() == ns.GearPanel.GainText(worthless),
+		"a worn ring worth nothing is replaced, not taken for an empty slot, and the gain stays a part of all worn: "
+		.. tostring(finger1.Gain:GetText()))
 	table.remove(taragaman.loot)
 	table.remove(taragaman.loot)
 	Mock.worn[11], Mock.worn[12] = nil, nil
@@ -3202,7 +3232,8 @@ end)()
 	Mock.worn[15] = CAPE
 	Mock.Fire("PLAYER_EQUIPMENT_CHANGED")
 	Mock.RunTimers(1)
-	check(not back.entry, "wearing the cape: no upgrade left for the back")
+	check(not back.entry and back.Name:GetText() == "Item" and back.Source:GetText() == "No upgrade found",
+		"wearing the cape: no upgrade left for the back, which shows what is worn")
 	Mock.worn[15] = WORN_CAPE
 	Mock.Fire("PLAYER_EQUIPMENT_CHANGED")
 	Mock.RunTimers(1)
@@ -3221,13 +3252,14 @@ end)()
 	Mock.itemsCached[BOOTS], Mock.itemStats[BOOTS] = true, { ITEM_MOD_STRENGTH_SHORT = 3 }
 	table.insert(other.boss.loot, { itemID = BOOTS })
 	GF:Refresh()
-	check(gear.Card.Name:GetText() == "Ragefire Chasm" and gear.Card.Next:IsShown(), "two dungeons with upgrades: arrows")
-	gear.Card.Next:Click()
-	check(gear.Card.Name:GetText() == other.instance.name, "the next dungeon: " .. tostring(gear.Card.Name:GetText()))
-	gear.Card.Next:Click()
-	check(gear.Card.Name:GetText() == "Ragefire Chasm", "and round to the first")
-	gear.Card.Previous:Click()
-	check(gear.Card.Name:GetText() == other.instance.name, "and back round to the last")
+	check(side.Dungeon.Name:GetText() == "Ragefire Chasm" and side.Next:IsShown() and side.Of:GetText() == "1 of 2",
+		"two dungeons with upgrades: arrows")
+	side.Next:Click()
+	check(side.Dungeon.Name:GetText() == other.instance.name, "the next dungeon: " .. tostring(side.Dungeon.Name:GetText()))
+	side.Next:Click()
+	check(side.Dungeon.Name:GetText() == "Ragefire Chasm", "and round to the first")
+	side.Previous:Click()
+	check(side.Dungeon.Name:GetText() == other.instance.name, "and back round to the last")
 	table.remove(other.boss.loot)
 
 	-- Clicking an upgrade opens its boss's loot, past a loot filter that would hide it
@@ -3258,22 +3290,49 @@ end)()
 	for _, cell in ipairs(gear.Cells) do
 		if cell.entry and cell.entry.itemID == trashItem then trashCell = cell end
 	end
-	check(trashCell and trashCell.Where:GetText() == trashInstance.name .. " \194\183 " .. ns.L.LOOT_TRASH,
-		"a trash drop says it drops from the dungeon's trash: " .. tostring(trashCell and trashCell.Where:GetText()))
+	check(trashCell and trashCell.Source:GetText() == trashInstance.name,
+		"a trash drop names its dungeon: " .. tostring(trashCell and trashCell.Source:GetText()))
 	trashCell:Click()
 	Mock.RunTimers(2)
 	check(page:IsShown() and page.instance == trashInstance and not page.boss and page.tab == Page.TAB_LOOT
 		and page.Loot.revealedItemID == trashItem, "and opens the dungeon's own loot page on it")
 	Mock.itemsCached[trashItem], Mock.itemStats[trashItem] = nil, nil
 
-	-- The character sheet's button
-	_G.PaperDollItemsFrame = CreateFrame("Frame", "PaperDollItemsFrame", UIParent)
-	_G.CharacterMainHandSlot = CreateFrame("Button", "CharacterMainHandSlot", _G.PaperDollItemsFrame)
-	check(ns.GearPanel:AttachCharacterButton() and ns.GearPanel.characterButton:GetParent() == _G.PaperDollItemsFrame,
-		"a button on the character sheet, beside the weapons")
-	ns.GearPanel.characterButton:Click()
+	-- The character panel's side tab, below the last of its own that shows
+	check(not ns.CharacterTab:Create() and not ns.CharacterTab.tab, "no character panel with side tabs: no tab")
+	local column = CreateFrame("Frame", "CharacterFrameModeTabs", UIParent)
+	column.Tabs = { CreateFrame("Frame", nil, column), CreateFrame("Frame", nil, column) }
+	column.Tabs[2]:Hide()
+	_G.CharacterFrame = CreateFrame("Frame", "CharacterFrame", UIParent)
+	CharacterFrame.ModeTabs = column
+	local layouts = 0
+	CharacterFrame.UpdateTabLayout = function() layouts = layouts + 1 end
+	check(ns.CharacterTab:Create(), "a tab on the character panel's side")
+	local tab = ns.CharacterTab.tab
+	check(tab:GetParent() == column and select(2, tab:GetPoint(1)) == column.Tabs[1] and tab.tooltipText == "Gear Finder"
+		and tab.Icon:GetTexture() == "Interface\\Icons\\INV_Helmet_08", "under the last tab shown: a helmet, called Gear Finder")
+	local listed = false
+	for _, other in ipairs(column.Tabs) do if other == tab then listed = true end end
+	check(not listed and #column.Tabs == 2, "kept out of the panel's own list of tabs")
+	column.Tabs[2]:Show()
+	CharacterFrame:UpdateTabLayout()
+	check(layouts == 1 and select(2, tab:GetPoint(1)) == column.Tabs[2], "and placed again when the panel lays out its tabs")
+	ns.Journal:SelectTab(1)
+	f:Hide()
+	tab.customMouseUpHandler(tab, "RightButton", true)
+	tab.customMouseUpHandler(tab, "LeftButton", false)
+	check(not f:IsShown(), "a right click, or a press let go outside it, opens nothing")
+	CharacterFrame:Show()
+	tab.customMouseUpHandler(tab, "LeftButton", true)
 	Mock.RunTimers(1)
-	check(f:IsShown() and f.selectedTab == 5 and gear:IsShown(), "which opens the Gear tab")
+	check(f:IsShown() and f.selectedTab == 4 and gear:IsShown() and not CharacterFrame:IsShown(),
+		"a click opens the Gear Finder tab in the character panel's place")
+	Mock.inCombat = true
+	CharacterFrame:Show()
+	tab.customMouseUpHandler(tab, "LeftButton", true)
+	check(CharacterFrame:IsShown() and f:IsShown(), "in combat the panel is left alone, and the journal opens over it")
+	Mock.inCombat = nil
+	_G.CharacterFrame, _G.CharacterFrameModeTabs = nil, nil
 
 	-- /aegis gearscan saves what the client says about the worn gear and nearby drops
 	SlashCmdList.AEGISJOURNAL("gearscan")
@@ -3283,6 +3342,44 @@ end)()
 	local named = false
 	for _, key in ipairs(scan.unknownKeys) do if key == "ITEM_MOD_NEW_THING" then named = true end end
 	check(named, "and the stat names the journal doesn't know")
+	-- Only what the saved file can keep: strings, numbers, true and false, in plain tables
+	local function Saveable(value, depth)
+		if type(value) == "table" then
+			if getmetatable(value) or depth > 10 then return false end
+			for key, inner in pairs(value) do
+				if not (Saveable(key, depth + 1) and Saveable(inner, depth + 1)) then return false end
+			end
+			return true
+		end
+		return type(value) == "string" or type(value) == "number" or type(value) == "boolean"
+	end
+	check(Saveable(scan, 0), "the scan holds only what the saved file can keep")
+	-- An item the journal cannot read is noted and the rest kept; a secret is saved as one; the
+	-- class's own background is the art measured
+	local read, getAtlas, SECRET, askedAtlases = IS.Read, C_Texture.GetAtlasInfo, {}, {}
+	IS.Read = function(self, link)
+		if link == Mock.ItemLink(CAPE) then error("unreadable") end
+		return read(self, link)
+	end
+	C_Texture.GetAtlasInfo = function(name)
+		askedAtlases[name] = true
+		return getAtlas(name)
+	end
+	issecretvalue = function(value) return value == SECRET end
+	Mock.itemStats[WORN_CAPE] = { ITEM_MOD_STAMINA_SHORT = SECRET }
+	SlashCmdList.AEGISJOURNAL("gearscan")
+	IS.Read, C_Texture.GetAtlasInfo, issecretvalue = read, getAtlas, nil
+	Mock.itemStats[WORN_CAPE] = { ITEM_MOD_STAMINA_SHORT = 1, RESISTANCE0_NAME = 10 }
+	scan = ns.db.gearScan
+	local told = false
+	for _, line in ipairs(Mock.chat) do
+		if line:find(string.format(ns.L.GEAR_SCAN_ERRORS, 1), 1, true) then told = true end
+	end
+	check(#scan.errors == 1 and scan.errors[1]:find("unreadable", 1, true) and #scan.drops > 0 and #scan.worn == 1 and told,
+		"an item that cannot be read is noted, said in chat, and the rest kept: " .. tostring(scan.errors[1]))
+	check(scan.worn[1].raw.ITEM_MOD_STAMINA_SHORT == "<secret>" and Saveable(scan, 0), "a secret is saved as one, not as itself")
+	check(askedAtlases["UI-Character-Info-WARRIOR-BG"] and scan.atlases["UI-Character-Info-CLASS-BG"]
+		and scan.atlases["UI-Character-Info-CLASS-BG"].width == 64, "the class's own background is measured")
 
 	ns.Journal:SelectTab(1)
 	f:Hide()

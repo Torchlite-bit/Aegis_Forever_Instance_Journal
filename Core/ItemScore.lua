@@ -343,16 +343,29 @@ function ItemScore:TalentSpec(classFile)
 	return ok and spec or nil
 end
 
---- The spec scored: the one picked, else the talents', else the class's levelling spec. And why.
-function ItemScore:Spec()
+-- The spec picked from the Gear Finder's menu, or nil for automatic.
+function ItemScore:PickedSpec()
+	local data = ns.GEAR_WEIGHTS[self:Class()]
+	local picked = Settings().spec
+	if picked and data and data[picked] then return picked end
+	return nil
+end
+
+-- What automatic scores: the talents' spec, else the class's levelling spec. And why.
+function ItemScore:AutoSpec()
 	local classFile = self:Class()
 	local data = ns.GEAR_WEIGHTS[classFile]
 	if not data then return nil end
-	local picked = Settings().spec
-	if picked and data[picked] then return picked, "picked" end
 	local fromTalents = self:TalentSpec(classFile)
 	if fromTalents then return fromTalents, "talents" end
 	return data.levelling, "levelling"
+end
+
+--- The spec scored: the one picked, else automatic's. And why.
+function ItemScore:Spec()
+	local picked = self:PickedSpec()
+	if picked then return picked, "picked" end
+	return self:AutoSpec()
 end
 
 function ItemScore:SetSpec(spec)
@@ -411,9 +424,21 @@ function ItemScore:Worn(slot, weights)
 	return self:ScoreStats(item.stats, weights), item, link
 end
 
+-- The slots gear with stats goes in (not shirt or tabard).
+local EQUIPMENT_SLOTS = { HEAD, NECK, SHOULDER, CHEST, WAIST, LEGS, FEET, WRIST, HANDS, FINGER1, FINGER2,
+	TRINKET1, TRINKET2, BACK, MAINHAND, OFFHAND, RANGED }
+
+-- What everything worn is worth together, for these weights.
+function ItemScore:WornTotal(weights)
+	weights = weights or self:Weights()
+	local total = 0
+	for _, slot in ipairs(EQUIPMENT_SLOTS) do total = total + self:Worn(slot, weights) end
+	return total
+end
+
 -- Whether every worn item has been described: one that hasn't yet scores 0 for now.
 function ItemScore:WornKnown()
-	for slot = HEAD, RANGED do
+	for _, slot in ipairs(EQUIPMENT_SLOTS) do
 		local link = GetInventoryItemLink("player", slot)
 		if link and not self:Read(link) then return false end
 	end
@@ -425,16 +450,25 @@ local PAIRED = { INVTYPE_FINGER = true, INVTYPE_TRINKET = true }
 
 --[[
 	How an item compares with what is worn, for these weights: { score, slot, worn (its score),
-	delta, pct (nil against an empty slot or one worth nothing), emptySlot, usable, later,
-	minLevel, noCompare }, or nil when it can't be read yet or goes in no slot. A ring or trinket
-	also says the other slot of the two: otherSlot, otherWorn, otherEmpty.
+	delta, pct (nil against an empty slot or one worth nothing), alsoSlot (the off hand a two-hander
+	also replaces), total (everything worn), share
+	(delta as a part of total, nil while nothing worn is worth anything), emptySlot, usable,
+	later, minLevel, noCompare }, or nil when it can't be read yet or goes in no slot. A ring or
+	trinket also says the other slot of the two: otherSlot, otherWorn, otherEmpty.
+
+	The share is what the Gear Finder shows: against a worn item worth next to nothing, the gain
+	over that item alone runs to thousands of percent; against everything worn, it stays a
+	measure of how much stronger the item makes the character. `total` may be given, when many
+	items are compared at once.
 ]]
-function ItemScore:Compare(link, weights)
+function ItemScore:Compare(link, weights, total)
 	weights = weights or self:Weights()
 	local item = self:Read(link)
 	if not item or not SLOTS[item.equipLoc or ""] then return nil end
 	local score = self:ScoreStats(item.stats, weights)
-	local out = { score = score, usable = item.usable, minLevel = item.minLevel, later = item.minLevel > self:Level() }
+	total = total or self:WornTotal(weights)
+	local out = { score = score, usable = item.usable, minLevel = item.minLevel, later = item.minLevel > self:Level(),
+		total = total }
 
 	local loc = item.equipLoc
 	local slots = SLOTS[loc]
@@ -447,6 +481,8 @@ function ItemScore:Compare(link, weights)
 	if loc == "INVTYPE_2HWEAPON" then
 		local offScore = twoHanded and 0 or self:Worn(OFFHAND, weights)
 		out.slot, out.worn = MAINHAND, mainScore + offScore
+		-- It takes the off hand's place too.
+		if not twoHanded and GetInventoryItemLink("player", OFFHAND) then out.alsoSlot = OFFHAND end
 	elseif twoHanded and OFF_HAND_ONLY[loc] then
 		-- An off hand is only half of what would replace a two-hander.
 		out.slot, out.noCompare = OFFHAND, true
@@ -465,9 +501,10 @@ function ItemScore:Compare(link, weights)
 			out.otherEmpty = GetInventoryItemLink("player", out.otherSlot) == nil
 		end
 	end
-	out.emptySlot = GetInventoryItemLink("player", out.slot) == nil
+	out.emptySlot = GetInventoryItemLink("player", out.slot) == nil and out.alsoSlot == nil
 	out.delta = score - out.worn
 	if out.worn > 0 then out.pct = out.delta / out.worn * 100 end
+	if total > 0 then out.share = out.delta / total * 100 end
 	return out
 end
 

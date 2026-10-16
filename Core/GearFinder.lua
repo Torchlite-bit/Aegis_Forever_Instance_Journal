@@ -7,8 +7,9 @@ local L = ns.L
 
 	It looks in every dungeon that starts no more than AHEAD levels above the player, at the drops
 	their class can wear now or within AHEAD levels ("at level 24"). Each is scored against what
-	is worn (Core/ItemScore.lua) and kept if it is an upgrade, under the slot it would replace. An
-	item the client has not described yet is asked for (Core/Items.lua) and weighed when it comes.
+	is worn (Core/ItemScore.lua) and kept if it is an upgrade, under the slot it would replace;
+	its gain is measured against everything worn. An item the client has not described yet is
+	asked for (Core/Items.lua) and weighed when it comes.
 
 	Pathfinder's other sources (quest rewards, reputation vendors, crafted gear, raids) are left
 	out of this first version: dungeon drops only.
@@ -18,7 +19,6 @@ local GearFinder = {}
 ns.GearFinder = GearFinder
 
 local AHEAD = 3              -- dungeons and items up to this many levels above the player
-local EMPTY_WORTH = 100      -- what filling an empty slot counts for, in %, when dungeons are ranked
 local REFRESH_DELAY = 0.5    -- seconds to gather item answers before weighing again
 
 -- The slots, in the character sheet's order, and the group each inventory slot is in.
@@ -28,27 +28,28 @@ local GROUP_OF = {
 	[16] = "MAINHAND", [17] = "OFFHAND", [18] = "RANGED",
 }
 
---[[ The panel's cells, laid out like the character sheet: two columns of eight, and the ranged
-	slot under the suggested dungeon. `inv` names the inventory slot whose empty picture a cell
-	shows when it has no upgrade. Shirt and tabard are left out: they have no stats. ]]
+--[[ The cells, one per equipment slot in the character sheet's order: `slot` is its inventory
+	slot, `inv` that slot's name (for its empty picture), `second` the second of two rings or
+	trinkets. Shirt and tabard are left out: they have no stats. Where each goes on the tab is
+	the panel's business (UI/GearPanel.lua). ]]
 GearFinder.CELLS = {
-	{ key = "head", group = "HEAD", col = 1, row = 1, inv = "HeadSlot" },
-	{ key = "neck", group = "NECK", col = 1, row = 2, inv = "NeckSlot" },
-	{ key = "shoulder", group = "SHOULDER", col = 1, row = 3, inv = "ShoulderSlot" },
-	{ key = "back", group = "BACK", col = 1, row = 4, inv = "BackSlot" },
-	{ key = "chest", group = "CHEST", col = 1, row = 5, inv = "ChestSlot" },
-	{ key = "wrist", group = "WRIST", col = 1, row = 6, inv = "WristSlot" },
-	{ key = "mainhand", group = "MAINHAND", col = 1, row = 7, inv = "MainHandSlot" },
-	{ key = "offhand", group = "OFFHAND", col = 1, row = 8, inv = "SecondaryHandSlot" },
-	{ key = "hands", group = "HANDS", col = 2, row = 1, inv = "HandsSlot" },
-	{ key = "waist", group = "WAIST", col = 2, row = 2, inv = "WaistSlot" },
-	{ key = "legs", group = "LEGS", col = 2, row = 3, inv = "LegsSlot" },
-	{ key = "feet", group = "FEET", col = 2, row = 4, inv = "FeetSlot" },
-	{ key = "finger1", group = "FINGER", col = 2, row = 5, inv = "Finger0Slot", second = false },
-	{ key = "finger2", group = "FINGER", col = 2, row = 6, inv = "Finger1Slot", second = true },
-	{ key = "trinket1", group = "TRINKET", col = 2, row = 7, inv = "Trinket0Slot", second = false },
-	{ key = "trinket2", group = "TRINKET", col = 2, row = 8, inv = "Trinket1Slot", second = true },
-	{ key = "ranged", group = "RANGED", col = 3, row = 8, inv = "RangedSlot" },
+	{ key = "head", group = "HEAD", slot = 1, inv = "HeadSlot" },
+	{ key = "neck", group = "NECK", slot = 2, inv = "NeckSlot" },
+	{ key = "shoulder", group = "SHOULDER", slot = 3, inv = "ShoulderSlot" },
+	{ key = "back", group = "BACK", slot = 15, inv = "BackSlot" },
+	{ key = "chest", group = "CHEST", slot = 5, inv = "ChestSlot" },
+	{ key = "wrist", group = "WRIST", slot = 9, inv = "WristSlot" },
+	{ key = "mainhand", group = "MAINHAND", slot = 16, inv = "MainHandSlot" },
+	{ key = "offhand", group = "OFFHAND", slot = 17, inv = "SecondaryHandSlot" },
+	{ key = "hands", group = "HANDS", slot = 10, inv = "HandsSlot" },
+	{ key = "waist", group = "WAIST", slot = 6, inv = "WaistSlot" },
+	{ key = "legs", group = "LEGS", slot = 7, inv = "LegsSlot" },
+	{ key = "feet", group = "FEET", slot = 8, inv = "FeetSlot" },
+	{ key = "finger1", group = "FINGER", slot = 11, inv = "Finger0Slot", second = false },
+	{ key = "finger2", group = "FINGER", slot = 12, inv = "Finger1Slot", second = true },
+	{ key = "trinket1", group = "TRINKET", slot = 13, inv = "Trinket0Slot", second = false },
+	{ key = "trinket2", group = "TRINKET", slot = 14, inv = "Trinket1Slot", second = true },
+	{ key = "ranged", group = "RANGED", slot = 18, inv = "RangedSlot" },
 }
 
 local results, missing, looked = {}, 0, 0
@@ -121,6 +122,7 @@ function GearFinder:Find()
 	local level = UnitLevel("player") or 1
 	local classFile = IS:Class()
 	local weights = IS:Weights()
+	local total = IS:WornTotal(weights)
 	local bySlot, seen = {}, {}
 	missing = 0
 	local dungeons = self:Dungeons()
@@ -135,7 +137,7 @@ function GearFinder:Find()
 					if not info then
 						missing = missing + 1
 					elseif info.kind == "EQUIPMENT" and ns.Items:ClassCanUse(classFile, info) and not info.unavailable then
-						local compare = info.link and IS:Compare(info.link, weights)
+						local compare = info.link and IS:Compare(info.link, weights, total)
 						if not compare then
 							-- Not described yet (or by a client that cannot): weighed when it is.
 							if info.pending or not info.link then missing = missing + 1 end
@@ -170,8 +172,12 @@ local recheckQueued = false
 function GearFinder:Recheck()
 	if missing == 0 or recheckQueued then return end
 	recheckQueued = true
+	local since = GetTime()
 	C_Timer.After(ns.Items.GIVE_UP_SECONDS + 1, function()
 		recheckQueued = false
+		-- Only once that time has really gone by: a timer that ran early would search, find the
+		-- same items waiting, and ask again, round and round.
+		if GetTime() - since < ns.Items.GIVE_UP_SECONDS then return end
 		if missing > 0 and GearFinder.IsShowing() then GearFinder:Queue() end
 	end)
 end
@@ -180,10 +186,10 @@ function GearFinder:Results()
 	return results, missing, looked
 end
 
--- What an upgrade is worth when dungeons are ranked: its %, or EMPTY_WORTH for a slot with
--- nothing in it, or nothing worth anything to the spec.
+-- What an upgrade is worth when dungeons are ranked: its share of everything worn, or its plain
+-- gain while nothing worn is worth anything.
 function GearFinder.Worth(entry)
-	return entry.compare.pct or EMPTY_WORTH
+	return entry.compare.share or entry.compare.delta
 end
 
 -- The list without one item.
@@ -210,6 +216,7 @@ local function SecondOf(list, first)
 			again.slot, again.worn, again.emptySlot = compare.otherSlot, compare.otherWorn, compare.otherEmpty
 			again.delta = compare.score - compare.otherWorn
 			again.pct = compare.otherWorn > 0 and again.delta / compare.otherWorn * 100 or nil
+			again.share = compare.total > 0 and again.delta / compare.total * 100 or nil
 			out[#out + 1] = { itemID = entry.itemID, link = entry.link, info = entry.info, instance = entry.instance,
 				boss = entry.boss, compare = again }
 		end
@@ -233,6 +240,11 @@ function GearFinder:Cells()
 			cell.entries = SecondOf(list, first and first.shown)
 			cell.shown = cell.entries[1]
 			if first and cell.shown then first.entries = Without(list, cell.shown.itemID) end
+			-- Each pick in the cell of the slot it replaces: the weaker of the two may be the second.
+			if first and first.shown and first.shown.compare.slot ~= first.def.slot then
+				first.shown, cell.shown = cell.shown, first.shown
+				first.entries, cell.entries = cell.entries, first.entries
+			end
 		else
 			cell.shown = list[1]
 			firstOf[def.group] = cell
@@ -244,7 +256,8 @@ end
 
 --[[
 	The dungeons the cells' upgrades drop in, best first: by how many cells, then by what those
-	upgrades add up to. Each: { instance, count, total, slots (the cells' keys) }.
+	upgrades add up to. Each: { instance, count, total, slots (the cells' keys), entries (the
+	upgrades, in the same order) }.
 ]]
 function GearFinder:Suggest(cells)
 	local tally, order = {}, {}
@@ -252,15 +265,16 @@ function GearFinder:Suggest(cells)
 		local entry = cell.shown
 		if entry then
 			local key = entry.instance.key
-			local item = tally[key]
-			if not item then
-				item = { instance = entry.instance, count = 0, total = 0, slots = {} }
-				tally[key] = item
-				order[#order + 1] = item
+			local dungeon = tally[key]
+			if not dungeon then
+				dungeon = { instance = entry.instance, count = 0, total = 0, slots = {}, entries = {} }
+				tally[key] = dungeon
+				order[#order + 1] = dungeon
 			end
-			item.count = item.count + 1
-			item.total = item.total + self.Worth(entry)
-			item.slots[#item.slots + 1] = cell.def.key
+			dungeon.count = dungeon.count + 1
+			dungeon.total = dungeon.total + self.Worth(entry)
+			dungeon.slots[#dungeon.slots + 1] = cell.def.key
+			dungeon.entries[#dungeon.entries + 1] = entry
 		end
 	end
 	table.sort(order, function(a, b)
@@ -310,7 +324,7 @@ function GearFinder:Queue()
 	end)
 end
 
--- Whether anyone is looking: the journal's Gear tab.
+-- Whether anyone is looking: the journal's Gear Finder tab.
 GearFinder.IsShowing = function() return false end
 
 ns.ItemScore:OnChange(function()
@@ -328,13 +342,39 @@ end)
 ------------------------------------------------------------------------------------------
 
 local SCAN_ITEMS = 30
+local SCAN_ATLASES = {
+	"UI-Character-Info-General-BG", "UI-Character-Info-Stat-BG", "UI-Character-Info-Stat-StoneBG",
+	"UI-Character-Info-CLASS-BG", "UI-Character-Info-GearSlot", "UI-Character-Info-Title",
+	"UI-Character-Info-Line-Bounce2", "UI-Character-Info-ItemLevel-Bounce", "common-framedivider", "bags-greenarrow",
+	"common-sidetab", "charactercreate-customize-dropdown-linemouseover-middle",
+}
+
+-- Only plain values go in the saved file: the client keeps some of its answers secret, and a
+-- secret cannot be written there.
+local function Plain(value)
+	if issecretvalue and issecretvalue(value) then return "<secret>" end
+	local kind = type(value)
+	if kind == "string" or kind == "number" or kind == "boolean" then return value end
+	if value == nil then return nil end
+	return tostring(value)
+end
+
+local function PlainTable(source)
+	local out = {}
+	for key, value in pairs(source or {}) do
+		local plainKey = Plain(key)
+		if plainKey ~= nil then out[plainKey] = Plain(value) end
+	end
+	return out
+end
 
 local function Raw(link)
 	local getStats = C_Item and C_Item.GetItemStats or GetItemStats
 	if not getStats then return "no C_Item.GetItemStats" end
 	local ok, raw = pcall(getStats, link)
 	if not ok then return "error: " .. tostring(raw) end
-	return raw
+	if type(raw) ~= "table" then return Plain(raw) end
+	return PlainTable(raw)
 end
 
 local function Lines(link)
@@ -347,22 +387,27 @@ local function Lines(link)
 		local color = line.leftColor
 		local r, g, b
 		if color and color.GetRGB then r, g, b = color:GetRGB() elseif color then r, g, b = color.r, color.g, color.b end
-		out[index] = { left = line.leftText, right = line.rightText, type = line.type,
-			color = r and string.format("%.2f,%.2f,%.2f", r, g, b) or nil }
+		r, g, b = Plain(r), Plain(g), Plain(b)
+		out[index] = { left = Plain(line.leftText), right = Plain(line.rightText), type = Plain(line.type),
+			color = type(r) == "number" and type(g) == "number" and type(b) == "number"
+				and string.format("%.2f,%.2f,%.2f", r, g, b) or nil }
 	end
 	return out
 end
 
 local function Sample(link, label)
 	local item = ns.ItemScore:Read(link)
-	return { label = label, link = link, raw = Raw(link), lines = Lines(link),
-		read = item and { stats = item.stats, equipLoc = item.equipLoc, minLevel = item.minLevel, usable = item.usable } }
+	return { label = label, link = Plain(link), raw = Raw(link), lines = Lines(link),
+		read = item and { stats = PlainTable(item.stats), equipLoc = Plain(item.equipLoc), minLevel = Plain(item.minLevel),
+			usable = Plain(item.usable) } }
 end
 
 --[[
 	What the Gear Finder sees on this client, saved for checking its scoring against Forever's own
 	words: the client's stat names and tooltip lines for the worn gear and some dungeon drops near
-	the player's level. Kept in the saved file (AegisJournalDB.gearScan) until the next scan.
+	the player's level. Kept in the saved file (AegisJournalDB.gearScan) until the next scan. It is
+	saved before the items are read, and an item that fails is noted in `errors`, so a problem with
+	one still leaves the rest.
 ]]
 function GearFinder:Scan()
 	local IS = ns.ItemScore
@@ -370,11 +415,20 @@ function GearFinder:Scan()
 	local scan = {
 		build = select(4, GetBuildInfo()) or 0, version = (GetBuildInfo()), class = IS:Class(), level = IS:Level(),
 		spec = spec, specWhy = why, talentSpec = IS:TalentSpec(IS:Class()) or false, dualWield = IS:CanDualWield(),
-		worn = {}, drops = {}, unknownKeys = {},
+		worn = {}, drops = {}, unknownKeys = {}, errors = {},
 	}
+	ns.db.gearScan = scan
+	local function Add(list, link, label)
+		local ok, sample = pcall(Sample, link, label)
+		if ok then
+			list[#list + 1] = sample
+		else
+			scan.errors[#scan.errors + 1] = label .. ": " .. tostring(sample)
+		end
+	end
 	for slot = 1, 19 do
 		local link = GetInventoryItemLink("player", slot)
-		if link then scan.worn[#scan.worn + 1] = Sample(link, "slot " .. slot) end
+		if link then Add(scan.worn, link, "slot " .. slot) end
 	end
 	-- Drops the client has described already; the rest are asked for a few at a time, as a
 	-- search asks, for the next scan.
@@ -388,15 +442,22 @@ function GearFinder:Scan()
 						if not info or info.pending then
 							waiting = waiting + 1
 						elseif info.kind == "EQUIPMENT" and info.link then
-							scan.drops[#scan.drops + 1] = Sample(info.link, instance.name .. " / " .. boss.name)
+							Add(scan.drops, info.link, instance.name .. " / " .. boss.name)
 						end
 					end
 				end
 			end
 		end
 	end
-	for key in pairs(IS.unknownKeys) do scan.unknownKeys[#scan.unknownKeys + 1] = key end
-	ns.db.gearScan = scan
+	for key in pairs(IS.unknownKeys) do scan.unknownKeys[#scan.unknownKeys + 1] = Plain(key) end
+	-- The character panel's art the Gear Finder tab borrows, at the sizes this client has it.
+	scan.atlases = {}
+	local getAtlas = C_Texture and C_Texture.GetAtlasInfo
+	for _, atlas in ipairs(getAtlas and SCAN_ATLASES or {}) do
+		local ok, info = pcall(getAtlas, (atlas:gsub("CLASS", IS:Class() or "")))
+		scan.atlases[atlas] = ok and info and { width = Plain(info.width), height = Plain(info.height) } or false
+	end
 	ns.Print(string.format(L.GEAR_SCAN_DONE, #scan.worn, #scan.drops))
+	if #scan.errors > 0 then ns.Print(string.format(L.GEAR_SCAN_ERRORS, #scan.errors)) end
 	if waiting > 0 and #scan.drops < SCAN_ITEMS then ns.Print(L.GEAR_SCAN_LOADING) end
 end

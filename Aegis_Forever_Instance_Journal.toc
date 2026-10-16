@@ -105,5 +105,6 @@ UI\QuestMap.lua
 UI\EncounterPage.lua
 UI\RecordPanel.lua
 UI\GearPanel.lua
+UI\CharacterTab.lua
 UI\Search.lua
 UI\Journal.lua

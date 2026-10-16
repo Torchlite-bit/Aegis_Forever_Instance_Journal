@@ -1,28 +1,52 @@
-local addonName, ns = ...
+local _, ns = ...
 local L = ns.L
 
 --[[
-	The journal's Gear tab: the Gear Finder (Core/GearFinder.lua), laid out as Aegis: Pathfinder
-	lays out its own. Two columns of slots, like the character sheet, each with the best upgrade
-	waiting for it, how much better it is and where it drops; beside them the dungeon holding the
-	most of them, the ‹ › arrows going through the others; the ranged slot under that.
+	The journal's Gear Finder tab (Core/GearFinder.lua), dressed as Forever's character panel
+	(Blizzard_UIPanels_Game/Camelot/CharacterFrame.xml and PaperDollFrame.xml): its two pane
+	backgrounds and the divider between them, its slot frames, header bar and striped rows.
 
-	A button beside the character sheet's weapons opens this tab.
+	Left, the slots in the character sheet's two columns, each with the best upgrade waiting for
+	it, marked with the equipment flyout's green arrow, or what is worn when there is none.
+	Right, the sheet's own pane: the dungeon holding the most upgrades, which they are, the
+	arrows through the other dungeons, and the ranged slot.
+
+	The character panel's own tab for this is UI/CharacterTab.lua.
 ]]
 
 local GearPanel = {}
 ns.GearPanel = GearPanel
 
-local CELL_WIDTH, CELL_HEIGHT, CELL_GAP = 238, 42, 4
-local LEFT, TOP = 17, 64
-local COLUMN_X = { LEFT, LEFT + CELL_WIDTH + 8, LEFT + 2 * (CELL_WIDTH + 8) + 4 }
-local CARD_WIDTH = 255
-local ICON_SIZE = 34
-local LOGO = "Interface\\AddOns\\" .. addonName .. "\\Media\\Logo"
+-- The two panes inside the panel's edge. The right one is the character sheet's own width; the
+-- left one takes the rest, wider than the sheet's for the slots' names. The panel fills the
+-- journal's inset, 792x431 (UI/Journal.lua).
+local EDGE = 3
+local RIGHT_WIDTH, PANE_HEIGHT = 233, 425
+
+-- Slots as the sheet sets them: 37 square and 6 apart, 24 in from the left and 20 from the
+-- right; the first row under the title and status line. The right pane's content sits 16 in,
+-- as its side panes' does.
+local SLOT_SIZE, ROW_STEP, FIRST_ROW = 37, 43, 59
+local LEFT_X, RIGHT_X, SIDE_X = 24, 20, 16
+local TEXT_GAP, TEXT_WIDTH = 8, 200
+local SIDE_TEXT_WIDTH = RIGHT_WIDTH - 2 * SIDE_X - SLOT_SIZE - TEXT_GAP
+
+-- Where each slot goes: { column, row }. Columns 1 and 2 are the left pane's, 3 the right pane.
+local PLACES = {
+	head = { 1, 1 }, neck = { 1, 2 }, shoulder = { 1, 3 }, back = { 1, 4 }, chest = { 1, 5 }, wrist = { 1, 6 },
+	mainhand = { 1, 7 }, offhand = { 1, 8 },
+	hands = { 2, 1 }, waist = { 2, 2 }, legs = { 2, 3 }, feet = { 2, 4 },
+	finger1 = { 2, 5 }, finger2 = { 2, 6 }, trinket1 = { 2, 7 }, trinket2 = { 2, 8 },
+	ranged = { 3, 8 },
+}
+
+-- The suggested dungeon's upgrades, as the sheet lists its stats: this many rows at most.
+local SIDE_ROWS, ROW_WIDTH, ROW_HEIGHT = 5, 187, 23
 
 local GAIN_COLOR = { 0.25, 1, 0.25 }
-local LATER_COLOR = "|cffffd100"
 local DIM_COLOR = { 0.5, 0.5, 0.5 }
+-- The sheet's tint for an item its wearer cannot use: here, not yet.
+local LATER_TINT = { 0.9, 0, 0 }
 
 local SLOT_LABELS = {
 	head = INVTYPE_HEAD or "Head", neck = INVTYPE_NECK or "Neck", shoulder = INVTYPE_SHOULDER or "Shoulder",
@@ -33,7 +57,33 @@ local SLOT_LABELS = {
 	finger1 = L.GEAR_SLOT_FINGER1, finger2 = L.GEAR_SLOT_FINGER2,
 	trinket1 = L.GEAR_SLOT_TRINKET1, trinket2 = L.GEAR_SLOT_TRINKET2,
 }
-GearPanel.SLOT_LABELS = SLOT_LABELS
+
+------------------------------------------------------------------------------------------
+-- Art
+------------------------------------------------------------------------------------------
+
+-- Draws an atlas, at its own size when asked; false when this client lacks it.
+local function Atlas(texture, atlas, ownSize)
+	if not ns.AtlasExists(atlas) then return false end
+	texture:SetAtlas(atlas, ownSize == true)
+	return true
+end
+
+-- An atlas at its own size, cut off where it would run past width x height: art made for the
+-- character sheet's taller panes, kept to ours.
+local function AtlasCut(texture, atlas, width, height)
+	if not Atlas(texture, atlas, true) then return false end
+	local info = C_Texture.GetAtlasInfo(atlas)
+	local fullWidth, fullHeight = info.width or width, info.height or height
+	local shownWidth, shownHeight = math.min(fullWidth, width), math.min(fullHeight, height)
+	texture:SetSize(shownWidth, shownHeight)
+	if (shownWidth < fullWidth or shownHeight < fullHeight) and info.leftTexCoord then
+		local left, right, top, bottom = info.leftTexCoord, info.rightTexCoord, info.topTexCoord, info.bottomTexCoord
+		texture:SetTexCoord(left, left + (right - left) * shownWidth / fullWidth,
+			top, top + (bottom - top) * shownHeight / fullHeight)
+	end
+	return true
+end
 
 -- The empty picture of an inventory slot, as the character sheet shows it.
 local function EmptySlotTexture(inv)
@@ -45,11 +95,26 @@ local function EmptySlotTexture(inv)
 	return "Interface\\PaperDoll\\UI-Backpack-EmptySlot"
 end
 
--- "+54%"; for a slot with nothing worn, that; against an item worth nothing, the score it adds.
+------------------------------------------------------------------------------------------
+-- Words
+------------------------------------------------------------------------------------------
+
+--[[
+	"+4.2%", "+12%": what an upgrade adds to everything worn. While nothing worn is worth
+	anything to the spec (a fresh character), the plain gain: "+31".
+]]
 local function GainText(compare)
-	if compare.emptySlot then return L.GEAR_EMPTY_SLOT end
-	if compare.pct then return string.format("+%d%%", math.floor(compare.pct + 0.5)) end
-	return string.format("+%.1f", compare.delta or 0)
+	local share = compare.share
+	if not share then return string.format("+%d", math.floor((compare.delta or 0) + 0.5)) end
+	if share < 9.95 then return string.format("+%.1f%%", share) end
+	return string.format("+%d%%", math.floor(share + 0.5))
+end
+GearPanel.GainText = GainText
+
+-- A gain in the spec's own unit: "31", or "0.8" when it is that small.
+local function Points(value)
+	if value >= 10 then return tostring(math.floor(value + 0.5)) end
+	return string.format("%.1f", value)
 end
 
 -- Who drops it: the boss, or the dungeon's trash.
@@ -57,43 +122,72 @@ local function SourceName(entry)
 	return entry.boss.trash and L.LOOT_TRASH or entry.boss.name
 end
 
--- "The Deadmines · Captain Greenskin", and when the item waits for a level, that too.
-local function WhereText(entry)
-	local text = entry.instance.name .. " \194\183 " .. SourceName(entry)
-	if entry.compare.later then text = text .. " " .. LATER_COLOR .. string.format(L.GEAR_AT_LEVEL, entry.compare.minLevel) .. "|r" end
-	return text
+-- The name of what is worn in a slot, from its link.
+local function WornName(slotID)
+	local link = GetInventoryItemLink("player", slotID)
+	return link and link:match("%[(.-)%]") or nil
+end
+
+local function QualityRGB(quality)
+	local r, g, b = ns.Items:QualityColor(quality)
+	return r, g, b
 end
 
 ------------------------------------------------------------------------------------------
--- Cells
+-- Tooltips and clicks
 ------------------------------------------------------------------------------------------
 
-local function ShowCellTooltip(cell)
-	local entry = cell.entry
-	if not entry then return end
-	GameTooltip:SetOwner(cell, "ANCHOR_RIGHT")
-	GameTooltip:SetHyperlink(entry.link)
-	local spec = ns.ItemScore:SpecLabel((ns.ItemScore:Spec()))
-	GameTooltip:AddLine(" ")
-	if entry.compare.emptySlot then
-		GameTooltip:AddLine(string.format(L.GEAR_TIP_EMPTY, spec), GAIN_COLOR[1], GAIN_COLOR[2], GAIN_COLOR[3])
-	else
-		GameTooltip:AddLine(string.format(L.GEAR_TIP_GAIN, spec, GainText(entry.compare)), GAIN_COLOR[1], GAIN_COLOR[2], GAIN_COLOR[3])
+-- What the upgrade is worth: against everything worn, and in the spec's unit against the item
+-- it replaces.
+local function AddGainLines(compare)
+	local IS = ns.ItemScore
+	local spec = IS:Spec()
+	local data = ns.GEAR_WEIGHTS[IS:Class()]
+	local unit = data and data[spec] and data[spec].unit or ""
+	GameTooltip:AddLine(string.format(L.GEAR_TIP_GAIN, IS:SpecLabel(spec), GainText(compare)),
+		GAIN_COLOR[1], GAIN_COLOR[2], GAIN_COLOR[3])
+	-- What it replaces: a two-hander takes the off hand's place too.
+	local names = {}
+	for _, slot in ipairs({ compare.slot, compare.alsoSlot }) do
+		local name = WornName(slot)
+		if name then names[#names + 1] = name end
 	end
-	GameTooltip:AddLine(entry.instance.name .. " \194\183 " .. SourceName(entry), 1, 1, 1)
-	if entry.compare.later then GameTooltip:AddLine(string.format(L.GEAR_TIP_LATER, entry.compare.minLevel), 1, 0.82, 0) end
+	if #names == 0 then
+		GameTooltip:AddLine(string.format(L.GEAR_TIP_EMPTY, Points(compare.delta), unit), 1, 1, 1, true)
+	elseif #names == 1 then
+		GameTooltip:AddLine(string.format(L.GEAR_TIP_OVER, Points(compare.delta), unit, names[1]), 1, 1, 1, true)
+	else
+		GameTooltip:AddLine(string.format(L.GEAR_TIP_OVER_BOTH, Points(compare.delta), unit, names[1], names[2]),
+			1, 1, 1, true)
+	end
+end
+
+local function ShowCompare()
+	if type(GameTooltip_ShowCompareItem) == "function" and IsModifiedClick and IsModifiedClick("COMPAREITEMS") then
+		pcall(GameTooltip_ShowCompareItem)
+	end
+end
+
+local function ShowEntryTooltip(owner, entry, anchor, others)
+	GameTooltip:SetOwner(owner, anchor or "ANCHOR_RIGHT")
+	GameTooltip:SetHyperlink(entry.link)
+	GameTooltip:AddLine(" ")
+	AddGainLines(entry.compare)
+	GameTooltip:AddLine(entry.instance.name .. " \194\183 " .. SourceName(entry), 1, 0.82, 0)
+	if entry.compare.later then GameTooltip:AddLine(string.format(L.GEAR_TIP_LATER, entry.compare.minLevel), 1, 0.2, 0.2) end
 	-- The next best for the slot, so a pick isn't the only thing it says.
-	local others = 0
-	for _, other in ipairs(cell.others or {}) do
-		if other.itemID ~= entry.itemID and others < 3 then
-			if others == 0 then GameTooltip:AddLine(L.GEAR_TIP_MORE, 0.75, 0.75, 0.75) end
-			GameTooltip:AddDoubleLine(other.info.name or other.link, GainText(other.compare), 1, 1, 1,
-				GAIN_COLOR[1], GAIN_COLOR[2], GAIN_COLOR[3])
-			others = others + 1
+	local listed = 0
+	for _, other in ipairs(others or {}) do
+		if other.itemID ~= entry.itemID and listed < 3 then
+			if listed == 0 then GameTooltip:AddLine(L.GEAR_TIP_MORE, 0.75, 0.75, 0.75) end
+			GameTooltip:AddDoubleLine((other.info.name or other.link) .. " (" .. other.instance.name .. ")",
+				GainText(other.compare), 1, 1, 1, GAIN_COLOR[1], GAIN_COLOR[2], GAIN_COLOR[3])
+			listed = listed + 1
 		end
 	end
 	GameTooltip:AddLine(L.GEAR_TIP_CLICK, 0.5, 0.8, 1)
 	GameTooltip:Show()
+	ShowCompare()
 end
 
 -- Opens the item where the journal lists it, as a search result opens: trash drops on the
@@ -109,168 +203,370 @@ local function OpenEntry(entry)
 	ns.LootPanel:Reveal(entry.itemID)
 end
 
-local function CreateCell(panel, def, width)
+-- A click on an upgrade: shift and ctrl do what they do on any item (link it, try it on); a
+-- plain one opens it.
+local function ClickEntry(entry)
+	if not entry then return end
+	if entry.link and type(HandleModifiedItemClick) == "function" and HandleModifiedItemClick(entry.link) then return end
+	OpenEntry(entry)
+end
+
+-- A cell's click: its upgrade's, or for what is worn there, only shift's and ctrl's.
+local function ClickCell(cell)
+	if cell.entry then
+		ClickEntry(cell.entry)
+		return
+	end
+	local link = GetInventoryItemLink("player", cell.def.slot)
+	if link and type(HandleModifiedItemClick) == "function" then HandleModifiedItemClick(link) end
+end
+
+------------------------------------------------------------------------------------------
+-- Slot cells
+------------------------------------------------------------------------------------------
+
+local function ShowCellTooltip(cell)
+	local entry = cell.entry
+	local anchor = cell.mirrored and "ANCHOR_LEFT" or "ANCHOR_RIGHT"
+	if entry then
+		ShowEntryTooltip(cell, entry, anchor, cell.others)
+		return
+	end
+	-- No upgrade: what is worn, as the sheet's own slot shows it.
+	GameTooltip:SetOwner(cell, anchor)
+	local slotID = cell.def.slot
+	if GetInventoryItemLink("player", slotID) then
+		GameTooltip:SetInventoryItem("player", slotID)
+	else
+		GameTooltip:SetText(SLOT_LABELS[cell.def.key] or cell.def.key, 1, 1, 1)
+	end
+	GameTooltip:AddLine(L.GEAR_TIP_NONE, DIM_COLOR[1], DIM_COLOR[2], DIM_COLOR[3], true)
+	GameTooltip:Show()
+end
+
+--[[
+	A slot as the character sheet draws one (PaperDollItemSlotButtonTemplate's look: the slot
+	frame, the quick-slot edge, the quality border), with the item's name and where it drops
+	beside it. Built rather than inherited: the sheet's template equips and picks up items.
+	Cells in the right-hand column face the other way, their text towards the middle.
+]]
+local function CreateCell(panel, def)
+	local column, row = PLACES[def.key][1], PLACES[def.key][2]
+	local mirrored = column == 2
+	local textWidth = column == 3 and SIDE_TEXT_WIDTH or TEXT_WIDTH
 	local cell = CreateFrame("Button", nil, panel)
-	cell:SetSize(width or CELL_WIDTH, CELL_HEIGHT)
-	cell:SetPoint("TOPLEFT", COLUMN_X[def.col], -(TOP + (def.row - 1) * (CELL_HEIGHT + CELL_GAP)))
-	cell.def = def
+	cell:SetSize(SLOT_SIZE + TEXT_GAP + textWidth, SLOT_SIZE)
+	local y = -(EDGE + FIRST_ROW + (row - 1) * ROW_STEP)
+	if column == 1 then
+		cell:SetPoint("TOPLEFT", EDGE + LEFT_X, y)
+	elseif column == 2 then
+		cell:SetPoint("TOPRIGHT", -(EDGE + RIGHT_WIDTH + RIGHT_X), y)
+	else
+		cell:SetPoint("TOPLEFT", panel, "TOPRIGHT", -(EDGE + RIGHT_WIDTH) + SIDE_X, y)
+	end
+	cell.def, cell.mirrored = def, mirrored
+	cell.emptyTexture = EmptySlotTexture(def.inv)
 
-	cell.Background = cell:CreateTexture(nil, "BACKGROUND")
-	cell.Background:SetAllPoints()
-	cell.Background:SetColorTexture(0, 0, 0, 0.35)
-	cell.Highlight = cell:CreateTexture(nil, "HIGHLIGHT")
-	cell.Highlight:SetAllPoints()
-	cell.Highlight:SetColorTexture(1, 1, 1, 0.06)
+	cell.Icon = cell:CreateTexture(nil, "BORDER")
+	cell.Icon:SetSize(SLOT_SIZE, SLOT_SIZE)
+	cell.Icon:SetPoint(mirrored and "RIGHT" or "LEFT")
 
-	cell.Icon = cell:CreateTexture(nil, "ARTWORK")
-	cell.Icon:SetSize(ICON_SIZE, ICON_SIZE)
-	cell.Icon:SetPoint("LEFT", 4, 0)
+	cell.SlotFrame = cell:CreateTexture(nil, "BACKGROUND")
+	cell.SlotFrame:SetPoint("CENTER", cell.Icon)
+	cell.SlotFrame:SetShown(Atlas(cell.SlotFrame, "UI-Character-Info-GearSlot", true))
 
-	cell.Gain = cell:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	cell.Gain:SetPoint("TOPRIGHT", -6, -5)
-	cell.Gain:SetJustifyH("RIGHT")
-	cell.Gain:SetTextColor(GAIN_COLOR[1], GAIN_COLOR[2], GAIN_COLOR[3])
+	cell.Edge = cell:CreateTexture(nil, "ARTWORK")
+	cell.Edge:SetTexture("Interface\\Buttons\\UI-Quickslot2")
+	cell.Edge:SetSize(64, 64)
+	cell.Edge:SetPoint("CENTER", cell.Icon, 0, -1)
 
+	cell.IconBorder = cell:CreateTexture(nil, "OVERLAY")
+	cell.IconBorder:SetTexture("Interface\\Common\\WhiteIconFrame")
+	cell.IconBorder:SetAllPoints(cell.Icon)
+
+	-- The equipment flyout's mark for an upgrade.
+	cell.Arrow = cell:CreateTexture(nil, "OVERLAY", nil, 2)
+	if not Atlas(cell.Arrow, "bags-greenarrow", true) then
+		cell.Arrow:SetSize(14, 14)
+		cell.Arrow:SetTexture("Interface\\Buttons\\UI-MicroStream-Green")
+	end
+	cell.Arrow:SetPoint("TOPLEFT", cell.Icon, -2, 2)
+
+	-- The level an item waits for, where the sheet puts a count.
+	cell.Level = cell:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
+	cell.Level:SetPoint("BOTTOMRIGHT", cell.Icon, -3, 2)
+
+	cell.IconHighlight = cell:CreateTexture(nil, "HIGHLIGHT")
+	cell.IconHighlight:SetTexture("Interface\\Buttons\\ButtonHilight-Square")
+	cell.IconHighlight:SetBlendMode("ADD")
+	cell.IconHighlight:SetAllPoints(cell.Icon)
+
+	-- The character panel's row light, behind the text.
+	cell.Hover = cell:CreateTexture(nil, "HIGHLIGHT")
+	if Atlas(cell.Hover, "charactercreate-customize-dropdown-linemouseover-middle") then
+		cell.Hover:SetAlpha(0.1)
+	else
+		cell.Hover:SetColorTexture(1, 1, 1, 0.06)
+	end
+	cell.Hover:SetPoint("TOP", 0, 2)
+	cell.Hover:SetPoint("BOTTOM", 0, -2)
+	if mirrored then
+		cell.Hover:SetPoint("LEFT", -4, 0)
+		cell.Hover:SetPoint("RIGHT", cell.Icon, "LEFT", -2, 0)
+	else
+		cell.Hover:SetPoint("LEFT", cell.Icon, "RIGHT", 2, 0)
+		cell.Hover:SetPoint("RIGHT", 4, 0)
+	end
+
+	local side = mirrored and "RIGHT" or "LEFT"
+	local out = mirrored and -TEXT_GAP or TEXT_GAP
 	cell.Name = cell:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	cell.Name:SetPoint("TOPLEFT", cell.Icon, "TOPRIGHT", 6, -1)
-	cell.Name:SetPoint("RIGHT", cell.Gain, "LEFT", -4, 0)
-	cell.Name:SetJustifyH("LEFT")
+	cell.Name:SetPoint("TOP" .. side, cell.Icon, "TOP" .. (mirrored and "LEFT" or "RIGHT"), out, -3)
+	cell.Name:SetWidth(textWidth)
+	cell.Name:SetJustifyH(side)
 	cell.Name:SetWordWrap(false)
 
-	cell.Where = cell:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-	cell.Where:SetPoint("BOTTOMLEFT", cell.Icon, "BOTTOMRIGHT", 6, 1)
-	cell.Where:SetPoint("RIGHT", -6, 0)
-	cell.Where:SetJustifyH("LEFT")
-	cell.Where:SetWordWrap(false)
+	-- Second line: where it drops, and the gain at the line's far end.
+	cell.Gain = cell:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	cell.Gain:SetTextColor(GAIN_COLOR[1], GAIN_COLOR[2], GAIN_COLOR[3])
+	cell.Source = cell:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	cell.Source:SetWordWrap(false)
+	cell.Source:SetJustifyH(side)
+	local edgeSide = mirrored and "LEFT" or "RIGHT"
+	cell.Gain:SetPoint("BOTTOM" .. edgeSide, cell, "BOTTOM" .. edgeSide, 0, 4)
+	cell.Gain:SetJustifyH(edgeSide)
+	cell.Source:SetPoint("BOTTOM" .. side, cell.Icon, "BOTTOM" .. (mirrored and "LEFT" or "RIGHT"), out, 4)
+	cell.Source:SetPoint("BOTTOM" .. edgeSide, cell.Gain, "BOTTOM" .. side, mirrored and 6 or -6, 0)
 
 	cell:SetScript("OnEnter", ShowCellTooltip)
 	cell:SetScript("OnLeave", function() GameTooltip:Hide() end)
-	cell:SetScript("OnClick", function(self)
-		if self.entry then OpenEntry(self.entry) end
-	end)
+	cell:SetScript("OnClick", ClickCell)
+	-- The tooltip rebuilds itself when the client sends more of the item, or shift is pressed.
+	cell.UpdateTooltip = ShowCellTooltip
 	return cell
 end
 
-local function SetCell(cell, shown, entries)
-	cell.entry, cell.others = shown, entries
-	if shown then
-		cell.Icon:SetTexture(ns.Items:Icon(shown.itemID) or EmptySlotTexture(cell.def.inv))
-		cell.Icon:SetDesaturated(false)
-		cell.Icon:SetAlpha(1)
-		cell.Name:SetText(shown.info.name or "")
-		local r, g, b = ns.Items:QualityColor(shown.info.quality)
-		cell.Name:SetTextColor(r, g, b)
-		cell.Gain:SetText(GainText(shown.compare))
-		cell.Where:SetText(WhereText(shown))
-		cell.Where:SetTextColor(1, 1, 1)
+local function SetIcon(cell, texture, quality, tint)
+	cell.Icon:SetTexture(texture or cell.emptyTexture)
+	tint = tint or { 1, 1, 1 }
+	cell.Icon:SetVertexColor(tint[1], tint[2], tint[3])
+	if quality and quality >= 2 then
+		cell.IconBorder:SetVertexColor(QualityRGB(quality))
+		cell.IconBorder:Show()
 	else
-		cell.Icon:SetTexture(EmptySlotTexture(cell.def.inv))
-		cell.Icon:SetDesaturated(true)
-		cell.Icon:SetAlpha(0.5)
-		cell.Name:SetText(L.GEAR_NO_UPGRADE)
-		cell.Name:SetTextColor(DIM_COLOR[1], DIM_COLOR[2], DIM_COLOR[3])
-		cell.Gain:SetText("")
-		cell.Where:SetText(SLOT_LABELS[cell.def.key] or cell.def.key)
-		cell.Where:SetTextColor(DIM_COLOR[1], DIM_COLOR[2], DIM_COLOR[3])
+		cell.IconBorder:Hide()
 	end
 end
 
+-- The upgrade a cell shows, or what is worn in its slot when there is none.
+local function SetCell(cell, shown, entries)
+	cell.entry, cell.others = shown, entries
+	if shown then
+		local compare = shown.compare
+		SetIcon(cell, ns.Items:Icon(shown.itemID), shown.info.quality, compare.later and LATER_TINT or nil)
+		cell.Arrow:Show()
+		cell.Level:SetText(compare.later and compare.minLevel or "")
+		cell.Name:SetText(shown.info.name or "")
+		cell.Name:SetTextColor(QualityRGB(shown.info.quality))
+		cell.Source:SetText(shown.instance.name)
+		cell.Source:SetTextColor(1, 1, 1)
+		cell.Gain:SetText(GainText(compare))
+		return
+	end
+	local slotID = cell.def.slot
+	local link = GetInventoryItemLink("player", slotID)
+	cell.Arrow:Hide()
+	cell.Level:SetText("")
+	if link then
+		local quality = GetInventoryItemQuality("player", slotID)
+		SetIcon(cell, GetInventoryItemTexture("player", slotID), quality)
+		cell.Name:SetText(link:match("%[(.-)%]") or "")
+		cell.Name:SetTextColor(QualityRGB(quality))
+	else
+		SetIcon(cell, nil, nil)
+		cell.Name:SetText(SLOT_LABELS[cell.def.key] or cell.def.key)
+		cell.Name:SetTextColor(DIM_COLOR[1], DIM_COLOR[2], DIM_COLOR[3])
+	end
+	cell.Source:SetText(L.GEAR_NO_UPGRADE)
+	cell.Source:SetTextColor(DIM_COLOR[1], DIM_COLOR[2], DIM_COLOR[3])
+	cell.Gain:SetText("")
+end
+
 ------------------------------------------------------------------------------------------
--- The suggested dungeon
+-- The right pane: the suggested dungeon
 ------------------------------------------------------------------------------------------
 
-local function CreateCard(panel)
-	local card = CreateFrame("Frame", nil, panel)
-	card:SetSize(CARD_WIDTH, 7 * (CELL_HEIGHT + CELL_GAP) - CELL_GAP)
-	card:SetPoint("TOPLEFT", COLUMN_X[3], -TOP)
-	card.Background = card:CreateTexture(nil, "BACKGROUND")
-	card.Background:SetAllPoints()
-	card.Background:SetColorTexture(0, 0, 0, 0.35)
-
-	card.Art = card:CreateTexture(nil, "ARTWORK")
-	card.Art:SetPoint("TOPLEFT", 6, -6)
-	card.Art:SetPoint("TOPRIGHT", -6, -6)
-	card.Art:SetHeight(120)
-
-	card.Heading = card:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-	card.Heading:SetPoint("TOP", card.Art, "BOTTOM", 0, -8)
-	card.Heading:SetText(L.GEAR_SUGGESTED)
-
-	card.Name = card:CreateFontString(nil, "OVERLAY", ns.Font("GameFontNormalLarge", "GameFontNormal"))
-	card.Name:SetPoint("TOP", card.Heading, "BOTTOM", 0, -6)
-	card.Name:SetWidth(CARD_WIDTH - 50)
-	card.Name:SetWordWrap(false)
-
-	card.Range = card:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-	card.Range:SetPoint("TOP", card.Name, "BOTTOM", 0, -3)
-
-	card.Count = card:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	card.Count:SetPoint("TOP", card.Range, "BOTTOM", 0, -10)
-	card.Count:SetTextColor(GAIN_COLOR[1], GAIN_COLOR[2], GAIN_COLOR[3])
-
-	card.Slots = card:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-	card.Slots:SetPoint("TOP", card.Count, "BOTTOM", 0, -4)
-	card.Slots:SetWidth(CARD_WIDTH - 20)
-
-	card.Of = card:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-	card.Of:SetPoint("BOTTOM", 0, 36)
-
-	card.Open = ns.CreateFrameWithTemplate("Button", nil, card, "UIPanelButtonTemplate")
-	card.Open:SetSize(170, 22)
-	card.Open:SetPoint("BOTTOM", 0, 8)
-	card.Open:SetText(L.GEAR_OPEN)
-	card.Open:SetScript("OnClick", function()
-		if card.instance then
-			ns.PlaySoundKit("IG_SPELLBOOK_OPEN")
-			ns.Journal:OpenInstance(card.instance)
+-- A row's tooltip: its upgrade's, or for the last row of a long list, the slots it stands for.
+local function ShowRowTooltip(row)
+	if row.entry then
+		ShowEntryTooltip(row, row.entry, "ANCHOR_LEFT")
+	elseif row.more then
+		GameTooltip:SetOwner(row, "ANCHOR_LEFT")
+		for index, entry in ipairs(row.more.entries) do
+			GameTooltip:AddDoubleLine(SLOT_LABELS[row.more.slots[index]] or row.more.slots[index], GainText(entry.compare),
+				1, 0.82, 0, GAIN_COLOR[1], GAIN_COLOR[2], GAIN_COLOR[3])
 		end
-	end)
+		GameTooltip:Show()
+	end
+end
 
-	local function Arrow(direction, point, x)
-		local button = CreateFrame("Button", nil, card)
-		button:SetSize(24, 24)
-		button:SetPoint(point, card.Name, direction < 0 and "LEFT" or "RIGHT", x, 0)
-		button.Text = button:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-		button.Text:SetPoint("CENTER")
-		button.Text:SetText(direction < 0 and "\226\128\185" or "\226\128\186")
+-- A row as the sheet lists a stat: gold label, white value, a stripe behind every other one.
+local function CreateRow(parent, index)
+	local row = CreateFrame("Button", nil, parent)
+	row:SetSize(ROW_WIDTH, ROW_HEIGHT)
+	row.Stripe = row:CreateTexture(nil, "BACKGROUND")
+	row.Stripe:SetPoint("CENTER")
+	row.Stripe:SetShown(index % 2 == 1 and Atlas(row.Stripe, "UI-Character-Info-Line-Bounce2", true))
+	row.Label = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	row.Label:SetPoint("LEFT", 11, 0)
+	row.Label:SetJustifyH("LEFT")
+	row.Value = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+	row.Value:SetPoint("RIGHT", -8, 0)
+	row.Value:SetTextColor(GAIN_COLOR[1], GAIN_COLOR[2], GAIN_COLOR[3])
+	row.Hover = row:CreateTexture(nil, "HIGHLIGHT")
+	row.Hover:SetAllPoints()
+	if Atlas(row.Hover, "charactercreate-customize-dropdown-linemouseover-middle") then
+		row.Hover:SetAlpha(0.1)
+	else
+		row.Hover:SetColorTexture(1, 1, 1, 0.06)
+	end
+	row:SetScript("OnEnter", ShowRowTooltip)
+	row:SetScript("OnLeave", function() GameTooltip:Hide() end)
+	row:SetScript("OnClick", function(self) ClickEntry(self.entry) end)
+	row.UpdateTooltip = ShowRowTooltip
+	return row
+end
+
+-- The spellbook's page arrows, which the character panel uses for its own.
+local function CreatePageButton(parent, direction)
+	local button = CreateFrame("Button", nil, parent)
+	button:SetSize(28, 28)
+	local name = direction < 0 and "Prev" or "Next"
+	button:SetNormalTexture("Interface\\Buttons\\UI-SpellbookIcon-" .. name .. "Page-Up")
+	button:SetPushedTexture("Interface\\Buttons\\UI-SpellbookIcon-" .. name .. "Page-Down")
+	button:SetDisabledTexture("Interface\\Buttons\\UI-SpellbookIcon-" .. name .. "Page-Disabled")
+	button:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
+	return button
+end
+
+local function CreateSide(panel)
+	local side = CreateFrame("Frame", nil, panel)
+	side:SetPoint("TOPRIGHT", -EDGE, -EDGE)
+	side:SetPoint("BOTTOMRIGHT", -EDGE, EDGE)
+	side:SetWidth(RIGHT_WIDTH)
+
+	side.Background = side:CreateTexture(nil, "BACKGROUND", nil, -8)
+	side.Background:SetAllPoints()
+	if not Atlas(side.Background, "UI-Character-Info-Stat-BG") then side.Background:SetColorTexture(0.05, 0.05, 0.05, 1) end
+	-- The class's own tint, as behind the sheet's stats.
+	side.ClassBackground = side:CreateTexture(nil, "BACKGROUND", nil, -7)
+	side.ClassBackground:SetPoint("TOPLEFT")
+	side.ClassBackground:SetShown(AtlasCut(side.ClassBackground,
+		string.format("UI-Character-Info-%s-BG", ns.ItemScore:Class() or ""), RIGHT_WIDTH, PANE_HEIGHT))
+	-- The line between the panes.
+	side.Divider = side:CreateTexture(nil, "OVERLAY")
+	if Atlas(side.Divider, "common-framedivider", true) then
+		side.Divider:SetPoint("TOPLEFT", -6, -1)
+		side.Divider:SetPoint("BOTTOMLEFT", -6, 0)
+	else
+		side.Divider:Hide()
+	end
+
+	-- "Suggested dungeon", on the sheet's category bar.
+	side.Header = CreateFrame("Frame", nil, side)
+	side.Header:SetSize(197, 40)
+	side.Header:SetPoint("TOP", 0, -8)
+	side.Header.Background = side.Header:CreateTexture(nil, "BACKGROUND")
+	side.Header.Background:SetAllPoints()
+	side.Header.Background:SetShown(Atlas(side.Header.Background, "UI-Character-Info-Title"))
+	side.Header.Title = side.Header:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+	side.Header.Title:SetPoint("CENTER", 0, 1)
+	side.Header.Title:SetText(L.GEAR_SUGGESTED)
+
+	-- The dungeon, as its button on the Dungeons tab: a click opens it.
+	side.Dungeon = ns.CreateInstanceButton(side)
+	side.Dungeon:SetPoint("TOP", side.Header, "BOTTOM", 0, -4)
+
+	-- "5 upgrades here", in the sheet's item-level box.
+	side.Count = CreateFrame("Frame", nil, side)
+	side.Count:SetSize(ROW_WIDTH, 29)
+	side.Count:SetPoint("TOP", side.Dungeon, "BOTTOM", 0, -4)
+	side.Count.Background = side.Count:CreateTexture(nil, "BORDER")
+	side.Count.Background:SetAllPoints()
+	side.Count.Background:SetShown(Atlas(side.Count.Background, "UI-Character-Info-ItemLevel-Bounce"))
+	side.Count.Text = side.Count:CreateFontString(nil, "OVERLAY", ns.Font("Game15Font_o1", "GameFontNormalLarge"))
+	side.Count.Text:SetPoint("CENTER", 0, -1)
+	side.Count.Text:SetTextColor(GAIN_COLOR[1], GAIN_COLOR[2], GAIN_COLOR[3])
+
+	side.Rows = {}
+	for index = 1, SIDE_ROWS do
+		local row = CreateRow(side, index)
+		row:SetPoint("TOP", index == 1 and side.Count or side.Rows[index - 1], "BOTTOM", 0, index == 1 and -2 or 0)
+		side.Rows[index] = row
+	end
+
+	-- The other dungeons with upgrades.
+	side.Previous = CreatePageButton(side, -1)
+	side.Next = CreatePageButton(side, 1)
+	side.Of = side:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	side.Of:SetPoint("TOP", side.Rows[SIDE_ROWS], "BOTTOM", 0, -12)
+	side.Previous:SetPoint("RIGHT", side.Of, "LEFT", -6, 0)
+	side.Next:SetPoint("LEFT", side.Of, "RIGHT", 6, 0)
+	for _, button in ipairs({ side.Previous, side.Next }) do
+		local direction = button == side.Previous and -1 or 1
 		button:SetScript("OnClick", function()
 			ns.PlaySoundKit("IG_ABILITY_PAGE_TURN")
 			panel.suggestIndex = (panel.suggestIndex or 1) + direction
 			GearPanel:Redraw(panel)
 		end)
-		return button
 	end
-	card.Previous = Arrow(-1, "RIGHT", -4)
-	card.Next = Arrow(1, "LEFT", 4)
 
-	card.None = card:CreateFontString(nil, "OVERLAY", "GameFontDisable")
-	card.None:SetPoint("CENTER", 0, -30)
-	card.None:SetWidth(CARD_WIDTH - 30)
-	card.None:SetText(L.GEAR_NONE)
-	return card
+	side.None = side:CreateFontString(nil, "OVERLAY", "GameFontDisable")
+	side.None:SetPoint("TOP", side.Header, "BOTTOM", 0, -40)
+	side.None:SetWidth(RIGHT_WIDTH - 2 * SIDE_X)
+	side.None:SetText(L.GEAR_NONE)
+	return side
 end
 
-local function SetCard(card, suggestions, index)
-	local item = suggestions[index]
-	card.instance = item and item.instance
-	for _, region in ipairs({ card.Art, card.Heading, card.Name, card.Range, card.Count, card.Slots, card.Of, card.Open }) do
-		region:SetShown(item ~= nil)
+local function SetSide(side, suggestions, index)
+	local dungeon = suggestions[index]
+	for _, region in ipairs({ side.Dungeon, side.Count }) do region:SetShown(dungeon ~= nil) end
+	local paged = dungeon ~= nil and #suggestions > 1
+	side.Previous:SetShown(paged)
+	side.Next:SetShown(paged)
+	side.Of:SetShown(paged)
+	side.None:SetShown(dungeon == nil)
+	for _, row in ipairs(side.Rows) do
+		row.entry, row.more = nil, nil
+		row:Hide()
 	end
-	card.Previous:SetShown(item ~= nil and #suggestions > 1)
-	card.Next:SetShown(item ~= nil and #suggestions > 1)
-	card.None:SetShown(item == nil)
-	if not item then return end
-	local instance = item.instance
-	ns.SetInstanceArt(card.Art, instance)
-	card.Name:SetText(instance.name)
-	-- The level range as the dungeon buttons show it.
-	local low, high = instance.levelMin, instance.levelMax
-	card.Range:SetText((low and high and low ~= high and (low .. "-" .. high)) or (low and string.format(L.MAP_LEVEL, low)) or "")
-	card.Count:SetText(item.count == 1 and L.GEAR_UPGRADE_HERE or string.format(L.GEAR_UPGRADES_HERE, item.count))
-	local names = {}
-	for index2, key in ipairs(item.slots) do names[index2] = SLOT_LABELS[key] or key end
-	card.Slots:SetText(table.concat(names, ", "))
-	card.Of:SetText(string.format(L.GEAR_DUNGEON_OF, index, #suggestions))
+	if not dungeon then return end
+
+	ns.SetInstanceButton(side.Dungeon, dungeon.instance)
+	side.Count.Text:SetText(dungeon.count == 1 and L.GEAR_UPGRADE_HERE or string.format(L.GEAR_UPGRADES_HERE, dungeon.count))
+	-- One row a slot; past the last row, how many more.
+	local count = #dungeon.slots
+	local rows = count > SIDE_ROWS and SIDE_ROWS - 1 or count
+	for rowIndex = 1, rows do
+		local row = side.Rows[rowIndex]
+		local entry = dungeon.entries[rowIndex]
+		row.entry = entry
+		row.Label:SetText(SLOT_LABELS[dungeon.slots[rowIndex]] or dungeon.slots[rowIndex])
+		row.Value:SetText(GainText(entry.compare))
+		row:Show()
+	end
+	if count > rows then
+		local row = side.Rows[SIDE_ROWS]
+		row.more = { slots = {}, entries = {} }
+		for index = rows + 1, count do
+			row.more.slots[#row.more.slots + 1] = dungeon.slots[index]
+			row.more.entries[#row.more.entries + 1] = dungeon.entries[index]
+		end
+		row.Label:SetText(string.format(L.GEAR_MORE_SLOTS, count - rows))
+		row.Value:SetText("")
+		row:Show()
+	end
+	side.Of:SetText(string.format(L.GEAR_DUNGEON_OF, index, #suggestions))
 end
 
 ------------------------------------------------------------------------------------------
@@ -287,38 +583,31 @@ local function SpecText()
 	return label
 end
 
-local function PickSpec(spec)
-	ns.ItemScore:SetSpec(spec)
-end
-
--- The spec picked from the menu, nil for automatic; read each time, never kept.
-local function PickedSpec()
-	return (ns.charDB.gearFinder or {}).spec
-end
-
--- What automatic would score: the talents' spec, else the levelling one.
-local function AutomaticLabel()
+local function AutomaticText()
 	local IS = ns.ItemScore
-	return IS:SpecLabel(IS:TalentSpec(IS:Class()) or (ns.GEAR_WEIGHTS[IS:Class()] or {}).levelling or "")
+	return string.format(L.GEAR_AUTO, IS:SpecLabel(IS:AutoSpec()))
 end
 
+-- In the left pane's top right corner, where the character panel's reputation page has its filter.
 local function CreateSpecMenu(panel)
+	local IS = ns.ItemScore
+	local right = -(EDGE + RIGHT_WIDTH + 14)
 	panel.ScoringLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	if ns.HasTemplate("WowStyle1DropdownTemplate") then
 		local ok, dropdown = pcall(CreateFrame, "DropdownButton", nil, panel, "WowStyle1DropdownTemplate")
 		if ok and dropdown and dropdown.SetupMenu then
 			dropdown:SetWidth(190)
-			dropdown:SetPoint("TOPRIGHT", -25, -16)
+			dropdown:SetPoint("TOPRIGHT", right, -16)
 			dropdown:SetupMenu(function(_, rootDescription)
-				local IS = ns.ItemScore
-				rootDescription:CreateRadio(string.format(L.GEAR_AUTO, AutomaticLabel()),
-					function() return PickedSpec() == nil end, function() PickSpec(nil) end)
+				rootDescription:CreateRadio(AutomaticText(),
+					function() return IS:PickedSpec() == nil end, function() IS:SetSpec(nil) end)
 				for _, spec in ipairs(IS:Specs()) do
 					rootDescription:CreateRadio(spec.label,
-						function() return PickedSpec() == spec.key end, function() PickSpec(spec.key) end)
+						function() return IS:PickedSpec() == spec.key end, function() IS:SetSpec(spec.key) end)
 				end
 			end)
-			if dropdown.SetDefaultText then dropdown:SetDefaultText(SpecText()) end
+			-- The closed menu says why: "Retribution, while levelling".
+			if dropdown.SetSelectionText then dropdown:SetSelectionText(function() return SpecText() end) end
 			panel.ScoringLabel:SetPoint("RIGHT", dropdown, "LEFT", -8, 0)
 			panel.ScoringLabel:SetText(L.GEAR_SCORING)
 			return dropdown
@@ -326,20 +615,19 @@ local function CreateSpecMenu(panel)
 	end
 	-- Older menu system, for a client without the modern dropdown.
 	local dropdown = CreateFrame("Frame", nil, panel, "UIDropDownMenuTemplate")
-	dropdown:SetPoint("TOPRIGHT", -10, -12)
+	dropdown:SetPoint("TOPRIGHT", right + 15, -12)
 	UIDropDownMenu_SetWidth(dropdown, 170)
 	UIDropDownMenu_Initialize(dropdown, function()
-		local IS = ns.ItemScore
 		local info = UIDropDownMenu_CreateInfo()
-		info.text = string.format(L.GEAR_AUTO, AutomaticLabel())
-		info.checked = PickedSpec() == nil
-		info.func = function() PickSpec(nil) end
+		info.text = AutomaticText()
+		info.checked = IS:PickedSpec() == nil
+		info.func = function() IS:SetSpec(nil) end
 		UIDropDownMenu_AddButton(info)
 		for _, spec in ipairs(IS:Specs()) do
 			info = UIDropDownMenu_CreateInfo()
 			info.text = spec.label
-			info.checked = PickedSpec() == spec.key
-			info.func = function() PickSpec(spec.key) end
+			info.checked = IS:PickedSpec() == spec.key
+			info.func = function() IS:SetSpec(spec.key) end
 			UIDropDownMenu_AddButton(info)
 		end
 	end)
@@ -354,22 +642,30 @@ end
 ------------------------------------------------------------------------------------------
 
 function GearPanel:Build(panel)
+	-- The character sheet's backgrounds in place of the journal's backdrop.
+	panel.Background:Hide()
+	panel.LeftBackground = panel:CreateTexture(nil, "BACKGROUND", nil, -8)
+	panel.LeftBackground:SetPoint("TOPLEFT", EDGE, -EDGE)
+	panel.LeftBackground:SetPoint("BOTTOMRIGHT", -(EDGE + RIGHT_WIDTH), EDGE)
+	if not Atlas(panel.LeftBackground, "UI-Character-Info-General-BG") then
+		panel.LeftBackground:SetColorTexture(0.06, 0.05, 0.04, 1)
+	end
+
 	panel.Title:SetText(L.GEAR_TITLE)
 	panel.Preview = panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
 	panel.Preview:SetPoint("LEFT", panel.Title, "RIGHT", 8, -1)
 	panel.Preview:SetText(L.GEAR_PREVIEW)
-	panel.Empty:SetText("")
 
 	panel.Status = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	panel.Status:SetPoint("TOPLEFT", 22, -44)
 	panel.Status:SetJustifyH("LEFT")
 
 	panel.Spec = CreateSpecMenu(panel)
+	panel.Side = CreateSide(panel)
 	panel.Cells = {}
 	for _, def in ipairs(ns.GearFinder.CELLS) do
-		panel.Cells[#panel.Cells + 1] = CreateCell(panel, def, def.col == 3 and CARD_WIDTH or nil)
+		panel.Cells[#panel.Cells + 1] = CreateCell(panel, def)
 	end
-	panel.Card = CreateCard(panel)
 	panel.suggestIndex = 1
 
 	ns.GearFinder.IsShowing = function() return panel:IsVisible() end
@@ -377,9 +673,13 @@ function GearPanel:Build(panel)
 		if panel:IsVisible() then GearPanel:Redraw(panel) end
 	end)
 	-- Searched on the next frame: a journal opened straight onto another page hides this at once.
+	-- Shown again and again in one frame (a journal toggled quickly), it still searches once.
 	panel:HookScript("OnShow", function()
 		panel.suggestIndex = 1
+		if panel.searchPending then return end
+		panel.searchPending = true
 		C_Timer.After(0, function()
+			panel.searchPending = nil
 			if panel:IsVisible() then ns.GearFinder:Refresh() end
 		end)
 	end)
@@ -397,7 +697,7 @@ function GearPanel:Redraw(panel)
 	else
 		panel.suggestIndex = 1
 	end
-	SetCard(panel.Card, suggestions, panel.suggestIndex)
+	SetSide(panel.Side, suggestions, panel.suggestIndex)
 
 	local _, missing, looked = finder:Results()
 	local status = looked == 1 and L.GEAR_LOOKING_ONE or string.format(L.GEAR_LOOKING, looked)
@@ -405,53 +705,6 @@ function GearPanel:Redraw(panel)
 		status = status .. " " .. (missing == 1 and L.GEAR_LOADING_ONE or string.format(L.GEAR_LOADING, missing))
 	end
 	panel.Status:SetText(status)
-	if panel.Spec and panel.Spec.SetDefaultText then panel.Spec:SetDefaultText(SpecText()) end
 	if panel.Spec and panel.Spec.GenerateMenu then pcall(panel.Spec.GenerateMenu, panel.Spec) end
 	if panel.Spec and panel.Spec.legacy then UIDropDownMenu_SetText(panel.Spec, SpecText()) end
 end
-
-------------------------------------------------------------------------------------------
--- The character sheet's button
-------------------------------------------------------------------------------------------
-
---[[
-	A round button left of the main-hand slot on the character sheet, which opens the Gear tab.
-	Our own frame on the paper doll's items frame: nothing of Blizzard's is changed, so the
-	character window's own tabs and code are left alone.
-]]
-function GearPanel:AttachCharacterButton()
-	if self.characterButton then return true end
-	local items, mainHand = _G.PaperDollItemsFrame, _G.CharacterMainHandSlot
-	if not (items and mainHand) then return false end
-	local button = CreateFrame("Button", "AegisJournalGearButton", items)
-	button:SetSize(30, 30)
-	button:SetPoint("RIGHT", mainHand, "LEFT", -14, 0)
-	button.Icon = button:CreateTexture(nil, "ARTWORK")
-	button.Icon:SetAllPoints()
-	button.Icon:SetTexture(LOGO)
-	button.Highlight = button:CreateTexture(nil, "HIGHLIGHT")
-	button.Highlight:SetAllPoints()
-	button.Highlight:SetTexture(LOGO)
-	button.Highlight:SetBlendMode("ADD")
-	button.Highlight:SetAlpha(0.4)
-	button:SetScript("OnEnter", function(self)
-		GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-		GameTooltip:SetText(L.GEAR_CHAR_BUTTON)
-		GameTooltip:AddLine(L.GEAR_CHAR_BUTTON_TIP, 1, 1, 1, true)
-		GameTooltip:Show()
-	end)
-	button:SetScript("OnLeave", function() GameTooltip:Hide() end)
-	button:SetScript("OnClick", function()
-		ns.PlaySoundKit("IG_SPELLBOOK_OPEN")
-		ns.Journal:ShowGear()
-	end)
-	self.characterButton = button
-	return true
-end
-
-local events = CreateFrame("Frame")
-ns.RegisterEvents(events, "PLAYER_LOGIN")
-events:SetScript("OnEvent", function(self)
-	GearPanel:AttachCharacterButton()
-	ns.UnregisterEvents(self, "PLAYER_LOGIN")
-end)

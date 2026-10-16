@@ -41,9 +41,15 @@ Measure("Close and reopen the journal", 200, function()
 	AegisJournal_Toggle()
 end)
 
+-- The four tabs measured before the Gear Finder came in: it searches on showing, and is
+-- measured on its own.
 Measure("Switch between the four bottom tabs", 100, function()
-	for index = 1, 4 do f.Tabs[index]:Click() end
+	for _, index in ipairs({ 1, 2, 3, 5 }) do f.Tabs[index]:Click() end
 end)
+
+f.Tabs[4]:Click()
+Measure("Search for gear (Gear Finder open)", 50, function() ns.GearFinder:Refresh() end)
+f.Tabs[1]:Click()
 
 local page = ns.Journal:Page()
 Measure("Open every dungeon on every side tab", 20, function()

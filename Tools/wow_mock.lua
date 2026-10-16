@@ -247,6 +247,8 @@ end
 function Region:SetDesaturated(desaturated) self._desaturated = desaturated end
 function Region:SetMask(mask) self._mask = mask end
 -- As strict as the client: the fourth value, if any, is the alpha, a number.
+-- Blizzard's side tabs (SidePanelTabButtonMixin) keep the handler their mouse-up calls.
+function Region:SetCustomOnMouseUpHandler(handler) self.customMouseUpHandler = handler end
 function Region:SetTextColor(...)
 	local a = select(4, ...)
 	if a ~= nil and type(a) ~= "number" then
@@ -959,6 +961,13 @@ Mock.worn = {}
 function GetInventoryItemLink(unit, slot)
 	local itemID = unit == "player" and Mock.worn[slot]
 	return itemID and ItemLink(itemID) or nil
+end
+function GetInventoryItemTexture(unit, slot)
+	local itemID = unit == "player" and Mock.worn[slot]
+	return itemID and 134400 + itemID % 7 or nil
+end
+function GetInventoryItemQuality(unit, slot)
+	return unit == "player" and Mock.worn[slot] and 2 or nil
 end
 -- Spells the player knows, by id (674 is Dual Wield).
 Mock.knownSpells = {}

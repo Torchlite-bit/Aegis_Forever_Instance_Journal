@@ -25,9 +25,21 @@ local TABS = {
 	{ key = "dungeons", title = L.TAB_DUNGEONS, empty = L.EMPTY_DUNGEONS, kind = "dungeon" },
 	{ key = "raids", title = L.TAB_RAIDS, empty = L.EMPTY_RAIDS, kind = "raid" },
 	{ key = "reputation", title = L.TAB_REPUTATION, empty = L.EMPTY_REPUTATION, factions = true },
-	{ key = "record", title = L.TAB_RECORD, empty = "", record = true },
 	{ key = "gear", title = L.TAB_GEAR, empty = "", gear = true },
+	{ key = "record", title = L.TAB_RECORD, empty = "", record = true },
 }
+
+--[[
+	The tab a character last had open is saved by its key. Before the Gear Finder came in ahead
+	of Record it was saved by its place, in this order; such a number is read once that way.
+]]
+local OLD_TAB_ORDER = { "dungeons", "raids", "reputation", "record", "gear" }
+
+local function TabIndex(key)
+	for index, info in ipairs(TABS) do
+		if info.key == key then return index end
+	end
+end
 
 local frame
 
@@ -246,7 +258,7 @@ local function GetFrame()
 		frame = CreateJournalFrame()
 		if start then ns.perfBuildMS = debugprofilestop() - start end
 		Journal:ApplyPosition()
-		Journal:SelectTab(ns.charDB.lastTab or 1)
+		Journal:SelectTab(Journal:SavedTabIndex(ns.charDB.lastTab))
 	end
 	return frame
 end
@@ -260,15 +272,16 @@ function Journal:Show()
 	GetFrame():Show()
 end
 
--- Opens the journal on its Gear tab (the Gear Finder).
+-- The tab to reopen for what was saved: a key, or a place from before the keys.
+function Journal:SavedTabIndex(saved)
+	if type(saved) == "number" then saved = OLD_TAB_ORDER[saved] end
+	return TabIndex(saved) or 1
+end
+
+-- Opens the journal on its Gear Finder tab: chosen first, so the last tab is not shown for nothing.
 function Journal:ShowGear()
-	for index, info in ipairs(TABS) do
-		if info.gear then
-			GetFrame():Show()
-			self:SelectTab(index)
-			return
-		end
-	end
+	self:SelectTab(TabIndex("gear"))
+	GetFrame():Show()
 end
 
 function Journal:IsShown()
@@ -299,7 +312,7 @@ function Journal:SelectTab(index)
 	-- Guarded: on a fallback tab without the template's textures this helper would error.
 	if type(PanelTemplates_SetTab) == "function" then pcall(PanelTemplates_SetTab, f, index) end
 	f.selectedTab = index
-	ns.charDB.lastTab = index
+	ns.charDB.lastTab = TABS[index].key
 	self:ShowHome()
 end
 
@@ -317,11 +330,12 @@ end
 
 local function ShowEncounterPage(f, instance)
 	-- An instance opened from elsewhere (a map pin, a search) brings its own list tab forward.
-	local tabIndex = (instance.kind == "raid" and 2) or (instance.kind == "faction" and 3) or 1
+	local key = (instance.kind == "raid" and "raids") or (instance.kind == "faction" and "reputation") or "dungeons"
+	local tabIndex = TabIndex(key)
 	if f.selectedTab ~= tabIndex then
 		if type(PanelTemplates_SetTab) == "function" then pcall(PanelTemplates_SetTab, f, tabIndex) end
 		f.selectedTab = tabIndex
-		ns.charDB.lastTab = tabIndex
+		ns.charDB.lastTab = key
 	end
 	for _, panel in ipairs(f.Panels) do panel:Hide() end
 end
