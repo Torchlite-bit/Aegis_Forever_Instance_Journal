@@ -450,6 +450,10 @@ function GearFinder:Scan()
 		end
 	end
 	for key in pairs(IS.unknownKeys) do scan.unknownKeys[#scan.unknownKeys + 1] = Plain(key) end
+	-- The character panel's side tabs, ours among them, and what each hangs from.
+	local ok, tabs = pcall(function() return ns.CharacterTab and ns.CharacterTab:Describe() end)
+	scan.tabs = {}
+	for index, entry in ipairs(ok and tabs or {}) do scan.tabs[index] = PlainTable(entry) end
 	-- The character panel's art the Gear Finder tab borrows, at the sizes this client has it.
 	scan.atlases = {}
 	local getAtlas = C_Texture and C_Texture.GetAtlasInfo

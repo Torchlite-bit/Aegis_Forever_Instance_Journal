@@ -3082,6 +3082,9 @@ end)()
 		and main.Gain:GetText() == string.format("+%d%%", math.floor(share + 0.5)) and main.Source:GetText() == "Ragefire Chasm",
 		"an empty slot's upgrade: what it adds to the gear worn, and the dungeon it drops in")
 	check(main.Name._textColor and #main.Name._textColor == 3, "its name in its quality's colour")
+	local hands = Cell("hands")
+	check(select(2, main.Gain:GetPoint(1)) == main.Source and select(1, hands.Gain:GetPoint(1)) == "BOTTOMRIGHT"
+		and select(2, hands.Gain:GetPoint(1)) == hands.Source, "each gain right after its own dungeon's name, on either side")
 	check(ns.GearPanel.GainText({ share = 4.24, delta = 3 }) == "+4.2%" and ns.GearPanel.GainText({ share = 12.4 }) == "+12%"
 		and ns.GearPanel.GainText({ delta = 31.2 }) == "+31", "small gains with a decimal, big ones without, a bare gain with nothing worn")
 	check(ranged.entry and ranged.entry.itemID == CROSSBOW and ranged.Level:GetText() == 17,
@@ -3304,7 +3307,7 @@ end)()
 	;(function()
 		check(not ns.CharacterTab:Create() and not ns.CharacterTab.tab, "no character panel with side tabs: no tab")
 		local column = CreateFrame("Frame", "CharacterFrameModeTabs", UIParent)
-		column.Tabs = { CreateFrame("Frame", nil, column), CreateFrame("Frame", nil, column) }
+		column.Tabs = { CreateFrame("Frame", "CharacterFrameModeTab1", column), CreateFrame("Frame", "CharacterFrameModeTab2", column) }
 		column.Tabs[2]:Hide()
 		_G.CharacterFrame = CreateFrame("Frame", "CharacterFrame", UIParent)
 		CharacterFrame.ModeTabs = column
@@ -3314,9 +3317,11 @@ end)()
 		CharacterFrame.ShowSubFrame = function() end
 		CharacterFrame.OnModeTabClicked = function() end
 		CharacterFrame.RefreshRightPane = function() end
-		-- Another addon's tab already in that place, and one more of its own hung under it
-		local theirs = CreateFrame("Frame", nil, column)
+		-- Another addon's tab already in that place, put in the panel's own list of tabs, and one more
+		-- of its own hung under it
+		local theirs = CreateFrame("Frame", "OtherAddonTab", column)
 		theirs:SetPoint("TOPLEFT", column.Tabs[1], "BOTTOMLEFT", 0, -2)
+		table.insert(column.Tabs, theirs)
 		local theirsNext = CreateFrame("Frame", nil, column)
 		theirsNext:SetPoint("TOPLEFT", theirs, "BOTTOMLEFT", 0, -2)
 		check(ns.CharacterTab:Create(), "a tab on the character panel's side")
@@ -3327,11 +3332,17 @@ end)()
 			"another addon's tab there moves down under it, with the one hung under that")
 		local listed = false
 		for _, other in ipairs(column.Tabs) do if other == tab then listed = true end end
-		check(not listed and #column.Tabs == 2, "kept out of the panel's own list of tabs")
+		check(not listed and #column.Tabs == 3 and #ns.CharacterTab.BlizzardTabs(column) == 2,
+			"kept out of the panel's own list of tabs; another addon's in that list is not taken for Blizzard's")
 		column.Tabs[2]:Show()
 		CharacterFrame:UpdateTabLayout()
 		check(layouts == 1 and select(2, tab:GetPoint(1)) == column.Tabs[2] and select(2, theirs:GetPoint(1)) == tab,
 			"placed again when the panel lays out its tabs, the other still under it")
+		local described, oursSeen = ns.CharacterTab:Describe(), false
+		for _, entry in ipairs(described or {}) do
+			if entry.ours and entry.relative == "CharacterFrameModeTab2" then oursSeen = true end
+		end
+		check(oursSeen, "the column described for /aegis gearscan, with what each tab hangs from")
 
 		-- Its click: the stat weights, over the panel's stats
 		CharacterFrame:Show()

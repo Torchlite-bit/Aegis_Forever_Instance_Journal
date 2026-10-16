@@ -15,7 +15,7 @@ local L = ns.L
 
 	Other addons put tabs in the same column. This one keeps the first spot under Blizzard's, and
 	moves another addon's tab found there down under it; it does so again once each addon has
-	placed its own when the panel opens.
+	placed its own when the panel opens, and a moment later.
 ]]
 
 local CharacterTab = {}
@@ -38,9 +38,27 @@ end
 -- Where the tab goes
 ------------------------------------------------------------------------------------------
 
+--[[
+	Blizzard's own tabs: those it names CharacterFrameModeTab1, 2 and on. Another addon may have
+	put its own in the panel's list of them; that one is moved like any other addon's. A client
+	naming none of them so has all of the list taken for Blizzard's.
+]]
+local function BlizzardTabs(column)
+	local own = {}
+	for _, tab in ipairs(column.Tabs or {}) do
+		local name = type(tab.GetName) == "function" and tab:GetName()
+		if type(name) == "string" and name:find("^CharacterFrameModeTab%d+$") then own[#own + 1] = tab end
+	end
+	if #own == 0 then
+		for _, tab in ipairs(column.Tabs or {}) do own[#own + 1] = tab end
+	end
+	return own
+end
+CharacterTab.BlizzardTabs = BlizzardTabs
+
 local function LastShownTab(column)
 	local last
-	for _, tab in ipairs(column.Tabs or {}) do
+	for _, tab in ipairs(BlizzardTabs(column)) do
 		if tab:IsShown() then last = tab end
 	end
 	return last
@@ -85,7 +103,7 @@ local PAGES = { "PaperDollFrame", "ReputationFrame", "TokenFrame", "PVPRankFrame
 -- What else is shown in the column, on the panel or on its pages: not Blizzard's tabs, not this one.
 local function OtherFrames(tab, column)
 	local blizzard = {}
-	for _, own in ipairs(column.Tabs or {}) do blizzard[own] = true end
+	for _, own in ipairs(BlizzardTabs(column)) do blizzard[own] = true end
 	local parents = { column, CharacterFrame }
 	for _, name in ipairs(PAGES) do
 		if type(_G[name]) == "table" and _G[name].GetChildren then parents[#parents + 1] = _G[name] end
@@ -227,7 +245,7 @@ function CharacterTab:Window()
 	holder:SetPoint("TOPLEFT", 0, -32)
 	holder:SetPoint("BOTTOMRIGHT")
 	window.Editor = ns.WeightsEditor:Create(holder, {
-		specMenu = function(parent) return ns.GearPanel.CreateSpecMenu(parent, 150) end,
+		specMenu = function(parent) return ns.GearPanel.CreateSpecMenu(parent, 160) end,
 		extra = { text = L.WEIGHTS_OPEN_FINDER, onClick = function() CharacterTab:Open() end },
 	})
 
@@ -255,6 +273,36 @@ function CharacterTab:Window()
 		end)
 	end
 	return window
+end
+
+--[[
+	What the column holds, for /aegis gearscan: each shown frame in it or on the panel, in order
+	from the top, with what it hangs from.
+]]
+function CharacterTab:Describe()
+	local column = CharacterFrame and CharacterFrame.ModeTabs
+	if not column then return nil end
+	local blizzard, listed = {}, {}
+	for _, own in ipairs(BlizzardTabs(column)) do blizzard[own] = true end
+	for _, entry in ipairs(column.Tabs or {}) do listed[entry] = true end
+	local function Name(frame)
+		if frame == nil then return nil end
+		local name = type(frame) == "table" and type(frame.GetName) == "function" and frame:GetName()
+		return name or tostring(frame)
+	end
+	local out = {}
+	for _, parent in ipairs({ column, CharacterFrame }) do
+		for _, child in ipairs({ parent:GetChildren() }) do
+			if child:IsShown() and (parent == column or math.abs((child:GetLeft() or -999) - (column:GetLeft() or 0)) <= 4) then
+				local point, relative, relativePoint, x, y = child:GetPoint(1)
+				out[#out + 1] = { name = Name(child), parent = Name(parent), blizzard = blizzard[child] or false,
+					listed = listed[child] or false, ours = child == self.tab, top = child:GetTop(), left = child:GetLeft(),
+					point = point, relative = Name(relative), relativePoint = relativePoint, x = x, y = y }
+			end
+		end
+	end
+	table.sort(out, function(a, b) return (a.top or 0) > (b.top or 0) end)
+	return out
 end
 
 -- What the tab does: the window, open or closed.
@@ -322,6 +370,7 @@ function CharacterTab:Create()
 	tab:HookScript("OnShow", function()
 		CharacterTab:Anchor()
 		C_Timer.After(0, function() CharacterTab:Anchor() end)
+		C_Timer.After(0.3, function() CharacterTab:Anchor() end)
 	end)
 	if type(CharacterFrame.UpdateTabLayout) == "function" then
 		hooksecurefunc(CharacterFrame, "UpdateTabLayout", function() CharacterTab:Anchor() end)

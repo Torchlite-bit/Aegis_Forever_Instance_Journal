@@ -15,7 +15,9 @@ Retail's instance journal and dungeon maps, brought to WoW: Forever. Press **Shi
 🗺️ **Dungeon maps** with boss pins; the bosses you've killed are crossed out
 🧭 **World map**: every dungeon door (click to open it, right-click for a waypoint), flight masters, boats, zeppelins, quest **!** / **?** marks, **zone level ranges**, and **unexplored areas** on request
 🛡️ **Reputation**: every faction's rewards by standing. Captured quartermasters show their exact costs; the rest are marked unconfirmed
+🎯 **Gear Finder**: your best dungeon upgrades, with stat weights to edit or bring from Pawn
 🔍 **Search** across everything
+🇷🇺 **In Russian** on a Russian client, thanks to **Staree4ok**
 🔴 **Record tab** and **Log Reader**: help us fill in Forever's journal
 
 **How to help**

@@ -45,8 +45,8 @@ local SIDE_ROWS, ROW_WIDTH, ROW_HEIGHT = 5, 187, 23
 
 local GAIN_COLOR = { 0.25, 1, 0.25 }
 local DIM_COLOR = { 0.5, 0.5, 0.5 }
--- The sheet's tint for an item its wearer cannot use: here, not yet.
-local LATER_TINT = { 0.9, 0, 0 }
+-- The level an item waits for, in the red the game gives what a player cannot use yet.
+local LATER_COLOR = { 1, 0.1, 0.1 }
 
 local SLOT_LABELS = {
 	head = INVTYPE_HEAD or "Head", neck = INVTYPE_NECK or "Neck", shoulder = INVTYPE_SHOULDER or "Shoulder",
@@ -327,17 +327,16 @@ local function CreateCell(panel, def)
 	cell.Name:SetJustifyH(side)
 	cell.Name:SetWordWrap(false)
 
-	-- Second line: where it drops, and the gain at the line's far end.
+	-- Second line: where it drops, and the gain just after it, so each cell's gain stays by its
+	-- own words (the two columns' would otherwise meet in the middle).
 	cell.Gain = cell:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 	cell.Gain:SetTextColor(GAIN_COLOR[1], GAIN_COLOR[2], GAIN_COLOR[3])
 	cell.Source = cell:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	cell.Source:SetWordWrap(false)
 	cell.Source:SetJustifyH(side)
-	local edgeSide = mirrored and "LEFT" or "RIGHT"
-	cell.Gain:SetPoint("BOTTOM" .. edgeSide, cell, "BOTTOM" .. edgeSide, 0, 4)
-	cell.Gain:SetJustifyH(edgeSide)
 	cell.Source:SetPoint("BOTTOM" .. side, cell.Icon, "BOTTOM" .. (mirrored and "LEFT" or "RIGHT"), out, 4)
-	cell.Source:SetPoint("BOTTOM" .. edgeSide, cell.Gain, "BOTTOM" .. side, mirrored and 6 or -6, 0)
+	cell.Gain:SetPoint("BOTTOM" .. side, cell.Source, "BOTTOM" .. (mirrored and "LEFT" or "RIGHT"), mirrored and -6 or 6, 0)
+	cell.textWidth = textWidth
 
 	cell:SetScript("OnEnter", ShowCellTooltip)
 	cell:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -347,10 +346,16 @@ local function CreateCell(panel, def)
 	return cell
 end
 
-local function SetIcon(cell, texture, quality, tint)
+-- The second line's words, as wide as they need and no wider than the gain leaves them.
+local function SetSource(cell, text, gain)
+	cell.Gain:SetText(gain or "")
+	cell.Source:SetText(text)
+	local room = cell.textWidth - ((gain and gain ~= "") and ((cell.Gain:GetStringWidth() or 0) + 6) or 0)
+	cell.Source:SetWidth(math.max(1, math.min(cell.Source:GetStringWidth() or room, room)))
+end
+
+local function SetIcon(cell, texture, quality)
 	cell.Icon:SetTexture(texture or cell.emptyTexture)
-	tint = tint or { 1, 1, 1 }
-	cell.Icon:SetVertexColor(tint[1], tint[2], tint[3])
 	if quality and quality >= 2 then
 		cell.IconBorder:SetVertexColor(QualityRGB(quality))
 		cell.IconBorder:Show()
@@ -364,14 +369,14 @@ local function SetCell(cell, shown, entries)
 	cell.entry, cell.others = shown, entries
 	if shown then
 		local compare = shown.compare
-		SetIcon(cell, ns.Items:Icon(shown.itemID), shown.info.quality, compare.later and LATER_TINT or nil)
+		SetIcon(cell, ns.Items:Icon(shown.itemID), shown.info.quality)
 		cell.Arrow:Show()
 		cell.Level:SetText(compare.later and compare.minLevel or "")
+		cell.Level:SetTextColor(LATER_COLOR[1], LATER_COLOR[2], LATER_COLOR[3])
 		cell.Name:SetText(shown.info.name or "")
 		cell.Name:SetTextColor(QualityRGB(shown.info.quality))
-		cell.Source:SetText(shown.instance.name)
+		SetSource(cell, shown.instance.name, GainText(compare))
 		cell.Source:SetTextColor(1, 1, 1)
-		cell.Gain:SetText(GainText(compare))
 		return
 	end
 	local slotID = cell.def.slot
@@ -388,9 +393,8 @@ local function SetCell(cell, shown, entries)
 		cell.Name:SetText(SLOT_LABELS[cell.def.key] or cell.def.key)
 		cell.Name:SetTextColor(DIM_COLOR[1], DIM_COLOR[2], DIM_COLOR[3])
 	end
-	cell.Source:SetText(L.GEAR_NO_UPGRADE)
+	SetSource(cell, L.GEAR_NO_UPGRADE)
 	cell.Source:SetTextColor(DIM_COLOR[1], DIM_COLOR[2], DIM_COLOR[3])
-	cell.Gain:SetText("")
 end
 
 ------------------------------------------------------------------------------------------
