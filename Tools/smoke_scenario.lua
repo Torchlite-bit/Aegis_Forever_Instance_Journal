@@ -348,6 +348,8 @@ do
 	check(ns.db.hideGearTipGains and not ns.GearPanel.ShowsGains(), "the stat weights in tooltips, the same box as the weights editor's")
 	boxes.AEGIS_JOURNAL_ITEM_TIPS:SetValue(true)
 	check(not ns.db.hideGearTipGains and boxes.AEGIS_JOURNAL_ITEM_TIPS:GetValue() == true, "and back")
+	check(SLASH_AEGISJOURNAL1 == "/aegis" and SLASH_AEGISJOURNAL3 == "/ij" and ns.L.SLASH_HELP:find("/ij", 1, true),
+		"/ij opens the journal as /aegis does, and the help says so")
 	SlashCmdList.AEGISJOURNAL("options")
 	check(Mock.openedSettings == category:GetID(), "/aegis options opens it")
 	-- A level up repaints them for the new level

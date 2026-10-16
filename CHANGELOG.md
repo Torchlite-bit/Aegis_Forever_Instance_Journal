@@ -40,6 +40,7 @@ and the version shown in the AddOns list. Quote it in bug reports.
   badge, coloured from grey to red by how hard the boss is for you.
 - **The journal's options**, in the game's Options under AddOns (or `/aegis options`): boss
   levels, stat weights in tooltips and the green arrows can each be turned off.
+- **`/ij`** opens the journal too, as `/aegis` does.
 - **The Gear Finder and its stat weights in Russian**, with every spec's name and unit, by
   Staree4ok. The new top 3 picker is still in English for now.
 

@@ -73,6 +73,7 @@ end
 
 SLASH_AEGISJOURNAL1 = "/aegis"
 SLASH_AEGISJOURNAL2 = "/instancejournal"
+SLASH_AEGISJOURNAL3 = "/ij"
 SlashCmdList.AEGISJOURNAL = function(message)
 	-- The first word is the command; the rest keeps its capitals (place names).
 	local command, rest = strtrim(message or ""):match("^(%S*)%s*(.-)$")
