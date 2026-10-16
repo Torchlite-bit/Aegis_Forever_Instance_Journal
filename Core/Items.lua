@@ -345,10 +345,14 @@ function Items:QualityColor(quality)
 end
 
 -- The classes this client has, in its own order: { classFile, name, classID }.
+-- The classes the client has, in its own order. Their ids have gaps (no Death Knight or Monk here,
+-- and the Druid is 11), and GetNumClasses counts the classes, not the ids: every id is tried, up
+-- to retail's last (the Evoker, 13).
+local LAST_CLASS_ID = 13
 function Items:Classes()
 	local classes = {}
 	local count = type(GetNumClasses) == "function" and GetNumClasses() or 0
-	for classID = 1, count do
+	for classID = 1, math.max(count, LAST_CLASS_ID) do
 		local ok, name, classFile = pcall(GetClassInfo, classID)
 		if ok and classFile and CLASS_ARMOR[classFile] then
 			classes[#classes + 1] = { classFile = classFile, name = name, classID = classID }

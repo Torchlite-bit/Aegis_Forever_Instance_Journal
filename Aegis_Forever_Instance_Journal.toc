@@ -113,3 +113,4 @@ UI\ItemTooltip.lua
 UI\CharacterTab.lua
 UI\Search.lua
 UI\Journal.lua
+UI\Options.lua

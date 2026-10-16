@@ -307,6 +307,60 @@ end
 check(page.Bosses.Buttons[7].Portrait._portrait == 139050 and not page.Bosses.Buttons[7].DefaultArt:IsShown(),
 	"the rare's portrait, from its model on Wowhead")
 
+-- Each boss's level on its portrait's rim, as the target frame shows a creature's, coloured against
+-- the player's own level (20 here)
+do
+	local button = page.Bosses.Buttons[1]
+	local badge = button.Level
+	local _, _, _, x, y = badge:GetPoint(1)
+	check(button.boss.level == 17 and badge:IsShown() and badge.Text:IsShown() and tostring(badge.Text:GetText()) == "17"
+		and badge._atlas == "UI-HUD-UnitFrame-SmallCircle" and x > 33.5 and y < 0
+		and math.abs(math.sqrt((x - 33.5) ^ 2 + y ^ 2) - 27) < 1,
+		"the boss's level in the target frame's badge, on the portrait's rim at the bottom right")
+	local LevelColor = Page.LevelColor
+	local function Same(level, r, g, b)
+		local cr, cg, cb = LevelColor(level)
+		return math.abs(cr - r) < 0.01 and math.abs(cg - g) < 0.01 and math.abs(cb - b) < 0.01
+	end
+	check(Same(25, 1, 0.1, 0.1) and Same(23, 1, 0.5, 0.25) and Same(21, 1, 1, 0) and Same(18, 1, 1, 0)
+		and Same(17, 0.25, 0.75, 0.25) and Same(13, 0.5, 0.5, 0.5),
+		"red five levels up, orange three, yellow near, green below, grey once it is nothing to the player")
+	local color = badge.Text._textColor
+	local r, g, b = LevelColor(17)
+	check(color[1] == r and color[2] == g and color[3] == b, "the badge in its level's colour")
+	GetCreatureDifficultyColor = function() return { r = 0.3, g = 0.2, b = 0.1 } end
+	check(Same(40, 0.3, 0.2, 0.1), "the client's own colours where it has them")
+	GetCreatureDifficultyColor = nil
+	-- Turned off in the journal's options (Options > AddOns), the badges go at once, and come back
+	local category, boxes = Mock.settingsCategory, Mock.settings
+	check(category and category.name == ns.L.OPTIONS_TITLE and #category.controls == 2
+		and boxes.AEGIS_JOURNAL_BOSS_LEVELS and boxes.AEGIS_JOURNAL_BOSS_LEVELS:GetValue() == true
+		and boxes.AEGIS_JOURNAL_BOSS_LEVELS.tooltip == ns.L.OPTIONS_BOSS_LEVELS_TIP,
+		"the journal's page in the game's options, the boss levels shown")
+	boxes.AEGIS_JOURNAL_BOSS_LEVELS:SetValue(false)
+	check(ns.db.hideBossLevels and not badge:IsShown() and not badge.Text:IsShown()
+		and boxes.AEGIS_JOURNAL_BOSS_LEVELS:GetValue() == false, "unticked: no badges on the open list")
+	boxes.AEGIS_JOURNAL_BOSS_LEVELS:SetValue(true)
+	check(not ns.db.hideBossLevels and badge:IsShown(), "ticked again: back")
+	boxes.AEGIS_JOURNAL_ITEM_TIPS:SetValue(false)
+	check(ns.db.hideGearTipGains and not ns.GearPanel.ShowsGains(), "the stat weights in tooltips, the same box as the weights editor's")
+	boxes.AEGIS_JOURNAL_ITEM_TIPS:SetValue(true)
+	check(not ns.db.hideGearTipGains and boxes.AEGIS_JOURNAL_ITEM_TIPS:GetValue() == true, "and back")
+	SlashCmdList.AEGISJOURNAL("options")
+	check(Mock.openedSettings == category:GetID(), "/aegis options opens it")
+	-- A level up repaints them for the new level
+	Mock.level = 25
+	Mock.Fire("PLAYER_LEVEL_UP", 25)
+	Mock.RunTimers(0)
+	local now = badge.Text._textColor
+	r, g, b = LevelColor(17)
+	check(now[1] == r and now[2] == g and now[3] == b and Same(17, 0.25, 0.75, 0.25) == false,
+		"a new level recolours them")
+	Mock.level = 20
+	Mock.Fire("PLAYER_LEVEL_UP", 20)
+	Mock.RunTimers(0)
+end
+
 -- Side tabs on the instance overview
 local tabs = page.Tabs
 check(#tabs == 5, "five side tabs: retail's four and the quests")
@@ -494,6 +548,12 @@ rows = lootRows()
 check(rows[1].itemID == 270230 and rows[1].Pin:IsShown() and rows[1].Boss:GetText() == "Boss: Magmatus",
 	"the pinned girdle leads, naming its boss")
 check(loot.Dividers[2]:IsShown() and loot.Dividers[2].Name:GetText() == "Faldrim Anvilmar", "then the boss's own loot under its name")
+do
+	local classNames = {}
+	for _, radio in ipairs(loot.ClassFilter._menu.radios) do classNames[#classNames + 1] = radio.text end
+	check(table.concat(classNames, ", ") == "All Classes, Warrior, Paladin, Hunter, Rogue, Priest, Shaman, Mage, Warlock, Druid",
+		"every class in the filter, the Druid (id 11, past the client's count of nine) too: " .. table.concat(classNames, ", "))
+end
 loot.ClassFilter._menu.radios[1 + 1].setSelected() -- Warrior
 loot.ArmorFilter._menu.radios[2].setSelected() -- the first armour type present here: Cloth
 check(lootRows()[1].itemID == 270230, "a pin ignores the filters")
@@ -2246,6 +2306,8 @@ for _, tab in ipairs(tabs) do if tab:IsShown() then tabsHidden = false end end
 check(tabsHidden, "no side tabs on a faction")
 check(page.Loot:IsShown() and not page.InstanceOverview:IsShown() and not page.QuestList:IsShown(), "rewards fill the right page")
 check(table.concat(visibleBosses(), ", ") == "Friendly, Honored, Revered, Exalted", "standings in order")
+check(not page.Bosses.Buttons[1].Level:IsShown() and not page.Bosses.Buttons[4].Level.Text:IsShown(),
+	"a standing has no level badge")
 local standingButtons = page.Bosses.Buttons
 check(standingButtons[1].Portrait:GetTexture() == "Interface\\Icons\\Achievement_Reputation_06"
 	and standingButtons[4].Portrait:GetTexture() == "Interface\\Icons\\Achievement_Reputation_07"
@@ -3359,10 +3421,11 @@ end)()
 	IS:Forget()
 	check(not IS:CanDualWield(), "and not when none says so")
 
-	-- Every item's tooltip: its worth by the weights, and the green arrow when it beats what is worn
+	-- Every item's tooltip, as Pawn's: a line per spec with the item's worth to it, and the green
+	-- arrow with what it adds to the gear where it beats what is worn
 	do
-		local function TipLines(link, owner)
-			GameTooltip:SetOwner(owner or UIParent, "ANCHOR_RIGHT")
+		local function TipLines(link)
+			GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
 			GameTooltip:SetHyperlink(link)
 			return GameTooltip._lines
 		end
@@ -3371,58 +3434,92 @@ end)()
 				if type(line) == "string" and line:find(text, 1, true) then return line end
 			end
 		end
-		local label = string.format(ns.L.ITEM_TIP_VALUE, IS:SpecLabel(IS:Spec()))
-		local cape = IS:Compare(Mock.ItemLink(CAPE))
+		-- A spec's line: "Arms<tab>65", or "<arrow> Arms<tab>+4.2%  65" for an upgrade; and where it is.
+		local function Row(lines, label)
+			for index, line in ipairs(lines) do
+				local left = type(line) == "string" and line:match("^(.-)\t")
+				if left and (left == label or left:sub(-#label - 1) == " " .. label) then return line, index end
+			end
+		end
+		local function Upgraded(lines)
+			for _, line in ipairs(lines) do
+				if type(line) == "string" and (line:find("greenarrow", 1, true) or line:find("MicroStream", 1, true)) then
+					return true
+				end
+			end
+			return false
+		end
+		local label = IS:SpecLabel(IS:Spec())
 		local lines = TipLines(Mock.ItemLink(CAPE))
-		check(cape.delta > 0 and Has(lines, label .. "\t" .. ns.GearPanel.Points(cape.score))
-			and Has(lines, string.format(ns.L.ITEM_TIP_UPGRADE, ns.GearPanel.GainText(cape))),
-			"an item's tooltip: its worth to the spec, and the upgrade it makes to what is worn")
+		local wrong, rows, last = {}, 0, 0
+		for _, spec in ipairs(IS:Specs()) do
+			local compare = IS:Compare(Mock.ItemLink(CAPE), IS:Weights(spec.key))
+			local row, at = Row(lines, spec.label)
+			if compare.score > 0 then
+				rows = rows + 1
+				local value = ns.GearPanel.Points(compare.score)
+				local upgrade = compare.delta > 0
+				if not row or row:sub(-#value) ~= value or (at or 0) < last
+					or (upgrade ~= (row:find(ns.GearPanel.GainText(compare), 1, true) ~= nil))
+					or (upgrade ~= (row:find("greenarrow", 1, true) ~= nil or row:find("MicroStream", 1, true) ~= nil)) then
+					wrong[#wrong + 1] = spec.label .. ": " .. tostring(row)
+				end
+				last = at or last
+			elseif row then
+				wrong[#wrong + 1] = spec.label .. " (worth nothing): " .. row
+			end
+		end
+		check(#wrong == 0 and rows == #IS:Specs() and Row(lines, label) and Upgraded(lines),
+			"an item's tooltip: each spec in order, its worth, and the upgrade it makes: " .. table.concat(wrong, "; "))
 		lines = TipLines(Mock.ItemLink(WORN_CAPE))
-		check(Has(lines, label .. "\t") and not Has(lines, "Upgrade:"), "what is worn: its worth, no upgrade")
-		check(not Has(TipLines(Mock.ItemLink(ROBE)), label), "nothing for an item the class cannot use")
-		check(not Has(TipLines(Mock.ItemLink(CUFFS)), label), "nor for one worth nothing to the spec")
+		check(Row(lines, label) and not Upgraded(lines), "what is worn: its worth, no upgrade")
+		check(not Row(TipLines(Mock.ItemLink(ROBE)), label), "nothing for an item the class cannot use")
+		lines = TipLines(Mock.ItemLink(CUFFS))
+		local anyRow = false
+		for _, spec in ipairs(IS:Specs()) do anyRow = anyRow or Row(lines, spec.label) ~= nil end
+		check(not anyRow, "nor for one worth nothing to any spec")
 		-- The stronger of two rings worn is measured against the weaker, but is no upgrade on itself
 		Mock.worn[11], Mock.worn[12] = RING_B, RING_X
 		IS:Forget()
 		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
 		GameTooltip:SetInventoryItem("player", 12)
 		lines = GameTooltip._lines
-		check(IS:Compare(Mock.ItemLink(RING_X)).delta > 0 and Has(lines, label .. "\t") and not Has(lines, "Upgrade:"),
+		check(IS:Compare(Mock.ItemLink(RING_X)).delta > 0 and Row(lines, label) and not Upgraded(lines),
 			"a worn ring better than the other is not called an upgrade, on the character sheet")
 		Mock.noItemGUIDs = true
 		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
 		GameTooltip:SetInventoryItem("player", 12)
-		check(Has(GameTooltip._lines, label .. "	") and not Has(GameTooltip._lines, "Upgrade:"),
+		check(Row(GameTooltip._lines, label) and not Upgraded(GameTooltip._lines),
 			"nor by a client that names no copies: the sheet's own slot says it")
 		Mock.noItemGUIDs = nil
 		-- A link of the same ring, or the same ring dropping, is the item, as the Gear Finder weighs it
-		check(Has(TipLines(Mock.ItemLink(RING_X)), "Upgrade:"), "a link or drop of that ring: a second one, an upgrade")
+		check(Upgraded(TipLines(Mock.ItemLink(RING_X))), "a link or drop of that ring: a second one, an upgrade")
 		-- Another copy of it is one, over the weaker ring: in the bags, or another green of the same name
 		Mock.bagItems["0:1"] = { RING_X, "Item-bag-0-1" }
 		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
 		GameTooltip:SetBagItem(0, 1)
-		check(Has(GameTooltip._lines, "Upgrade:"), "a second copy of the better ring, in the bags, is an upgrade over the other")
+		check(Upgraded(GameTooltip._lines), "a second copy of the better ring, in the bags, is an upgrade over the other")
 		local variant = Mock.ItemLink(RING_X):gsub("::::::::", ":::::1017:::")
-		check(Has(TipLines(variant), "Upgrade:"), "and so is the same green with another suffix")
+		check(Upgraded(TipLines(variant)), "and so is the same green with another suffix")
 		-- Unless only one may be worn
 		Mock.itemLines[RING_X] = { "Unique" }
 		IS:Forget()
 		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
 		GameTooltip:SetBagItem(0, 1)
 		local unique = IS:Compare(Mock.ItemLink(RING_X))
-		check(unique.slot == 12 and unique.delta == 0 and not Has(GameTooltip._lines, "Upgrade:"),
+		check(unique.slot == 12 and unique.delta == 0 and not Upgraded(GameTooltip._lines),
 			"a unique ring worn already can only take its own place: no upgrade, here or in the Gear Finder")
 		Mock.itemLines[RING_X] = { "Unique (2)" }
 		IS:Forget()
 		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
 		GameTooltip:SetBagItem(0, 1)
-		check(IS:Compare(Mock.ItemLink(RING_X)).slot == 11 and Has(GameTooltip._lines, "Upgrade:"),
+		check(IS:Compare(Mock.ItemLink(RING_X)).slot == 11 and Upgraded(GameTooltip._lines),
 			"two may be had of a Unique (2) ring, and worn: still an upgrade")
 		Mock.itemLines[RING_X] = { "Unique-Equipped" }
 		IS:Forget()
 		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
 		GameTooltip:SetBagItem(0, 1)
-		check(IS:Compare(Mock.ItemLink(RING_X)).slot == 12 and not Has(GameTooltip._lines, "Upgrade:"),
+		check(IS:Compare(Mock.ItemLink(RING_X)).slot == 12 and not Upgraded(GameTooltip._lines),
 			"a Unique-Equipped ring worn already: no second one")
 		-- Every way the client words it, in its own words: each language's format strings
 		local wrong = {}
@@ -3453,7 +3550,7 @@ end)()
 		Mock.noItemGUIDs = true
 		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
 		GameTooltip:SetBagItem(0, 1)
-		local fromBag = Has(GameTooltip._lines, "Upgrade:")
+		local fromBag = Upgraded(GameTooltip._lines)
 		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
 		GameTooltip._lines[1] = "Inspected"
 		GameTooltip._info = { getterName = "GetInventoryItem", getterArgs = { "target", 12 } }
@@ -3461,18 +3558,18 @@ end)()
 			callback(GameTooltip, { hyperlink = Mock.ItemLink(RING_X) })
 		end
 		Mock.noItemGUIDs = nil
-		check(fromBag and Has(GameTooltip._lines, "Upgrade:"),
+		check(fromBag and Upgraded(GameTooltip._lines),
 			"with no guids, a bag's copy and another player's worn ring are still weighed as upgrades")
 		Mock.itemLines[RING_X], Mock.bagItems["0:1"] = nil, nil
 		Mock.worn[11], Mock.worn[12] = nil, nil
 		IS:Forget()
 		-- An item for later: an upgrade within the Gear Finder's few levels ahead, saying when; not past them
 		local bow = IS:Compare(Mock.ItemLink(CROSSBOW))
-		check(bow.later and bow.delta > 0 and Has(TipLines(Mock.ItemLink(CROSSBOW)),
-			string.format(ns.L.ITEM_TIP_UPGRADE_LATER, 17, ns.GearPanel.GainText(bow))),
-			"an upgrade two levels ahead says the level it is worn at")
+		local bowRow = Row(TipLines(Mock.ItemLink(CROSSBOW)), label)
+		check(bow.later and bow.delta > 0 and bowRow and bowRow:find(ns.GearPanel.GainText(bow), 1, true)
+			and bowRow:find("(17)", 1, true), "an upgrade two levels ahead says the level it is worn at: " .. tostring(bowRow))
 		lines = TipLines(Mock.ItemLink(SCEPTER))
-		check(IS:Compare(Mock.ItemLink(SCEPTER)).delta > 0 and Has(lines, label .. "\t") and not Has(lines, "Upgrade"),
+		check(IS:Compare(Mock.ItemLink(SCEPTER)).delta > 0 and Row(lines, label) and not Upgraded(lines),
 			"one ten levels ahead is given its worth, not called an upgrade")
 		-- The Gear Finder's cell for a slot with no upgrade: what is worn, with its worth
 		back:_RunScript("OnEnter")
@@ -3480,16 +3577,24 @@ end)()
 		Mock.Fire("PLAYER_EQUIPMENT_CHANGED")
 		Mock.RunTimers(1)
 		back:_RunScript("OnEnter")
-		check(not back.entry and Has(GameTooltip._lines, label .. "\t"),
+		check(not back.entry and Row(GameTooltip._lines, label),
 			"a Gear Finder cell that showed an upgrade, and now what is worn, gives its worth too")
 		Mock.worn[15] = WORN_CAPE
 		Mock.Fire("PLAYER_EQUIPMENT_CHANGED")
 		Mock.RunTimers(1)
-		local finder = CreateFrame("Button")
-		finder.gearFinderTip = true
-		check(not Has(TipLines(Mock.ItemLink(CAPE), finder), label), "the Gear Finder's own tooltips say it themselves")
+		-- The Gear Finder's own tooltip: the same lines once, then what it adds over what is worn
+		back:_RunScript("OnEnter")
+		local finderLines, count = GameTooltip._lines, 0
+		for _, line in ipairs(finderLines) do
+			local left = type(line) == "string" and line:match("^(.-)\t")
+			if left and left:sub(-#label) == label then count = count + 1 end
+		end
+		check(back.entry and count == 1 and Upgraded(finderLines) and Has(finderLines, "Worth ")
+			and not Has(finderLines, "Gear Finder ("), "the Gear Finder's tooltips: each spec's line once, and what it adds")
 		ns.GearPanel.SetShowsGains(false)
-		check(not Has(TipLines(Mock.ItemLink(CAPE)), label), "the Show upgrades in tooltips box turns them off")
+		check(not Row(TipLines(Mock.ItemLink(CAPE)), label), "the Show stat weights in tooltips box turns them off")
+		back:_RunScript("OnEnter")
+		check(not Row(GameTooltip._lines, label) and not Has(GameTooltip._lines, "Worth "), "the Gear Finder's too")
 		ns.GearPanel.SetShowsGains(true)
 		local other = { _lines = {}, AddLine = GameTooltip.AddLine, AddDoubleLine = GameTooltip.AddDoubleLine }
 		for _, callback in ipairs(Mock.tooltipPostCalls[Enum.TooltipDataType.Item]) do
@@ -3807,29 +3912,26 @@ end)()
 		check(IS:Weights().AGILITY == 0.68691, "and nothing changed by passing through it")
 		editor.Reset:Click()
 
-		-- The box under the weights: the Gear Finder's tooltips without what items add, and back
+		-- The box under the weights: the tooltips without what items are worth and add, and back
 		local function GainLine()
 			back:_RunScript("OnEnter")
+			local spec, worth = false, false
 			for _, line in ipairs(GameTooltip._lines or {}) do
-				if type(line) == "string" and line:find("Gear Finder (", 1, true) then return true end
+				if type(line) == "string" then
+					local left = line:match("^(.-)\t")
+					spec = spec or (left ~= nil and left:sub(-#IS:SpecLabel(IS:Spec())) == IS:SpecLabel(IS:Spec()))
+					worth = worth or line:find("Worth ", 1, true) ~= nil
+				end
 			end
-			return false
+			return spec and worth
 		end
-		check(editor.ShowGains:GetChecked() and GainLine(), "upgrades shown in the Gear Finder's tooltips, the box ticked")
+		check(editor.ShowGains:GetChecked() and GainLine(), "each spec's worth and the gain in the Gear Finder's tooltips, the box ticked")
 		editor.ShowGains:SetChecked(false)
 		editor.ShowGains:_RunScript("OnClick")
-		check(ns.db.hideGearTipGains and not GainLine(), "unticked: the tooltips leave out what items add")
+		check(ns.db.hideGearTipGains and not GainLine(), "unticked: the tooltips leave out what items are worth and add")
 		editor.ShowGains:SetChecked(true)
 		editor.ShowGains:_RunScript("OnClick")
 		check(not ns.db.hideGearTipGains and GainLine(), "ticked again: back")
-		local valueLines = 0
-		local valueLabel = string.format(ns.L.ITEM_TIP_VALUE, IS:SpecLabel(IS:Spec())) .. "\t"
-		for _, line in ipairs(GameTooltip._lines) do
-			if type(line) == "string" and line:find(valueLabel, 1, true) then
-				valueLines = valueLines + 1
-			end
-		end
-		check(valueLines == 0, "and without the line every other item's tooltip gets")
 
 		-- The window closes when the panel turns to another page; its button opens the Gear Finder
 		CharacterFrame:ShowSubFrame("ReputationFrame")

@@ -987,6 +987,30 @@ TooltipDataProcessor = {
 		table.insert(Mock.tooltipPostCalls[dataType], callback)
 	end,
 }
+-- The client's settings panel (Blizzard_Settings_Shared): an addon's page, its proxy settings by
+-- variable (Mock.settings) and the page last opened (Mock.openedSettings).
+Mock.settings = {}
+Settings = {
+	VarType = { Boolean = "boolean", Number = "number", String = "string" },
+	RegisterVerticalLayoutCategory = function(name)
+		local category = { name = name, controls = {} }
+		function category:GetID() return "category:" .. name end
+		return category
+	end,
+	RegisterProxySetting = function(category, variable, variableType, name, default, getValue, setValue)
+		local setting = { variable = variable, type = variableType, name = name, default = default }
+		function setting:GetValue() return getValue() end
+		function setting:SetValue(value) setValue(value) end
+		Mock.settings[variable] = setting
+		return setting
+	end,
+	CreateCheckbox = function(category, setting, tooltip)
+		setting.tooltip = tooltip
+		table.insert(category.controls, setting)
+	end,
+	RegisterAddOnCategory = function(category) Mock.settingsCategory = category end,
+	OpenToCategory = function(categoryID) Mock.openedSettings = categoryID end,
+}
 -- Each copy of an item has its own guid: a worn one's names its slot (Mock.WornGUID).
 function Mock.WornGUID(slot) return Mock.worn[slot] and ("Item-worn-" .. slot .. "-" .. Mock.worn[slot]) or nil end
 ItemLocation = { CreateFromEquipmentSlot = function(_, slot) return { equipmentSlotIndex = slot } end }
@@ -1044,13 +1068,17 @@ C_Spell = {
 	RequestLoadSpellData = function(spellID) Mock.spellsRequested[spellID] = true end,
 }
 
+-- The classes by their client ids, gaps and all: Forever's, which has no Death Knight (6) or Monk
+-- (10), and counts nine classes though the Druid is 11.
 Mock.classes = {
-	{ "Warrior", "WARRIOR" }, { "Paladin", "PALADIN" }, { "Hunter", "HUNTER" }, { "Rogue", "ROGUE" },
-	{ "Priest", "PRIEST" }, { "Shaman", "SHAMAN" }, { "Mage", "MAGE" }, { "Warlock", "WARLOCK" }, { "Druid", "DRUID" },
+	[1] = { "Warrior", "WARRIOR" }, [2] = { "Paladin", "PALADIN" }, [3] = { "Hunter", "HUNTER" },
+	[4] = { "Rogue", "ROGUE" }, [5] = { "Priest", "PRIEST" }, [7] = { "Shaman", "SHAMAN" }, [8] = { "Mage", "MAGE" },
+	[9] = { "Warlock", "WARLOCK" }, [11] = { "Druid", "DRUID" },
 }
-function GetNumClasses() return #Mock.classes end
+function GetNumClasses() return 9 end
 function GetClassInfo(classID)
 	local class = Mock.classes[classID]
+	if not class then return nil end
 	return class[1], class[2], classID
 end
 Mock.playerClass = "MAGE"

@@ -138,15 +138,13 @@ end
 -- Tooltips and clicks
 ------------------------------------------------------------------------------------------
 
--- What the upgrade is worth: against everything worn, and in the spec's unit against the item
--- it replaces.
+-- What the upgrade adds over the item it replaces, in the spec's unit. Each spec's share of the
+-- gear it adds is in the lines every item's tooltip has (UI/ItemTooltip.lua), above it.
 local function AddGainLines(compare)
 	local IS = ns.ItemScore
 	local spec = IS:Spec()
 	-- The journal's weights count in one stat (attack power, healing...); a player's own in points.
 	local unit = (not IS:CustomWeights(spec) and IS:SpecUnit(spec)) or L.GEAR_UNIT_POINTS
-	GameTooltip:AddLine(string.format(L.GEAR_TIP_GAIN, IS:SpecLabel(spec), GainText(compare)),
-		GAIN_COLOR[1], GAIN_COLOR[2], GAIN_COLOR[3])
 	-- What it replaces: a two-hander takes the off hand's place too.
 	local names = {}
 	for _, slot in ipairs({ compare.slot, compare.alsoSlot }) do
@@ -169,9 +167,9 @@ local function ShowCompare()
 	end
 end
 
--- Whether the Gear Finder's tooltips say what each item adds to the gear worn, and list the slot's
--- other upgrades, and every item's tooltip what it is worth (UI/ItemTooltip.lua): the player's
--- choice for every character, shown unless turned off.
+-- Whether every item's tooltip says what it is worth to each spec (UI/ItemTooltip.lua), and the
+-- Gear Finder's what it adds over what is worn and the slot's other upgrades: the player's choice
+-- for every character, shown unless turned off (the weights editor, the journal's options).
 function GearPanel.ShowsGains()
 	return not (ns.db and ns.db.hideGearTipGains)
 end
@@ -184,8 +182,6 @@ end
 -- `owner` does, `picked` that the player chose it for its slot.
 local function ShowEntryTooltip(owner, entry, anchor, others, clickText, picked)
 	local gains = GearPanel.ShowsGains()
-	-- Its own lines say what the item is worth: not the ones every item's tooltip has (UI/ItemTooltip.lua).
-	owner.gearFinderTip = true
 	GameTooltip:SetOwner(owner, anchor or "ANCHOR_RIGHT")
 	GameTooltip:SetHyperlink(entry.link)
 	GameTooltip:AddLine(" ")
@@ -258,7 +254,6 @@ local function ShowCellTooltip(cell)
 		return
 	end
 	-- No upgrade: what is worn, as the sheet's own slot shows it, with what it is worth.
-	cell.gearFinderTip = nil
 	GameTooltip:SetOwner(cell, anchor)
 	local slotID = cell.def.slot
 	if GetInventoryItemLink("player", slotID) then

@@ -2,22 +2,24 @@ local _, ns = ...
 local L = ns.L
 
 --[[
-	The Gear Finder's stat weights on every item's tooltip: in the bags, on the character sheet, in
-	loot, a merchant's wares and links in chat. Under the item, what it is worth to the spec the
-	Gear Finder scores for, and when it beats what is worn, the green arrow and what it adds to the
-	gear, the share the Gear Finder shows ("+4.2%"). Pawn shows its scales on tooltips the same way;
-	these are the journal's own lines, from its own weights (Core/ItemScore.lua).
+	The Gear Finder's stat weights on every item's tooltip, as Pawn shows its scales: in the bags,
+	on the character sheet, in loot, a merchant's wares, links in chat and the Gear Finder's own.
+	Under the item, a line for each spec of the class, in its order: the spec, and what the item is
+	worth to it. Where it beats what is worn, the green arrow before the spec and, beside its worth,
+	what it adds to the gear: the share the Gear Finder shows ("+4.2%"). These are the journal's own
+	lines, from its own weights (Core/ItemScore.lua).
 
-	Left out: items the class cannot use, ones worth nothing to the spec or with no slot, and the
-	Gear Finder's own tooltips (UI/GearPanel.lua), which say all this already. The weights' Show
-	upgrades in tooltips box turns these off with the Gear Finder's own lines.
+	Left out: items the class cannot use, ones with no slot, and specs the item is worth nothing to.
+	The Show stat weights in tooltips box (the weights editor, the journal's options) turns them off,
+	with the Gear Finder's own lines.
 ]]
 
 local ItemTooltip = {}
 ns.ItemTooltip = ItemTooltip
 
-local VALUE_COLOR = { 1, 0.82, 0 }
+local SPEC_COLOR = { 1, 0.82, 0 }
 local GAIN_COLOR = { 0.25, 1, 0.25 }
+local GAIN_HEX, LATER_HEX = "|cff40ff40", "|cffff2020"
 
 -- The tooltips that show an item for itself: the main one, a chat link's, and the ones beside
 -- each with what is worn.
@@ -99,40 +101,50 @@ local function IsWorn(tooltip, data)
 end
 
 --[[
-	The lines for an item: { value = "145", upgrade = "+4.2%" or nil, level = 24 or nil }, or nil
-	when it gets none. An upgrade, as the Gear Finder counts one: worn within its few levels
-	ahead (`level` when not yet), and not the item worn itself or an off hand beside a two-hander.
+	The lines for an item, one per spec it is worth something to, in the class's order:
+	{ label, value = "145", gain = "+4.2%" or nil, level = 24 or nil }; nil when there are none.
+	A gain is an upgrade as the Gear Finder counts one: worn within its few levels ahead (`level`
+	when not yet), and not the item worn itself or an off hand beside a two-hander.
 ]]
 function ItemTooltip:Lines(link, tooltip, data)
 	local IS = ns.ItemScore
-	local compare = IS:Compare(link)
-	if not compare or not compare.usable or compare.score <= 0 then return nil end
-	local lines = { value = ns.GearPanel.Points(compare.score) }
-	if compare.delta and compare.delta > 0.0001 and compare.minLevel <= IS:Level() + ns.GearFinder.AHEAD
-		and not IsWorn(tooltip, data) then
-		lines.upgrade = ns.GearPanel.GainText(compare)
-		if compare.later then lines.level = compare.minLevel end
+	local rows, worn = {}, nil
+	local reach = IS:Level() + ns.GearFinder.AHEAD
+	for _, spec in ipairs(IS:Specs()) do
+		local compare = IS:Compare(link, IS:Weights(spec.key))
+		-- What the class cannot use, or what goes in no slot, is so for every spec.
+		if not compare or not compare.usable then return nil end
+		if compare.score > 0 then
+			local row = { label = spec.label, value = ns.GearPanel.Points(compare.score) }
+			if compare.delta and compare.delta > 0.0001 and compare.minLevel <= reach then
+				if worn == nil then worn = IsWorn(tooltip, data) end
+				if not worn then
+					row.gain = ns.GearPanel.GainText(compare)
+					if compare.later then row.level = compare.minLevel end
+				end
+			end
+			rows[#rows + 1] = row
+		end
 	end
-	return lines
+	return #rows > 0 and rows or nil
 end
 
 local function OnItem(tooltip, data)
 	if not (ns.charDB and ns.GearPanel.ShowsGains()) then return end
 	if tooltip.IsForbidden and tooltip:IsForbidden() then return end
 	if not Wanted(tooltip) then return end
-	-- The Gear Finder's own: it adds what an item is worth itself, and more.
-	local owner = tooltip.GetOwner and tooltip:GetOwner()
-	if type(owner) == "table" and rawget(owner, "gearFinderTip") then return end
 	local link = ShownLink(tooltip, data)
-	local lines = link and ItemTooltip:Lines(link, tooltip, data)
-	if not lines then return end
-	local IS = ns.ItemScore
-	tooltip:AddDoubleLine(string.format(L.ITEM_TIP_VALUE, IS:SpecLabel(IS:Spec())), lines.value,
-		VALUE_COLOR[1], VALUE_COLOR[2], VALUE_COLOR[3], 1, 1, 1)
-	if lines.upgrade then
-		local text = lines.level and string.format(L.ITEM_TIP_UPGRADE_LATER, lines.level, lines.upgrade)
-			or string.format(L.ITEM_TIP_UPGRADE, lines.upgrade)
-		tooltip:AddLine(Arrow() .. text, GAIN_COLOR[1], GAIN_COLOR[2], GAIN_COLOR[3])
+	local rows = link and ItemTooltip:Lines(link, tooltip, data)
+	if not rows then return end
+	for _, row in ipairs(rows) do
+		local left, right, color = row.label, row.value, SPEC_COLOR
+		if row.gain then
+			-- "↑ Retribution     +4.2%  145", the level it waits for in red: "+4.2% (24)".
+			left, color = Arrow() .. left, GAIN_COLOR
+			local level = row.level and (" " .. LATER_HEX .. "(" .. row.level .. ")|r") or ""
+			right = GAIN_HEX .. row.gain .. "|r" .. level .. "  " .. right
+		end
+		tooltip:AddDoubleLine(left, right, color[1], color[2], color[3], 1, 1, 1)
 	end
 end
 

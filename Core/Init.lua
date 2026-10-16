@@ -101,6 +101,8 @@ SlashCmdList.AEGISJOURNAL = function(message)
 		ns.GearPanel:ShowWeights(ns.GearPanel.panel, true)
 	elseif command == "gearscan" then
 		ns.GearFinder:Scan()
+	elseif command == "options" then
+		ns.Options:Open()
 	else
 		ns.Print(L.SLASH_HELP)
 	end
