@@ -19,7 +19,7 @@ L.BINDING_TOGGLE = "Открыть путеводитель по подземе�
 L.KEY_CLAIMED = "Shift+J теперь открывает путеводитель по подземельям."
 L.KEY_TAKEN = "Shift+J уже назначена на %s. Выберите клавишу в Назначение клавиш > Модификации > Открыть путеводитель по подземельям."
 L.POSITION_RESET = "Положение окна сброшено."
-L.SLASH_HELP = "/aegis открывает путеводитель. /aegis record включает или выключает запись. /aegis reset возвращает окно на место по умолчанию. /aegis perf измеряет память и скорость путеводителя. /aegis where и /aegis taxi показывают, где вы стоите и точки полетов на карте. /aegis travel сохраняет корабль, дирижабль, подземку или портал для карты мира. /aegis items находит предметы из списка, о которых сервер ничего не знает."
+L.SLASH_HELP = "/aegis открывает путеводитель. /aegis record включает или выключает запись. /aegis reset возвращает окно на место по умолчанию. /aegis perf измеряет память и скорость путеводителя. /aegis where и /aegis taxi показывают, где вы стоите и точки полетов на карте. /aegis travel сохраняет корабль, дирижабль, подземку или портал для карты мира. /aegis items находит предметы из списка, о которых сервер ничего не знает. /aegis gear открывает поиск снаряжения, /aegis weights — настройку приоритетов характеристик; /aegis gearscan сохраняет данные экипировки для проверки расчета улучшений."
 L.ITEMS_START = "Запрос к серверу о %d предметах из списка путеводителя. Ответ придет примерно через %d сек.; можете продолжать игру."
 L.ITEMS_SCANNING = "Ожидание ответа от сервера; данные появятся через секунду."
 L.ITEMS_DONE = "Из %d предметов сервер ничего не знает о %d: скорее всего, их еще нет на сервере Forever. Путеводитель скрывает их, пока сервер или записанное прохождение не подтвердят их наличие. Полный список будет сохранен в файл при следующем /reload или выходе из игры."
@@ -48,6 +48,101 @@ L.EMPTY_REPUTATION = "Награды за репутацию пока неизв
 L.EMPTY_BRACKET = "Ничего нет для этого диапазона уровней."
 
 L.TAB_RECORD = "Запись"
+L.TAB_GEAR = "Поиск снаряжения"
+
+-- The Gear Finder (Core/GearFinder.lua, UI/GearPanel.lua, UI/CharacterTab.lua).
+L.GEAR_TITLE = "Поиск снаряжения"
+L.GEAR_PREVIEW = "Просмотр"
+L.GEAR_NO_UPGRADE = "Улучшений не найдено"
+L.GEAR_LOOKING = "Поиск в подземельях: %d."
+L.GEAR_LOOKING_ONE = "Поиск в 1 подземелье."
+L.GEAR_LOADING = "Загружается предметов: %d."
+L.GEAR_LOADING_ONE = "Загружается 1 предмет."
+L.GEAR_SCORING = "Расчёт для"
+L.GEAR_AUTO = "Автоматически: %s"
+L.GEAR_WHY_TALENTS = "%s (таланты)"
+L.GEAR_WHY_LEVELLING = "%s (прокачка)"
+L.GEAR_SUGGESTED = "Рекомендуем"
+L.GEAR_UPGRADES_HERE = "Улучшений здесь: %d"
+L.GEAR_UPGRADE_HERE = "1 улучшение здесь"
+L.GEAR_MORE_SLOTS = "и ещё %d"
+L.GEAR_DUNGEON_OF = "%d из %d"
+L.GEAR_NONE = "В подземельях вашего уровня улучшений нет."
+L.GEAR_TIP_GAIN = "Поиск снаряжения (%s): %s к вашей экипировке"
+L.GEAR_TIP_OVER = "На %s %s лучше, чем %s."
+L.GEAR_TIP_OVER_BOTH = "На %s %s лучше, чем %s и %s."
+L.GEAR_TIP_EMPTY = "Даёт %s %s — слот у вас пуст."
+L.GEAR_TIP_LATER = "Можно надеть с %d уровня."
+L.GEAR_TIP_CLICK = "ЛКМ — открыть добычу в журнале; Shift+ЛКМ — вставить ссылку."
+L.GEAR_TIP_MORE = "Другие улучшения для этого слота:"
+L.GEAR_TIP_NONE = "Для этого слота нет улучшений в подземельях вашего уровня."
+L.GEAR_CHAR_BUTTON = "Поиск снаряжения"
+L.GEAR_CHAR_BUTTON_TIP = "Ваш приоритет характеристик и лучшие улучшения в подземельях журнала."
+L.GEAR_SCAN_DONE = "Сканирование сохранено: %d надетых предметов и %d предметов из подземелий. Выйдите из игры или введите /reload, чтобы записать файл."
+L.GEAR_SCAN_ERRORS = "Не удалось прочитать предметов: %d. Подробности сохранены вместе со сканом."
+L.GEAR_SCAN_LOADING = "Часть добычи ещё загружается: подождите несколько секунд и снова введите /aegis gearscan."
+L.GEAR_SLOT_FINGER1 = "Кольцо 1"
+L.GEAR_SLOT_FINGER2 = "Кольцо 2"
+L.GEAR_SLOT_TRINKET1 = "Аксессуар 1"
+L.GEAR_SLOT_TRINKET2 = "Аксессуар 2"
+
+-- Stat weights (Core/ItemScore.lua, UI/WeightsEditor.lua).
+L.WEIGHTS_TITLE = "Приоритет характеристик"
+L.WEIGHTS_EDIT = "Изменить приоритет характеристик..."
+L.WEIGHTS_SOURCE_DEFAULT = "Приоритет из журнала"
+L.WEIGHTS_SOURCE_LEVELLING = "Приоритет из журнала (при прокачке)"
+L.WEIGHTS_SOURCE_CUSTOM = "Ваш собственный приоритет"
+L.WEIGHTS_SOURCE_PAWN = "Ваш приоритет из Pawn: %s"
+L.WEIGHTS_TIP = "Насколько важна 1 единица каждой характеристики для этой специализации. Нажмите на значение, чтобы изменить его; собственные значения отображаются зелёным и сохраняются для этого персонажа."
+L.WEIGHTS_RESET = "Сброс"
+L.WEIGHTS_RESET_TIP = "Вернуть приоритет журнала для этой специализации."
+L.WEIGHTS_PAWN = "Pawn..."
+L.WEIGHTS_PAWN_TIP = "Импортировать приоритет из Pawn."
+L.WEIGHTS_PAWN_HELP = "В Pawn откройте вкладку «Весы», выберите шкалу, нажмите «Экспорт», скопируйте текст и вставьте его сюда."
+L.WEIGHTS_IMPORT = "Импорт"
+L.WEIGHTS_CANCEL = "Отмена"
+L.WEIGHTS_BACK = "Назад"
+L.WEIGHTS_OPEN_FINDER = "Открыть поиск снаряжения"
+L.WEIGHTS_IMPORTED = "Импортировано значений: %d из %s."
+L.WEIGHTS_UNUSED = "Не использовано: %s."
+L.WEIGHTS_NOT_PAWN = "Это не шкала Pawn. В Pawn выберите «Экспорт» и скопируйте весь текст."
+L.WEIGHTS_OTHER_CLASS = "Эта шкала для класса %s, а не для класса этого персонажа."
+L.WEIGHTS_FOR = "Для"
+L.GEAR_WHY_CUSTOM = "%s (ваш приоритет)"
+L.GEAR_UNIT_POINTS = "очк."
+L.WEIGHT_GROUPS = {
+	PRIMARY = "Основные характеристики", WEAPONS = "Оружие", SPELLS = "Заклинания", DEFENSE = "Защита",
+	RESISTANCE = "Сопротивления",
+}
+L.STAT_NAMES = {
+	STRENGTH = "Сила", AGILITY = "Ловкость", STAMINA = "Выносливость", INTELLECT = "Интеллект", SPIRIT = "Дух",
+	DPS = "Урон оружием в сек.", ["RANGED DPS"] = "Урон дальнего оружия в сек.", ["ATTACK POWER"] = "Сила атаки",
+	["RANGED ATTACK POWER"] = "Сила атаки дальнего боя", ["FERAL ATTACK POWER"] = "Сила атаки в облике зверя", HIT = "Меткость",
+	CRIT = "Критический удар", ["RANGED CRIT"] = "Критический удар дальнего боя", HASTE = "Скорость атаки", ["RANGED HASTE"] = "Скорость дальнего боя",
+	["SPELL POWER"] = "Урон и исцеление", ["SPELL DAMAGE"] = "Урон от заклинаний", HEALING = "Исцеление", ["SPELL HIT"] = "Меткость заклинаний",
+	["SPELL CRIT"] = "Критический удар заклинаний", ["HOLY CRIT"] = "Критический удар светлой магии", ["HOLY DAMAGE"] = "Урон от светлой магии",
+	["FIRE DAMAGE"] = "Урон от огня", ["FROST DAMAGE"] = "Урон от магии льда", ["NATURE DAMAGE"] = "Урон от сил природы",
+	["SHADOW DAMAGE"] = "Урон от тёмной магии", ["ARCANE DAMAGE"] = "Урон от тайной магии", ["SPELL PENETRATION"] = "Проникающая способность заклинаний",
+	MANA = "Мана", ["MANA PER 5"] = "Мана за 5 сек.", ["CASTING REGEN"] = "Восстановление при чтении",
+	ARMOR = "Броня", HEALTH = "Здоровье", ["HEALTH PER 5"] = "Здоровье за 5 сек.", DEFENSE = "Защита", DODGE = "Уклонение",
+	PARRY = "Парирование", BLOCK = "Блок", ["BLOCK VALUE"] = "Показатель блока",
+	["HOLY RESISTANCE"] = "Сопротивление светлой магии", ["FIRE RESISTANCE"] = "Сопротивление огню",
+	["NATURE RESISTANCE"] = "Сопротивление силам природы", ["FROST RESISTANCE"] = "Сопротивление магии льда",
+	["SHADOW RESISTANCE"] = "Сопротивление тёмной магии", ["ARCANE RESISTANCE"] = "Сопротивление тайной магии",
+}
+L.GEAR_SPEC_NAMES = {
+	Arms = "Оружие", Fury = "Неистовство", Protection = "Защита", Holy = "Свет", Retribution = "Возмездие",
+	BeastMastery = "Повелитель зверей", Marksmanship = "Стрельба", Survival = "Выживание",
+	Assassination = "Убийство", Combat = "Бой", Subtlety = "Скрытность", Discipline = "Послушание", Shadow = "Тьма",
+	Elemental = "Стихии", Enhancement = "Совершенствование", EnhancementTank = "Совершенствование (танк)",
+	Restoration = "Исцеление", Arcane = "Тайная магия", Fire = "Огонь", Frost = "Лед", Affliction = "Колдовство",
+	Demonology = "Демонология", Destruction = "Разрушение", Balance = "Баланс", FeralBear = "Сила зверя (медведь)",
+	FeralCat = "Сила зверя (кошка)",
+}
+L.GEAR_UNITS = {
+	["attack power"] = "сила атаки", ["ranged attack power"] = "сила атаки дальнего боя",
+	["spell damage"] = "урон от заклинаний", healing = "исцеление", Stamina = "выносливость",
+}
 L.RECORD_START = "Начать запись"
 L.RECORD_STOP = "Остановить запись"
 L.RECORD_CLEAR = "Очистить"
@@ -303,7 +398,7 @@ L.INSTANCE_NAMES = {
 	StratholmeMainGate = "Стратхольм (главные врата)",
 	StratholmeServiceGate = "Стратхольм (черный ход)",
 	CityOfDalaran = "Даларан",
-	HallOfThanes = "Зал Тэнов",
+	HallOfThanes = "Зал Танов",
 	RuinsOfLordaeron = "Руины Лордерона",
 	ExcavationSiteWetlands = "Раскопки: Болотина",
 	BarrowDeeps = "Глубины кургана",

@@ -142,9 +142,8 @@ end
 local function AddGainLines(compare)
 	local IS = ns.ItemScore
 	local spec = IS:Spec()
-	local data = ns.GEAR_WEIGHTS[IS:Class()]
 	-- The journal's weights count in one stat (attack power, healing...); a player's own in points.
-	local unit = (not IS:CustomWeights(spec) and data and data[spec] and data[spec].unit) or L.GEAR_UNIT_POINTS
+	local unit = (not IS:CustomWeights(spec) and IS:SpecUnit(spec)) or L.GEAR_UNIT_POINTS
 	GameTooltip:AddLine(string.format(L.GEAR_TIP_GAIN, IS:SpecLabel(spec), GainText(compare)),
 		GAIN_COLOR[1], GAIN_COLOR[2], GAIN_COLOR[3])
 	-- What it replaces: a two-hander takes the off hand's place too.

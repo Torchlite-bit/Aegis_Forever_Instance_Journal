@@ -28,6 +28,9 @@ and the version shown in the AddOns list. Quote it in bug reports.
   off; and the Highland Horror's roots, which Blessing of Freedom breaks. The Thicket Hunter's
   Infected Wound in Shadetooth's fight is marked as a disease, with who can take it off.
 
+- **The Gear Finder and its stat weights in Russian**, with every spec's name and unit, by
+  Staree4ok. The new top 3 picker is still in English for now.
+
 ### Changed
 - **18 quests' levels or side**, to Forever's: mostly the level they open at.
 - The Log Reader page keeps a boss's spells when the game calls him neutral (the Relic Guardian).

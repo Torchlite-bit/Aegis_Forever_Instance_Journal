@@ -311,11 +311,18 @@ function ItemScore:Level()
 	return UnitLevel("player") or 1
 end
 
+-- A spec's name in the client's language: the locale's (L.GEAR_SPEC_NAMES, by spec), else the
+-- English in the generated weights.
+local function SpecName(data, spec)
+	local names = ns.L.GEAR_SPEC_NAMES
+	return names and names[spec] or data and data[spec] and data[spec].label or spec
+end
+
 -- The class's specs, in order: { key, label }.
 function ItemScore:Specs(classFile)
 	local data = ns.GEAR_WEIGHTS[classFile or self:Class()]
 	local out = {}
-	for _, key in ipairs(data and data.order or {}) do out[#out + 1] = { key = key, label = data[key].label } end
+	for _, key in ipairs(data and data.order or {}) do out[#out + 1] = { key = key, label = SpecName(data, key) } end
 	return out
 end
 
@@ -391,8 +398,16 @@ function ItemScore:SetSpec(spec)
 end
 
 function ItemScore:SpecLabel(spec)
+	return SpecName(ns.GEAR_WEIGHTS[self:Class()], spec)
+end
+
+-- What the journal's weights for a spec count in ("attack power"...), in the client's language
+-- (L.GEAR_UNITS, by the English word); nil for a spec it has no weights for.
+function ItemScore:SpecUnit(spec)
 	local data = ns.GEAR_WEIGHTS[self:Class()]
-	return data and data[spec] and data[spec].label or spec
+	local unit = data and data[spec] and data[spec].unit
+	local units = ns.L.GEAR_UNITS
+	return unit and (units and units[unit] or unit)
 end
 
 -- The journal's own weights for a spec: the levelling set below 60 (tanks have one set).

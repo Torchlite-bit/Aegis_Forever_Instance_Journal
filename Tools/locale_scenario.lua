@@ -43,6 +43,19 @@ check(translated > 100 and IsRussian(L.TAB_RECORD) and IsRussian(L.JOURNAL_TITLE
 	"the interface is in Russian: " .. translated .. " strings")
 check(IsRussian(ns.LEVEL_BRACKETS[1].text) and ns.LEVEL_BRACKETS[2].text:find("30", 1, true),
 	"the level menu too: " .. tostring(ns.LEVEL_BRACKETS[2].text))
+-- The Gear Finder's specs and the units their weights count in, named by the translation while
+-- the generated weights stay English
+local untranslated = {}
+for _, class in pairs(ns.GEAR_WEIGHTS) do
+	for _, spec in ipairs(class.order) do
+		if not IsRussian(L.GEAR_SPEC_NAMES[spec] or "") then untranslated[#untranslated + 1] = spec end
+		if not IsRussian(L.GEAR_UNITS[class[spec].unit] or "") then untranslated[#untranslated + 1] = class[spec].unit end
+	end
+end
+local IS = ns.ItemScore
+check(#untranslated == 0 and IsRussian(IS:SpecLabel(IS:Specs()[1].key)) and IsRussian(IS:SpecUnit(IS:Specs()[1].key))
+	and ns.GEAR_WEIGHTS.WARRIOR.Arms.label == "Arms",
+	"every spec and unit of the Gear Finder in Russian, the weights themselves untouched: " .. table.concat(untranslated, ", "))
 
 -- The content: names laid over the data once it has loaded.
 local ragefire = ns.GetInstance("RagefireChasm")

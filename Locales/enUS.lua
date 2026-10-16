@@ -116,6 +116,12 @@ L.WEIGHTS_OTHER_CLASS = "That scale is for a %s, not for this character's class.
 L.WEIGHTS_FOR = "For"
 L.GEAR_WHY_CUSTOM = "%s (your weights)"
 L.GEAR_UNIT_POINTS = "points"
+-- The specs' names and the units their weights count in are the generated weights' own English
+-- (Data/Generated/GearWeights.lua). A translation names them here: by spec key
+-- (L.GEAR_SPEC_NAMES = { Arms = "...", ... }) and by the English unit
+-- (L.GEAR_UNITS = { ["attack power"] = "...", ... }).
+L.GEAR_SPEC_NAMES = {}
+L.GEAR_UNITS = {}
 L.WEIGHT_GROUPS = {
 	PRIMARY = "Primary Attributes", WEAPONS = "Weapons", SPELLS = "Spells", DEFENSE = "Defense",
 	RESISTANCE = "Resistances",
