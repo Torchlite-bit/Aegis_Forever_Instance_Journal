@@ -570,8 +570,9 @@ local function LootSource(slot)
 	local nearKill = lastKill and GetTime() - lastKill.time <= LOOT_CREDIT_SECONDS and lastKill.name or nil
 	local instance = currentInstanceID and ns.GetInstanceByInstanceID(currentInstanceID)
 	if npcID and instance then
+		-- By the boss's English name, whatever the client's language, as recordings are read.
 		for _, boss in ipairs(instance.bosses) do
-			if boss.npcID == npcID then return boss.name end
+			if boss.npcID == npcID then return boss.enName or boss.name end
 		end
 	end
 	if npcID then return "trash:" .. npcID, nearKill end

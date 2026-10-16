@@ -105,6 +105,10 @@ events:SetScript("OnEvent", function(self, event, arg1)
 	if event == "ADDON_LOADED" then
 		if arg1 == addonName then
 			InitSavedVariables()
+			-- The content in the client's language, where the journal has it. A mistake in a
+			-- translation is reported, and the journal still opens.
+			local ok, problem = pcall(ns.ApplyLocale)
+			if not ok then geterrorhandler()(problem) end
 			self:UnregisterEvent("ADDON_LOADED")
 		end
 	elseif event == "PLAYER_LOGIN" then

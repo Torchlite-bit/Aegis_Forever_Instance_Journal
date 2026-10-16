@@ -223,6 +223,8 @@ check(not dungeons.Empty:IsShown(), "no empty message while dungeons show")
 local menu = dungeons.Dropdown._menu
 check(menu and #menu.radios == 5, "five level brackets in the dropdown")
 check(menu.radios[1].isSelected(), "All Levels selected by default")
+check(menu.radios[1].text == "All Levels" and menu.radios[3].text == "Level 30 to 45" and menu.radios[5].text == "Level 60",
+	"the level brackets in English words")
 menu.radios[3].setSelected() -- Level 30 to 45
 names = visibleButtons(dungeons)
 local listed = table.concat(names, ", ")

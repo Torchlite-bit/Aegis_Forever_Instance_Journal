@@ -12,6 +12,14 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.29.0] (restart)
+
+### Added
+- **The journal in Russian**, translated by Staree4ok. On a game client set to Russian, the
+  window, its tabs, menus and messages are in Russian, and so are the dungeons', raids' and
+  factions' names, their bosses and abilities, quests and places. Item and spell names are the
+  game's own, as before. A client in any other language is unchanged.
+
 ## [0.28.0] (restart)
 
 ### Added

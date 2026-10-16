@@ -1,7 +1,8 @@
 """
 Loads the addon the way the client would (files in TOC order, sharing one namespace)
 against Tools/wow_mock.lua, then runs Tools/smoke_scenario.lua, which clicks through the
-journal and checks what it shows.
+journal and checks what it shows. Then it loads it again as a Russian client and runs
+Tools/locale_scenario.lua, which checks the translation against the English.
 
     python Tools/smoke_test.py
 
@@ -35,10 +36,17 @@ def read(path):
         return handle.read()
 
 
-def main():
+def run_pass(scenario, locale="enUS"):
     lua = lupa.LuaRuntime(unpack_returned_tuples=True)
     lua.execute("date = os.date; debugstack = function() return debug.traceback() end")
+    lua.execute("WOWMOCK_LOCALE = '%s'" % locale)
     lua.execute(read(os.path.join(TOOLS, "wow_mock.lua")))
+    # The English strings as enUS.lua leaves them, before another language is laid over them.
+    keep_english = lua.eval("""function(ns)
+        local copy = {}
+        for key, value in pairs(ns.L or {}) do copy[key] = value end
+        WOWMOCK.english = copy
+    end""")
 
     load = lua.eval("""function(source, name, addon, ns)
         local chunk, err = loadstring(source, "@" .. name)
@@ -49,7 +57,6 @@ def main():
     register = lua.eval("""function(name, frameType, mixin)
         WOWMOCK.xmlTemplates[name] = { type = frameType, mixin = mixin }
     end""")
-    perf = "--perf" in sys.argv[1:]
     memory = lua.eval('function() collectgarbage("collect") return collectgarbage("count") end')
     before = memory()
     ns = lua.table()
@@ -63,11 +70,11 @@ def main():
                     register(element.get("name"), element.tag.split("}")[-1], element.get("mixin"))
             continue
         load(read(os.path.join(ROOT, relative)), relative, ADDON, ns)
+        if relative.replace(os.sep, "/") == "Locales/enUS.lua":
+            keep_english(ns)
     loaded = memory() - before
-    print("Loaded %d files from the TOC." % len(list(toc_files())))
+    print("Loaded %d files from the TOC (%s)." % (len(list(toc_files())), locale))
 
-    # --perf times the heavy operations instead of checking behaviour (Tools/perf_scenario.lua).
-    scenario = "perf_scenario.lua" if perf else "smoke_scenario.lua"
     run = lua.eval("""function(source, name, ns, loaded)
         local chunk = assert(loadstring(source, "@" .. name))
         return xpcall(function() return chunk(ns, loaded) end, debug.traceback)
@@ -78,6 +85,13 @@ def main():
         return 1
     print(result)
     return 0
+
+
+def main():
+    # --perf times the heavy operations instead of checking behaviour (Tools/perf_scenario.lua).
+    if "--perf" in sys.argv[1:]:
+        return run_pass("perf_scenario.lua")
+    return run_pass("smoke_scenario.lua") or run_pass("locale_scenario.lua", "ruRU")
 
 
 if __name__ == "__main__":
