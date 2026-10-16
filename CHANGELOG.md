@@ -15,7 +15,7 @@ and the version shown in the AddOns list. Quote it in bug reports.
 ## [0.31.1]
 
 ### Added
-- **74 dungeon quests** the journal lacked, after checking every dungeon's quests against
+- **73 dungeon quests** the journal lacked, after checking every dungeon's quests against
   foreverchanges.pro's lists: chain steps given far from the dungeon (Gnomeregan, Uldaman,
   Blackrock Depths and Spire), Forever's new ones in Wailing Caverns, Blackrock Depths and the
   Ruins of Lordaeron, Dire Maul's librams, the Sunken Temple's class quests and more.

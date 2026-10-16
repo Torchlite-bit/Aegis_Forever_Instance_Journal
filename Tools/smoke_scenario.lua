@@ -746,6 +746,12 @@ do
 		and Quest("DireMaulEast", 5526) and Quest("TempleOfAtalHakkar", 8232).classOnly == "HUNTER"
 		and Quest("HallOfThanes", 96403).faction == "Alliance" and Quest("BlackrockDepths", 4341).prerequisites[1].questID == 3701,
 		"the quests the site lists for each dungeon, Forever's changes to them, and the class quests done inside")
+	check(#Quest("RuinsOfLordaeron", 97292).prerequisites == 4 and #Quest("DireMaulNorth", 5525).prerequisites == 0
+		and #Quest("DireMaulNorth", 5518).prerequisites == 0 and Quest("DireMaulNorth", 5519).prerequisites[1].questID == 5518
+		and not Quest("DireMaulNorth", 7703) and Quest("LowerBlackrockSpire", 4981)
+		and Quest("LowerBlackrockSpire", 4981).turnin:find("Lower", 1, true) and Quest("Gnomeregan", 2923).endMap.mapID == 1455
+		and not Quest("ZulFarrak", 2861).startMap and Quest("Uldaman", 721).endMap.mapID == 1432,
+		"chains in order and no loops, Bijou where she is, Ironforge's givers on its own map, no capital's mark for every side")
 end
 -- A recorded run of Excavation Site: each boss's encounter id and spells, the Relic Guardian's though
 -- the game calls him neutral, and the spiders that were fighting the dig nearby left out of the adds

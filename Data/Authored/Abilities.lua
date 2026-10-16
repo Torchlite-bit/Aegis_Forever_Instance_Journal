@@ -790,7 +790,7 @@ ns.AmendInstance("ExcavationSiteWetlands", { bosses = {
 			{ spellID = 10101, name = "Knock Away", flags = { "Tank", "Important" },
 				text = "He knocks the tank back and turns to someone else: he drops his threat. Damage dealers, slow down when the tank loses him. Tank, take him back at once." },
 			{ spellID = 8374, name = "Arcing Smash", flags = { "Tank" },
-				text = "A heavy swing at everyone in front of him, every 10 to 15 seconds. Only the tank should stand there." },
+				text = "A heavy swing at everyone in front of him. Only the tank should stand there." },
 			{ spellID = 8078, name = "Thunderclap", flags = { "Damage" },
 				text = "Hits everyone near him and slows their attacks." },
 		},

@@ -608,6 +608,7 @@ Update("WailingCaverns", {
 			turnin = "Arch Druid Hamuul Runetotem, Thunder Bluff",
 			startMap = { mapID = 1413, x = 0.523, y = 0.319 }, endMap = { mapID = 1456, x = 0.786, y = 0.286 },
 			objective = "Go to Thunder Bluff and talk to Arch Druid Hamuul Runetotem.",
+			prerequisites = { { questID = 880, name = "Altered Beings" } },
 		},
 		{
 			questID = 1490, name = "Nara Wildmane", level = 16, requiredLevel = 10, faction = "Horde",
@@ -644,28 +645,28 @@ Update("Gnomeregan", {
 			questID = 2923, name = "Tinkmaster Overspark", level = 26, requiredLevel = 20, faction = "Alliance",
 			pickup = "Brother Sarno, Stormwind City",
 			turnin = "Tinkmaster Overspark, Ironforge",
-			startMap = { mapID = 1453, x = 0.511, y = 0.484 }, endMap = { mapID = 1426, x = 0.622, y = 0.292 },
+			startMap = { mapID = 1453, x = 0.511, y = 0.484 }, endMap = { mapID = 1455, x = 0.690, y = 0.500 },
 			objective = "Report to Tinkmaster Overspark in Ironforge.",
 		},
 		{
 			questID = 2925, name = "Klockmort's Essentials", level = 30, requiredLevel = 24, faction = "Alliance",
 			pickup = "Mathiel, Darnassus",
 			turnin = "Klockmort Spannerspan, Ironforge",
-			startMap = { mapID = 1457, x = 0.595, y = 0.454 }, endMap = { mapID = 1426, x = 0.620, y = 0.285 },
+			startMap = { mapID = 1457, x = 0.595, y = 0.454 }, endMap = { mapID = 1455, x = 0.670, y = 0.460 },
 			objective = "Talk to Klockmort Spannerspan in Ironforge.",
 		},
 		{
 			questID = 2927, name = "The Day After", level = 27, requiredLevel = 20, faction = "Alliance",
 			pickup = "Gnoarn, Ironforge",
 			turnin = "Ozzie Togglevolt, Dun Morogh",
-			startMap = { mapID = 1426, x = 0.622, y = 0.292 }, endMap = { mapID = 1426, x = 0.459, y = 0.494 },
+			startMap = { mapID = 1455, x = 0.690, y = 0.500 }, endMap = { mapID = 1426, x = 0.459, y = 0.494 },
 			objective = "Talk to Ozzie Togglevolt in Kharanos.",
 		},
 		{
 			questID = 2931, name = "Castpipe's Task", level = 28, requiredLevel = 25, faction = "Alliance",
 			pickup = "Gaxim Rustfizzle, Stonetalon Mountains",
 			turnin = "Master Mechanic Castpipe, Ironforge",
-			startMap = { mapID = 1442, x = 0.595, y = 0.671 }, endMap = { mapID = 1426, x = 0.623, y = 0.288 },
+			startMap = { mapID = 1442, x = 0.595, y = 0.671 }, endMap = { mapID = 1455, x = 0.690, y = 0.480 },
 			objective = "Talk to Master Mechanic Castpipe in Ironforge.",
 		},
 		{
@@ -741,15 +742,16 @@ Update("Uldaman", {
 		{
 			questID = 721, name = "A Sign of Hope", level = 35, requiredLevel = 35, faction = "Alliance",
 			pickup = "Prospector Ryedol, Badlands",
-			turnin = "Hammertoe Grez, inside Uldaman",
-			startMap = { mapID = 1418, x = 0.534, y = 0.434 },
-			objective = "Find Hammertoe Grez inside Uldaman.",
+			turnin = "Hammertoe Grez, Loch Modan",
+			startMap = { mapID = 1418, x = 0.534, y = 0.434 }, endMap = { mapID = 1432, x = 0.373, y = 0.858 },
+			objective = "Find Hammertoe Grez in the caves before Uldaman.",
+			prerequisites = { { questID = 720, name = "A Sign of Hope" } },
 		},
 		{
 			questID = 2200, name = "Back to Uldaman", level = 42, requiredLevel = 37, faction = "Alliance",
 			pickup = "Talvash del Kissel, Ironforge",
 			turnin = "Remains of a Paladin, inside Uldaman",
-			startMap = { mapID = 1426, x = 0.569, y = 0.217 },
+			startMap = { mapID = 1455, x = 0.357, y = 0.040 },
 			objective = "Look in Uldaman for the dead paladin who last had Talvash's necklace.",
 			prerequisites = { { questID = 2199, name = "Lore for a Price" } },
 		},
@@ -779,14 +781,14 @@ Update("Uldaman", {
 			questID = 2398, name = "The Lost Dwarves", level = 40, requiredLevel = 35, faction = "Alliance",
 			pickup = "Prospector Stormpike, Ironforge",
 			turnin = "Baelog, inside Uldaman",
-			startMap = { mapID = 1426, x = 0.631, y = 0.230 },
+			startMap = { mapID = 1455, x = 0.747, y = 0.103 },
 			objective = "Find Baelog inside Uldaman.",
 		},
 		{
 			questID = 3375, name = "Replacement Phial", level = 42, requiredLevel = 37, faction = "Alliance",
 			pickup = "Talvash del Kissel, Ironforge",
 			turnin = "Talvash del Kissel, Ironforge",
-			startMap = { mapID = 1426, x = 0.569, y = 0.217 }, endMap = { mapID = 1426, x = 0.569, y = 0.217 },
+			startMap = { mapID = 1455, x = 0.357, y = 0.040 }, endMap = { mapID = 1455, x = 0.357, y = 0.040 },
 			objective = "Bring Talvash a Mana Potion, Coal and Sweet Nectar to get a new Phial of Scrying.",
 			note = "Repeatable: for when the phial is lost.",
 		},
@@ -797,11 +799,11 @@ Update("ZulFarrak", {
 	addQuests = {
 		{
 			questID = 2861, name = "Tabetha's Task", level = 46, requiredLevel = 40, faction = "Both",
-			pickup = "Ursyn Ghull, Thunder Bluff",
+			pickup = "A mage trainer in a capital",
 			turnin = "Tabetha, Dustwallow Marsh",
-			startMap = { mapID = 1456, x = 0.257, y = 0.142 }, endMap = { mapID = 1445, x = 0.461, y = 0.571 },
+			endMap = { mapID = 1445, x = 0.461, y = 0.571 },
 			objective = "Talk to Tabetha in Dustwallow Marsh.",
-			note = "Also from Anastasia Hartwell (Undercity), Bink (Ironforge), Jennea Cannon (Stormwind) and Deino (Orgrimmar).",
+			note = "Given by Jennea Cannon (Stormwind), Bink (Ironforge), Deino (Orgrimmar), Ursyn Ghull (Thunder Bluff) and Anastasia Hartwell (Undercity).",
 		},
 		{
 			questID = 2864, name = "Tran'rek", level = 45, requiredLevel = 40, faction = "Both",
@@ -816,6 +818,7 @@ Update("ZulFarrak", {
 			turnin = "Master Gadrin, Durotar",
 			startMap = { mapID = 1411, x = 0.559, y = 0.747 }, endMap = { mapID = 1411, x = 0.559, y = 0.747 },
 			objective = "Read the Tablet of Theka in Zul'Farrak to learn the spider god's name, then go back to Master Gadrin.",
+			prerequisites = { { questID = 2935, name = "Consult Master Gadrin" } },
 		},
 	},
 })
@@ -869,6 +872,7 @@ Update("BlackrockDepths", {
 			turnin = "Commander Gor'shak, inside Blackrock Depths",
 			startMap = { mapID = 1418, x = 0.060, y = 0.477 },
 			objective = "Find Commander Gor'shak in a prison cell in Blackrock Depths.",
+			prerequisites = { { questID = 3906, name = "Disharmony of Flame" } },
 		},
 		{
 			questID = 3982, name = "What Is Going On?", level = 54, requiredLevel = 48, faction = "Horde",
@@ -921,6 +925,7 @@ Update("BlackrockDepths", {
 			turnin = "Marshal Windsor, inside Blackrock Depths",
 			startMap = { mapID = 1428, x = 0.847, y = 0.690 },
 			objective = "Go into Blackrock Depths and find out what happened to Marshal Windsor.",
+			prerequisites = { { questID = 4224, name = "The True Masters" } },
 		},
 		{
 			questID = 4295, name = "Rocknot's Ale", level = 1, requiredLevel = 1, faction = "Both",
@@ -940,7 +945,7 @@ Update("BlackrockDepths", {
 			questID = 4341, name = "Kharan Mighthammer", level = 59, requiredLevel = 50, faction = "Alliance",
 			pickup = "King Magni Bronzebeard, Ironforge",
 			turnin = "Kharan Mighthammer, inside Blackrock Depths",
-			startMap = { mapID = 1426, x = 0.574, y = 0.301 },
+			startMap = { mapID = 1455, x = 0.394, y = 0.558 },
 			objective = "Find Kharan Mighthammer in the Blackrock Depths prison.",
 			prerequisites = { { questID = 3701, name = "The Smoldering Ruins of Thaurissan" } },
 		},
@@ -954,7 +959,7 @@ Update("BlackrockDepths", {
 			questID = 4361, name = "The Bearer of Bad News", level = 59, requiredLevel = 50, faction = "Alliance",
 			pickup = "Kharan Mighthammer, inside Blackrock Depths",
 			turnin = "King Magni Bronzebeard, Ironforge",
-			endMap = { mapID = 1426, x = 0.574, y = 0.301 },
+			endMap = { mapID = 1455, x = 0.394, y = 0.558 },
 			objective = "Take the bad news back to King Magni Bronzebeard in Ironforge.",
 			prerequisites = { { questID = 4341, name = "Kharan Mighthammer" }, { questID = 4342, name = "Kharan's Tale" } },
 		},
@@ -964,6 +969,21 @@ Update("BlackrockDepths", {
 Update("LowerBlackrockSpire", {
 	questPatches = {
 		[5047] = { requiredLevel = 57 }, -- Finkle Einhorn, At Your Service!
+	},
+	addQuests = {
+		{
+			questID = 4981, name = "Operative Bijou", level = 59, requiredLevel = 55, faction = "Horde",
+			pickup = "Lexlort, Badlands",
+			turnin = "Bijou, inside Lower Blackrock Spire",
+			startMap = { mapID = 1418, x = 0.059, y = 0.476 },
+			objective = "Go into Blackrock Spire and find out what happened to Bijou.",
+		},
+		{
+			questID = 7761, name = "Blackhand's Command", level = 60, requiredLevel = 55, faction = "Both",
+			turnin = "Drakkisath's Brand, inside Upper Blackrock Spire",
+			objective = "Find Drakkisath's Brand, guarded by General Drakkisath, to get the Mark of Drakkisath.",
+			note = "Starts from Blackhand's Command, a letter dropped in Lower Blackrock Spire.",
+		},
 	},
 })
 
@@ -992,11 +1012,12 @@ Update("UpperBlackrockSpire", {
 			turnin = "Tinkee Steamboil, Burning Steppes",
 			startMap = { mapID = 1452, x = 0.616, y = 0.386 }, endMap = { mapID = 1428, x = 0.652, y = 0.240 },
 			objective = "Talk to Tinkee Steamboil in the Burning Steppes.",
+			prerequisites = { { questID = 4810, name = "Return to Tinkee" } },
 		},
 		{
 			questID = 4981, name = "Operative Bijou", level = 59, requiredLevel = 55, faction = "Horde",
 			pickup = "Lexlort, Badlands",
-			turnin = "Bijou, inside Upper Blackrock Spire",
+			turnin = "Bijou, inside Lower Blackrock Spire",
 			startMap = { mapID = 1418, x = 0.059, y = 0.476 },
 			objective = "Go into Blackrock Spire and find out what happened to Bijou.",
 		},
@@ -1069,7 +1090,8 @@ Update("DireMaulEast", {
 
 Update("DireMaulNorth", {
 	questPatches = {
-		[5525] = { requiredLevel = 56 }, -- Free Knot!
+		[5518] = { prerequisites = {} }, -- The Gordok Ogre Suit: its second part was given as its prerequisite
+		[5525] = { requiredLevel = 56, prerequisites = {} }, -- Free Knot!, the same
 		[5528] = { requiredLevel = 56 }, -- The Gordok Taste Test
 	},
 	addQuests = {
@@ -1129,12 +1151,6 @@ Update("DireMaulNorth", {
 			turnin = "Lorekeeper Lydros, inside Dire Maul",
 			objective = "Bring the Libram of Protection, a Pristine Black Diamond, 2 Large Brilliant Shards and a Frayed Abomination Stitching to Lorekeeper Lydros for an Arcanum of Protection.",
 			note = "Repeatable.",
-		},
-		{
-			questID = 7703, name = "Unfinished Gordok Business", level = 60, requiredLevel = 56, faction = "Both",
-			pickup = "Captain Kromcrush, inside Dire Maul",
-			turnin = "Captain Kromcrush, inside Dire Maul",
-			objective = "Get the Gauntlet of Gordok Might from the Prince's Chest and bring it back to Captain Kromcrush.",
 		},
 	},
 })
@@ -1229,15 +1245,18 @@ Update("RuinsOfLordaeron", {
 	addQuests = {
 		{
 			questID = 97289, name = "Unending Torment", level = 21, requiredLevel = 16, faction = "Horde",
-			note = "New in Forever: a later part of the Unending Torment chain. Where it starts isn't known yet.",
+			note = "New in Forever: part 2, given in the Undercity once the Abominable Head is with Master Apothecary Faranell.",
+			prerequisites = { { questID = 97288, name = "Unending Torment" } },
 		},
 		{
 			questID = 97291, name = "Unending Torment", level = 21, requiredLevel = 16, faction = "Horde",
-			note = "New in Forever: a later part of the Unending Torment chain. Where it starts isn't known yet.",
+			note = "New in Forever: part 4, in the Undercity.",
+			prerequisites = { { questID = 97288, name = "Unending Torment" }, { questID = 97289, name = "Unending Torment" }, { questID = 97290, name = "Unending Torment" } },
 		},
 		{
 			questID = 97292, name = "Unending Torment", level = 21, requiredLevel = 16, faction = "Horde",
-			note = "New in Forever: the last part of the Unending Torment chain. Where it starts isn't known yet.",
+			note = "New in Forever: the last part, back to Master Apothecary Faranell in the Undercity.",
+			prerequisites = { { questID = 97288, name = "Unending Torment" }, { questID = 97289, name = "Unending Torment" }, { questID = 97290, name = "Unending Torment" }, { questID = 97291, name = "Unending Torment" } },
 		},
 	},
 })
