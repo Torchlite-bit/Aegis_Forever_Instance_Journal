@@ -26,7 +26,7 @@ its address goes in the text. Uploads themselves are automatic: each new `## Ver
 - 🗺️ **Dungeon maps** with boss pins; the bosses you've killed are crossed out
 - 🧭 **World map**: every dungeon door, flight masters, boats and zeppelins, quest marks, **zone level ranges** coloured for your level, and **unexplored areas** on request
 - 🛡️ **Reputation**: every faction's rewards by standing. Captured quartermasters give exact prices; the rest show the game's own list, marked unconfirmed
-- 🎯 **Gear Finder**: the best upgrade for every slot in the dungeons near your level, and the dungeon with the most of them. Scored for your spec, with **stat weights you can change** or bring in from **Pawn**, on the journal's tab or the character panel's
+- 🎯 **Gear Finder**: the best upgrade for every slot in the dungeons near your level (or your pick of its top 3), and the dungeon with the most of them. Scored for your spec, with **stat weights you can change** or bring in from **Pawn**, on the journal's tab or the character panel's
 - 🔍 **Search** across everything
 - 🇷🇺 **In Russian** on a Russian game client, translated by **Staree4ok**
 - 🔴 **Record tab** and **Log Reader**: help fill in Forever's journal

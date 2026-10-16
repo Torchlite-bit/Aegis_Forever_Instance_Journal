@@ -12,6 +12,18 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.31.0]
+
+### Added
+- **Pick from a slot's top 3**, as in Aegis: Pathfinder: click a slot in the Gear Finder and its
+  three biggest upgrades open beside it, each with what it adds and where it drops. Click one to
+  show it in the slot; the suggested dungeon follows your picks. A pick is starred, kept for each
+  character, and forgotten once you wear it; **Clear my pick** brings the biggest back.
+
+### Changed
+- **Right-click** a Gear Finder slot to open its item's loot in the journal (a plain click now
+  opens the top 3).
+
 ## [0.30.1]
 
 ### Changed
