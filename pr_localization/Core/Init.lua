@@ -1,0 +1,123 @@
+local addonName, ns = ...
+local L = ns.L
+
+ns.name = addonName
+
+BINDING_NAME_AEGISJOURNAL_TOGGLE = L.BINDING_TOGGLE
+
+local BINDING = "AEGISJOURNAL_TOGGLE"
+local DEFAULT_KEY = "SHIFT-J"
+
+-- Actions Shift+J may already hold that are safe to take over: nothing at all, Blizzard's
+-- own journal (which does not load on Forever), the two journals this one replaces, and
+-- this journal's own binding from before it was renamed.
+local REPLACEABLE_ACTIONS = {
+	[""] = true,
+	TOGGLEENCOUNTERJOURNAL = true,
+	TOGGLE_ADVENTUREGUIDECLASSIC = true,
+	FOREVERDUNGEONJOURNAL_TOGGLE = true,
+	AEGISIJ_TOGGLE = true,
+}
+
+function ns.Print(message)
+	DEFAULT_CHAT_FRAME:AddMessage("|cffffd100" .. L.JOURNAL_TITLE .. ":|r " .. message)
+end
+
+--[[
+	Shift+J is offered once for each set of key bindings (the account's, and the character's
+	when "Character Specific Key Bindings" is on), not forced. A key the player has already
+	given to something else is left alone, and once a set has had the offer the player's own
+	choices in the Key Bindings window always win.
+]]
+local events = CreateFrame("Frame")
+
+local function ClaimDefaultKey()
+	local set = GetCurrentBindingSet()
+	ns.db.keyOfferedSets = ns.db.keyOfferedSets or {}
+	if ns.db.keyOfferedSets[set] then return end
+	if InCombatLockdown() then
+		-- Bindings cannot change in combat: listen for its end only now, not all the time.
+		events:RegisterEvent("PLAYER_REGEN_ENABLED")
+		return
+	end
+	ns.db.keyOfferedSets[set] = true
+
+	if GetBindingKey(BINDING) then return end
+	local current = GetBindingAction(DEFAULT_KEY) or ""
+	if not REPLACEABLE_ACTIONS[current] then
+		ns.Print(string.format(L.KEY_TAKEN, current))
+		return
+	end
+	if SetBinding(DEFAULT_KEY, BINDING) then
+		SaveBindings(set)
+		ns.Print(L.KEY_CLAIMED)
+	end
+end
+
+local function InitSavedVariables()
+	AegisJournalDB = AegisJournalDB or {}
+	AegisJournalCharDB = AegisJournalCharDB or {}
+	ns.db = AegisJournalDB
+	ns.charDB = AegisJournalCharDB
+	ns.Recorder:Init()
+	-- The player's own /aegis items scan hides what it found, as the built-in one does.
+	if type(ns.db.missingItems) == "table" then ns.Items:AddUnconfirmed(ns.db.missingItems.items) end
+end
+
+-- Hidden items are asked about again a while after logging in, once a session.
+local RECHECK_DELAY = 10
+
+function AegisJournal_Toggle()
+	ns.Journal:Toggle()
+end
+
+SLASH_AEGISJOURNAL1 = "/aegis"
+SLASH_AEGISJOURNAL2 = "/instancejournal"
+SlashCmdList.AEGISJOURNAL = function(message)
+	-- The first word is the command; the rest keeps its capitals (place names).
+	local command, rest = strtrim(message or ""):match("^(%S*)%s*(.-)$")
+	command = command:lower()
+	if command == "" then
+		ns.Journal:Toggle()
+	elseif command == "record" then
+		ns.Recorder:Toggle()
+	elseif command == "reset" then
+		ns.Journal:ResetPosition()
+		ns.Print(L.POSITION_RESET)
+	elseif command == "perf" then
+		ns.Perf:Run()
+	elseif command == "where" then
+		ns.Perf:Where()
+	elseif command == "taxi" then
+		ns.Perf:Taxi()
+	elseif command == "items" then
+		ns.Perf:Items()
+	elseif command == "travel" then
+		ns.TravelMap:Capture(rest)
+	else
+		ns.Print(L.SLASH_HELP)
+	end
+end
+
+events:RegisterEvent("ADDON_LOADED")
+events:RegisterEvent("PLAYER_LOGIN")
+events:SetScript("OnEvent", function(self, event, arg1)
+	if event == "ADDON_LOADED" then
+		if arg1 == addonName then
+			InitSavedVariables()
+			if ns.ApplyLocale then ns.ApplyLocale() end
+			self:UnregisterEvent("ADDON_LOADED")
+		end
+	elseif event == "PLAYER_LOGIN" then
+		self:UnregisterEvent("PLAYER_LOGIN")
+		ClaimDefaultKey()
+		C_Timer.After(RECHECK_DELAY, function() ns.Items:RecheckUnconfirmed() end)
+		-- Switching between the account's and the character's bindings brings another set.
+		self:RegisterEvent("UPDATE_BINDINGS")
+	elseif event == "UPDATE_BINDINGS" then
+		ClaimDefaultKey()
+	elseif event == "PLAYER_REGEN_ENABLED" then
+		self:UnregisterEvent("PLAYER_REGEN_ENABLED")
+		ClaimDefaultKey()
+	end
+end)
