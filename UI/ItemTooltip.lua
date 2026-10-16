@@ -64,12 +64,11 @@ end
 -- The tooltips beside another that show what is worn, to compare with.
 local SHOWS_WORN = { "ShoppingTooltip1", "ShoppingTooltip2", "ItemRefShoppingTooltip1", "ItemRefShoppingTooltip2" }
 
--- Whether the client was asked to show one of the player's own slots (retail's tooltip info:
--- the getter it was filled by, and that getter's unit and slot).
+-- Whether the client was asked to show one of the player's own slots: the tooltip's info
+-- (TooltipDataHandlerMixin:GetPrimaryTooltipInfo), the getter it was filled by, with its unit and slot.
 local function ShowsPlayerSlot(tooltip)
 	local ok, info = pcall(function() return tooltip.GetPrimaryTooltipInfo and tooltip:GetPrimaryTooltipInfo() end)
-	if not (ok and type(info) == "table") then info = rawget(tooltip, "info") end
-	if type(info) ~= "table" or info.getterName ~= "GetInventoryItem" or type(info.getterArgs) ~= "table" then
+	if not ok or type(info) ~= "table" or info.getterName ~= "GetInventoryItem" or type(info.getterArgs) ~= "table" then
 		return false
 	end
 	return info.getterArgs[1] == "player" and type(info.getterArgs[2]) == "number"

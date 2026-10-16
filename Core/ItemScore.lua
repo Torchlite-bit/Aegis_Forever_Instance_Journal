@@ -215,19 +215,46 @@ local function LevelLine(minLevel)
 	return string.format(ITEM_MIN_LEVEL or "Requires Level %d", minLevel or 0)
 end
 local EQUIP_PREFIX = "^" .. (ITEM_SPELL_TRIGGER_ONEQUIP or "Equip:"):gsub("%p", "%%%0") .. "%s*(.+)$"
--- Only one may be worn: "Unique", "Unique-Equipped", or a limit of one ("Unique (1)",
--- "Unique-Equipped: Rings (1)"). "Unique (2)" lets two be had, and worn.
-local UNIQUE_WORDS = { ITEM_UNIQUE or "Unique", ITEM_UNIQUE_EQUIPPABLE or "Unique-Equipped" }
-local function IsUniqueLine(text)
-	for _, words in ipairs(UNIQUE_WORDS) do
-		if text == words then return true end
-		if text:sub(1, #words) == words then
-			local limit = tonumber(text:match("%((%d+)%)%s*$"))
-			if limit then return limit == 1 end
+--[[
+	Only one may be worn: "Unique", "Unique-Equipped", or a limit of one ("Unique (1)",
+	"Unique: Rings (1)", "Unique-Equipped: Rings (1)"); "Unique (2)" lets two be had, and worn.
+	Read in the client's own words, its format strings made patterns: other languages word
+	these, and bracket the count, their own way ("装备唯一：%s （%d）").
+]]
+local function FormatPattern(format)
+	local pattern = format:gsub("[%^%$%(%)%%%.%[%]%*%+%-%?]", "%%%0")
+	-- The format's own %d and %s (or %1$s), escaped above: the count, and anything.
+	pattern = pattern:gsub("%%%%%d+%%%$([ds])", "%%%%%1"):gsub("%%%%d", "(%%d+)"):gsub("%%%%s", ".-")
+	return "^" .. pattern .. "$"
+end
+
+local uniqueWordsOf, uniqueExact, uniqueLimits
+local function UniqueWords()
+	local words = { ITEM_UNIQUE or "Unique", ITEM_UNIQUE_EQUIPPABLE or "Unique-Equipped" }
+	local formats = { ITEM_UNIQUE_MULTIPLE or "Unique (%d)", ITEM_LIMIT_CATEGORY or "Unique: %s (%d)",
+		ITEM_LIMIT_CATEGORY_MULTIPLE or "Unique-Equipped: %s (%d)" }
+	local key = table.concat(words, "\1") .. "\1" .. table.concat(formats, "\1")
+	if key ~= uniqueWordsOf then
+		uniqueWordsOf, uniqueExact, uniqueLimits = key, words, {}
+		for _, format in ipairs(formats) do
+			uniqueLimits[#uniqueLimits + 1] = { pattern = FormatPattern(format), counted = format:find("%%%d*%$?d") ~= nil }
 		end
+	end
+	return uniqueExact, uniqueLimits
+end
+
+function ItemScore.IsUniqueLine(text)
+	local exact, limits = UniqueWords()
+	for _, words in ipairs(exact) do
+		if text == words then return true end
+	end
+	for _, limit in ipairs(limits) do
+		local count = text:match(limit.pattern)
+		if count then return not limit.counted or tonumber(count) == 1 end
 	end
 	return false
 end
+local IsUniqueLine = ItemScore.IsUniqueLine
 
 local readCache, linkOfData = {}, {}
 

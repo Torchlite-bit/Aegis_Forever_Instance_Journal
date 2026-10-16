@@ -995,7 +995,7 @@ C_Item.GetItemGUID = function(location) return Mock.WornGUID(location.equipmentS
 -- Mock.noItemGUIDs leaves the guids out, as a client without them would.
 local function ShowItem(tooltip, link, guid, getterName, ...)
 	tooltip._link = link
-	tooltip.info = { getterName = getterName or "GetHyperlink", getterArgs = { ... } }
+	tooltip._info = { getterName = getterName or "GetHyperlink", getterArgs = { ... } }
 	tooltip._lines[#tooltip._lines + 1] = Mock.itemNames[ItemIDOf(link)] or link
 	if Mock.noItemGUIDs then guid = nil end
 	local data = { type = Enum.TooltipDataType.Item, id = ItemIDOf(link), hyperlink = link, guid = guid }
@@ -1013,7 +1013,7 @@ function GameTooltip:SetBagItem(bag, slot)
 	local item = Mock.bagItems[bag .. ":" .. slot]
 	if item then ShowItem(self, ItemLink(item[1]), item[2], "GetBagItem", bag, slot) end
 end
-function GameTooltip:GetPrimaryTooltipInfo() return self.info end
+function GameTooltip:GetPrimaryTooltipInfo() return self._info end
 function GameTooltip:GetItem()
 	if self._link then return Mock.itemNames[ItemIDOf(self._link)] or "Item", self._link end
 end

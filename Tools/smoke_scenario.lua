@@ -3418,6 +3418,51 @@ end)()
 		GameTooltip:SetBagItem(0, 1)
 		check(IS:Compare(Mock.ItemLink(RING_X)).slot == 11 and Has(GameTooltip._lines, "Upgrade:"),
 			"two may be had of a Unique (2) ring, and worn: still an upgrade")
+		Mock.itemLines[RING_X] = { "Unique-Equipped" }
+		IS:Forget()
+		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+		GameTooltip:SetBagItem(0, 1)
+		check(IS:Compare(Mock.ItemLink(RING_X)).slot == 12 and not Has(GameTooltip._lines, "Upgrade:"),
+			"a Unique-Equipped ring worn already: no second one")
+		-- Every way the client words it, in its own words: each language's format strings
+		local wrong = {}
+		local function Judge(cases)
+			for _, case in ipairs(cases) do
+				if IS.IsUniqueLine(case[1]) ~= case[2] then wrong[#wrong + 1] = case[1] end
+			end
+		end
+		Judge({ { "Unique", true }, { "Unique-Equipped", true }, { "Unique (1)", true }, { "Unique (2)", false },
+			{ "Unique: Rings (1)", true }, { "Unique: Rings (2)", false }, { "Unique-Equipped: Rings (1)", true },
+			{ "Unique-Equipped: Rings (2)", false }, { "Binds when picked up", false }, { "Uniquely crafted", false } })
+		local strings = { "ITEM_UNIQUE", "ITEM_UNIQUE_MULTIPLE", "ITEM_UNIQUE_EQUIPPABLE", "ITEM_LIMIT_CATEGORY",
+			"ITEM_LIMIT_CATEGORY_MULTIPLE" }
+		local function Words(values)
+			for index, name in ipairs(strings) do _G[name] = values[index] end
+		end
+		Words({ "唯一", "唯一（%d）", "装备唯一", "唯一：%s（%d）", "装备唯一：%s （%d）" })
+		Judge({ { "装备唯一", true }, { "装备唯一：饰品 （1）", true }, { "装备唯一：饰品 （2）", false }, { "唯一：戒指（1）", true } })
+		Words({ "Único", "Único (%d)", "Único equipado", "Único: %s (%d)", "Máximo equipado: %s (%d)" })
+		Judge({ { "Máximo equipado: Anéis (1)", true }, { "Máximo equipado: Anéis (2)", false } })
+		Words({ nil, nil, nil, "Unique: %1$s (%2$d)", "Unique-Equipped: %s" })
+		Judge({ { "Unique: Rings (1)", true }, { "Unique: Rings (3)", false }, { "Unique-Equipped: Rings", true } })
+		Words({})
+		check(#wrong == 0, "unique, in every wording and language the client has: " .. table.concat(wrong, ", "))
+		-- Without the client's guids: a bag's copy is not the worn one, nor another player's slot
+		Mock.itemLines[RING_X] = nil
+		IS:Forget()
+		Mock.noItemGUIDs = true
+		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+		GameTooltip:SetBagItem(0, 1)
+		local fromBag = Has(GameTooltip._lines, "Upgrade:")
+		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+		GameTooltip._lines[1] = "Inspected"
+		GameTooltip._info = { getterName = "GetInventoryItem", getterArgs = { "target", 12 } }
+		for _, callback in ipairs(Mock.tooltipPostCalls[Enum.TooltipDataType.Item]) do
+			callback(GameTooltip, { hyperlink = Mock.ItemLink(RING_X) })
+		end
+		Mock.noItemGUIDs = nil
+		check(fromBag and Has(GameTooltip._lines, "Upgrade:"),
+			"with no guids, a bag's copy and another player's worn ring are still weighed as upgrades")
 		Mock.itemLines[RING_X], Mock.bagItems["0:1"] = nil, nil
 		Mock.worn[11], Mock.worn[12] = nil, nil
 		IS:Forget()

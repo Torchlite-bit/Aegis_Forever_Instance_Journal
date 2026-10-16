@@ -88,6 +88,8 @@ def run_pass(scenario, locale="enUS"):
 
 
 def main():
+    # A failed check may quote any language's text: print it whatever the console's code page.
+    sys.stdout.reconfigure(errors="backslashreplace")
     # --perf times the heavy operations instead of checking behaviour (Tools/perf_scenario.lua).
     if "--perf" in sys.argv[1:]:
         return run_pass("perf_scenario.lua")
