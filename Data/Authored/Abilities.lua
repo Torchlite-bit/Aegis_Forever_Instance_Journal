@@ -744,23 +744,40 @@ ns.AmendInstance("RuinsOfLordaeron", { bosses = {
 	},
 } })
 
+-- Saltspine's, Shadetooth's and the Relic Guardian's spells are from a recorded kill of each
+-- (2026-10-16). The Highland Spiders that cast in the first two fights were fighting the dig's
+-- Dwarf Excavators nearby, not the group.
 ns.AmendInstance("ExcavationSiteWetlands", { bosses = {
 	["Saltspine"] = {
-		extraAbilities = {
-			{ title = "A large health pool", icon = ICONS .. "spell_holy_sealofmight", flags = { "Damage" },
-				description = "Nothing special seen in the fight: he hits and has a lot of health. He roams the marsh at the start among elite crocolisks, so clear them first or pull him away from them." },
+		abilities = {
+			{ spellID = 1316382, name = "Dust Storm", flags = { "Damage" },
+				text = "A storm of dust that hits the group for about 160 to 330 nature damage. Healers, be ready for it." },
+			{ spellID = 3604, name = "Tendon Rip", flags = { "Tank" },
+				text = "He tears at the tank's legs, slowing them." },
 		},
+		extraAbilities = {
+			{ title = "Crocolisks in the marsh", icon = ICONS .. "ability_hunter_pet_crocolisk", flags = { "Damage" },
+				description = "He roams the marsh at the start among elite crocolisks, so clear them first or pull him away from them." },
+		},
+		notAdds = { [260803] = true },
 	},
 	["Shadetooth"] = {
+		abilities = {
+			{ spellID = 14100, name = "Terrifying Roar", flags = { "Important" },
+				text = "About every 20 seconds he roars and fears up to three players near him. A shaman's Tremor Totem helps." },
+			{ spellID = 13445, name = "Rend", flags = { "Tank", "Bleed" },
+				text = "He makes the tank bleed." },
+			{ spellID = 1284435, name = "Enrage", flags = { "Tank", "Important" },
+				text = "Late in the fight he enrages and hits harder: keep the tank's health up to the end." },
+		},
 		extraAbilities = {
 			{ title = "Raptors in the grass", icon = ICONS .. "ability_druid_rake", flags = { "Bleed" },
 				description = "Small raptors jump out of the grass as you walk through it and make you bleed." },
 			{ title = "The wave before him", icon = ICONS .. "ability_hunter_pet_raptor", flags = { "Important", "Damage" },
 				description = "Kill every raptor of the wave before he arrives. One group wiped on its first try with Shadetooth and several raptors on it at once." },
-			{ title = "Fear", icon = ICONS .. "spell_shadow_psychicscream", flags = { "Tank", "Important" },
-				description = "The tank is feared several times in this fight. A shaman's Tremor Totem helps." },
 		},
 		fightNote = "Kill the raptor matriarch in the tall grass. A wave of raptors comes when she dies, and Shadetooth runs in once they are dead.",
+		notAdds = { [260803] = true },
 	},
 	["Highland Horror"] = {
 		extraAbilities = {
@@ -769,9 +786,13 @@ ns.AmendInstance("ExcavationSiteWetlands", { bosses = {
 		},
 	},
 	["Relic Guardian"] = {
-		extraAbilities = {
-			{ title = "Threat reset", icon = ICONS .. "ability_rogue_feint", flags = { "Tank", "Important" },
-				description = "He drops his threat and changes target during the fight. Damage dealers, slow down when the tank loses him. Tank, take him back at once." },
+		abilities = {
+			{ spellID = 10101, name = "Knock Away", flags = { "Tank", "Important" },
+				text = "He knocks the tank back and turns to someone else: he drops his threat. Damage dealers, slow down when the tank loses him. Tank, take him back at once." },
+			{ spellID = 8374, name = "Arcing Smash", flags = { "Tank" },
+				text = "A heavy swing at everyone in front of him, every 10 to 15 seconds. Only the tank should stand there." },
+			{ spellID = 8078, name = "Thunderclap", flags = { "Damage" },
+				text = "Hits everyone near him and slows their attacks." },
 		},
 		fightNote = "He stands still at the end of the spider trail. Click the small panel next to him to wake him.",
 	},

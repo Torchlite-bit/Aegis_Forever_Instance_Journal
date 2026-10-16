@@ -28,18 +28,20 @@ ns.AmendInstance("ExcavationSiteWetlands", {
 	bosses = {
 		["Saltspine"] = {
 			notes = {
-				"Nothing special seen in the fight yet: he hits, and has a lot of health.",
+				"A dust storm hits the whole group now and then, and he slows the tank.",
 				"He roams the marsh near the start among elite crocolisks: clear them first, or pull him away from them.",
 			},
 			mapPin = { x = 0.498, y = 0.395, floor = 1 },
+			area = "Lost Marsh",
 		},
 		["Shadetooth"] = {
 			notes = {
 				"Kill the raptor matriarch in the tall grass. Her death brings a wave of raptors, and Shadetooth comes once they are dead: finish the whole wave before he arrives.",
 				"Small raptors leap out of the grass as you walk through it, and make you bleed.",
-				"He fears the tank several times: a shaman's Tremor Totem helps.",
+				"About every 20 seconds he fears up to three players near him: a shaman's Tremor Totem helps. Late in the fight he enrages.",
 			},
 			mapPin = { x = 0.400, y = 0.483, floor = 1 },
+			area = "Stalker's Thicket",
 		},
 		["Highland Horror"] = {
 			notes = {
@@ -51,12 +53,16 @@ ns.AmendInstance("ExcavationSiteWetlands", {
 		["Relic Guardian"] = {
 			notes = {
 				"The last boss stands still at the end of the spider trail: click the small panel beside him to wake him.",
-				"He drops his threat and changes target during the fight: damage dealers, ease off when the tank loses him; tank, take him back at once.",
+				"His Knock Away throws the tank back and drops his threat: damage dealers, ease off when the tank loses him; tank, take him back at once.",
 				"Drops the Titan Relic that starts each side's relic quest.",
 			},
 			mapPin = { x = 0.345, y = 0.685, floor = 1 },
+			area = "Site of the Guardian",
 		},
 	},
+
+	-- The areas a recorded run passed through (2026-10-16), and where it came in.
+	areas = { "Lost Marsh", "Stalker's Thicket", "Lost Dig Site", "Site of the Guardian" },
 
 	questPatches = {
 		[95647] = { prerequisites = { { questID = 95737, name = "Seeking Caitlin" } } },

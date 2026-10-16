@@ -733,6 +733,30 @@ do
 	check(slamText and slamText:find("Hits 25-30, first cast at 4s, then every 12s", 1, true),
 		"recorded numbers read plainly: " .. tostring(slamText))
 end
+-- A recorded run of Excavation Site: each boss's encounter id and spells, the Relic Guardian's though
+-- the game calls him neutral, and the spiders that were fighting the dig nearby left out of the adds
+do
+	local dig = ns.GetInstance("ExcavationSiteWetlands")
+	local bosses = {}
+	for _, boss in ipairs(dig.bosses) do bosses[boss.name] = boss end
+	local function Spell(boss, spellID)
+		for _, row in ipairs(boss.abilities or {}) do
+			if row.spellID == spellID then return row end
+		end
+	end
+	local function AddIDs(boss)
+		local ids = {}
+		for _, add in ipairs(boss.adds or {}) do ids[#ids + 1] = add.npcID end
+		table.sort(ids)
+		return table.concat(ids, ",")
+	end
+	local guardian = bosses["Relic Guardian"]
+	check(bosses["Saltspine"].encounterID == 3480 and guardian.encounterID == 3482 and Spell(guardian, 10101)
+		and Spell(guardian, 8374) and Spell(guardian, 8374).every[1] == 9 and Spell(guardian, 8374).text,
+		"Excavation Site's encounter ids, and the Relic Guardian's spells with their written text and recorded numbers")
+	check(AddIDs(bosses["Saltspine"]) == "" and AddIDs(bosses["Shadetooth"]) == "260800,260801",
+		"the spiders fighting the dig nearby are not taken for adds: " .. AddIDs(bosses["Shadetooth"]))
+end
 ns.Journal:OpenBoss(thanes, magmatus)
 local magmatusHeaders = shownHeaders()
 local addHeader

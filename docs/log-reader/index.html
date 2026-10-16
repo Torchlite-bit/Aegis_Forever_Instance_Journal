@@ -248,7 +248,9 @@ function Reader() {
       }
       if (row.length < 12) return;
       const sourceGUID = row[1], npc = npcID(sourceGUID);
-      if (npc === null || !(parseInt(row[3], 16) & HOSTILE)) return;
+      // The boss the fight is named for counts even when the game calls him neutral
+      // (Excavation Site's Relic Guardian); anything else only when hostile.
+      if (npc === null || !((parseInt(row[3], 16) & HOSTILE) || row[2] === current.name)) return;
       current.creatures.set(npc, row[2]);
       const spellID = parseInt(row[9], 10), key = npc + ":" + spellID;
       let stats = current.spells.get(key);

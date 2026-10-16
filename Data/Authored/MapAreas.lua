@@ -29,8 +29,8 @@ Areas("RuinsOfLordaeron", {
 
 -- Santiago Reyes's newer map labels its areas; the boss spots are in Data/Authored/ExcavationSiteWetlands.lua.
 Areas("ExcavationSiteWetlands", {
-	["Lost Marsh"] = { x = 0.580, y = 0.390, radius = 0.12 },
-	["Stalker's Thicket"] = { x = 0.335, y = 0.420, radius = 0.08 },
-	["Lost Dig Site"] = { x = 0.110, y = 0.450, radius = 0.08 },
-	["Site of the Guardian"] = { x = 0.370, y = 0.700, radius = 0.08 },
+	["Lost Marsh"] = { x = 0.580, y = 0.390, radius = 0.12 },   -- seen
+	["Stalker's Thicket"] = { x = 0.335, y = 0.420, radius = 0.08 },   -- seen
+	["Lost Dig Site"] = { x = 0.110, y = 0.450, radius = 0.08 },   -- seen
+	["Site of the Guardian"] = { x = 0.370, y = 0.700, radius = 0.08 },   -- seen
 })
