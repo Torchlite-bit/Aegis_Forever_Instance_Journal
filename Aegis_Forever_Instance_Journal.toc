@@ -16,6 +16,7 @@ Locales\ruRU_content.lua
 Core\Init.lua
 Core\Compat.lua
 Core\Registry.lua
+Core\Areas.lua
 Core\Items.lua
 Core\Reputation.lua
 Core\Recorder.lua
@@ -62,6 +63,7 @@ Data\Reputation\Listed.lua
 Data\Reputation\Captured.lua
 Data\Travel\KnownTransports.lua
 Data\Generated\Unconfirmed.lua
+Data\Generated\AreaIDs.lua
 Data\Generated\MapOverlays.lua
 Data\Generated\GearWeights.lua
 Data\Authored\TheDeadmines.lua

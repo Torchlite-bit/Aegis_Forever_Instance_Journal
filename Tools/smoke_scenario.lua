@@ -1240,6 +1240,37 @@ check(overlay.Here:IsShown() and math.abs(overlay.Here._width - 0.18 * artW) < 0
 Mock.subzone = "Somewhere unmapped"
 Mock.Fire("ZONE_CHANGED")
 check(not overlay.Here:IsShown(), "and goes out in an area the map does not know")
+-- A client in another language names the area its own way: known through the area's id
+do
+	local ids = ns.AREA_IDS
+	ns.AREA_IDS = { ["Anvilmar's Rest"] = { 9001 } }
+	Mock.areaNames[9001] = "Anvilmars Ruhest\195\164tte"
+	ns.Areas:Forget()
+	Mock.subzone = "Anvilmars Ruhest\195\164tte"
+	Mock.Fire("ZONE_CHANGED")
+	check(overlay.Here:IsShown() and ns.AreaKey(Mock.subzone) == "Anvilmar's Rest"
+		and ns.AreaName("Anvilmar's Rest") == Mock.subzone,
+		"a German client's name for the area lights it up too, through the area's id")
+	ns.AREA_IDS = {}
+	ns.L.AREA_NAMES = { ["Anvilmar's Rest"] = "Anvilmars Rast" }
+	ns.Areas:Forget()
+	check(ns.AreaKey("Anvilmars Rast") == "Anvilmar's Rest" and ns.AreaName("Anvilmar's Rest") == "Anvilmars Rast",
+		"without an id, the translation's name")
+	ns.L.AREA_NAMES, ns.AREA_IDS = nil, ids
+	Mock.areaNames[9001] = nil
+	ns.Areas:Forget()
+	Mock.subzone = "Somewhere unmapped"
+	Mock.Fire("ZONE_CHANGED")
+	-- /aegis areas: on an English client, each name's ids, saved for Tools/bake_area_ids.py
+	Mock.areaNames[4321], Mock.areaNames[4322], Mock.areaNames[17000] = "Anvilmar's Rest", "Anvilmar's Rest", "Lost Marsh"
+	SlashCmdList.AEGISJOURNAL("areas")
+	local scan = ns.db.areaIDs
+	check(scan and scan.locale == "enUS" and scan.found["Anvilmar's Rest"] and #scan.found["Anvilmar's Rest"] == 2
+		and scan.found["Lost Marsh"][1] == 17000 and #scan.missing > 0 and not scan.found["Somewhere unmapped"],
+		"/aegis areas finds the ids of the journal's area names, and says which it could not")
+	Mock.areaNames[4321], Mock.areaNames[4322], Mock.areaNames[17000] = nil, nil, nil
+	ns.db.areaIDs = nil
+end
 Mock.Fire("ENCOUNTER_END", 3493, "Faldrim Anvilmar", 1, 5, 1)
 check(DungeonMap:IsDefeated(ns.GetInstance("HallOfThanes"), faldrimPin.boss) and faldrimPin.Cross:IsShown()
 	and faldrimPin.Portrait._desaturated, "a kill greys and crosses out its boss")
@@ -3223,6 +3254,23 @@ end)()
 	check(IS:Read(Mock.ItemLink(LATE)).stats.CRIT == 1, "once read, it is kept")
 	Mock.Fire("TOOLTIP_DATA_UPDATE", 4242)
 	check(IS:Read(Mock.ItemLink(LATE)).stats.CRIT == 2, "until the client says more of its tooltip came")
+
+	-- Another language's wordings, from its locale file (L.EQUIP_PATTERNS, "{n}" for the number)
+	do
+		local GERMAN = 990784
+		Mock.itemInstant[GERMAN] = { "INVTYPE_NECK", 4, 0, "Miscellaneous" }
+		Mock.itemsCached[GERMAN] = true
+		Mock.itemLines[GERMAN] = { "Equip: Erh\195\182ht Eure Chance, einen kritischen Treffer zu erzielen, um 2%.",
+			"Equip: Erh\195\182ht durch Feuerzauber und Feuereffekte zugef\195\188gten Schaden um bis zu 9." }
+		ns.L.EQUIP_PATTERNS = { { "kritischen treffer zu erzielen, um {n}", "CRIT" },
+			{ "durch feuerzauber.-um bis zu {n}", "FIRE DAMAGE" } }
+		IS:Forget()
+		local german = IS:Read(Mock.ItemLink(GERMAN)).stats
+		check(german.CRIT == 2 and german["FIRE DAMAGE"] == 9, "a German client's Equip: lines, by its own wordings")
+		ns.L.EQUIP_PATTERNS = nil
+		IS:Forget()
+		check(not IS:Read(Mock.ItemLink(GERMAN)).stats.CRIT, "and without them, the English ones only")
+	end
 
 	-- Talents: the tree with the most points, each answer matched to its tree by its id
 	local talents, traits = C_ClassTalents, C_Traits

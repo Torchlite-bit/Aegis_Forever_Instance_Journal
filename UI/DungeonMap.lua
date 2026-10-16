@@ -712,7 +712,7 @@ local function DrawHere(instance, index)
 	if instance == CurrentInstance() then
 		local ok, subzone = pcall(GetSubZoneText)
 		subzone = ok and ns.Readable(subzone) or nil
-		area = subzone and instance.mapAreas and instance.mapAreas[subzone]
+		area = subzone and instance.mapAreas and instance.mapAreas[ns.AreaKey(subzone)]
 	end
 	if not area or (area.floor or 1) ~= index then
 		here:Hide()
@@ -749,7 +749,7 @@ local function ZoneName()
 	for _, fn in ipairs({ GetMinimapZoneText, GetRealZoneText }) do
 		local ok, name = pcall(fn)
 		name = ok and ns.Readable(name) or nil
-		if type(name) == "string" and name ~= "" then return name end
+		if type(name) == "string" and name ~= "" then return ns.AreaKey(name) end
 	end
 	return nil
 end
@@ -764,6 +764,7 @@ local function PlayerSubMap(mapID)
 	if x then
 		local ok, area = pcall(GetSubZoneText)
 		area = ok and ns.Readable(area) or nil
+		area = area and ns.AreaKey(area)
 		for _, subMap in ipairs(ns.GetSubMaps()) do
 			if area and subMap.areas and subMap.parentMapID == playerMap and OnSubMap(subMap, x, y) and (subMap.areas[area]
 				or (subMap == playerBelow and subMap.sharedAreas and subMap.sharedAreas[area])) then

@@ -108,6 +108,12 @@ L.WEIGHTS_UNUSED = "Not used: %s."
 L.WEIGHTS_NOT_PAWN = "That isn't a Pawn scale. In Pawn, choose Export and copy all of its text."
 L.WEIGHTS_OTHER_CLASS = "That scale is for a %s, not for this character's class."
 L.WEIGHTS_FOR = "For"
+-- /aegis areas: the client's id for each of the journal's area names (Core/Areas.lua).
+L.AREAS_START = "Looking up the client's ids for the journal's %d area names..."
+L.AREAS_DONE = "Found the ids of %d of the %d area names. /reload to save them."
+L.AREAS_MISSING = "Not found: %s."
+L.AREAS_SCANNING = "Still looking up the area names."
+L.AREAS_ENGLISH = "Run /aegis areas on an English client: the names it looks for are English."
 -- The journal's page in the game's options (Options > AddOns).
 L.OPTIONS_TITLE = "Aegis Instance Journal"
 L.OPTIONS_BOSS_LEVELS = "Show boss levels on the boss list"

@@ -104,6 +104,8 @@ SlashCmdList.AEGISJOURNAL = function(message)
 		ns.GearFinder:Scan()
 	elseif command == "options" then
 		ns.Options:Open()
+	elseif command == "areas" then
+		ns.Areas:Scan()
 	else
 		ns.Print(L.SLASH_HELP)
 	end
