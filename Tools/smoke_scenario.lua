@@ -2771,7 +2771,7 @@ check(ns.Recorder:IsRecording(), "/aegis record starts recording")
 -- Copy: the recording as text for our Discord, under the name the player wants credited
 do
 	check(record.Link:GetText() == "https://discord.gg/Hr66t25vE7" and record.Names:GetText():find("Subtilizer", 1, true)
-		and record.Names:GetText():find("Genesys Firstborn", 1, true),
+		and record.Names:GetText():find("Genesys Firstborn", 1, true) and record.Names:GetText():find("Staree4ok", 1, true),
 		"the Discord link and the contributors")
 	Mock.Fire("QUEST_ACCEPTED", 96403)
 	state.quests[96403].title = "Important Heirlooms"
