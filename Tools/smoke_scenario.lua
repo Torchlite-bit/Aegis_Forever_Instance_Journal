@@ -3199,9 +3199,24 @@ end)()
 	ns.GearPanel:Redraw(gear)
 	check(finger2.entry.itemID == RING_X and finger1.entry.itemID == RING_Y,
 		"a cell never shows the ring the other shows, picked or not")
-	GF:SetPick("finger1", nil)
 	GF:SetPick("finger2", nil)
-	ns.GearPanel:Redraw(gear)
+	-- The first finger's ring grows stronger than the pick: the pick now beats only the second
+	-- finger's, and shows there, its own cell's pick or not, rather than in neither cell
+	Mock.itemStats[RING_A], Mock.itemStats[RING_B] = { ITEM_MOD_STRENGTH_SHORT = 20 }, { ITEM_MOD_STRENGTH_SHORT = 10 }
+	Mock.itemStats[RING_X], Mock.itemStats[RING_Y] = { ITEM_MOD_STRENGTH_SHORT = 8 }, { ITEM_MOD_STRENGTH_SHORT = 15 }
+	IS:Forget()
+	Mock.RunTimers(1)
+	check(ns.charDB.gearFinder.picks.finger1 == RING_Y and finger2.entry and finger2.entry.itemID == RING_Y
+		and finger2.entry.compare.slot == 12 and not finger1.entry,
+		"a ring picked for a finger it no longer beats shows on the other finger, not in neither cell")
+	finger2:Click()
+	check(gear.Picker:IsShown() and gear.Picker.Rows[1].entry.itemID == RING_Y, "and its picker opens there")
+	ns.GearPanel:ClosePicker()
+	Mock.itemStats[RING_A], Mock.itemStats[RING_B] = { ITEM_MOD_STRENGTH_SHORT = 5 }, { ITEM_MOD_STRENGTH_SHORT = 14 }
+	Mock.itemStats[RING_X], Mock.itemStats[RING_Y] = { ITEM_MOD_STRENGTH_SHORT = 19 }, { ITEM_MOD_STRENGTH_SHORT = 16 }
+	GF:SetPick("finger1", nil)
+	IS:Forget()
+	Mock.RunTimers(1)
 	-- One ring worn and a finger free: one cell fills it
 	Mock.worn[11], Mock.worn[12] = RING_B, nil
 	Mock.itemStats[RING_Y] = { ITEM_MOD_STRENGTH_SHORT = 9 }

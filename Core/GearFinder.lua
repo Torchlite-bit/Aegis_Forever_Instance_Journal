@@ -295,7 +295,12 @@ function GearFinder:Cells()
 			local main, other = firstOf[def.group], cell
 			if not main or (list[1] and list[1].compare.slot == def.slot) then main, other = cell, main end
 			local mainPick, otherPick = picks[main.def.key], other and picks[other.def.key]
-			main.shown = Listed(list, mainPick) or FirstBut(list, otherPick)
+			-- The other cell's pick is left to it only while it can show it, beating the other worn
+			-- one; else it would be in neither cell.
+			local held = Listed(list, otherPick)
+			local leftToOther = held and held.compare.otherSlot and held.compare.score - held.compare.otherWorn > 0.0001
+				and held.itemID or nil
+			main.shown = Listed(list, mainPick) or FirstBut(list, leftToOther)
 			main.picked = main.shown ~= nil and main.shown.itemID == mainPick
 			if other then
 				other.entries = SecondOf(list, main.shown)

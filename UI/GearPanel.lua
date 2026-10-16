@@ -473,6 +473,10 @@ local function CreatePickRow(picker, index)
 	row.IconBorder = row:CreateTexture(nil, "OVERLAY")
 	row.IconBorder:SetTexture("Interface\\Common\\WhiteIconFrame")
 	row.IconBorder:SetAllPoints(row.Icon)
+	-- The level it waits for, in red on its icon, as on a cell.
+	row.Level = row:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
+	row.Level:SetPoint("BOTTOMRIGHT", row.Icon, -2, 2)
+	row.Level:SetTextColor(LATER_COLOR[1], LATER_COLOR[2], LATER_COLOR[3])
 	row.Gain = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 	row.Gain:SetPoint("TOPRIGHT", -6, -5)
 	row.Gain:SetTextColor(GAIN_COLOR[1], GAIN_COLOR[2], GAIN_COLOR[3])
@@ -579,11 +583,8 @@ function GearPanel:PaintPicker(cells)
 			if quality then row.IconBorder:SetVertexColor(QualityRGB(quality)) end
 			row.Name:SetText(entry.info.name or "")
 			row.Name:SetTextColor(QualityRGB(quality))
-			local where = entry.instance.name .. " \194\183 " .. SourceName(entry)
-			if entry.compare.later then
-				where = where .. " \194\183 |cffff1a1a" .. string.format(L.GEAR_PICK_LATER, entry.compare.minLevel) .. "|r"
-			end
-			row.Source:SetText(where)
+			row.Source:SetText(entry.instance.name .. " \194\183 " .. SourceName(entry))
+			row.Level:SetText(entry.compare.later and entry.compare.minLevel or "")
 			row.Gain:SetText(GainText(entry.compare))
 			row.Mark:SetText(shown and (cell.picked and L.GEAR_PICK_YOURS or L.GEAR_PICK_BIGGEST) or "")
 			row.Selected:SetShown(shown)
