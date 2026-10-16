@@ -3189,6 +3189,34 @@ end)()
 	local listsY = false
 	for _, other in ipairs(finger1.others or {}) do if other.itemID == RING_Y then listsY = true end end
 	check(not listsY, "and the first cell does not list it among its own")
+	-- A ring picked for the first finger: the other finger's cell takes the next, against its own ring
+	GF:SetPick("finger1", RING_Y)
+	ns.GearPanel:Redraw(gear)
+	check(finger1.entry.itemID == RING_Y and finger1.picked and finger2.entry and finger2.entry.itemID == RING_X
+		and finger2.entry.compare.slot == 12 and not finger2.picked,
+		"a ring picked for the first finger: the second takes the other, measured against the ring it replaces")
+	GF:SetPick("finger2", RING_Y)
+	ns.GearPanel:Redraw(gear)
+	check(finger2.entry.itemID == RING_X and finger1.entry.itemID == RING_Y,
+		"a cell never shows the ring the other shows, picked or not")
+	GF:SetPick("finger2", nil)
+	-- The first finger's ring grows stronger than the pick: the pick now beats only the second
+	-- finger's, and shows there, its own cell's pick or not, rather than in neither cell
+	Mock.itemStats[RING_A], Mock.itemStats[RING_B] = { ITEM_MOD_STRENGTH_SHORT = 20 }, { ITEM_MOD_STRENGTH_SHORT = 10 }
+	Mock.itemStats[RING_X], Mock.itemStats[RING_Y] = { ITEM_MOD_STRENGTH_SHORT = 8 }, { ITEM_MOD_STRENGTH_SHORT = 15 }
+	IS:Forget()
+	Mock.RunTimers(1)
+	check(ns.charDB.gearFinder.picks.finger1 == RING_Y and finger2.entry and finger2.entry.itemID == RING_Y
+		and finger2.entry.compare.slot == 12 and not finger1.entry,
+		"a ring picked for a finger it no longer beats shows on the other finger, not in neither cell")
+	finger2:Click()
+	check(gear.Picker:IsShown() and gear.Picker.Rows[1].entry.itemID == RING_Y, "and its picker opens there")
+	ns.GearPanel:ClosePicker()
+	Mock.itemStats[RING_A], Mock.itemStats[RING_B] = { ITEM_MOD_STRENGTH_SHORT = 5 }, { ITEM_MOD_STRENGTH_SHORT = 14 }
+	Mock.itemStats[RING_X], Mock.itemStats[RING_Y] = { ITEM_MOD_STRENGTH_SHORT = 19 }, { ITEM_MOD_STRENGTH_SHORT = 16 }
+	GF:SetPick("finger1", nil)
+	IS:Forget()
+	Mock.RunTimers(1)
 	-- One ring worn and a finger free: one cell fills it
 	Mock.worn[11], Mock.worn[12] = RING_B, nil
 	Mock.itemStats[RING_Y] = { ITEM_MOD_STRENGTH_SHORT = 9 }
@@ -3279,9 +3307,74 @@ end)()
 	check(side.Dungeon.Name:GetText() == other.instance.name, "and back round to the last")
 	table.remove(other.boss.loot)
 
-	-- Clicking an upgrade opens its boss's loot, past a loot filter that would hide it
+	-- Clicking a cell: its top three upgrades beside it, to pick one from, as in Pathfinder
+	local PICK_A, PICK_B, PICK_C, PICK_D = 990796, 990797, 990798, 990799
+	for itemID, value in pairs({ [PICK_A] = 8, [PICK_B] = 6, [PICK_C] = 4, [PICK_D] = 2 }) do
+		Mock.itemInstant[itemID] = { "INVTYPE_FEET", 4, 3, "Mail" }
+		Mock.itemsCached[itemID], Mock.itemStats[itemID] = true, { ITEM_MOD_STRENGTH_SHORT = value }
+	end
+	table.insert(taragaman.loot, { itemID = PICK_A })
+	table.insert(other.boss.loot, { itemID = PICK_B })
+	table.insert(taragaman.loot, { itemID = PICK_C })
+	table.insert(taragaman.loot, { itemID = PICK_D })
+	GF:Refresh()
+	local feet = Cell("feet")
+	Cell("wrist"):Click()
+	check(not (rawget(gear, "Picker") and gear.Picker:IsShown()), "a slot with no upgrade has nothing to pick from")
+	feet:Click()
+	local picker = gear.Picker
+	check(picker and picker:IsShown() and f.selectedTab == 4 and picker.Title:GetText() == "Feet"
+		and picker.Count:GetText() == "The top 3 of 4 upgrades" and picker.Rows[1].entry.itemID == PICK_A
+		and picker.Rows[2].entry.itemID == PICK_B and picker.Rows[3].entry.itemID == PICK_C and not picker.Rows[4]:IsShown()
+		and picker.Rows[1].Mark:GetText() == "Biggest" and picker.Rows[1].Selected:IsShown() and not picker.Rows[2].Selected:IsShown()
+		and not picker.Clear:IsShown(), "a click on a cell: its top three upgrades beside it, biggest first and marked")
+	check(select(1, picker:GetPoint(1)) == "TOPRIGHT" and picker.Rows[2].Source:GetText():find(other.instance.name, 1, true)
+		and picker.Rows[2].Gain:GetText() == ns.GearPanel.GainText(picker.Rows[2].entry.compare),
+		"over the other column, each with where it drops and what it adds")
+	picker.Rows[2]:Click()
+	local suggested = {}
+	for _, dungeon in ipairs(GF:Suggest()) do
+		for _, key in ipairs(dungeon.slots) do suggested[key] = dungeon.instance end
+	end
+	check(not picker:IsShown() and feet.entry.itemID == PICK_B and feet.picked and feet.Picked:IsShown() == feet.hasPickedArt
+		and ns.charDB.gearFinder.picks.feet == PICK_B and suggested.feet == other.instance,
+		"picking one shows it in the slot, starred, kept for the character; the suggested dungeons follow")
+	feet:Click()
+	check(picker:IsShown() and picker.Rows[2].Mark:GetText() == "Your pick" and picker.Rows[2].Selected:IsShown()
+		and picker.Clear:IsShown(), "opened again, it marks the pick, with Clear")
+	feet:Click()
+	check(not picker:IsShown(), "a second click on the cell closes it")
+	GF:SetPick("feet", PICK_D)
+	ns.GearPanel:Redraw(gear)
+	feet:Click()
+	check(picker.Rows[4]:IsShown() and picker.Rows[4].entry.itemID == PICK_D and picker.Rows[4].Mark:GetText() == "Your pick",
+		"a pick further down than the top three is listed after them")
+	picker.Clear:Click()
+	check(not picker:IsShown() and feet.entry.itemID == PICK_A and not feet.picked and not feet.Picked:IsShown()
+		and ns.charDB.gearFinder.picks.feet == nil, "Clear my pick: the biggest again")
+	GF:SetPick("feet", PICK_A)
+	check(ns.charDB.gearFinder.picks.feet == nil, "picking the biggest is no pick at all")
+	-- A pick that stops being an upgrade gives the slot back its biggest; one put on is forgotten
+	GF:SetPick("feet", PICK_C)
+	Mock.worn[8] = PICK_C
+	Mock.Fire("PLAYER_EQUIPMENT_CHANGED")
+	Mock.RunTimers(1)
+	check(ns.charDB.gearFinder.picks.feet == nil and feet.entry.itemID == PICK_A and not feet.picked,
+		"a pick put on is forgotten, and the slot shows what still beats it")
+	Mock.worn[8] = nil
+	feet:Click()
+	ns.Journal:SelectTab(1)
+	check(not picker:IsShown(), "the box closes with the tab")
+	ns.Journal:ShowGear()
+	Mock.RunTimers(1)
+	for _ = 1, 3 do table.remove(taragaman.loot) end
+	table.remove(other.boss.loot)
+	Mock.Fire("PLAYER_EQUIPMENT_CHANGED")
+	Mock.RunTimers(1)
+
+	-- Right-clicking an upgrade opens its boss's loot, past a loot filter that would hide it
 	ns.charDB.lootFilters.slot = "FEET"
-	main:Click()
+	main:Click("RightButton")
 	Mock.RunTimers(2)
 	check(page:IsShown() and page.boss and page.boss.name == "Taragaman the Hungerer" and page.tab == Page.TAB_LOOT
 		and f.selectedTab == 1, "an upgrade opens its boss on the Loot tab, under Dungeons")
@@ -3309,7 +3402,7 @@ end)()
 	end
 	check(trashCell and trashCell.Source:GetText() == trashInstance.name,
 		"a trash drop names its dungeon: " .. tostring(trashCell and trashCell.Source:GetText()))
-	trashCell:Click()
+	trashCell:Click("RightButton")
 	Mock.RunTimers(2)
 	check(page:IsShown() and page.instance == trashInstance and not page.boss and page.tab == Page.TAB_LOOT
 		and page.Loot.revealedItemID == trashItem, "and opens the dungeon's own loot page on it")

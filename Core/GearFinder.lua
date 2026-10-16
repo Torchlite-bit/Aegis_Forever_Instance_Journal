@@ -13,6 +13,11 @@ local L = ns.L
 
 	Pathfinder's other sources (quest rewards, reputation vendors, crafted gear, raids) are left
 	out of this first version: dungeon drops only.
+
+	As in Pathfinder, a slot shows its biggest upgrade, or one the player picked from its top
+	TOP_PICKS. Picks are kept for each character, and the suggested dungeon follows them. A pick
+	that stops being an upgrade (another spec, better gear) gives the slot back its biggest, and
+	comes back if it is one again; one the player has put on is forgotten.
 ]]
 
 local GearFinder = {}
@@ -20,6 +25,7 @@ ns.GearFinder = GearFinder
 
 local AHEAD = 3              -- dungeons and items up to this many levels above the player
 local REFRESH_DELAY = 0.5    -- seconds to gather item answers before weighing again
+GearFinder.TOP_PICKS = 3     -- a slot's upgrades the player can pick from
 
 -- The slots, in the character sheet's order, and the group each inventory slot is in.
 local GROUP_OF = {
@@ -159,8 +165,36 @@ function GearFinder:Find()
 	if not IS:WornKnown() then missing = missing + 1 end
 	for _, list in pairs(bySlot) do table.sort(list, ByGain) end
 	results = bySlot
+	self:ForgetWornPicks()
 	self:Recheck()
 	return results, missing
+end
+
+------------------------------------------------------------------------------------------
+-- Picks
+------------------------------------------------------------------------------------------
+
+-- The player's picks: the item each cell shows instead of its biggest upgrade, by the cell's key.
+function GearFinder:Picks()
+	ns.charDB.gearFinder = ns.charDB.gearFinder or {}
+	local settings = ns.charDB.gearFinder
+	settings.picks = settings.picks or {}
+	return settings.picks
+end
+
+-- A pick the player has put on is theirs: the slot goes back to its biggest upgrade.
+function GearFinder:ForgetWornPicks()
+	local picks = self:Picks()
+	if next(picks) == nil then return end
+	local worn = {}
+	for slot = 1, 19 do
+		local link = GetInventoryItemLink("player", slot)
+		local itemID = link and tonumber(link:match("item:(%d+)"))
+		if itemID then worn[itemID] = true end
+	end
+	for key, itemID in pairs(picks) do
+		if worn[itemID] then picks[key] = nil end
+	end
 end
 
 --[[
@@ -225,33 +259,85 @@ local function SecondOf(list, first)
 	return out
 end
 
+-- The upgrade `itemID` among `list`'s, or nil.
+local function Listed(list, itemID)
+	if not itemID then return nil end
+	for _, entry in ipairs(list) do
+		if entry.itemID == itemID then return entry end
+	end
+	return nil
+end
+
+-- The first of `list` that is not `itemID`.
+local function FirstBut(list, itemID)
+	for _, entry in ipairs(list) do
+		if entry.itemID ~= itemID then return entry end
+	end
+	return nil
+end
+
 --[[
 	The cells: { def (from CELLS), entries (its slot's upgrades, best first), shown (the one it
-	shows, or nil) }. Two cells of one slot (rings, trinkets) never show the same item, and
-	neither lists the other's.
+	shows, or nil), picked (shown because the player picked it) }. Two cells of one slot (rings,
+	trinkets) never show the same item, and neither lists the other's.
+
+	Of those two, the cell of the weaker worn one (the slot every upgrade of the pair replaces,
+	Core/ItemScore.lua) shows the pair's first choice. The other cell's must also beat the other
+	worn one, and is measured against it. A pick in either cell is kept from the other.
 ]]
 function GearFinder:Cells()
+	local picks = self:Picks()
 	local out, firstOf = {}, {}
 	for _, def in ipairs(self.CELLS) do
 		local list = results[def.group] or {}
 		local cell = { def = def, entries = list }
 		if def.second then
-			local first = firstOf[def.group]
-			cell.entries = SecondOf(list, first and first.shown)
-			cell.shown = cell.entries[1]
-			if first and cell.shown then first.entries = Without(list, cell.shown.itemID) end
-			-- Each pick in the cell of the slot it replaces: the weaker of the two may be the second.
-			if first and first.shown and first.shown.compare.slot ~= first.def.slot then
-				first.shown, cell.shown = cell.shown, first.shown
-				first.entries, cell.entries = cell.entries, first.entries
+			local main, other = firstOf[def.group], cell
+			if not main or (list[1] and list[1].compare.slot == def.slot) then main, other = cell, main end
+			local mainPick, otherPick = picks[main.def.key], other and picks[other.def.key]
+			-- The other cell's pick is left to it only while it can show it, beating the other worn
+			-- one; else it would be in neither cell.
+			local held = Listed(list, otherPick)
+			local leftToOther = held and held.compare.otherSlot and held.compare.score - held.compare.otherWorn > 0.0001
+				and held.itemID or nil
+			main.shown = Listed(list, mainPick) or FirstBut(list, leftToOther)
+			main.picked = main.shown ~= nil and main.shown.itemID == mainPick
+			if other then
+				other.entries = SecondOf(list, main.shown)
+				other.shown = Listed(other.entries, otherPick) or other.entries[1]
+				other.picked = other.shown ~= nil and other.shown.itemID == otherPick
+				main.entries = Without(list, other.shown and other.shown.itemID)
 			end
 		else
-			cell.shown = list[1]
+			cell.shown = Listed(list, picks[def.key]) or list[1]
+			cell.picked = cell.shown ~= nil and cell.shown.itemID == picks[def.key]
 			firstOf[def.group] = cell
 		end
 		out[#out + 1] = cell
 	end
 	return out
+end
+
+-- What a cell offers to pick from: its top TOP_PICKS, and the one it shows if that is further down.
+function GearFinder:Choices(cell)
+	local out = {}
+	for index = 1, math.min(#cell.entries, self.TOP_PICKS) do out[#out + 1] = cell.entries[index] end
+	if cell.shown and not Listed(out, cell.shown.itemID) then out[#out + 1] = cell.shown end
+	return out
+end
+
+--[[
+	Shows upgrade `itemID` in cell `key`; nil, or the item the cell would show unpicked, gives it
+	back its biggest.
+]]
+function GearFinder:SetPick(key, itemID)
+	local picks = self:Picks()
+	picks[key] = nil
+	if itemID == nil then return end
+	for _, cell in ipairs(self:Cells()) do
+		if cell.def.key == key and cell.shown and cell.shown.itemID == itemID then return end
+	end
+	picks[key] = itemID
 end
 
 --[[

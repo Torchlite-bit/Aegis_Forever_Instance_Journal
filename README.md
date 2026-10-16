@@ -1,6 +1,6 @@
 <p align="center"><img src="docs/images/logo.png" alt="Aegis Instance Journal" width="220"></p>
 
-# Aegis: Forever Instance Journal (v0.30.1)
+# Aegis: Forever Instance Journal (v0.31.0)
 
 **Retail's instance journal and dungeon maps, brought to WoW: Forever.**
 
@@ -133,7 +133,10 @@ Five side tabs, as in retail, plus one:
 
 - **The best upgrade for every slot** waiting in the dungeons near your level, laid
   out like your character sheet: each marked with what it adds to all the gear you
-  wear, and where it drops. A click opens its loot.
+  wear, and where it drops.
+- **Pick from the top 3**: click a slot to see its three biggest upgrades and choose
+  the one you want there; your picks are kept for each character. Right-click opens
+  an item's loot in the journal.
 - **The dungeon that holds the most of them**, and the others with upgrades, one
   click apart.
 - **Scored for your spec**: the one your talents say, or one you pick. Change any

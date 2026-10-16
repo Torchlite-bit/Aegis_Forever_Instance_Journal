@@ -169,13 +169,16 @@ local function ShowCompare()
 	end
 end
 
-local function ShowEntryTooltip(owner, entry, anchor, others)
+-- An upgrade's tooltip: the item, what it adds, where it drops; `clickText` says what a click on
+-- `owner` does, `picked` that the player chose it for its slot.
+local function ShowEntryTooltip(owner, entry, anchor, others, clickText, picked)
 	GameTooltip:SetOwner(owner, anchor or "ANCHOR_RIGHT")
 	GameTooltip:SetHyperlink(entry.link)
 	GameTooltip:AddLine(" ")
 	AddGainLines(entry.compare)
 	GameTooltip:AddLine(entry.instance.name .. " \194\183 " .. SourceName(entry), 1, 0.82, 0)
 	if entry.compare.later then GameTooltip:AddLine(string.format(L.GEAR_TIP_LATER, entry.compare.minLevel), 1, 0.2, 0.2) end
+	if picked then GameTooltip:AddLine(L.GEAR_TIP_PICKED, 1, 0.82, 0) end
 	-- The next best for the slot, so a pick isn't the only thing it says.
 	local listed = 0
 	for _, other in ipairs(others or {}) do
@@ -186,7 +189,7 @@ local function ShowEntryTooltip(owner, entry, anchor, others)
 			listed = listed + 1
 		end
 	end
-	GameTooltip:AddLine(L.GEAR_TIP_CLICK, 0.5, 0.8, 1)
+	GameTooltip:AddLine(clickText or L.GEAR_TIP_CLICK, 0.5, 0.8, 1, true)
 	GameTooltip:Show()
 	ShowCompare()
 end
@@ -212,14 +215,21 @@ local function ClickEntry(entry)
 	OpenEntry(entry)
 end
 
--- A cell's click: its upgrade's, or for what is worn there, only shift's and ctrl's.
-local function ClickCell(cell)
-	if cell.entry then
-		ClickEntry(cell.entry)
-		return
+--[[
+	A cell's click: shift and ctrl do what they do on any item (its upgrade, or what is worn there
+	when it has none). A plain click opens the slot's top upgrades to pick from, beside it; a right
+	click opens its upgrade's loot.
+]]
+local function ClickCell(cell, button)
+	local link = cell.entry and cell.entry.link or GetInventoryItemLink("player", cell.def.slot)
+	if link and type(HandleModifiedItemClick) == "function" and HandleModifiedItemClick(link) then return end
+	if not cell.entry then return end
+	if button == "RightButton" then
+		GearPanel:ClosePicker()
+		OpenEntry(cell.entry)
+	else
+		GearPanel:TogglePicker(cell)
 	end
-	local link = GetInventoryItemLink("player", cell.def.slot)
-	if link and type(HandleModifiedItemClick) == "function" then HandleModifiedItemClick(link) end
 end
 
 ------------------------------------------------------------------------------------------
@@ -230,7 +240,7 @@ local function ShowCellTooltip(cell)
 	local entry = cell.entry
 	local anchor = cell.mirrored and "ANCHOR_LEFT" or "ANCHOR_RIGHT"
 	if entry then
-		ShowEntryTooltip(cell, entry, anchor, cell.others)
+		ShowEntryTooltip(cell, entry, anchor, cell.others, L.GEAR_TIP_CELL_CLICK, cell.picked)
 		return
 	end
 	-- No upgrade: what is worn, as the sheet's own slot shows it.
@@ -297,6 +307,13 @@ local function CreateCell(panel, def)
 	cell.Level = cell:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
 	cell.Level:SetPoint("BOTTOMRIGHT", cell.Icon, -3, 2)
 
+	-- The player's own pick, starred as the auction house stars a favourite.
+	cell.Picked = cell:CreateTexture(nil, "OVERLAY", nil, 2)
+	cell.Picked:SetSize(14, 14)
+	cell.Picked:SetPoint("TOPRIGHT", cell.Icon, 2, 2)
+	cell.hasPickedArt = Atlas(cell.Picked, "auctionhouse-icon-favorite")
+	cell.Picked:Hide()
+
 	cell.IconHighlight = cell:CreateTexture(nil, "HIGHLIGHT")
 	cell.IconHighlight:SetTexture("Interface\\Buttons\\ButtonHilight-Square")
 	cell.IconHighlight:SetBlendMode("ADD")
@@ -340,6 +357,7 @@ local function CreateCell(panel, def)
 
 	cell:SetScript("OnEnter", ShowCellTooltip)
 	cell:SetScript("OnLeave", function() GameTooltip:Hide() end)
+	cell:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 	cell:SetScript("OnClick", ClickCell)
 	-- The tooltip rebuilds itself when the client sends more of the item, or shift is pressed.
 	cell.UpdateTooltip = ShowCellTooltip
@@ -368,9 +386,11 @@ local function SetIcon(cell, texture, quality)
 	end
 end
 
--- The upgrade a cell shows, or what is worn in its slot when there is none.
-local function SetCell(cell, shown, entries)
-	cell.entry, cell.others = shown, entries
+-- The upgrade a cell shows, starred when the player picked it; or what is worn in its slot when
+-- there is none.
+local function SetCell(cell, shown, entries, picked)
+	cell.entry, cell.others, cell.picked = shown, entries, picked and shown ~= nil or false
+	cell.Picked:SetShown(cell.picked and cell.hasPickedArt)
 	if shown then
 		local compare = shown.compare
 		SetIcon(cell, ns.Items:Icon(shown.itemID), shown.info.quality)
@@ -399,6 +419,215 @@ local function SetCell(cell, shown, entries)
 	end
 	SetSource(cell, L.GEAR_NO_UPGRADE)
 	cell.Source:SetTextColor(DIM_COLOR[1], DIM_COLOR[2], DIM_COLOR[3])
+end
+
+------------------------------------------------------------------------------------------
+-- Picking a slot's upgrade
+------------------------------------------------------------------------------------------
+
+--[[
+	A cell's top upgrades (Core/GearFinder.lua, Choices) in a box beside it, over the other column,
+	as Pathfinder's Gear Finder opens a slot's list: each with its gain and where it drops, the
+	one the slot shows marked. A click on one shows it in the slot; the box closes.
+]]
+local PICKER_WIDTH, PICK_ROW_WIDTH, PICK_ROW_HEIGHT = 268, 252, 42
+-- Room above the rows (the slot, how many) and below them (the note, Clear).
+local PICKER_TOP, PICKER_BOTTOM = 46, 38
+
+local function ShowPickRowTooltip(row)
+	ShowEntryTooltip(row, row.entry, "ANCHOR_RIGHT", nil, L.GEAR_TIP_PICK_CLICK, row.picked)
+end
+
+-- A row's click: shift and ctrl as on any item; a right click opens its loot, a plain one picks it.
+local function ClickPickRow(row, button)
+	local entry = row.entry
+	if not entry then return end
+	if entry.link and type(HandleModifiedItemClick) == "function" and HandleModifiedItemClick(entry.link) then return end
+	if button == "RightButton" then
+		GearPanel:ClosePicker()
+		OpenEntry(entry)
+		return
+	end
+	GearPanel:Pick(row.key, entry.itemID)
+end
+
+local function CreatePickRow(picker, index)
+	local row = CreateFrame("Button", nil, picker)
+	row:SetSize(PICK_ROW_WIDTH, PICK_ROW_HEIGHT)
+	row:SetPoint("TOP", 0, -(PICKER_TOP + (index - 1) * PICK_ROW_HEIGHT))
+	row:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+	-- The one the slot shows, lit in gold.
+	row.Selected = row:CreateTexture(nil, "BACKGROUND")
+	row.Selected:SetAllPoints()
+	row.Selected:SetColorTexture(1, 0.82, 0, 0.12)
+	row.Hover = row:CreateTexture(nil, "HIGHLIGHT")
+	row.Hover:SetAllPoints()
+	if Atlas(row.Hover, "charactercreate-customize-dropdown-linemouseover-middle") then
+		row.Hover:SetAlpha(0.15)
+	else
+		row.Hover:SetColorTexture(1, 1, 1, 0.06)
+	end
+	row.Icon = row:CreateTexture(nil, "ARTWORK")
+	row.Icon:SetSize(32, 32)
+	row.Icon:SetPoint("LEFT", 5, 0)
+	row.IconBorder = row:CreateTexture(nil, "OVERLAY")
+	row.IconBorder:SetTexture("Interface\\Common\\WhiteIconFrame")
+	row.IconBorder:SetAllPoints(row.Icon)
+	-- The level it waits for, in red on its icon, as on a cell.
+	row.Level = row:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
+	row.Level:SetPoint("BOTTOMRIGHT", row.Icon, -2, 2)
+	row.Level:SetTextColor(LATER_COLOR[1], LATER_COLOR[2], LATER_COLOR[3])
+	row.Gain = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+	row.Gain:SetPoint("TOPRIGHT", -6, -5)
+	row.Gain:SetTextColor(GAIN_COLOR[1], GAIN_COLOR[2], GAIN_COLOR[3])
+	row.Mark = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	row.Mark:SetPoint("BOTTOMRIGHT", -6, 6)
+	row.Name = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	row.Name:SetPoint("TOPLEFT", row.Icon, "TOPRIGHT", 8, -1)
+	row.Name:SetPoint("RIGHT", row.Gain, "LEFT", -6, 0)
+	row.Name:SetJustifyH("LEFT")
+	row.Name:SetWordWrap(false)
+	row.Source = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	row.Source:SetPoint("BOTTOMLEFT", row.Icon, "BOTTOMRIGHT", 8, 1)
+	row.Source:SetPoint("RIGHT", row.Mark, "LEFT", -6, 0)
+	row.Source:SetJustifyH("LEFT")
+	row.Source:SetWordWrap(false)
+	row:SetScript("OnClick", ClickPickRow)
+	row:SetScript("OnEnter", ShowPickRowTooltip)
+	row:SetScript("OnLeave", function() GameTooltip:Hide() end)
+	row.UpdateTooltip = ShowPickRowTooltip
+	return row
+end
+
+-- The box, in the look of the game's tooltips, over the slots.
+local function CreatePicker(panel)
+	local picker = ns.CreateFrameWithTemplate("Frame", nil, panel, "TooltipBackdropTemplate")
+	picker:SetWidth(PICKER_WIDTH)
+	picker:SetFrameLevel(panel:GetFrameLevel() + 30)
+	picker:EnableMouse(true)
+	picker:Hide()
+	picker.Title = picker:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	picker.Title:SetPoint("TOPLEFT", 12, -10)
+	picker.Count = picker:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+	picker.Count:SetPoint("TOPLEFT", picker.Title, "BOTTOMLEFT", 0, -3)
+	picker.Close = ns.CreateFrameWithTemplate("Button", nil, picker, "UIPanelCloseButtonNoScripts", "UIPanelCloseButton")
+	picker.Close:SetPoint("TOPRIGHT", 0, 0)
+	picker.Close:SetScript("OnClick", function() GearPanel:ClosePicker() end)
+	picker.Rows = {}
+	-- The top ones, and the slot's own pick if it is further down.
+	for index = 1, ns.GearFinder.TOP_PICKS + 1 do picker.Rows[index] = CreatePickRow(picker, index) end
+	picker.Clear = ns.CreateFrameWithTemplate("Button", nil, picker, "UIPanelButtonTemplate")
+	picker.Clear:SetSize(100, 22)
+	picker.Clear:SetPoint("BOTTOMRIGHT", -8, 8)
+	picker.Clear:SetText(L.GEAR_PICK_CLEAR)
+	picker.Clear:SetScript("OnClick", function() GearPanel:Pick(picker.key, nil) end)
+	picker.Kept = picker:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+	picker.Kept:SetPoint("BOTTOMLEFT", 12, 10)
+	picker.Kept:SetPoint("RIGHT", picker.Clear, "LEFT", -8, 0)
+	picker.Kept:SetJustifyH("LEFT")
+	picker.Kept:SetText(L.GEAR_PICK_KEPT)
+	return picker
+end
+
+-- Beside its cell, over the other column (the ranged slot's, over the left pane), inside the panel.
+local function PlacePicker(panel, picker, def)
+	local column, row = PLACES[def.key][1], PLACES[def.key][2]
+	local panelHeight = panel:GetHeight()
+	if not panelHeight or panelHeight <= 0 then panelHeight = PANE_HEIGHT + 2 * EDGE end
+	local top = EDGE + FIRST_ROW + (row - 1) * ROW_STEP - 4
+	top = math.max(EDGE, math.min(top, panelHeight - picker:GetHeight() - EDGE))
+	local cellWidth = SLOT_SIZE + TEXT_GAP + TEXT_WIDTH
+	picker:ClearAllPoints()
+	if column == 1 then
+		picker:SetPoint("TOPLEFT", EDGE + LEFT_X + cellWidth + 6, -top)
+	elseif column == 2 then
+		picker:SetPoint("TOPRIGHT", -(EDGE + RIGHT_WIDTH + RIGHT_X + cellWidth + 6), -top)
+	else
+		picker:SetPoint("TOPRIGHT", -(EDGE + RIGHT_WIDTH - SIDE_X + 6), -top)
+	end
+end
+
+-- The box for its cell, from the finder's cells; closed when the slot has nothing left to pick.
+function GearPanel:PaintPicker(cells)
+	local panel = self.panel
+	local picker = panel and rawget(panel, "Picker")
+	if not (picker and picker:IsShown()) then return end
+	local finder = ns.GearFinder
+	local cell
+	for _, each in ipairs(cells or finder:Cells()) do
+		if each.def.key == picker.key then cell = each end
+	end
+	if not cell or not cell.shown then
+		picker:Hide()
+		return
+	end
+	local choices = finder:Choices(cell)
+	local total = #cell.entries
+	picker.Title:SetText(SLOT_LABELS[cell.def.key] or cell.def.key)
+	if total <= 1 then
+		picker.Count:SetText(L.GEAR_PICK_ONE)
+	elseif total <= finder.TOP_PICKS then
+		picker.Count:SetText(string.format(L.GEAR_PICK_ALL, total))
+	else
+		picker.Count:SetText(string.format(L.GEAR_PICK_TOP, finder.TOP_PICKS, total))
+	end
+	for index, row in ipairs(picker.Rows) do
+		local entry = choices[index]
+		row.entry, row.key = entry, cell.def.key
+		if entry then
+			local shown = entry.itemID == cell.shown.itemID
+			row.picked = shown and cell.picked
+			row.Icon:SetTexture(ns.Items:Icon(entry.itemID))
+			local quality = entry.info.quality
+			row.IconBorder:SetShown(quality ~= nil and quality >= 2)
+			if quality then row.IconBorder:SetVertexColor(QualityRGB(quality)) end
+			row.Name:SetText(entry.info.name or "")
+			row.Name:SetTextColor(QualityRGB(quality))
+			row.Source:SetText(entry.instance.name .. " \194\183 " .. SourceName(entry))
+			row.Level:SetText(entry.compare.later and entry.compare.minLevel or "")
+			row.Gain:SetText(GainText(entry.compare))
+			row.Mark:SetText(shown and (cell.picked and L.GEAR_PICK_YOURS or L.GEAR_PICK_BIGGEST) or "")
+			row.Selected:SetShown(shown)
+			row:Show()
+		else
+			row.picked = nil
+			row:Hide()
+		end
+	end
+	picker.Clear:SetShown(cell.picked)
+	picker:SetHeight(PICKER_TOP + #choices * PICK_ROW_HEIGHT + PICKER_BOTTOM)
+	PlacePicker(panel, picker, cell.def)
+end
+
+-- Opens a cell's box, or closes it when it is that cell's already.
+function GearPanel:TogglePicker(cellFrame)
+	local panel = self.panel
+	local picker = rawget(panel, "Picker")
+	if not picker then
+		picker = CreatePicker(panel)
+		panel.Picker = picker
+	end
+	if picker:IsShown() and picker.key == cellFrame.def.key then
+		picker:Hide()
+		return
+	end
+	picker.key = cellFrame.def.key
+	picker:Show()
+	self:PaintPicker()
+end
+
+function GearPanel:ClosePicker()
+	local picker = self.panel and rawget(self.panel, "Picker")
+	if picker then picker:Hide() end
+end
+
+-- Shows upgrade `itemID` in cell `key` (nil: its biggest again); the suggested dungeon follows.
+function GearPanel:Pick(key, itemID)
+	if not key then return end
+	ns.GearFinder:SetPick(key, itemID)
+	self:ClosePicker()
+	self.panel.suggestIndex = 1
+	self:Redraw(self.panel)
 end
 
 ------------------------------------------------------------------------------------------
@@ -728,6 +957,7 @@ function GearPanel:Build(panel)
 			if panel:IsVisible() then ns.GearFinder:Refresh() end
 		end)
 	end)
+	panel:HookScript("OnHide", function() GearPanel:ClosePicker() end)
 	self.panel = panel
 end
 
@@ -754,7 +984,8 @@ end
 function GearPanel:Redraw(panel)
 	local finder = ns.GearFinder
 	local cells = finder:Cells()
-	for index, cell in ipairs(cells) do SetCell(panel.Cells[index], cell.shown, cell.entries) end
+	for index, cell in ipairs(cells) do SetCell(panel.Cells[index], cell.shown, cell.entries, cell.picked) end
+	self:PaintPicker(cells)
 	local suggestions = finder:Suggest(cells)
 	local count = #suggestions
 	if count > 0 then
