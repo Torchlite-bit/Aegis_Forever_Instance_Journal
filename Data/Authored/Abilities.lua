@@ -746,7 +746,9 @@ ns.AmendInstance("RuinsOfLordaeron", { bosses = {
 
 -- Saltspine's, Shadetooth's and the Relic Guardian's spells are from a recorded kill of each
 -- (2026-10-16). The Highland Spiders that cast in the first two fights were fighting the dig's
--- Dwarf Excavators nearby, not the group.
+-- Dwarf Excavators nearby, not the group. From the same run's log: what the creatures on the way
+-- to each boss put on players that the group took off, by what (Purify, Cure Poison, Cure
+-- Disease, Remove Curse), and the Highland Horror's roots, which Blessing of Freedom broke.
 ns.AmendInstance("ExcavationSiteWetlands", { bosses = {
 	["Saltspine"] = {
 		abilities = {
@@ -758,6 +760,9 @@ ns.AmendInstance("ExcavationSiteWetlands", { bosses = {
 		extraAbilities = {
 			{ title = "Crocolisks in the marsh", icon = ICONS .. "ability_hunter_pet_crocolisk", flags = { "Damage" },
 				description = "He roams the marsh at the start among elite crocolisks, so clear them first or pull him away from them." },
+			{ title = "Muculent Rot", icon = ICONS .. "ability_creature_disease_02", flags = { "Healer", "Poison", "Disease" },
+				description = "The Marsh Skulkers on the way to him give players Muculent Rot. A paladin's Purify takes it off. "
+					.. "It's either a poison or a disease, so a druid's or shaman's Cure Poison, or a priest's or shaman's Cure Disease, may work too." },
 		},
 		notAdds = { [260803] = true },
 	},
@@ -775,14 +780,24 @@ ns.AmendInstance("ExcavationSiteWetlands", { bosses = {
 				description = "Small raptors jump out of the grass as you walk through it and make you bleed." },
 			{ title = "The wave before him", icon = ICONS .. "ability_hunter_pet_raptor", flags = { "Important", "Damage" },
 				description = "Kill every raptor of the wave before he arrives. One group wiped on its first try with Shadetooth and several raptors on it at once." },
+			{ title = "Infected Wound", icon = ICONS .. "ability_creature_disease_03", flags = { "Healer", "Disease" },
+				description = "The Thicket Hunters, raptors on the way to him and in his fight, give players Infected Wound, a disease. "
+					.. "Paladins (Purify), priests and shamans (Cure Disease) can take it off." },
 		},
 		fightNote = "Kill the raptor matriarch in the tall grass. A wave of raptors comes when she dies, and Shadetooth runs in once they are dead.",
 		notAdds = { [260803] = true },
 	},
 	["Highland Horror"] = {
+		abilities = {
+			{ spellID = 1316480, name = "Entangling Roots", flags = { "Important" },
+				text = "He roots players in place. A paladin's Blessing of Freedom frees them." },
+		},
 		extraAbilities = {
 			{ title = "The Dragonmaw camp", icon = ICONS .. "inv_misc_head_dragon_black",
-				description = "He stands in a Dragonmaw camp. Its groups pull apart easily: take them one at a time first. The fight itself is short, nothing special seen yet." },
+				description = "He stands in a Dragonmaw camp. Its groups pull apart easily: take them one at a time first. The fight itself is short." },
+			{ title = "Curse of Weakness", icon = ICONS .. "spell_shadow_curseofmannoroth", flags = { "Healer", "Curse" },
+				description = "The Dragonmaw Thaumaturgists in his camp put Curse of Weakness on players. "
+					.. "Druids (Remove Curse) and mages (Remove Lesser Curse) can take it off." },
 		},
 	},
 	["Relic Guardian"] = {
@@ -793,6 +808,14 @@ ns.AmendInstance("ExcavationSiteWetlands", { bosses = {
 				text = "A heavy swing at everyone in front of him. Only the tank should stand there." },
 			{ spellID = 8078, name = "Thunderclap", flags = { "Damage" },
 				text = "Hits everyone near him and slows their attacks." },
+		},
+		extraAbilities = {
+			{ title = "Poison on the spider trail", icon = ICONS .. "ability_creature_poison_05", flags = { "Healer", "Poison" },
+				description = "The Highland Spiders and Highland Lurkers on the trail to him poison players. "
+					.. "Druids and shamans (Cure Poison) and paladins (Purify) can take it off." },
+			{ title = "Highland Venom", icon = ICONS .. "ability_creature_poison_03", flags = { "Healer", "Disease" },
+				description = "The Highland Lurkers also give players Highland Venom. Despite the name it's a disease: "
+					.. "paladins (Purify), priests and shamans (Cure Disease) can take it off." },
 		},
 		fightNote = "He stands still at the end of the spider trail. Click the small panel next to him to wake him.",
 	},

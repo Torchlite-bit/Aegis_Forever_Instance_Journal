@@ -776,6 +776,17 @@ do
 		"Excavation Site's encounter ids, and the Relic Guardian's spells with their written text and recorded numbers")
 	check(AddIDs(bosses["Saltspine"]) == "" and AddIDs(bosses["Shadetooth"]) == "260800,260801",
 		"the spiders fighting the dig nearby are not taken for adds: " .. AddIDs(bosses["Shadetooth"]))
+	-- What the creatures on the way put on players, and who can take it off, on the boss they lead to
+	local function Extra(boss, title)
+		for _, entry in ipairs(boss.extraAbilities or {}) do
+			if entry.title == title then return entry end
+		end
+	end
+	local venom = Extra(guardian, "Highland Venom")
+	check(Extra(bosses["Saltspine"], "Muculent Rot") and Extra(bosses["Shadetooth"], "Infected Wound")
+		and Extra(bosses["Highland Horror"], "Curse of Weakness") and Spell(bosses["Highland Horror"], 1316480)
+		and Extra(guardian, "Poison on the spider trail") and venom and venom.description:find("Cure Disease", 1, true),
+		"each boss notes the debuffs of the creatures on the way to him, and who can take them off")
 end
 ns.Journal:OpenBoss(thanes, magmatus)
 local magmatusHeaders = shownHeaders()

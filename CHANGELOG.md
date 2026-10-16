@@ -22,6 +22,10 @@ and the version shown in the AddOns list. Quote it in bug reports.
 - **Excavation Site: Wetlands, from a recorded run**: each boss's spells (the Relic Guardian's
   Knock Away is his threat drop; Shadetooth's roar fears up to three players), their areas and
   the entrance. Thank you, Genesys Firstborn.
+- **What can be dispelled on the way**, on the boss each pack leads to: the Marsh Skulkers'
+  Muculent Rot, the Thicket Hunters' Infected Wound, the Dragonmaw Thaumaturgists' Curse of
+  Weakness and the spider trail's poison and Highland Venom, with the classes that can take each
+  off; and the Highland Horror's roots, which Blessing of Freedom breaks.
 
 ### Changed
 - **18 quests' levels or side**, to Forever's: mostly the level they open at.
