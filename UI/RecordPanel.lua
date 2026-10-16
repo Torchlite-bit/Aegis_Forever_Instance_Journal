@@ -6,7 +6,7 @@ local L = ns.L
 
 	Left page, the recorder: whether it is on and how much it has caught; Start or Stop, Copy and
 	Clear; recording by itself in dungeons, and the combat-log choice; where to send a recording
-	(our Discord) and the name to credit it to; and the contributors whose recordings went into
+	(our Discord) and the name to credit it to; and the contributors whose work went into
 	the journal.
 
 	Right page, what has been caught, by dungeon (the latest first): the bosses killed and the

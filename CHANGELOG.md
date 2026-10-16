@@ -12,6 +12,11 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.29.1]
+
+### Changed
+- **Staree4ok heads the contributors** on the Record tab, for the journal's Russian translation.
+
 ## [0.29.0] (restart)
 
 ### Added
