@@ -18,8 +18,8 @@ and the version shown in the AddOns list. Quote it in bug reports.
 - **The character panel's Gear Finder tab** works like the panel's own tabs: from any page it
   turns the panel to your character, with your stat weights where its stats are. Clicked again,
   the weights stay; the Character tab or any other gives the stats back. Only the tab you're on is
-  marked. A folded-away right pane is unfolded for them (in combat they show over the panel's
-  edge instead).
+  marked. With the right pane folded away, they show over the panel's edge; its arrow unfolds
+  it.
 
 ## [0.30.0] (restart)
 

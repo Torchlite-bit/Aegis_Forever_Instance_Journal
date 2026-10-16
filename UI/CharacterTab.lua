@@ -6,7 +6,7 @@ local L = ns.L
 	Reputation, Skills, Honor, Currency, Statistics). Like those, it turns the panel to a page:
 	the Character page, with the Gear Finder's stat weights in a window where its stats are (the
 	weights to read and change, UI/WeightsEditor.lua, and a button that opens the Gear Finder).
-	Another tab, the pane folded away or the panel closed puts the stats back.
+	Another tab, or the panel closed, puts the stats back.
 
 	The tab is made from the same Blizzard template as the panel's own (LargeSideTabButtonTemplate)
 	and parented to their column, so it looks and moves as they do, but it is kept out of the
@@ -200,8 +200,8 @@ end
 ------------------------------------------------------------------------------------------
 
 --[[
-	Over the panel's right-hand pane; where that is folded away (in combat, when it can't be
-	unfolded), over the panel's right edge, below the button that unfolds it.
+	Over the panel's right-hand pane; where that is folded away, over the panel's right edge,
+	below the button that unfolds it.
 ]]
 function CharacterTab:PlaceWindow()
 	local window, host = self.window, CharacterFrame.RightPaneHost
@@ -272,13 +272,10 @@ function CharacterTab:Window()
 	if type(CharacterFrame.OnModeTabClicked) == "function" then
 		hooksecurefunc(CharacterFrame, "OnModeTabClicked", function() window:Hide() end)
 	end
-	-- The pane folded away takes the weights with it, as it takes the stats; unfolded (in combat,
-	-- with the window over the panel's edge), the window goes back over it.
+	-- Placed again when the right-hand pane is folded away or unfolded.
 	if type(CharacterFrame.RefreshRightPane) == "function" then
 		hooksecurefunc(CharacterFrame, "RefreshRightPane", function()
-			if not window:IsShown() then return end
-			local host = CharacterFrame.RightPaneHost
-			if host and not host:IsShown() then window:Hide() else CharacterTab:PlaceWindow() end
+			if window:IsShown() then CharacterTab:PlaceWindow() end
 		end)
 	end
 	-- The panel marks the Character tab whenever it lays itself out again: this one stays marked.
@@ -360,19 +357,24 @@ function CharacterTab:Describe()
 end
 
 --[[
-	What the tab does: the Character page, turned to as the panel's own tab does (ToggleCharacter,
-	which Blizzard's merchant window calls too), with the weights where its stats are. Clicked
-	again, it stays so. A pane folded away is unfolded, as its button does; in combat the
-	panel's size is left alone, and the window lies over the panel's edge instead.
+	What the tab does: the Character page, with the weights where its stats are. Clicked again, it
+	stays so.
+
+	The page is turned as ToggleCharacter turns it on an open panel (ShowSubFrame, then
+	RefreshDisplay), but not through ToggleCharacter: with the gamepad UI on, that also moves the
+	gamepad's cursor and rebinds its buttons, which addon code may not do in combat. What
+	ShowSubFrame writes, Blizzard's own code writes again the next time it turns the page.
+
+	A pane folded away is left so, with the window over the panel's edge: unfolding it from here
+	would leave the panel's folded state written by an addon until /reload, and the panel opened
+	in combat with the gamepad UI would then be blocked. Its own button unfolds it.
 ]]
 function CharacterTab:Select()
 	local window = self:Window()
-	if type(ToggleCharacter) == "function" and PaperDollFrame and not PaperDollFrame:IsShown() then
-		ToggleCharacter("PaperDollFrame", true)
-	end
-	if type(CharacterFrame.IsRightPaneCollapsed) == "function" and CharacterFrame:IsRightPaneCollapsed()
-		and type(CharacterFrame.SetRightPaneCollapsed) == "function" and not InCombatLockdown() then
-		CharacterFrame:SetRightPaneCollapsed(false)
+	if PaperDollFrame and not PaperDollFrame:IsShown() and not PaperDollFrame.hidden
+		and type(CharacterFrame.ShowSubFrame) == "function" then
+		CharacterFrame:ShowSubFrame("PaperDollFrame")
+		if type(CharacterFrame.RefreshDisplay) == "function" then CharacterFrame:RefreshDisplay() end
 	end
 	window:Show()
 	self:PlaceWindow()

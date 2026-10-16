@@ -3341,7 +3341,11 @@ end)()
 				if own.frameName then own:SetChecked(own.frameName == self.activeSubframe) end
 			end
 		end
+		-- What only Blizzard's own code may call: ToggleCharacter moves the gamepad's cursor, and the
+		-- pane's folded state, once written by an addon, stays so
+		local blizzardOnly = 0
 		_G.ToggleCharacter = function(name)
+			blizzardOnly = blizzardOnly + 1
 			if not _G[name]:IsShown() then CharacterFrame:ShowSubFrame(name) end
 			CharacterFrame:RefreshDisplay()
 		end
@@ -3349,6 +3353,7 @@ end)()
 		CharacterFrame.RefreshRightPane = function(self) self.RightPaneHost:SetShown(not self.rightPaneCollapsed) end
 		CharacterFrame.IsRightPaneCollapsed = function(self) return self.rightPaneCollapsed == true end
 		CharacterFrame.SetRightPaneCollapsed = function(self, collapsed)
+			blizzardOnly = blizzardOnly + 1
 			self.rightPaneCollapsed = collapsed
 			self:RefreshRightPane()
 			self:RefreshDisplay()
@@ -3388,34 +3393,32 @@ end)()
 		tab.customMouseUpHandler(tab, "LeftButton", false)
 		check(not (ns.CharacterTab.window and ns.CharacterTab.window:IsShown()) and ReputationFrame:IsShown(),
 			"a right click, or a press let go outside it, does nothing")
+		local before = blizzardOnly
 		tab.customMouseUpHandler(tab, "LeftButton", true)
 		local window = ns.CharacterTab.window
 		check(window and window:IsShown() and window:GetParent() == CharacterFrame and window:GetFrameStrata() == "HIGH"
 			and select(2, window:GetPoint(1)) == CharacterFrame.RightPaneHost,
 			"a click shows the stat weights over the panel's stats, above its detail panes")
-		check(PaperDollFrame:IsShown() and not ReputationFrame:IsShown() and CharacterFrame.activeSubframe == "PaperDollFrame",
-			"from another page, the panel turns to the Character page")
+		check(PaperDollFrame:IsShown() and not ReputationFrame:IsShown() and CharacterFrame.activeSubframe == "PaperDollFrame"
+			and blizzardOnly == before, "from another page, the panel turns to the Character page")
 		check(tab:GetChecked() and not column.Tabs[1]:GetChecked() and not column.Tabs[2]:GetChecked(),
 			"this tab marked, none of the panel's own")
 		tab.customMouseUpHandler(tab, "LeftButton", true)
 		CharacterFrame:RefreshDisplay()
 		check(window:IsShown() and tab:GetChecked() and not column.Tabs[1]:GetChecked(),
 			"clicked again, the weights stay; the panel laid out again leaves this tab marked")
-		-- The pane folded away takes the weights with it, as it takes the stats; the tab unfolds it
+		-- The pane folded away by its own button: the window over the panel's edge, below that button
 		CharacterFrame:SetRightPaneCollapsed(true)
-		check(not window:IsShown() and not tab:GetChecked() and column.Tabs[1]:GetChecked(),
-			"the pane folded away: the weights go with it, the Character tab marked again")
-		tab.customMouseUpHandler(tab, "LeftButton", true)
-		check(not CharacterFrame:IsRightPaneCollapsed() and window:IsShown()
-			and select(2, window:GetPoint(1)) == CharacterFrame.RightPaneHost, "the tab unfolds the pane for them")
-		-- In combat the panel's size is left alone: the window over its edge, below the button that unfolds it
-		CharacterFrame:SetRightPaneCollapsed(true)
-		Mock.inCombat = true
-		tab.customMouseUpHandler(tab, "LeftButton", true)
 		local point, relative, _, _, y = window:GetPoint(1)
-		check(CharacterFrame:IsRightPaneCollapsed() and window:IsShown() and point == "TOPRIGHT" and relative == CharacterFrame
-			and y == -56, "in combat the pane stays folded, and the window lies over the panel's edge")
-		Mock.inCombat = nil
+		check(window:IsShown() and tab:GetChecked() and point == "TOPRIGHT" and relative == CharacterFrame and y == -56,
+			"the pane folded away: the weights stay, over the panel's edge")
+		CharacterFrame:ShowSubFrame("ReputationFrame")
+		before = blizzardOnly
+		tab.customMouseUpHandler(tab, "LeftButton", true)
+		check(PaperDollFrame:IsShown() and CharacterFrame:IsRightPaneCollapsed() and window:IsShown()
+			and select(2, window:GetPoint(1)) == CharacterFrame, "a folded pane is left so, the weights over the edge")
+		check(blizzardOnly == before, "the tab turns the page and places the weights without calling ToggleCharacter "
+			.. "or folding the pane itself")
 		CharacterFrame:SetRightPaneCollapsed(false)
 		check(window:IsShown() and select(2, window:GetPoint(1)) == CharacterFrame.RightPaneHost,
 			"and goes over the pane once it is unfolded")
