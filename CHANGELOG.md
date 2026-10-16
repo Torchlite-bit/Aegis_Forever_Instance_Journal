@@ -26,7 +26,8 @@ and the version shown in the AddOns list. Quote it in bug reports.
   Muculent Rot, the Thicket Hunters' Infected Wound, the Dragonmaw Thaumaturgists' Curse of
   Weakness and the spider trail's poison and Highland Venom, with the classes that can take each
   off; and the Highland Horror's roots, which Blessing of Freedom breaks.
-
+- **"You will also receive"** on a quest's page, for the items that come with the choice, and
+  how many of each item you get.
 - **Show upgrades in tooltips**, a box under the stat weights: untick it and the Gear Finder's
   tooltips leave out what each item adds to your gear and the slot's other upgrades.
 - **The Gear Finder and its stat weights in Russian**, with every spec's name and unit, by
@@ -34,6 +35,10 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ### Changed
 - **18 quests' levels or side**, to Forever's: mostly the level they open at.
+- **Excavation Site's quests**, checked one by one against foreverchanges.pro: where each is
+  given and handed in, the right experience, Heartwoven's four of each potion, and no quests
+  needed first that only lead the way there (Seeking Caitlin, Young Crocolisk Skins, Rethiel's
+  Wetlands quests).
 - The Log Reader page keeps a boss's spells when the game calls him neutral (the Relic Guardian).
 
 ## [0.31.0]

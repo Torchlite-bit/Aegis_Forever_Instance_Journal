@@ -64,18 +64,71 @@ ns.AmendInstance("ExcavationSiteWetlands", {
 	-- The areas a recorded run passed through (2026-10-16), and where it came in.
 	areas = { "Lost Marsh", "Stalker's Thicket", "Lost Dig Site", "Site of the Guardian" },
 
+	-- Where each quest is given and handed in, and which quests it needs, as the site's quest pages
+	-- give them (2026-10-16). Seeking Caitlin, Young Crocolisk Skins and Rethiel's Wetlands quests
+	-- lead to these but are not needed for them.
 	questPatches = {
-		[95647] = { prerequisites = { { questID = 95737, name = "Seeking Caitlin" } } },
-		[95795] = { prerequisites = { { questID = 95772, name = "Songblade Search" } } },
-		[98824] = { prerequisites = { { questID = 95810, name = "Lost Relic Carry" } } },
-		[98823] = { prerequisites = { { questID = 95664, name = "Elder Knowledge" } } },
+		[95647] = {
+			prerequisites = {},
+			startMap = { mapID = 1437, x = 0.118, y = 0.586, label = "Caitlin Grassman, Menethil Harbor" },
+			note = "Seeking Caitlin, from Llana in Ashenvale, sends you to Caitlin; this leads to Heartwoven.",
+		},
+		[95795] = {
+			prerequisites = { { questID = 95772, name = "Songblade Search" } },
+			endMap = { mapID = 1433, x = 0.308, y = 0.466, label = "Dorin Songblade, Lakeshire" },
+		},
+		[98824] = {
+			prerequisites = { { questID = 95810, name = "Lost Relic Carry" } },
+			startMap = { mapID = 1437, x = 0.388, y = 0.522, label = "Prospector Whelgar, Whelgar's Excavation Site" },
+			endMap = { mapID = 1455, x = 0.696, y = 0.186, label = "High Explorer Magellas, Hall of Explorers" },
+		},
+		[98823] = {
+			prerequisites = { { questID = 95664, name = "Elder Knowledge" } },
+			endMap = { mapID = 1412, x = 0.334, y = 0.224, label = "Muln Earthfury, Skywatcher Plateau" },
+		},
 		[95682] = {
 			startMap = { mapID = 1437, x = 0.514, y = 0.592, label = "Deathstalker Agent, in the hills above the Dragonmaw camp" },
+			endMap = { mapID = 1437, x = 0.514, y = 0.592, label = "Deathstalker Agent, in the hills above the Dragonmaw camp" },
 			note = "Zaruk in the Arathi Highlands sends you to her with Dragonmaw Rumors. The Dragonmaw Dispatch comes "
 				.. "from the Dragonmaw forces inside the dungeon.",
 		},
+		[95697] = { endMap = { mapID = 1454, x = 0.574, y = 0.534, label = "Borstan, The Drag, Orgrimmar" } },
+		[98815] = {
+			prerequisites = {},
+			startMap = { mapID = 1437, x = 0.086, y = 0.556, label = "James Halloran, Menethil Harbor" },
+			endMap = { mapID = 1437, x = 0.086, y = 0.556, label = "James Halloran, Menethil Harbor" },
+		},
+		[95772] = { startMap = { mapID = 1433, x = 0.308, y = 0.466, label = "Dorin Songblade, Lakeshire" } },
+		[95646] = {
+			prerequisites = {},
+			endMap = { mapID = 1437, x = 0.562, y = 0.404, label = "Rethiel the Greenwarden" },
+		},
+		[95809] = { endMap = { mapID = 1437, x = 0.118, y = 0.586, label = "Caitlin Grassman, Menethil Harbor" } },
+		[95810] = { endMap = { mapID = 1437, x = 0.388, y = 0.522, label = "Prospector Whelgar, Whelgar's Excavation Site" } },
+		[95664] = { endMap = { mapID = 1456, x = 0.708, y = 0.338, label = "Bashana Runetotem, Elder Rise" } },
 	},
 })
+
+-- The rewards the quest pages give beyond the generated data's: the right experience, how many of
+-- each item, and the items that come with the choice.
+local REWARD_FIXES = {
+	[95682] = { xp = 6950, also = { { itemID = 271745, name = "Bloody Map", quality = 1 } } },
+	[95697] = {
+		also = {
+			{ itemID = 250185, name = "Recipe: Twice-Spiced Raptor Slice", quality = 1 },
+			{ itemID = 250077, name = "Twice-Spiced Raptor Slice", quality = 1, count = 5 },
+		},
+	},
+	[95809] = {
+		counts = { [1710] = 4, [3827] = 4 },
+		also = {
+			{ itemID = 2459, name = "Swiftness Potion", quality = 1 },
+			{ itemID = 280766, name = "Satchel of Potions", quality = 3 },
+		},
+	},
+	[98824] = { xp = 6150 },
+	[98823] = { xp = 6950 },
+}
 
 local excavation = ns.GetInstance("ExcavationSiteWetlands")
 if excavation then
@@ -90,4 +143,15 @@ if excavation then
 		end
 	end
 	if excavation.map then excavation.map.entrance = { x = 0.887, y = 0.260, floor = 1 } end
+	for _, quest in ipairs(excavation.quests) do
+		local fix = REWARD_FIXES[quest.questID]
+		if fix then
+			quest.rewards = quest.rewards or {}
+			quest.rewards.xp = fix.xp or quest.rewards.xp
+			quest.rewards.also = fix.also
+			for _, item in ipairs(quest.rewards.items or {}) do
+				item.count = fix.counts and fix.counts[item.itemID] or item.count
+			end
+		end
+	end
 end

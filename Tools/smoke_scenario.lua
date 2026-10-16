@@ -1042,6 +1042,24 @@ tabs[5]:Click()
 check(rowFor(95810) and rowFor(95647) and not rowFor(95664), "the Excavation Site's added quests, by faction")
 rowFor(95810):Click()
 check(detail.Title:GetText() == "Lost Relic Carry", "a quest that begins with an item opens")
+check(detail.ShowEnd:IsEnabled() and detail.ShowEnd.point.x == 0.388 and not detail.Also:IsShown(),
+	"handed in at Whelgar's camp, with nothing given beside the choice")
+-- Rewards given with the choice, and how many of each.
+do
+	if not rowFor(95809) then rowFor(95647).Expand:Click() end
+	rowFor(95809):Click()
+	local heartBoxes = {}
+	for _, box in ipairs(detail.RewardBoxes) do if box:IsShown() then heartBoxes[#heartBoxes + 1] = box end end
+	check(#heartBoxes == 4 and tostring(heartBoxes[1].Count:GetText()) == "4" and heartBoxes[3].itemID == 2459
+		and heartBoxes[3].Count:GetText() == "" and detail.Also:IsShown() and detail.Also:GetText():find("also", 1, true)
+		and select(2, detail.Also:GetPoint()) ~= nil and detail.ShowEnd.point.mapID == 1437,
+		"Heartwoven: four of each potion to choose from, two more items with them, and where Caitlin is")
+	local _, _, _, _, alsoY = detail.Also:GetPoint()
+	local _, _, _, _, boxY = heartBoxes[3]:GetPoint()
+	check(boxY < alsoY, "the items given with it sit below their label")
+	rowFor(95810):Click()
+	check(not detail.Also:IsShown() and not heartBoxes[3]:IsShown(), "and are gone on the next quest")
+end
 ns.Journal:OpenInstance(ns.GetInstance("ScarletMonasteryLibrary"))
 tabs[5]:Click()
 check(rowFor(1951) and not rowFor(1160), "a Mage sees Rituals of Power; the Horde's Test of Lore is not for this character")
