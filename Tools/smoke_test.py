@@ -93,7 +93,10 @@ def main():
     # --perf times the heavy operations instead of checking behaviour (Tools/perf_scenario.lua).
     if "--perf" in sys.argv[1:]:
         return run_pass("perf_scenario.lua")
-    return run_pass("smoke_scenario.lua") or run_pass("locale_scenario.lua", "ruRU")
+    # Then each language the TOC lists a translation for.
+    locales = [name[len("Locales/"):-len(".lua")] for name in (f.replace(os.sep, "/") for f in toc_files())
+               if name.startswith("Locales/") and len(name) == len("Locales/xxXX.lua") and not name.endswith("enUS.lua")]
+    return run_pass("smoke_scenario.lua") or next((1 for code in locales if run_pass("locale_scenario.lua", code)), 0)
 
 
 if __name__ == "__main__":

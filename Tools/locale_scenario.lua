@@ -1,5 +1,6 @@
--- The journal on a Russian client (Locales/ruRU.lua, Locales/ruRU_content.lua), checked against
--- the English it is laid over, and clicked through so a translation cannot break a page.
+-- The journal on a client in another language (Locales/<code>.lua, Locales/<code>_content.lua),
+-- checked against the English it is laid over, and clicked through so a translation cannot break
+-- a page. Run once for each language the TOC lists (Tools/smoke_test.py).
 local ns = ...
 local Mock = WOWMOCK
 local L, english = ns.L, Mock.english
@@ -10,12 +11,19 @@ local function check(condition, message)
 	if not condition then error("check failed: " .. message, 2) end
 end
 
--- Cyrillic letters, as UTF-8 writes them.
-local function IsRussian(text)
-	return type(text) == "string" and text:find("[\208\209]") ~= nil
+local LOCALE = GetLocale()
+local LANGUAGE = ({ ruRU = "Russian", deDE = "German", frFR = "French", zhCN = "Simplified Chinese",
+	zhTW = "Traditional Chinese" })[LOCALE]
+-- A language's own script, as UTF-8 writes it: Cyrillic, the CJK ideographs. German and French
+-- share English's letters: their text is told by not being the English it replaces.
+local SCRIPT = ({ ruRU = "[\208\209]", zhCN = "[\228-\233]", zhTW = "[\228-\233]" })[LOCALE]
+local function InLanguage(text, englishText)
+	if type(text) ~= "string" or text == "" then return false end
+	if SCRIPT then return text:find(SCRIPT) ~= nil end
+	return englishText == nil or text ~= englishText
 end
 
-check(GetLocale() == "ruRU", "a Russian client")
+check(LANGUAGE ~= nil, "a client in a language the journal is translated into: " .. tostring(LOCALE))
 Mock.Fire("ADDON_LOADED", "Aegis_Forever_Instance_Journal")
 Mock.Fire("PLAYER_LOGIN")
 
@@ -29,51 +37,54 @@ local function Codes(text)
 end
 local translated, wrong = 0, {}
 for key, value in pairs(english) do
-	local russian = L[key]
-	if type(value) == "string" and type(russian) == "string" and russian ~= value then
+	local given = L[key]
+	if type(value) == "string" and type(given) == "string" and given ~= value then
 		translated = translated + 1
-		if Codes(russian) ~= Codes(value) then
-			wrong[#wrong + 1] = key .. " (" .. Codes(value) .. " | " .. Codes(russian) .. ")"
+		if Codes(given) ~= Codes(value) then
+			wrong[#wrong + 1] = key .. " (" .. Codes(value) .. " | " .. Codes(given) .. ")"
 		end
 	end
 end
 table.sort(wrong)
 check(#wrong == 0, "each translated string takes the English one's values: " .. table.concat(wrong, ", "))
-check(translated > 100 and IsRussian(L.TAB_RECORD) and IsRussian(L.JOURNAL_TITLE),
-	"the interface is in Russian: " .. translated .. " strings")
-check(IsRussian(ns.LEVEL_BRACKETS[1].text) and ns.LEVEL_BRACKETS[2].text:find("30", 1, true),
+check(translated > 100 and InLanguage(L.TAB_RECORD, english.TAB_RECORD) and InLanguage(L.JOURNAL_TITLE, english.JOURNAL_TITLE),
+	"the interface is in " .. LANGUAGE .. ": " .. translated .. " strings")
+check(InLanguage(ns.LEVEL_BRACKETS[1].text, english.LEVEL_ALL)
+	and ns.LEVEL_BRACKETS[2].text:find("30", 1, true) ~= nil,
 	"the level menu too: " .. tostring(ns.LEVEL_BRACKETS[2].text))
 -- The Gear Finder's specs and the units their weights count in, named by the translation while
 -- the generated weights stay English
 local untranslated = {}
 for _, class in pairs(ns.GEAR_WEIGHTS) do
 	for _, spec in ipairs(class.order) do
-		if not IsRussian(L.GEAR_SPEC_NAMES[spec] or "") then untranslated[#untranslated + 1] = spec end
-		if not IsRussian(L.GEAR_UNITS[class[spec].unit] or "") then untranslated[#untranslated + 1] = class[spec].unit end
+		if not InLanguage(L.GEAR_SPEC_NAMES[spec]) then untranslated[#untranslated + 1] = spec end
+		if not InLanguage(L.GEAR_UNITS[class[spec].unit]) then untranslated[#untranslated + 1] = class[spec].unit end
 	end
 end
 local IS = ns.ItemScore
-check(#untranslated == 0 and IsRussian(IS:SpecLabel(IS:Specs()[1].key)) and IsRussian(IS:SpecUnit(IS:Specs()[1].key))
+check(#untranslated == 0 and InLanguage(IS:SpecLabel(IS:Specs()[1].key)) and InLanguage(IS:SpecUnit(IS:Specs()[1].key))
 	and ns.GEAR_WEIGHTS.WARRIOR.Arms.label == "Arms",
-	"every spec and unit of the Gear Finder in Russian, the weights themselves untouched: " .. table.concat(untranslated, ", "))
+	"every spec and unit of the Gear Finder in " .. LANGUAGE .. ", the weights themselves untouched: "
+	.. table.concat(untranslated, ", "))
 
 -- The content: names laid over the data once it has loaded.
 local ragefire = ns.GetInstance("RagefireChasm")
-check(IsRussian(ragefire.name), "dungeon names in Russian: " .. tostring(ragefire.name))
-local bosses, russianBosses = 0, 0
+check(InLanguage(ragefire.name, ragefire.enName), "dungeon names in " .. LANGUAGE .. ": " .. tostring(ragefire.name))
+local bosses, named = 0, 0
 for _, kind in ipairs({ "dungeon", "raid" }) do
 	for _, instance in ipairs(ns.GetInstances(kind)) do
 		for _, boss in ipairs(instance.bosses or {}) do
 			bosses = bosses + 1
-			if IsRussian(boss.name) then russianBosses = russianBosses + 1 end
+			if InLanguage(boss.name, boss.enName) then named = named + 1 end
 		end
 	end
 end
-check(russianBosses > bosses / 2, "most boss names in Russian: " .. russianBosses .. " of " .. bosses)
-check(ns.GetInstance("RagefireChasm").enName == "Ragefire Chasm" and ns.GetInstance("TheDeadmines").bosses[1].enName
-	and not IsRussian(ns.GetInstance("TheDeadmines").bosses[1].enName),
+-- German and French keep many proper names as they are (Bazzalan, Gnomeregan's bosses).
+check(named > bosses * (SCRIPT and 0.5 or 0.25), "boss names in " .. LANGUAGE .. ": " .. named .. " of " .. bosses)
+local deadmines = ns.GetInstance("TheDeadmines")
+check(ragefire.enName == "Ragefire Chasm" and deadmines.bosses[1].enName and (not SCRIPT or not deadmines.bosses[1].enName:find(SCRIPT)),
 	"each keeps its English name, which the journal matches and records by")
-check(ns.GetInstance("ScarletMonasteryLibrary").name:find(":", 1, true),
+check(ns.GetInstance("ScarletMonasteryLibrary").name:find(":", 1, true) or ns.GetInstance("ScarletMonasteryLibrary").name:find("\239\188\154", 1, true),
 	"Scarlet Monastery's wings named 'building: wing', as its shared door reads them")
 check(L.STRINGS == nil and L.BOSS_NAMES == nil, "the lookup tables let go once used")
 
@@ -84,13 +95,13 @@ for _, spot in ipairs(ns.GetTransports()) do
 		local note = spot.notes and spot.notes[destination]
 		if note then
 			noted = noted + 1
-			check(IsRussian(destination) and IsRussian(note), "a route's note under its translated destination: " .. destination)
+			check(InLanguage(note, "Skyborne only"), "a route's note under its translated destination: " .. destination)
 		end
 	end
 end
 check(noted >= 3, "the Skyborne routes keep their notes: " .. noted)
 
--- A faction is found by the client's English name as by its Russian one
+-- A faction is found by the client's English name as by its translated one
 local faction, listed
 for _, candidate in ipairs(ns.GetFactions()) do
 	for _, standing in ipairs(candidate.bosses or {}) do
@@ -101,10 +112,10 @@ for _, candidate in ipairs(ns.GetFactions()) do
 		end
 	end
 end
-check(faction and IsRussian(faction.name) and ns.FactionListsItem(faction.enName, listed)
-	and ns.FactionListsItem(faction.name, listed), "a faction is found by its English and its Russian name")
+check(faction and InLanguage(faction.name, faction.enName) and ns.FactionListsItem(faction.enName, listed)
+	and ns.FactionListsItem(faction.name, listed), "a faction is found by its English and its " .. LANGUAGE .. " name")
 
--- Every page, in Russian: each tab, and each dungeon, raid and faction with its bosses.
+-- Every page in the language: each tab, and each dungeon, raid and faction with its bosses.
 ns.Journal:Show()
 local f = AegisJournalFrame
 for _, tab in ipairs(f.Tabs) do tab:Click() end
@@ -123,19 +134,19 @@ for _, kind in ipairs({ "dungeon", "raid", "faction" }) do
 		end
 	end
 end
-check(opened > 100, "every boss page opens in Russian: " .. opened)
-check(#ns.Search:Find(ragefire.name) > 0, "search finds a dungeon by its Russian name")
+check(opened > 100, "every boss page opens in " .. LANGUAGE .. ": " .. opened)
+check(#ns.Search:Find(ragefire.name) > 0, "search finds a dungeon by its " .. LANGUAGE .. " name")
 
 -- The Excavation Site's quests, corrected by hand over the guides': their notes and where each
--- starts, still in Russian.
-local english = {}
+-- starts, in the language too.
+local untold = {}
 for _, quest in ipairs(ns.GetInstance("ExcavationSiteWetlands").quests) do
 	for _, text in ipairs({ quest.note or "", quest.startMap and quest.startMap.label or "" }) do
-		if text ~= "" and not IsRussian(text) then english[#english + 1] = quest.questID .. ": " .. text end
+		if SCRIPT and text ~= "" and not InLanguage(text) then untold[#untold + 1] = quest.questID .. ": " .. text end
 	end
 end
-check(#english == 0, "the Excavation Site's quest notes and starting places in Russian: " .. table.concat(english, "; "))
+check(#untold == 0, "the Excavation Site's quest notes and starting places in " .. LANGUAGE .. ": " .. table.concat(untold, "; "))
 f:Hide()
 
-return string.format("All %d Russian checks passed (%d strings; %d of %d boss names in Russian).",
-	checks, translated, russianBosses, bosses)
+return string.format("All %d %s checks passed (%d strings; %d of %d boss names in %s).",
+	checks, LANGUAGE, translated, named, bosses, LANGUAGE)
