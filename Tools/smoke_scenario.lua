@@ -1275,7 +1275,7 @@ do
 	ns.Areas:Forget()
 	Mock.subzone = "Somewhere unmapped"
 	Mock.Fire("ZONE_CHANGED")
-	-- /aegis areas: on an English client, each name's ids, saved for Tools/bake_area_ids.py
+	-- /aegis areas: on an English client, each name's ids, saved for Dev/bake_area_ids.py
 	Mock.areaNames[4321], Mock.areaNames[4322], Mock.areaNames[17000] = "Anvilmar's Rest", "Anvilmar's Rest", "Lost Marsh"
 	SlashCmdList.AEGISJOURNAL("areas")
 	local scan = ns.db.areaIDs

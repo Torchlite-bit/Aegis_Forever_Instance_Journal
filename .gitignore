@@ -45,3 +45,7 @@ __pycache__/
 
 # Releases built by Tools/package.py
 dist/
+
+# The developer's own tools and drafts (data builders, art scripts, the tester guide, the
+# CurseForge and Discord texts): kept in their own private repository, not published here.
+Dev/

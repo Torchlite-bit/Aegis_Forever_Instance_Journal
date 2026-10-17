@@ -3,7 +3,7 @@ local L = ns.L
 
 --[[
 	What is new in WoW: Forever (its own dungeons and raids) carries WoW: Forever's emblem in the
-	corner of its button (Media/ForeverIcon, made by Tools/make_raid_art.py). Hovering it says
+	corner of its button (Media/ForeverIcon, made by Dev/make_raid_art.py). Hovering it says
 	what it means; clicks pass through to the button beneath.
 ]]
 ns.FOREVER_ICON = "Interface\\AddOns\\" .. addonName .. "\\Media\\ForeverIcon"

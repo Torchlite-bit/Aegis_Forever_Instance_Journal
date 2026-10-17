@@ -12,7 +12,7 @@ local L = ns.L
 
 	Everything lands in AegisJournalDB.record, merged by dungeon, boss and quest rather than
 	kept as a raw event stream, so the saved file stays small and reads directly into
-	Tools/build_data.py.
+	Dev/build_data.py.
 ]]
 
 local Recorder = {}

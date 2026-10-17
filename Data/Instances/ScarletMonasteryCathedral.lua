@@ -2,7 +2,7 @@
 -- (2026-10-09), facts only, in our own words. Edit it by hand. The client gives all four wings one
 -- instance id (189): the journal tells which wing the player is in by the area's name (wingAreas).
 -- Its map and boss spots are set in Data/Authored/ClassicMaps.lua; the bosses' abilities are
--- added by Data/Generated/Abilities.lua (Tools/build_data.py).
+-- added by Data/Generated/Abilities.lua (Dev/build_data.py).
 
 local _, ns = ...
 

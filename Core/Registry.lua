@@ -4,7 +4,7 @@ local addonName, ns = ...
 	The journal's data, registered by the files under Data/ as they load.
 
 	Data/Instances holds each dungeon's own data, Data/Authored what is laid over it by hand,
-	and Data/Generated what Tools/build_data.py writes (abilities, recorded fights). Adding a
+	and Data/Generated what Dev/build_data.py writes (abilities, recorded fights). Adding a
 	dungeon is one more ns.AddInstance file and its maps; nothing in the UI names a dungeon.
 ]]
 
@@ -30,7 +30,7 @@ local function FirstFile(candidates)
 end
 
 -- The picture of a dungeon that has none of its own (Media/DungeonPlaceholder, made by
--- Tools/make_raid_art.py): 2:1, cut like the raids' pictures.
+-- Dev/make_raid_art.py): 2:1, cut like the raids' pictures.
 local PLACEHOLDER_ART = "Interface\\AddOns\\" .. addonName .. "\\Media\\DungeonPlaceholder"
 
 local function UsePlaceholderArt(instance)
@@ -194,7 +194,7 @@ function ns.AmendInstance(key, patch)
 end
 
 --[[
-	What recorded fights measured (Data/Generated/Abilities.lua, from Tools/build_data.py):
+	What recorded fights measured (Data/Generated/Abilities.lua, from Dev/build_data.py):
 	{ [instance key] = { [boss name] = { abilities, adds, encounterID } } }. Loaded after every
 	other data file. A recorded spell the boss's written abilities name gives them its numbers
 	(damage, timings); one they lack is added, unless it is nothing to watch for: a hand-written
