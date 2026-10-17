@@ -46,7 +46,7 @@ welcome, never required:
 
 The pictures of Onyxia's Lair and of the dungeons that have none of their own
 (`Media/Raids/OnyxiasLair.tga` and `Media/DungeonPlaceholder.tga`, made by
-`Tools/make_raid_art.py`) are cut from Lionel Schramm's paintings for Mysteries of Azeroth
+`Dev/make_raid_art.py`) are cut from Lionel Schramm's paintings for Mysteries of Azeroth
 (Turtle WoW), used with his permission.
 
 ## Staree4ok's Russian translation

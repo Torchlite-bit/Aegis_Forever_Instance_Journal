@@ -251,14 +251,13 @@ Aegis_Forever_Instance_Journal/
 ├── Data/
 │   ├── Instances/   each dungeon and raid: bosses, loot, quests, maps
 │   ├── Authored/    notes, fixes and amendments written by hand
-│   ├── Generated/   abilities and recorded fights (Tools/build_data.py)
+│   ├── Generated/   abilities and recorded fights, from the developer's build tools
 │   ├── Reputation/  faction rewards
 │   └── Travel/      boats, zeppelins, trams and portals
 ├── Media/         maps, raid pictures and the journal's own textures
 ├── Locales/       every string the journal shows
-├── Tools/         build, test and packaging scripts (never shipped)
-└── docs/          the README's pictures, the Log Reader page, and the CurseForge
-                   description and Discord #releases post to paste (never shipped)
+├── Tools/         the tests and the release scripts (never shipped)
+└── docs/          the README's pictures and the Log Reader page (never shipped)
 ```
 
 Everything is the Forever client's own API, guarded where the client withholds

@@ -5,7 +5,7 @@ local addonName, ns = ...
 
 	Run order, strategy, Lyn the Ignored's abilities and summoning, the way in and the Horde's key
 	quests from Wowhead's "City of Dalaran Dungeon Overview" (Riyani, 2026-10-09), read by hand and
-	put in our own words: facts only. Its loot's item ids come from the same guide (Tools/build_data.py).
+	put in our own words: facts only. Its loot's item ids come from the same guide (Dev/build_data.py).
 
 	Checked against foreverchanges.pro's City of Dalaran page (2026-10-09), read by hand, facts only:
 	its loot and ability names agree with ours. From it: which effects can be dispelled, how the Fel

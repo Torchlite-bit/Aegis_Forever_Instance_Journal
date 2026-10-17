@@ -1,7 +1,7 @@
 -- The factions on the Reputation tab: the journal's own list. Edit it by hand.
 -- None has rewards here: they come only from quartermasters captured in game, by the
 -- Reputation tab's Capture button or a recording (Data/Reputation/Captured.lua, written by
--- Tools/build_data.py, and the player's own captures). A faction with none yet shows a
+-- Dev/build_data.py, and the player's own captures). A faction with none yet shows a
 -- placeholder asking for its quartermaster.
 
 local _, ns = ...

@@ -2,7 +2,7 @@
 -- Bosses, levels, models, loot and quests as foreverchanges.pro lists them (2026-10-10), facts
 -- only; its maps (Media/Maps/Classic), floor names and boss spots are the classic dungeon maps
 -- that Advanced Dungeon Guide keeps. The bosses' abilities are added by
--- Data/Generated/Abilities.lua (Tools/build_data.py).
+-- Data/Generated/Abilities.lua (Dev/build_data.py).
 
 local _, ns = ...
 

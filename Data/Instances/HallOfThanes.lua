@@ -1,7 +1,7 @@
 -- The Hall of Thanes: the journal's own data for this dungeon. Edit it by hand.
 -- Hand-written notes, fights, maps and corrections are laid over it by the files in Data/Authored;
 -- foreverchanges.pro is the source to check it against. The bosses' abilities are added by
--- Data/Generated/Abilities.lua (Tools/build_data.py).
+-- Data/Generated/Abilities.lua (Dev/build_data.py).
 
 local _, ns = ...
 

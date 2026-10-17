@@ -122,7 +122,7 @@ end
 
 --[[
 	/aegis areas: the client's id for each English area name the journal uses, on an English
-	client, saved under "areaIDs" for Tools/bake_area_ids.py. A few thousand ids a frame.
+	client, saved under "areaIDs" for Dev/bake_area_ids.py. A few thousand ids a frame.
 ]]
 local scanning = false
 function Areas:Scan()

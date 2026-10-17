@@ -1,6 +1,6 @@
 -- The raids, before they open in WoW: Forever: the journal's own data. Edit it by hand.
 -- Placeholders (comingSoon): what is known now, and our Discord for anyone who records a run.
--- Their pictures are Media/Raids (made by Tools/make_raid_art.py from Art/Raids).
+-- Their pictures are Media/Raids (made by Dev/make_raid_art.py from Art/Raids).
 
 local _, ns = ...
 

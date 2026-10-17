@@ -143,13 +143,13 @@ footer { font-size: 14px; color: var(--muted); border-top: 1px solid var(--rule)
     <p class="small">It reads the log in your browser: the file never leaves your computer. From the boss fights only, it keeps what the enemies cast: each spell, how hard it hit, when it was first cast and how often. It leaves out everything else, including every player's name, so your group isn't shared.</p>
   </section>
 
-  <footer>Part of the <a href="https://github.com/Torchlite-bit/Aegis_Forever_Instance_Journal">Aegis Instance Journal</a>. The lines it adds are read by the journal's build tool, <code>Tools/build_data.py</code>.</footer>
+  <footer>Part of the <a href="https://github.com/Torchlite-bit/Aegis_Forever_Instance_Journal">Aegis Instance Journal</a>. The lines it adds are read by the journal's build tool, <code>Dev/build_data.py</code>.</footer>
 </main>
 
 <script>
 "use strict";
 /*
-  The journal's own combat-log reader (Tools/read_combat_log.py), in the browser: the same rules,
+  The journal's own combat-log reader (Dev/read_combat_log.py), in the browser: the same rules,
   so the numbers match what the build tool reads from a log file.
 
   Added to the recording:
@@ -535,7 +535,7 @@ for (const button of document.querySelectorAll("[data-copy]")) {
   });
 }
 
-// For checking the reader against Tools/read_combat_log.py.
+// For checking the reader against Dev/read_combat_log.py.
 window.AegisLogReader = {
   readText(text) { const r = Reader(); for (const l of text.split(/\r?\n/)) r.line(l); return r.encounters.map(fightReport); },
   fightLines,
