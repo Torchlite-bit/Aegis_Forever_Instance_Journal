@@ -525,9 +525,8 @@ end
 local function WingHere(instanceID, wings)
 	local ok, area = pcall(GetSubZoneText)
 	area = ok and ns.Readable(area) or nil
-	area = area and ns.AreaKey(area)
 	for _, wing in ipairs(wings) do
-		if area and wing.wingAreas and wing.wingAreas[area] then return wing end
+		if area and ns.AreaIn(wing.wingAreas, area) then return wing end
 	end
 	local mapID = ns.PlayerMapPosition()
 	for _, wing in ipairs(wings) do

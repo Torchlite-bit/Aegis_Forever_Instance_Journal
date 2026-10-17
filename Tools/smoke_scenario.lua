@@ -1256,6 +1256,13 @@ do
 	ns.Areas:Forget()
 	check(ns.AreaKey("Anvilmars Rast") == "Anvilmar's Rest" and ns.AreaName("Anvilmar's Rest") == "Anvilmars Rast",
 		"without an id, the translation's name")
+	-- Two rooms a translation names alike: a table holding either one is found by that name
+	ns.L.AREA_NAMES = { ["Anvilmar's Rest"] = "Halle", ["Dark Iron Ingress"] = "Halle" }
+	ns.Areas:Forget()
+	local spot, english = ns.AreaIn({ ["Dark Iron Ingress"] = 7 }, "Halle")
+	check(spot == 7 and english == "Dark Iron Ingress" and ns.AreaIn({ ["Anvilmar's Rest"] = 8 }, "Halle") == 8
+		and ns.AreaIn({ ["Anvilmar's Rest"] = 9 }, "Anvilmar's Rest") == 9 and ns.AreaIn({}, "Halle") == nil,
+		"two rooms one translation names alike are each found by that name")
 	ns.L.AREA_NAMES, ns.AREA_IDS = nil, ids
 	Mock.areaNames[9001] = nil
 	ns.Areas:Forget()

@@ -67,23 +67,50 @@ function ns.AreaName(english)
 	return L.AREA_NAMES and L.AREA_NAMES[english] or english
 end
 
--- The journal's English name for an area the client names: what the data is keyed by.
+-- For each name the client may give an area, the journal's English names it stands for: one
+-- room spelt two ways in the data (Tazz'Alaor, Tazz'Alor), or two rooms a translation names alike.
 local reverse
-function ns.AreaKey(name)
-	if type(name) ~= "string" or name == "" then return name end
-	if not reverse then
-		reverse = {}
-		for _, english in ipairs(ns.AreaNamesUsed()) do
-			reverse[english] = english
-			for _, areaID in ipairs(ns.AREA_IDS and ns.AREA_IDS[english] or {}) do
-				local localized = AreaInfo(areaID)
-				if localized then reverse[localized] = english end
-			end
-			local translated = L.AREA_NAMES and L.AREA_NAMES[english]
-			if translated then reverse[translated] = english end
+local function Reverse()
+	if reverse then return reverse end
+	reverse = {}
+	local function Add(name, english)
+		local list = reverse[name]
+		if not list then
+			reverse[name] = { english }
+		elseif list[#list] ~= english then
+			list[#list + 1] = english
 		end
 	end
-	return reverse[name] or name
+	local names = ns.AreaNamesUsed()
+	-- Each English name stands first for itself.
+	for _, english in ipairs(names) do Add(english, english) end
+	for _, english in ipairs(names) do
+		for _, areaID in ipairs(ns.AREA_IDS and ns.AREA_IDS[english] or {}) do
+			local localized = AreaInfo(areaID)
+			if localized then Add(localized, english) end
+		end
+		local translated = L.AREA_NAMES and L.AREA_NAMES[english]
+		if translated then Add(translated, english) end
+	end
+	return reverse
+end
+
+-- The journal's English name for an area the client names: what the data is keyed by.
+function ns.AreaKey(name)
+	if type(name) ~= "string" or name == "" then return name end
+	local list = Reverse()[name]
+	return list and list[1] or name
+end
+
+-- A table keyed by English area names, read with a name the client gives: the entry under any
+-- English name it stands for, and that name.
+function ns.AreaIn(map, name)
+	if type(map) ~= "table" or type(name) ~= "string" or name == "" then return nil end
+	if map[name] ~= nil then return map[name], name end
+	for _, english in ipairs(Reverse()[name] or {}) do
+		if map[english] ~= nil then return map[english], english end
+	end
+	return nil
 end
 
 -- Built again from all the data, once it has all loaded.
