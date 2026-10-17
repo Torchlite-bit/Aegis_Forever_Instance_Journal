@@ -111,6 +111,135 @@ ns.SetAbilities({
 			encounterID = 2910,
 		},
 	},
+	ExcavationSiteWetlands = {
+		Saltspine = {
+			abilities = {
+				{
+					spellID = 1316382,
+					name = "Dust Storm",
+					school = 8,
+					hit = { 164, 327, 270 },
+					firstCast = 13,
+				},
+				{
+					spellID = 3604,
+					name = "Tendon Rip",
+					school = 1,
+					firstCast = 26,
+				},
+			},
+			adds = {
+				{
+					name = "Highland Spider",
+					npcID = 260803,
+					abilities = {
+						{
+							spellID = 744,
+							name = "Poison",
+							school = 8,
+							firstCast = 30,
+						},
+					},
+				},
+			},
+			encounterID = 3480,
+		},
+		Shadetooth = {
+			abilities = {
+				{
+					spellID = 13445,
+					name = "Rend",
+					school = 1,
+					tick = { 18, 18 },
+					firstCast = 7,
+					every = { 13, 16 },
+				},
+				{
+					spellID = 14100,
+					name = "Terrifying Roar",
+					school = 1,
+					firstCast = 11,
+					every = { 20, 21 },
+				},
+				{
+					spellID = 1284435,
+					name = "Enrage",
+					school = 1,
+					firstCast = 42,
+					onSelf = true,
+				},
+			},
+			adds = {
+				{
+					name = "Thicket Lurker",
+					npcID = 260800,
+					abilities = {
+						{
+							spellID = 1309069,
+							name = "Rend Flesh",
+							school = 1,
+							tick = { 94, 111 },
+							firstCast = 4,
+							every = { 13, 13 },
+						},
+					},
+				},
+				{
+					name = "Thicket Hunter",
+					npcID = 260801,
+					abilities = {
+						{
+							spellID = 3427,
+							name = "Infected Wound",
+							school = 8,
+							firstCast = 13,
+							every = { 3, 34 },
+						},
+					},
+				},
+				{
+					name = "Highland Spider",
+					npcID = 260803,
+					abilities = {
+						{
+							spellID = 744,
+							name = "Poison",
+							school = 8,
+							firstCast = 29,
+						},
+					},
+				},
+			},
+			encounterID = 3481,
+		},
+		["Relic Guardian"] = {
+			abilities = {
+				{
+					spellID = 8374,
+					name = "Arcing Smash",
+					school = 1,
+					hit = { 87, 186, 131 },
+					firstCast = 2,
+					every = { 9, 17 },
+				},
+				{
+					spellID = 8078,
+					name = "Thunderclap",
+					school = 8,
+					hit = { 28, 55, 43 },
+					firstCast = 15,
+				},
+				{
+					spellID = 10101,
+					name = "Knock Away",
+					school = 1,
+					hit = { 107, 107, 107 },
+					firstCast = 26,
+				},
+			},
+			encounterID = 3482,
+		},
+	},
 	HallOfThanes = {
 		["Faldrim Anvilmar"] = {
 			abilities = {

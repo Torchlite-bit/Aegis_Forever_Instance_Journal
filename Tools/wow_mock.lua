@@ -75,7 +75,8 @@ function Region:GetParent() return self._parent end
 function Region:SetParent(parent) self._parent = parent end
 function Region:Show() self._shown = true; self:_RunScript("OnShow") end
 function Region:Hide() local was = self._shown; self._shown = false; if was then self:_RunScript("OnHide") end end
-function Region:SetShown(shown) if shown then self:Show() else self:Hide() end end
+-- The client's SetShown does not go through a frame's own Show or Hide: a hook on those does not hear it.
+function Region:SetShown(shown) if shown then Region.Show(self) else Region.Hide(self) end end
 function Region:IsShown() return self._shown end
 function Region:IsVisible()
 	if not self._shown then return false end
@@ -151,16 +152,26 @@ function Region:RegisterEvent(event) self._events[event] = true end
 function Region:UnregisterEvent(event) self._events[event] = nil end
 function Region:IsEventRegistered(event) return self._events[event] == true end
 
-function Region:CreateTexture(name, layer, template)
+function Region:CreateTexture(name, layer, template, subLevel)
 	CheckTemplates(template)
 	local texture = NewRegion("Texture", name, self)
 	rawset(texture, "_layer", layer)
+	rawset(texture, "_subLevel", subLevel or 0)
 	return texture
 end
-function Region:CreateFontString(name, _, template)
+function Region:CreateFontString(name, layer, template)
 	CheckTemplates(template)
-	return NewRegion("FontString", name, self)
+	local text = NewRegion("FontString", name, self)
+	rawset(text, "_layer", layer)
+	rawset(text, "_subLevel", 0)
+	return text
 end
+-- Text and textures share a layer's sublevels: the higher is drawn on top.
+function Region:SetDrawLayer(layer, subLevel)
+	rawset(self, "_layer", layer)
+	rawset(self, "_subLevel", subLevel or 0)
+end
+function Region:GetDrawLayer() return self._layer, self._subLevel end
 function Region:CreateMaskTexture(name) return NewRegion("MaskTexture", name, self) end
 
 local function ButtonTexture(self, key, texture)
@@ -448,7 +459,8 @@ ScrollUtil = { InitScrollFrameWithScrollBar = function() end }
 function ScrollFrame_OnLoad(scroll) scroll.ScrollBar = CreateFrame("EventFrame", nil, scroll) end
 GameTooltip = CreateFrame("GameTooltip", "GameTooltip")
 GameTooltip._lines = {}
-function GameTooltip:SetOwner() self._lines = {} end
+function GameTooltip:SetOwner(owner) self._lines, self._owner, self._link = {}, owner, nil end
+function GameTooltip:GetOwner() return self._owner end
 function GameTooltip:AddLine(text) self._lines[#self._lines + 1] = text end
 -- A two-column line is kept as "left<tab>right".
 function GameTooltip:AddDoubleLine(left, right) self._lines[#self._lines + 1] = left .. "\t" .. right end
@@ -829,6 +841,11 @@ function LoggingCombat(on)
 	return Mock.combatLogging
 end
 
+-- The minimap: 140 wide, its centre at (500, 400) on a scale of 1.
+Minimap = CreateFrame("Frame", "Minimap", UIParent)
+Minimap:SetSize(140, 140)
+function Minimap:GetCenter() return 500, 400 end
+function Minimap:GetEffectiveScale() return 1 end
 -- The cursor, for dragging: Mock.cursorX, Mock.cursorY.
 Mock.cursorX, Mock.cursorY = 0, 0
 function GetCursorPosition() return Mock.cursorX, Mock.cursorY end
@@ -945,7 +962,10 @@ Mock.ItemLink = ItemLink
 -- gives an item's tooltip data, where a test gives one (Mock.tooltipDataIDs[itemID]).
 Mock.itemStats, Mock.itemMinLevels, Mock.itemLines, Mock.tooltipDataIDs = {}, {}, {}, {}
 C_Item = {
-	GetItemInfoInstant = function(itemID)
+	-- By id, or by link as the client also takes it.
+	GetItemInfoInstant = function(item)
+		local itemID = ItemIDOf(item)
+		if not itemID then return nil end
 		local entry = Mock.itemInstant[itemID] or { "INVTYPE_CHEST", 4, 1, "Cloth" }
 		return itemID, ITEM_CLASS_NAMES[entry[2]], entry[4], entry[1], 134400 + itemID % 7, entry[2], entry[3]
 	end,
@@ -974,6 +994,133 @@ function GetInventoryItemLink(unit, slot)
 	local itemID = unit == "player" and Mock.worn[slot]
 	return itemID and ItemLink(itemID) or nil
 end
+
+-- Retail's tooltip data: an item tooltip runs the item post-calls once its lines are in, with
+-- the data's id and link, as the client's TooltipDataProcessor does.
+Enum = Enum or {}
+Enum.TooltipDataType = { Item = 0, Spell = 1, Unit = 2 }
+Mock.tooltipPostCalls = {}
+TooltipDataProcessor = {
+	AddTooltipPostCall = function(dataType, callback)
+		Mock.tooltipPostCalls[dataType] = Mock.tooltipPostCalls[dataType] or {}
+		table.insert(Mock.tooltipPostCalls[dataType], callback)
+	end,
+}
+-- The client's settings panel (Blizzard_Settings_Shared): an addon's page, its proxy settings by
+-- variable (Mock.settings) and the page last opened (Mock.openedSettings).
+Mock.settings, Mock.settingsNotified = {}, {}
+Settings = {
+	VarType = { Boolean = "boolean", Number = "number", String = "string" },
+	RegisterVerticalLayoutCategory = function(name)
+		local category = { name = name, controls = {} }
+		function category:GetID() return "category:" .. name end
+		return category
+	end,
+	RegisterProxySetting = function(category, variable, variableType, name, default, getValue, setValue)
+		local setting = { variable = variable, type = variableType, name = name, default = default }
+		function setting:GetValue() return getValue() end
+		function setting:SetValue(value) setValue(value) end
+		Mock.settings[variable] = setting
+		return setting
+	end,
+	CreateCheckbox = function(category, setting, tooltip)
+		setting.tooltip = tooltip
+		table.insert(category.controls, setting)
+	end,
+	RegisterAddOnCategory = function(category) Mock.settingsCategory = category end,
+	NotifyUpdate = function(variable) Mock.settingsNotified[variable] = (Mock.settingsNotified[variable] or 0) + 1 end,
+	OpenToCategory = function(categoryID) Mock.openedSettings = categoryID end,
+}
+-- Each copy of an item has its own guid: a worn one's names its slot (Mock.WornGUID).
+function Mock.WornGUID(slot) return Mock.worn[slot] and ("Item-worn-" .. slot .. "-" .. Mock.worn[slot]) or nil end
+ItemLocation = { CreateFromEquipmentSlot = function(_, slot) return { equipmentSlotIndex = slot } end }
+C_Item.GetItemGUID = function(location) return Mock.WornGUID(location.equipmentSlotIndex) end
+-- What the tooltip was asked to show: retail's tooltip info, its getter and the getter's arguments.
+-- Mock.noItemGUIDs leaves the guids out, as a client without them would.
+local function ShowItem(tooltip, link, guid, getterName, ...)
+	tooltip._link = link
+	tooltip._info = { getterName = getterName or "GetHyperlink", getterArgs = { ... } }
+	tooltip._lines[#tooltip._lines + 1] = Mock.itemNames[ItemIDOf(link)] or link
+	if Mock.noItemGUIDs then guid = nil end
+	local data = { type = Enum.TooltipDataType.Item, id = ItemIDOf(link), hyperlink = link, guid = guid }
+	for _, callback in ipairs(Mock.tooltipPostCalls[Enum.TooltipDataType.Item] or {}) do callback(tooltip, data) end
+end
+function GameTooltip:SetHyperlink(link) ShowItem(self, link) end
+function GameTooltip:SetItemByID(itemID) ShowItem(self, ItemLink(itemID)) end
+function GameTooltip:SetInventoryItem(unit, slot)
+	local link = GetInventoryItemLink(unit, slot)
+	if link then ShowItem(self, link, unit == "player" and Mock.WornGUID(slot) or nil, "GetInventoryItem", unit, slot) end
+end
+-- A bag's item: Mock.bagItems["bag:slot"] = { itemID, guid }.
+Mock.bagItems = {}
+C_Container = C_Container or {}
+function C_Container.GetContainerItemLink(bag, slot)
+	local item = Mock.bagItems[bag .. ":" .. slot]
+	return item and ItemLink(item[1]) or nil
+end
+-- The bags (ContainerFrameCombinedBags): its item buttons, each with its bag and slot
+-- (Mock.BagButton), drawn again by UpdateItems as the client's are.
+ContainerFrameCombinedBags = CreateFrame("Frame", "ContainerFrameCombinedBags", UIParent)
+ContainerFrameCombinedBags._buttons = {}
+ContainerFrameCombinedBags:Hide()
+function ContainerFrameCombinedBags:UpdateItems() end
+function ContainerFrameCombinedBags:EnumerateValidItems() return ipairs(self._buttons) end
+function Mock.BagButton(bag, slot)
+	local button = CreateFrame("Button", nil, ContainerFrameCombinedBags)
+	button:SetID(slot)
+	-- The vendor's junk coin, in the top left as the arrow (ContainerFrame.xml), hidden.
+	button.JunkIcon = button:CreateTexture(nil, "OVERLAY", nil, 5)
+	button.JunkIcon:Hide()
+	function button:GetBagID() return bag end
+	table.insert(ContainerFrameCombinedBags._buttons, button)
+	return button
+end
+-- The loot window: its rows (Mock.LootRow), each an item button for a loot slot, in a scroll box.
+Mock.lootRows = {}
+LootFrame = CreateFrame("Frame", "LootFrame", UIParent)
+LootFrame:Hide()
+LootFrame.ScrollBox = { ForEachFrame = function(_, callback) for _, row in ipairs(Mock.lootRows) do callback(row) end end }
+LootFrameItemElementMixin = { Init = function() end }
+function LootFrameItemElementMixin:GetSlotIndex() return self._slot end
+-- A row the list made, or took back and gave another slot (Mock.LootRow(slot, row)).
+function Mock.LootRow(slot, row)
+	if not row then
+		row = Mixin(CreateFrame("Frame", nil, LootFrame), LootFrameItemElementMixin)
+		row.Item = CreateFrame("Button", nil, row)
+		table.insert(Mock.lootRows, row)
+	end
+	row._slot = slot
+	row:Init()
+	return row
+end
+LOOT_SLOT_ITEM = 1
+function GetLootSlotType(slot) return Mock.lootSlots[slot] and Mock.lootSlots[slot].link and 1 or 0 end
+-- Group loot rolls: GroupLootFrame1-4, each with its item's icon; the item by roll (Mock.rolls).
+Mock.rolls = {}
+function GetLootRollItemLink(rollID) return Mock.rolls[rollID] end
+function GroupLootFrame_SetupItemDisplay(frame) return frame.rollID ~= nil end
+for index = 1, 4 do
+	local frame = CreateFrame("Frame", "GroupLootFrame" .. index, UIParent)
+	frame.IconFrame = CreateFrame("Button", nil, frame)
+	frame:SetScript("OnShow", function(self) GroupLootFrame_SetupItemDisplay(self) end)
+	frame:Hide()
+end
+-- The gamepad's roll cards (Mock.RollCard): set up by the same function, never shown as frames 1-4.
+function Mock.RollCard(rollID)
+	local card = CreateFrame("Frame", nil, UIParent)
+	card.IconFrame = CreateFrame("Button", nil, card)
+	card.rollID = rollID
+	GroupLootFrame_SetupItemDisplay(card)
+	return card
+end
+function GameTooltip:SetBagItem(bag, slot)
+	local item = Mock.bagItems[bag .. ":" .. slot]
+	if item then ShowItem(self, ItemLink(item[1]), item[2], "GetBagItem", bag, slot) end
+end
+function GameTooltip:GetPrimaryTooltipInfo() return self._info end
+function GameTooltip:GetItem()
+	if self._link then return Mock.itemNames[ItemIDOf(self._link)] or "Item", self._link end
+end
 function GetInventoryItemTexture(unit, slot)
 	local itemID = unit == "player" and Mock.worn[slot]
 	return itemID and 134400 + itemID % 7 or nil
@@ -1001,17 +1148,27 @@ C_Spell = {
 	RequestLoadSpellData = function(spellID) Mock.spellsRequested[spellID] = true end,
 }
 
+-- The classes by their client ids, gaps and all: Forever's, which has no Death Knight (6) or Monk
+-- (10), and counts nine classes though the Druid is 11.
 Mock.classes = {
-	{ "Warrior", "WARRIOR" }, { "Paladin", "PALADIN" }, { "Hunter", "HUNTER" }, { "Rogue", "ROGUE" },
-	{ "Priest", "PRIEST" }, { "Shaman", "SHAMAN" }, { "Mage", "MAGE" }, { "Warlock", "WARLOCK" }, { "Druid", "DRUID" },
+	[1] = { "Warrior", "WARRIOR" }, [2] = { "Paladin", "PALADIN" }, [3] = { "Hunter", "HUNTER" },
+	[4] = { "Rogue", "ROGUE" }, [5] = { "Priest", "PRIEST" }, [7] = { "Shaman", "SHAMAN" }, [8] = { "Mage", "MAGE" },
+	[9] = { "Warlock", "WARLOCK" }, [11] = { "Druid", "DRUID" },
 }
-function GetNumClasses() return #Mock.classes end
+function GetNumClasses() return 9 end
 function GetClassInfo(classID)
 	local class = Mock.classes[classID]
+	if not class then return nil end
 	return class[1], class[2], classID
 end
 Mock.playerClass = "MAGE"
-function UnitClass() return "Mage", Mock.playerClass, 8 end
+-- The player's class, with its id as the client numbers it.
+function UnitClass()
+	for classID, class in pairs(Mock.classes) do
+		if class[2] == Mock.playerClass then return class[1], class[2], classID end
+	end
+	return "Mage", Mock.playerClass, 8
+end
 function HandleModifiedItemClick() return false end
 function IsModifiedClick() return false end
 INVTYPE_NECK, INVTYPE_WRIST, INVTYPE_CLOAK, INVTYPE_WAIST, INVTYPE_HAND = "Neck", "Wrist", "Back", "Waist", "Hands"
@@ -1079,6 +1236,18 @@ function UnitGUID(unit) return Mock.units[unit] and Mock.units[unit].guid end
 
 StaticPopupDialogs = {}
 function StaticPopup_Show(name) Mock.popup = name end
+-- Escape on the popup shown, as the client's StaticPopup_EscapePressed takes it (Blizzard_StaticPopup):
+-- its OnEscape, else its OnCancel unless noCancelOnEscape, each told "clicked", as the second button is.
+function Mock.EscapePopup()
+	local info = Mock.popup and StaticPopupDialogs[Mock.popup]
+	if not (info and info.hideOnEscape) then return end
+	if info.OnEscape then
+		info.OnEscape(nil, nil, "clicked")
+	elseif info.OnCancel and not info.noCancelOnEscape then
+		info.OnCancel(nil, nil, "clicked")
+	end
+	Mock.popup = nil
+end
 YES, NO = "Yes", "No"
 
 function strsplit(delimiter, text)

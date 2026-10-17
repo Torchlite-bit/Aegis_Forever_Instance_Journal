@@ -251,6 +251,9 @@ local function CreateRewardBox(parent)
 	box.Name:SetSize(90, 36)
 	box.Name:SetPoint("LEFT", box.NameFrame, "LEFT", 15, 0)
 	box.Name:SetJustifyH("LEFT")
+	-- How many, as the quest frame shows it on the icon.
+	box.Count = box:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
+	box.Count:SetPoint("BOTTOMRIGHT", box.Icon, -3, 3)
 	box:SetScript("OnEnter", function(self)
 		GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
 		if ns.Items:IsIdentified(self.itemID) then
@@ -437,7 +440,8 @@ local function FillDetail(detail, quest)
 	else
 		for _, entry in ipairs(rewards.reputation or {}) do reputation[#reputation + 1] = entry end
 	end
-	local items, choice = rewards.items or {}, rewards.choice
+	-- rewards.items, one of which is chosen when rewards.choice is set; rewards.also, given with it.
+	local items, choice, also = rewards.items or {}, rewards.choice, rewards.also or {}
 	-- Rewards seen on the quest frame fill in for a quest the data lists none for.
 	local seen = recorded and (recorded.rewards or recorded.offered)
 	if #items == 0 and seen then
@@ -453,9 +457,36 @@ local function FillDetail(detail, quest)
 	child.Experience:Hide()
 	child.Reputation:Hide()
 	child.Choose:Hide()
+	child.Also:Hide()
 	for _, box in ipairs(child.RewardBoxes) do box:Hide() end
 
-	local hasRewards = (xp and xp > 0) or (money and money > 0) or #reputation > 0 or #items > 0
+	-- The items in two columns, from the pool's box `first` on; returns the next free box.
+	local function PlaceBoxes(list, first)
+		y = y + 6
+		for index, item in ipairs(list) do
+			local slot = first + index - 1
+			local box = child.RewardBoxes[slot]
+			if not box then
+				box = CreateRewardBox(child)
+				child.RewardBoxes[slot] = box
+			end
+			box.itemID = item.itemID
+			local info = ns.Items:Get(item.itemID, item)
+			box.Icon:SetTexture(info.icon or "Interface\\Icons\\INV_Misc_QuestionMark")
+			local r, g, b = ns.Items:QualityColor(info.quality)
+			box.Name:SetText(info.name or "")
+			box.Name:SetTextColor(r, g, b)
+			box.Count:SetText(item.count and item.count > 1 and item.count or "")
+			local column = (index - 1) % 2
+			box:ClearAllPoints()
+			box:SetPoint("TOPLEFT", 2 + column * (REWARD_BOX_WIDTH + 8), -y)
+			box:Show()
+			if column == 1 or index == #list then y = y + REWARD_BOX_HEIGHT + 4 end
+		end
+		return first + #list
+	end
+
+	local hasRewards = (xp and xp > 0) or (money and money > 0) or #reputation > 0 or #items > 0 or #also > 0
 	if hasRewards and not quest.steps then
 		place(child.RewardsHeader, 16)
 		if money and money > 0 then
@@ -479,30 +510,18 @@ local function FillDetail(detail, quest)
 			child.Reputation:SetText(table.concat(lines, "\n"))
 			place(child.Reputation, 2)
 		end
+		local nextBox = 1
 		if #items > 0 then
 			if choice then
 				child.Choose:SetText(L.QUEST_CHOOSE)
 				place(child.Choose, 8)
 			end
-			y = y + 6
-			for index, item in ipairs(items) do
-				local box = child.RewardBoxes[index]
-				if not box then
-					box = CreateRewardBox(child)
-					child.RewardBoxes[index] = box
-				end
-				box.itemID = item.itemID
-				local info = ns.Items:Get(item.itemID, item)
-				box.Icon:SetTexture(info.icon or "Interface\\Icons\\INV_Misc_QuestionMark")
-				local r, g, b = ns.Items:QualityColor(info.quality)
-				box.Name:SetText(info.name or "")
-				box.Name:SetTextColor(r, g, b)
-				local column = (index - 1) % 2
-				box:ClearAllPoints()
-				box:SetPoint("TOPLEFT", 2 + column * (REWARD_BOX_WIDTH + 8), -y)
-				box:Show()
-				if column == 1 or index == #items then y = y + REWARD_BOX_HEIGHT + 4 end
-			end
+			nextBox = PlaceBoxes(items, nextBox)
+		end
+		if #also > 0 then
+			child.Also:SetText(L.QUEST_ALSO)
+			place(child.Also, 8)
+			PlaceBoxes(also, nextBox)
 		end
 	end
 
@@ -550,6 +569,7 @@ function QuestsPanel:Create(page, info)
 	child.Experience = Text(child)
 	child.Reputation = Text(child, ns.Font("GameFontNormalSmall", "GameFontBlack"), REPUTATION_COLOR)
 	child.Choose = Text(child)
+	child.Also = Text(child)
 	child.RewardBoxes = {}
 
 	child.Empty = Text(child)
@@ -694,7 +714,7 @@ function QuestsPanel:Refresh(page)
 		FillDetail(page.QuestDetail, selected)
 	else
 		for _, key in ipairs({ "Title", "Status", "Objective", "Note", "DescriptionHeader", "Description", "ShowStart",
-			"ShowEnd", "RewardsHeader", "Receive", "Money", "Experience", "Reputation", "Choose" }) do
+			"ShowEnd", "RewardsHeader", "Receive", "Money", "Experience", "Reputation", "Choose", "Also" }) do
 			detailChild[key]:Hide()
 		end
 		for _, box in ipairs(detailChild.RewardBoxes) do box:Hide() end

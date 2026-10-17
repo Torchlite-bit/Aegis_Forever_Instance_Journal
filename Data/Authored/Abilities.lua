@@ -736,7 +736,7 @@ ns.AmendInstance("RuinsOfLordaeron", { bosses = {
 	["Viktor the Vile"] = {
 		extraAbilities = {
 			{ title = "Poison", icon = ICONS .. "ability_creature_poison_05", flags = { "Poison", "Healer" },
-				description = "Poisons his target. Watch the health bars." },
+				description = "Poisons his target. Druids and shamans (Cure Poison) and paladins (Purify or Cleanse) can take it off; otherwise, watch the health bars." },
 			{ title = "Heavy blows", icon = ICONS .. "ability_warrior_decisivestrike", flags = { "Tank" },
 				description = "He hits hard: keep the tank healthy. Bring mana potions for the waves before him." },
 		},
@@ -744,34 +744,75 @@ ns.AmendInstance("RuinsOfLordaeron", { bosses = {
 	},
 } })
 
+-- Saltspine's, Shadetooth's and the Relic Guardian's spells are from a recorded kill of each
+-- (2026-10-16). The Highland Spiders that cast in the first two fights were fighting the dig's
+-- Dwarf Excavators nearby, not the group. From the same run's log: what the creatures on the way
+-- to each boss put on players that the group took off, by what (Purify, Cure Poison, Cure
+-- Disease, Remove Curse), and the Highland Horror's roots, which Blessing of Freedom broke.
 ns.AmendInstance("ExcavationSiteWetlands", { bosses = {
 	["Saltspine"] = {
-		extraAbilities = {
-			{ title = "A large health pool", icon = ICONS .. "spell_holy_sealofmight", flags = { "Damage" },
-				description = "Nothing special seen in the fight: he hits and has a lot of health. He roams the marsh at the start among elite crocolisks, so clear them first or pull him away from them." },
+		abilities = {
+			{ spellID = 1316382, name = "Dust Storm", flags = { "Damage" },
+				text = "A storm of dust that hits the group for about 160 to 330 nature damage. Healers, be ready for it." },
+			{ spellID = 3604, name = "Tendon Rip", flags = { "Tank" },
+				text = "He tears at the tank's legs, slowing them." },
 		},
+		extraAbilities = {
+			{ title = "Crocolisks in the marsh", icon = ICONS .. "ability_hunter_pet_crocolisk", flags = { "Damage" },
+				description = "He roams the marsh at the start among elite crocolisks, so clear them first or pull him away from them." },
+			{ title = "Muculent Rot", icon = ICONS .. "ability_creature_disease_02", flags = { "Healer", "Poison", "Disease" },
+				description = "The Marsh Skulkers on the way to him give players Muculent Rot. A paladin's Purify or Cleanse takes it off. "
+					.. "It's either a poison or a disease, so a druid's or shaman's Cure Poison, or a priest's or shaman's Cure Disease, may work too." },
+		},
+		notAdds = { [260803] = true },
 	},
 	["Shadetooth"] = {
+		abilities = {
+			{ spellID = 14100, name = "Terrifying Roar", flags = { "Important" },
+				text = "About every 20 seconds he roars and fears up to three players near him. A shaman's Tremor Totem helps." },
+			{ spellID = 13445, name = "Rend", flags = { "Tank", "Bleed" },
+				text = "He makes the tank bleed." },
+			{ spellID = 1284435, name = "Enrage", flags = { "Tank", "Important" },
+				text = "Late in the fight he enrages and hits harder: keep the tank's health up to the end." },
+		},
 		extraAbilities = {
-			{ title = "Raptors in the grass", icon = ICONS .. "ability_druid_rake", flags = { "Bleed" },
-				description = "Small raptors jump out of the grass as you walk through it and make you bleed." },
-			{ title = "The wave before him", icon = ICONS .. "ability_hunter_pet_raptor", flags = { "Important", "Damage" },
-				description = "Kill every raptor of the wave before he arrives. One group wiped on its first try with Shadetooth and several raptors on it at once." },
-			{ title = "Fear", icon = ICONS .. "spell_shadow_psychicscream", flags = { "Tank", "Important" },
-				description = "The tank is feared several times in this fight. A shaman's Tremor Totem helps." },
+			{ title = "Infected Wound", icon = ICONS .. "ability_creature_disease_03", flags = { "Healer", "Disease" },
+				description = "The Thicket Hunters, raptors on the way to him and in his fight, give players Infected Wound, a disease. "
+					.. "Paladins (Purify or Cleanse), priests and shamans (Cure Disease) can take it off." },
 		},
 		fightNote = "Kill the raptor matriarch in the tall grass. A wave of raptors comes when she dies, and Shadetooth runs in once they are dead.",
+		-- The raptors that cast in his fight are the thicket's, noted above: not listed as his adds.
+		notAdds = { [260800] = true, [260801] = true, [260803] = true },
 	},
 	["Highland Horror"] = {
+		abilities = {
+			{ spellID = 1316480, name = "Entangling Roots", flags = { "Important" },
+				text = "He roots players in place. A paladin's Blessing of Freedom frees them." },
+		},
 		extraAbilities = {
 			{ title = "The Dragonmaw camp", icon = ICONS .. "inv_misc_head_dragon_black",
-				description = "He stands in a Dragonmaw camp. Its groups pull apart easily: take them one at a time first. The fight itself is short, nothing special seen yet." },
+				description = "He stands in a Dragonmaw camp. Its groups pull apart easily: take them one at a time first. The fight itself is short." },
+			{ title = "Curse of Weakness", icon = ICONS .. "spell_shadow_curseofmannoroth", flags = { "Healer", "Curse" },
+				description = "The Dragonmaw Thaumaturgists in his camp put Curse of Weakness on players. "
+					.. "Druids (Remove Curse) and mages (Remove Lesser Curse) can take it off." },
 		},
 	},
 	["Relic Guardian"] = {
+		abilities = {
+			{ spellID = 10101, name = "Knock Away", flags = { "Tank", "Important" },
+				text = "He knocks the tank back and turns to someone else: he drops his threat. Damage dealers, slow down when the tank loses him. Tank, take him back at once." },
+			{ spellID = 8374, name = "Arcing Smash", flags = { "Tank" },
+				text = "A heavy swing at everyone in front of him. Only the tank should stand there." },
+			{ spellID = 8078, name = "Thunderclap", flags = { "Damage" },
+				text = "Hits everyone near him and slows their attacks." },
+		},
 		extraAbilities = {
-			{ title = "Threat reset", icon = ICONS .. "ability_rogue_feint", flags = { "Tank", "Important" },
-				description = "He drops his threat and changes target during the fight. Damage dealers, slow down when the tank loses him. Tank, take him back at once." },
+			{ title = "Poison on the spider trail", icon = ICONS .. "ability_creature_poison_05", flags = { "Healer", "Poison" },
+				description = "The Highland Spiders and Highland Lurkers on the trail to him poison players. "
+					.. "Druids and shamans (Cure Poison) and paladins (Purify or Cleanse) can take it off." },
+			{ title = "Highland Venom", icon = ICONS .. "ability_creature_poison_03", flags = { "Healer", "Disease" },
+				description = "The Highland Lurkers also give players Highland Venom. Despite the name it's a disease: "
+					.. "paladins (Purify or Cleanse), priests and shamans (Cure Disease) can take it off." },
 		},
 		fightNote = "He stands still at the end of the spider trail. Click the small panel next to him to wake him.",
 	},

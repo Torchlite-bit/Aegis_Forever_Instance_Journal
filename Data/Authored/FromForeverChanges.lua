@@ -577,3 +577,769 @@ Update("TheDrownedCity", {
 		},
 	},
 })
+
+--[[
+	2026-10-16: every dungeon's quest list on the site (/quests/<dungeon>), set against ours, and
+	each quest we lacked read on its own page, one at a time: facts only, in our own words. Where the site's details come from Wowhead's database (quests
+	new in Forever), only its plain facts are kept: name, level, side.
+
+	  questPatches  the required level Forever changed (the site has it from the game), three
+	                more where the site's differs from ours, and Important Heirlooms being the
+	                Alliance's only
+	  addQuests     the quests on the site's list for the dungeon that ours lacked: chain steps
+	                given far from it, Forever's new ones, and the quests started inside it
+
+	A quest of more than one wing (Dire Maul's librams and Elven Legends, Stratholme's Medallion
+	of Faith) is listed in each wing it touches, as the others are.
+]]
+
+Update("WailingCaverns", {
+	questPatches = {
+		[914] = { requiredLevel = 10 }, -- Leaders of the Fang
+	},
+	addQuests = {
+		{
+			questID = 999, name = "When Dreams Turn to Nightmares", level = 25, requiredLevel = 10, faction = "Both",
+			note = "New in Forever. Where it starts isn't known yet.",
+		},
+		{
+			questID = 1489, name = "Hamuul Runetotem", level = 16, requiredLevel = 10, faction = "Horde",
+			pickup = "Tonga Runetotem, The Barrens",
+			turnin = "Arch Druid Hamuul Runetotem, Thunder Bluff",
+			startMap = { mapID = 1413, x = 0.523, y = 0.319 }, endMap = { mapID = 1456, x = 0.786, y = 0.286 },
+			objective = "Go to Thunder Bluff and talk to Arch Druid Hamuul Runetotem.",
+			prerequisites = { { questID = 880, name = "Altered Beings" } },
+		},
+		{
+			questID = 1490, name = "Nara Wildmane", level = 16, requiredLevel = 10, faction = "Horde",
+			pickup = "Arch Druid Hamuul Runetotem, Thunder Bluff",
+			turnin = "Nara Wildmane, Thunder Bluff",
+			startMap = { mapID = 1456, x = 0.786, y = 0.286 }, endMap = { mapID = 1456, x = 0.756, y = 0.316 },
+			objective = "Talk to Nara Wildmane nearby in Thunder Bluff.",
+			prerequisites = { { questID = 1489, name = "Hamuul Runetotem" } },
+		},
+		{
+			questID = 1500, name = "Waking Naralex", level = 25, requiredLevel = 10, faction = "Both",
+			note = "New in Forever. Where it starts isn't known yet.",
+		},
+		{
+			questID = 3366, name = "The Glowing Shard", level = 25, requiredLevel = 15, faction = "Both",
+			note = "New in Forever. Where it starts isn't known yet.",
+		},
+	},
+})
+
+Update("TheStockade", {
+	questPatches = {
+		[378] = { requiredLevel = 22 }, -- The Fury Runs Deep
+	},
+})
+
+Update("Gnomeregan", {
+	questPatches = {
+		[2843] = { requiredLevel = 20 }, -- Gnomer-gooooone!
+		[2904] = { requiredLevel = 20 }, -- A Fine Mess
+	},
+	addQuests = {
+		{
+			questID = 2923, name = "Tinkmaster Overspark", level = 26, requiredLevel = 20, faction = "Alliance",
+			pickup = "Brother Sarno, Stormwind City",
+			turnin = "Tinkmaster Overspark, Ironforge",
+			startMap = { mapID = 1453, x = 0.511, y = 0.484 }, endMap = { mapID = 1455, x = 0.690, y = 0.500 },
+			objective = "Report to Tinkmaster Overspark in Ironforge.",
+		},
+		{
+			questID = 2925, name = "Klockmort's Essentials", level = 30, requiredLevel = 24, faction = "Alliance",
+			pickup = "Mathiel, Darnassus",
+			turnin = "Klockmort Spannerspan, Ironforge",
+			startMap = { mapID = 1457, x = 0.595, y = 0.454 }, endMap = { mapID = 1455, x = 0.670, y = 0.460 },
+			objective = "Talk to Klockmort Spannerspan in Ironforge.",
+		},
+		{
+			questID = 2927, name = "The Day After", level = 27, requiredLevel = 20, faction = "Alliance",
+			pickup = "Gnoarn, Ironforge",
+			turnin = "Ozzie Togglevolt, Dun Morogh",
+			startMap = { mapID = 1455, x = 0.690, y = 0.500 }, endMap = { mapID = 1426, x = 0.459, y = 0.494 },
+			objective = "Talk to Ozzie Togglevolt in Kharanos.",
+		},
+		{
+			questID = 2931, name = "Castpipe's Task", level = 28, requiredLevel = 25, faction = "Alliance",
+			pickup = "Gaxim Rustfizzle, Stonetalon Mountains",
+			turnin = "Master Mechanic Castpipe, Ironforge",
+			startMap = { mapID = 1442, x = 0.595, y = 0.671 }, endMap = { mapID = 1455, x = 0.690, y = 0.480 },
+			objective = "Talk to Master Mechanic Castpipe in Ironforge.",
+		},
+		{
+			questID = 2953, name = "More Sparklematic Action", level = 30, requiredLevel = 25, faction = "Both",
+			pickup = "The Sparklematic 5200, inside Gnomeregan",
+			turnin = "The Sparklematic 5200, inside Gnomeregan",
+			objective = "Give the Sparklematic 5200 another Grime-Encrusted Object to get a Sparklematic-Wrapped Box.",
+			note = "Repeatable. Each go costs 3 silver.",
+			prerequisites = { { questID = 2952, name = "The Sparklematic 5200!" } },
+		},
+		{
+			questID = 4601, name = "The Sparklematic 5200!", level = 30, requiredLevel = 25, faction = "Both",
+			pickup = "The Sparklematic 5200, inside Gnomeregan",
+			turnin = "The Sparklematic 5200, inside Gnomeregan",
+			objective = "Put a Grime-Encrusted Object in the Sparklematic 5200; you need 3 silver to run it.",
+			note = "Each go costs 3 silver.",
+		},
+		{
+			questID = 4602, name = "The Sparklematic 5200!", level = 30, requiredLevel = 25, faction = "Both",
+			pickup = "The Sparklematic 5200, inside Gnomeregan",
+			turnin = "The Sparklematic 5200, inside Gnomeregan",
+			objective = "Put a Grime-Encrusted Object in the Sparklematic 5200; you need 3 silver to run it.",
+			note = "Each go costs 3 silver.",
+		},
+		{
+			questID = 4603, name = "More Sparklematic Action", level = 30, requiredLevel = 25, faction = "Both",
+			pickup = "The Sparklematic 5200, inside Gnomeregan",
+			turnin = "The Sparklematic 5200, inside Gnomeregan",
+			objective = "Give the Sparklematic 5200 another Grime-Encrusted Object to get a Sparklematic-Wrapped Box.",
+			note = "Repeatable. Each go costs 3 silver.",
+			prerequisites = { { questID = 4605, name = "The Sparklematic 5200!" } },
+		},
+		{
+			questID = 4604, name = "More Sparklematic Action", level = 30, requiredLevel = 25, faction = "Both",
+			pickup = "The Sparklematic 5200, inside Gnomeregan",
+			turnin = "The Sparklematic 5200, inside Gnomeregan",
+			objective = "Give the Sparklematic 5200 another Grime-Encrusted Object to get a Sparklematic-Wrapped Box.",
+			note = "Repeatable. Each go costs 3 silver.",
+			prerequisites = { { questID = 4606, name = "The Sparklematic 5200!" } },
+		},
+		{
+			questID = 4605, name = "The Sparklematic 5200!", level = 30, requiredLevel = 25, faction = "Both",
+			pickup = "The Sparklematic 5200, inside Gnomeregan",
+			turnin = "The Sparklematic 5200, inside Gnomeregan",
+			objective = "Hand the Sparklematic 5200 a Grime-Encrusted Object for a Sparklematic-Wrapped Box.",
+			prerequisites = { { questID = 4601, name = "The Sparklematic 5200!" } },
+		},
+		{
+			questID = 4606, name = "The Sparklematic 5200!", level = 30, requiredLevel = 25, faction = "Both",
+			pickup = "The Sparklematic 5200, inside Gnomeregan",
+			turnin = "The Sparklematic 5200, inside Gnomeregan",
+			objective = "Hand the Sparklematic 5200 a Grime-Encrusted Object for a Sparklematic-Wrapped Box.",
+			prerequisites = { { questID = 4602, name = "The Sparklematic 5200!" } },
+		},
+	},
+})
+
+Update("RazorfenKraul", {
+	questPatches = {
+		[1144] = { requiredLevel = 22 }, -- Willix the Importer
+	},
+})
+
+Update("Uldaman", {
+	questPatches = {
+		[17] = { requiredLevel = 38 }, -- Uldaman Reagent Run
+		[2201] = { requiredLevel = 37 }, -- Find the Gems
+		[2204] = { requiredLevel = 37 }, -- Restoring the Necklace
+		[2341] = { requiredLevel = 37 }, -- Necklace Recovery, Take 3
+		[2361] = { requiredLevel = 37 }, -- Restoring the Necklace
+	},
+	addQuests = {
+		{
+			questID = 721, name = "A Sign of Hope", level = 35, requiredLevel = 35, faction = "Alliance",
+			pickup = "Prospector Ryedol, Badlands",
+			turnin = "Hammertoe Grez, Loch Modan",
+			startMap = { mapID = 1418, x = 0.534, y = 0.434 }, endMap = { mapID = 1432, x = 0.373, y = 0.858 },
+			objective = "Find Hammertoe Grez in the caves before Uldaman.",
+			prerequisites = { { questID = 720, name = "A Sign of Hope" } },
+		},
+		{
+			questID = 2200, name = "Back to Uldaman", level = 42, requiredLevel = 37, faction = "Alliance",
+			pickup = "Talvash del Kissel, Ironforge",
+			turnin = "Remains of a Paladin, inside Uldaman",
+			startMap = { mapID = 1455, x = 0.357, y = 0.040 },
+			objective = "Look in Uldaman for the dead paladin who last had Talvash's necklace.",
+			prerequisites = { { questID = 2199, name = "Lore for a Price" } },
+		},
+		{
+			questID = 2278, name = "The Platinum Discs", level = 47, requiredLevel = 40, faction = "Both",
+			pickup = "The Discs of Norgannon, inside Uldaman",
+			turnin = "The Discs of Norgannon, inside Uldaman",
+			objective = "Talk to the stone watcher, then use the Discs of Norgannon.",
+		},
+		{
+			questID = 2284, name = "Necklace Recovery, Take 2", level = 41, requiredLevel = 37, faction = "Horde",
+			pickup = "Dran Droffers, Orgrimmar",
+			turnin = "Remains of a Paladin, inside Uldaman",
+			startMap = { mapID = 1454, x = 0.596, y = 0.365 },
+			objective = "Search deep in Uldaman for a clue to where the necklace's gems went.",
+			prerequisites = { { questID = 2283, name = "Necklace Recovery" } },
+		},
+		{
+			questID = 2318, name = "Translating the Journal", level = 42, requiredLevel = 37, faction = "Horde",
+			pickup = "Remains of a Paladin, inside Uldaman",
+			turnin = "Jarkal Mossmeld, Badlands",
+			endMap = { mapID = 1418, x = 0.024, y = 0.461 },
+			objective = "Find someone in Kargath (Badlands) who can translate the paladin's journal.",
+			prerequisites = { { questID = 2284, name = "Necklace Recovery, Take 2" } },
+		},
+		{
+			questID = 2398, name = "The Lost Dwarves", level = 40, requiredLevel = 35, faction = "Alliance",
+			pickup = "Prospector Stormpike, Ironforge",
+			turnin = "Baelog, inside Uldaman",
+			startMap = { mapID = 1455, x = 0.747, y = 0.103 },
+			objective = "Find Baelog inside Uldaman.",
+		},
+		{
+			questID = 3375, name = "Replacement Phial", level = 42, requiredLevel = 37, faction = "Alliance",
+			pickup = "Talvash del Kissel, Ironforge",
+			turnin = "Talvash del Kissel, Ironforge",
+			startMap = { mapID = 1455, x = 0.357, y = 0.040 }, endMap = { mapID = 1455, x = 0.357, y = 0.040 },
+			objective = "Bring Talvash a Mana Potion, Coal and Sweet Nectar to get a new Phial of Scrying.",
+			note = "Repeatable: for when the phial is lost.",
+		},
+	},
+})
+
+Update("ZulFarrak", {
+	addQuests = {
+		{
+			questID = 2861, name = "Tabetha's Task", level = 46, requiredLevel = 40, faction = "Both",
+			pickup = "A mage trainer in a capital",
+			turnin = "Tabetha, Dustwallow Marsh",
+			endMap = { mapID = 1445, x = 0.461, y = 0.571 },
+			objective = "Talk to Tabetha in Dustwallow Marsh.",
+			note = "Given by Jennea Cannon (Stormwind), Bink (Ironforge), Deino (Orgrimmar), Ursyn Ghull (Thunder Bluff) and Anastasia Hartwell (Undercity).",
+		},
+		{
+			questID = 2864, name = "Tran'rek", level = 45, requiredLevel = 40, faction = "Both",
+			pickup = "Krazek, Stranglethorn Vale",
+			turnin = "Tran'rek, Tanaris",
+			startMap = { mapID = 1434, x = 0.269, y = 0.772 }, endMap = { mapID = 1446, x = 0.516, y = 0.268 },
+			objective = "Talk to Tran'rek in Gadgetzan.",
+		},
+		{
+			questID = 2936, name = "The Spider God", level = 45, requiredLevel = 40, faction = "Horde",
+			pickup = "Master Gadrin, Durotar",
+			turnin = "Master Gadrin, Durotar",
+			startMap = { mapID = 1411, x = 0.559, y = 0.747 }, endMap = { mapID = 1411, x = 0.559, y = 0.747 },
+			objective = "Read the Tablet of Theka in Zul'Farrak to learn the spider god's name, then go back to Master Gadrin.",
+			prerequisites = { { questID = 2935, name = "Consult Master Gadrin" } },
+		},
+	},
+})
+
+Update("Maraudon", {
+	questPatches = {
+		[7066] = { requiredLevel = 39 }, -- Seed of Life
+		[7068] = { requiredLevel = 39 }, -- Shadowshard Fragments
+		[7070] = { requiredLevel = 39 }, -- Shadowshard Fragments
+	},
+})
+
+Update("TempleOfAtalHakkar", {
+	questPatches = {
+		[1475] = { requiredLevel = 38 }, -- Into The Temple of Atal'Hakkar
+	},
+	addQuests = {
+		{
+			questID = 3380, name = "The Sunken Temple", level = 51, requiredLevel = 46, faction = "Horde",
+			pickup = "Witch Doctor Uzer'i, Feralas",
+			turnin = "Marvon Rivetseeker, Tanaris",
+			startMap = { mapID = 1444, x = 0.744, y = 0.434 }, endMap = { mapID = 1446, x = 0.527, y = 0.459 },
+			objective = "Find Marvon Rivetseeker in Tanaris.",
+		},
+		{
+			questID = 8733, name = "Eranikus, Tyrant of the Dream", level = 60, requiredLevel = 60, faction = "Both",
+			pickup = "Malfurion Stormrage, inside the Sunken Temple",
+			turnin = "Forest Wisp, Teldrassil",
+			endMap = { mapID = 1438, x = 0.376, y = 0.479 },
+			objective = "Go to Teldrassil and find Malfurion's agent outside Darnassus.",
+		},
+	},
+})
+
+Update("BlackrockDepths", {
+	addQuests = {
+		{
+			questID = 3801, name = "Dark Iron Legacy", level = 52, requiredLevel = 48, faction = "Both",
+			pickup = "Franclorn Forgewright, Burning Steppes",
+			turnin = "Franclorn Forgewright, Burning Steppes",
+			startMap = { mapID = 1428, x = 0.290, y = 0.289 }, endMap = { mapID = 1428, x = 0.290, y = 0.289 },
+			objective = "Talk to Franclorn Forgewright about getting a key to the city.",
+		},
+		{
+			questID = 3911, name = "The Last Element", level = 54, requiredLevel = 48, faction = "Both",
+			note = "New in Forever. Where it starts isn't known yet.",
+		},
+		{
+			questID = 3981, name = "Commander Gor'shak", level = 52, requiredLevel = 48, faction = "Horde",
+			pickup = "Galamav the Marksman, Badlands",
+			turnin = "Commander Gor'shak, inside Blackrock Depths",
+			startMap = { mapID = 1418, x = 0.060, y = 0.477 },
+			objective = "Find Commander Gor'shak in a prison cell in Blackrock Depths.",
+			prerequisites = { { questID = 3906, name = "Disharmony of Flame" } },
+		},
+		{
+			questID = 3982, name = "What Is Going On?", level = 54, requiredLevel = 48, faction = "Horde",
+			pickup = "Commander Gor'shak, inside Blackrock Depths",
+			turnin = "Commander Gor'shak, inside Blackrock Depths",
+			objective = "Defend Commander Gor'shak.",
+			prerequisites = { { questID = 3981, name = "Commander Gor'shak" } },
+		},
+		{
+			questID = 4001, name = "What Is Going On?", level = 54, requiredLevel = 48, faction = "Horde",
+			pickup = "Commander Gor'shak, inside Blackrock Depths",
+			turnin = "Thrall, Orgrimmar",
+			endMap = { mapID = 1454, x = 0.317, y = 0.378 },
+			objective = "Hear from Kharan Mighthammer about Princess Moira's kidnapping, then report to Thrall.",
+			prerequisites = { { questID = 3982, name = "What Is Going On?" } },
+		},
+		{
+			questID = 4002, name = "The Eastern Kingdoms", level = 54, requiredLevel = 48, faction = "Horde",
+			pickup = "Thrall, Orgrimmar",
+			turnin = "Thrall, Orgrimmar",
+			startMap = { mapID = 1454, x = 0.317, y = 0.378 }, endMap = { mapID = 1454, x = 0.317, y = 0.378 },
+			objective = "Talk to Thrall to take on his mission.",
+			prerequisites = { { questID = 4001, name = "What Is Going On?" } },
+		},
+		{
+			questID = 4122, name = "Grark Lorkrub", level = 58, requiredLevel = 52, faction = "Horde",
+			pickup = "Lexlort, Badlands",
+			turnin = "Grark Lorkrub, Burning Steppes",
+			startMap = { mapID = 1418, x = 0.059, y = 0.476 }, endMap = { mapID = 1428, x = 0.402, y = 0.342 },
+			objective = "Shackle Grark Lorkrub in the Blackrock fortress and lead him through Blackrock Mountain to Searing Gorge.",
+			note = "An escort: Grark is held at the Blackrock fortress in the Burning Steppes.",
+		},
+		{
+			questID = 4128, name = "Ragnar Thunderbrew", level = 55, requiredLevel = 50, faction = "Alliance",
+			pickup = "Enohar Thunderbrew, Blasted Lands",
+			turnin = "Ragnar Thunderbrew, Dun Morogh",
+			startMap = { mapID = 1419, x = 0.636, y = 0.206 }, endMap = { mapID = 1426, x = 0.468, y = 0.524 },
+			objective = "Talk to Ragnar Thunderbrew in Kharanos.",
+		},
+		{
+			questID = 4133, name = "Vivian Lagrave", level = 55, requiredLevel = 50, faction = "Horde",
+			pickup = "Apothecary Zinge, Undercity",
+			turnin = "Shadowmage Vivian Lagrave, Badlands",
+			startMap = { mapID = 1458, x = 0.501, y = 0.680 }, endMap = { mapID = 1418, x = 0.029, y = 0.478 },
+			objective = "Talk to Shadowmage Vivian Lagrave in Kargath.",
+		},
+		{
+			questID = 4241, name = "Marshal Windsor", level = 54, requiredLevel = 48, faction = "Alliance",
+			pickup = "Marshal Maxwell, Burning Steppes",
+			turnin = "Marshal Windsor, inside Blackrock Depths",
+			startMap = { mapID = 1428, x = 0.847, y = 0.690 },
+			objective = "Go into Blackrock Depths and find out what happened to Marshal Windsor.",
+			prerequisites = { { questID = 4224, name = "The True Masters" } },
+		},
+		{
+			questID = 4295, name = "Rocknot's Ale", level = 1, requiredLevel = 1, faction = "Both",
+			pickup = "Private Rocknot, inside Blackrock Depths",
+			turnin = "Private Rocknot, inside Blackrock Depths",
+			objective = "Bring Private Rocknot 2 Dark Iron Ale Mugs.",
+			note = "Repeatable.",
+		},
+		{
+			questID = 4324, name = "Yuka Screwspigot", level = 53, requiredLevel = 48, faction = "Both",
+			pickup = "Yorba Screwspigot, Tanaris",
+			turnin = "Yuka Screwspigot, Burning Steppes",
+			startMap = { mapID = 1446, x = 0.670, y = 0.240 }, endMap = { mapID = 1428, x = 0.661, y = 0.220 },
+			objective = "Talk to Yuka Screwspigot in the Burning Steppes.",
+		},
+		{
+			questID = 4341, name = "Kharan Mighthammer", level = 59, requiredLevel = 50, faction = "Alliance",
+			pickup = "King Magni Bronzebeard, Ironforge",
+			turnin = "Kharan Mighthammer, inside Blackrock Depths",
+			startMap = { mapID = 1455, x = 0.394, y = 0.558 },
+			objective = "Find Kharan Mighthammer in the Blackrock Depths prison.",
+			prerequisites = { { questID = 3701, name = "The Smoldering Ruins of Thaurissan" } },
+		},
+		{
+			questID = 4342, name = "Kharan's Tale", level = 59, requiredLevel = 50, faction = "Alliance",
+			pickup = "Kharan Mighthammer, inside Blackrock Depths",
+			turnin = "Kharan Mighthammer, inside Blackrock Depths",
+			objective = "Listen to Kharan Mighthammer tell his story.",
+		},
+		{
+			questID = 4361, name = "The Bearer of Bad News", level = 59, requiredLevel = 50, faction = "Alliance",
+			pickup = "Kharan Mighthammer, inside Blackrock Depths",
+			turnin = "King Magni Bronzebeard, Ironforge",
+			endMap = { mapID = 1455, x = 0.394, y = 0.558 },
+			objective = "Take the bad news back to King Magni Bronzebeard in Ironforge.",
+			prerequisites = { { questID = 4341, name = "Kharan Mighthammer" }, { questID = 4342, name = "Kharan's Tale" } },
+		},
+	},
+})
+
+Update("LowerBlackrockSpire", {
+	questPatches = {
+		[5047] = { requiredLevel = 57 }, -- Finkle Einhorn, At Your Service!
+	},
+	addQuests = {
+		{
+			questID = 4981, name = "Operative Bijou", level = 59, requiredLevel = 55, faction = "Horde",
+			pickup = "Lexlort, Badlands",
+			turnin = "Bijou, inside Lower Blackrock Spire",
+			startMap = { mapID = 1418, x = 0.059, y = 0.476 },
+			objective = "Go into Blackrock Spire and find out what happened to Bijou.",
+		},
+		{
+			questID = 7761, name = "Blackhand's Command", level = 60, requiredLevel = 55, faction = "Both",
+			turnin = "Drakkisath's Brand, inside Upper Blackrock Spire",
+			objective = "Find Drakkisath's Brand, guarded by General Drakkisath, to get the Mark of Drakkisath.",
+			note = "Starts from Blackhand's Command, a letter dropped in Lower Blackrock Spire.",
+		},
+	},
+})
+
+Update("UpperBlackrockSpire", {
+	questPatches = {
+		[5047] = { requiredLevel = 57 }, -- Finkle Einhorn, At Your Service!
+	},
+	addQuests = {
+		{
+			questID = 4766, name = "Mayara Brightwing", level = 60, requiredLevel = 57, faction = "Alliance",
+			pickup = "Count Remington Ridgewell, Stormwind City",
+			turnin = "Mayara Brightwing, Burning Steppes",
+			startMap = { mapID = 1453, x = 0.769, y = 0.478 }, endMap = { mapID = 1428, x = 0.848, y = 0.691 },
+			objective = "Talk to Mayara Brightwing in the Burning Steppes.",
+		},
+		{
+			questID = 4769, name = "Vivian Lagrave and the Darkstone Tablet", level = 60, requiredLevel = 57, faction = "Horde",
+			pickup = "Apothecary Zinge, Undercity",
+			turnin = "Shadowmage Vivian Lagrave, Badlands",
+			startMap = { mapID = 1458, x = 0.501, y = 0.680 }, endMap = { mapID = 1418, x = 0.029, y = 0.478 },
+			objective = "Talk to Shadowmage Vivian Lagrave in Kargath.",
+		},
+		{
+			questID = 4907, name = "Tinkee Steamboil", level = 60, requiredLevel = 57, faction = "Both",
+			pickup = "Felnok Steelspring, Winterspring",
+			turnin = "Tinkee Steamboil, Burning Steppes",
+			startMap = { mapID = 1452, x = 0.616, y = 0.386 }, endMap = { mapID = 1428, x = 0.652, y = 0.240 },
+			objective = "Talk to Tinkee Steamboil in the Burning Steppes.",
+			prerequisites = { { questID = 4810, name = "Return to Tinkee" } },
+		},
+		{
+			questID = 4981, name = "Operative Bijou", level = 59, requiredLevel = 55, faction = "Horde",
+			pickup = "Lexlort, Badlands",
+			turnin = "Bijou, inside Lower Blackrock Spire",
+			startMap = { mapID = 1418, x = 0.059, y = 0.476 },
+			objective = "Go into Blackrock Spire and find out what happened to Bijou.",
+		},
+		{
+			questID = 7761, name = "Blackhand's Command", level = 60, requiredLevel = 55, faction = "Both",
+			turnin = "Drakkisath's Brand, inside Upper Blackrock Spire",
+			objective = "Find Drakkisath's Brand, guarded by General Drakkisath, to get the Mark of Drakkisath.",
+			note = "Starts from Blackhand's Command, a letter dropped in Lower Blackrock Spire.",
+		},
+	},
+})
+
+Update("DireMaulEast", {
+	questPatches = {
+		[5528] = { requiredLevel = 56 }, -- The Gordok Taste Test
+	},
+	addQuests = {
+		{
+			questID = 7481, name = "Elven Legends", level = 60, requiredLevel = 54, faction = "Horde",
+			pickup = "Sage Korolusk, Feralas",
+			turnin = "Sage Korolusk, Feralas",
+			startMap = { mapID = 1444, x = 0.752, y = 0.438 }, endMap = { mapID = 1444, x = 0.752, y = 0.438 },
+			objective = "Look in Dire Maul for Kariel Winthalus and report back to Sage Korolusk.",
+		},
+		{
+			questID = 7482, name = "Elven Legends", level = 60, requiredLevel = 54, faction = "Alliance",
+			pickup = "Scholar Runethorn, Feralas",
+			turnin = "Scholar Runethorn, Feralas",
+			startMap = { mapID = 1444, x = 0.312, y = 0.439 }, endMap = { mapID = 1444, x = 0.312, y = 0.439 },
+			objective = "Look in Dire Maul for Kariel Winthalus and report back to Scholar Runethorn.",
+		},
+		{
+			questID = 7483, name = "Libram of Rapidity", level = 60, requiredLevel = 54, faction = "Both",
+			pickup = "Lorekeeper Lydros, inside Dire Maul",
+			turnin = "Lorekeeper Lydros, inside Dire Maul",
+			objective = "Bring the Libram of Rapidity, a Pristine Black Diamond, 2 Large Brilliant Shards and 2 Blood of Heroes to Lorekeeper Lydros for an Arcanum of Rapidity.",
+			note = "Repeatable.",
+		},
+		{
+			questID = 7484, name = "Libram of Focus", level = 60, requiredLevel = 54, faction = "Both",
+			pickup = "Lorekeeper Lydros, inside Dire Maul",
+			turnin = "Lorekeeper Lydros, inside Dire Maul",
+			objective = "Bring the Libram of Focus, a Pristine Black Diamond, 4 Large Brilliant Shards and 2 Skin of Shadow to Lorekeeper Lydros for an Arcanum of Focus.",
+			note = "Repeatable.",
+		},
+		{
+			questID = 7485, name = "Libram of Protection", level = 60, requiredLevel = 54, faction = "Both",
+			pickup = "Lorekeeper Lydros, inside Dire Maul",
+			turnin = "Lorekeeper Lydros, inside Dire Maul",
+			objective = "Bring the Libram of Protection, a Pristine Black Diamond, 2 Large Brilliant Shards and a Frayed Abomination Stitching to Lorekeeper Lydros for an Arcanum of Protection.",
+			note = "Repeatable.",
+		},
+		{
+			questID = 7492, name = "Camp Mojache", level = 57, requiredLevel = 54, faction = "Horde",
+			pickup = "Warcaller Gorlach, Orgrimmar",
+			turnin = "Talo Thornhoof, Feralas",
+			startMap = { mapID = 1454, x = 0.482, y = 0.661 }, endMap = { mapID = 1444, x = 0.762, y = 0.438 },
+			objective = "Talk to Talo Thornhoof at Camp Mojache in Feralas.",
+		},
+		{
+			questID = 7494, name = "Feathermoon Stronghold", level = 57, requiredLevel = 54, faction = "Alliance",
+			pickup = "Crier Goodman, Stormwind City",
+			turnin = "Latronicus Moonspear, Feralas",
+			startMap = { mapID = 1453, x = 0.564, y = 0.741 }, endMap = { mapID = 1444, x = 0.304, y = 0.462 },
+			objective = "Talk to Latronicus Moonspear at Feathermoon Stronghold in Feralas.",
+			note = "Also from Courier Hammerfall in Ironforge and Herald Moonstalker in Darnassus.",
+		},
+	},
+})
+
+Update("DireMaulNorth", {
+	questPatches = {
+		[5518] = { prerequisites = {} }, -- The Gordok Ogre Suit: its second part was given as its prerequisite
+		[5525] = { requiredLevel = 56, prerequisites = {} }, -- Free Knot!, the same
+		[5528] = { requiredLevel = 56 }, -- The Gordok Taste Test
+	},
+	addQuests = {
+		{
+			questID = 1193, name = "A Broken Trap", level = 60, requiredLevel = 56, faction = "Both",
+			pickup = "Broken Trap, inside Dire Maul",
+			turnin = "Broken Trap, inside Dire Maul",
+			objective = "Fix the broken trap with a Thorium Widget and Frost Oil.",
+		},
+		{
+			questID = 5519, name = "The Gordok Ogre Suit", level = 60, requiredLevel = 56, faction = "Both",
+			pickup = "Knot Thimblejack, inside Dire Maul",
+			turnin = "Knot Thimblejack, inside Dire Maul",
+			objective = "Bring Knot 4 Bolts of Runecloth, 8 Rugged Leather, 2 Rune Thread and Ogre Tannin to get a Gordok Ogre Suit.",
+			note = "Repeatable.",
+			prerequisites = { { questID = 5518, name = "The Gordok Ogre Suit" } },
+		},
+		{
+			questID = 7429, name = "Free Knot!", level = 60, requiredLevel = 56, faction = "Both",
+			pickup = "Knot Thimblejack, inside Dire Maul",
+			turnin = "Knot Thimblejack, inside Dire Maul",
+			objective = "Bring Knot Thimblejack a Gordok Shackle Key to free him.",
+			note = "Repeatable.",
+			prerequisites = { { questID = 5525, name = "Free Knot!" } },
+		},
+		{
+			questID = 7481, name = "Elven Legends", level = 60, requiredLevel = 54, faction = "Horde",
+			pickup = "Sage Korolusk, Feralas",
+			turnin = "Sage Korolusk, Feralas",
+			startMap = { mapID = 1444, x = 0.752, y = 0.438 }, endMap = { mapID = 1444, x = 0.752, y = 0.438 },
+			objective = "Look in Dire Maul for Kariel Winthalus and report back to Sage Korolusk.",
+		},
+		{
+			questID = 7482, name = "Elven Legends", level = 60, requiredLevel = 54, faction = "Alliance",
+			pickup = "Scholar Runethorn, Feralas",
+			turnin = "Scholar Runethorn, Feralas",
+			startMap = { mapID = 1444, x = 0.312, y = 0.439 }, endMap = { mapID = 1444, x = 0.312, y = 0.439 },
+			objective = "Look in Dire Maul for Kariel Winthalus and report back to Scholar Runethorn.",
+		},
+		{
+			questID = 7483, name = "Libram of Rapidity", level = 60, requiredLevel = 54, faction = "Both",
+			pickup = "Lorekeeper Lydros, inside Dire Maul",
+			turnin = "Lorekeeper Lydros, inside Dire Maul",
+			objective = "Bring the Libram of Rapidity, a Pristine Black Diamond, 2 Large Brilliant Shards and 2 Blood of Heroes to Lorekeeper Lydros for an Arcanum of Rapidity.",
+			note = "Repeatable.",
+		},
+		{
+			questID = 7484, name = "Libram of Focus", level = 60, requiredLevel = 54, faction = "Both",
+			pickup = "Lorekeeper Lydros, inside Dire Maul",
+			turnin = "Lorekeeper Lydros, inside Dire Maul",
+			objective = "Bring the Libram of Focus, a Pristine Black Diamond, 4 Large Brilliant Shards and 2 Skin of Shadow to Lorekeeper Lydros for an Arcanum of Focus.",
+			note = "Repeatable.",
+		},
+		{
+			questID = 7485, name = "Libram of Protection", level = 60, requiredLevel = 54, faction = "Both",
+			pickup = "Lorekeeper Lydros, inside Dire Maul",
+			turnin = "Lorekeeper Lydros, inside Dire Maul",
+			objective = "Bring the Libram of Protection, a Pristine Black Diamond, 2 Large Brilliant Shards and a Frayed Abomination Stitching to Lorekeeper Lydros for an Arcanum of Protection.",
+			note = "Repeatable.",
+		},
+	},
+})
+
+Update("DireMaulWest", {
+	questPatches = {
+		[5528] = { requiredLevel = 56 }, -- The Gordok Taste Test
+	},
+	addQuests = {
+		{
+			questID = 7481, name = "Elven Legends", level = 60, requiredLevel = 54, faction = "Horde",
+			pickup = "Sage Korolusk, Feralas",
+			turnin = "Sage Korolusk, Feralas",
+			startMap = { mapID = 1444, x = 0.752, y = 0.438 }, endMap = { mapID = 1444, x = 0.752, y = 0.438 },
+			objective = "Look in Dire Maul for Kariel Winthalus and report back to Sage Korolusk.",
+		},
+		{
+			questID = 7482, name = "Elven Legends", level = 60, requiredLevel = 54, faction = "Alliance",
+			pickup = "Scholar Runethorn, Feralas",
+			turnin = "Scholar Runethorn, Feralas",
+			startMap = { mapID = 1444, x = 0.312, y = 0.439 }, endMap = { mapID = 1444, x = 0.312, y = 0.439 },
+			objective = "Look in Dire Maul for Kariel Winthalus and report back to Scholar Runethorn.",
+		},
+		{
+			questID = 7483, name = "Libram of Rapidity", level = 60, requiredLevel = 54, faction = "Both",
+			pickup = "Lorekeeper Lydros, inside Dire Maul",
+			turnin = "Lorekeeper Lydros, inside Dire Maul",
+			objective = "Bring the Libram of Rapidity, a Pristine Black Diamond, 2 Large Brilliant Shards and 2 Blood of Heroes to Lorekeeper Lydros for an Arcanum of Rapidity.",
+			note = "Repeatable.",
+		},
+		{
+			questID = 7484, name = "Libram of Focus", level = 60, requiredLevel = 54, faction = "Both",
+			pickup = "Lorekeeper Lydros, inside Dire Maul",
+			turnin = "Lorekeeper Lydros, inside Dire Maul",
+			objective = "Bring the Libram of Focus, a Pristine Black Diamond, 4 Large Brilliant Shards and 2 Skin of Shadow to Lorekeeper Lydros for an Arcanum of Focus.",
+			note = "Repeatable.",
+		},
+		{
+			questID = 7485, name = "Libram of Protection", level = 60, requiredLevel = 54, faction = "Both",
+			pickup = "Lorekeeper Lydros, inside Dire Maul",
+			turnin = "Lorekeeper Lydros, inside Dire Maul",
+			objective = "Bring the Libram of Protection, a Pristine Black Diamond, 2 Large Brilliant Shards and a Frayed Abomination Stitching to Lorekeeper Lydros for an Arcanum of Protection.",
+			note = "Repeatable.",
+		},
+	},
+})
+
+Update("Scholomance", {
+	addQuests = {
+		{
+			questID = 5582, name = "Healthy Dragon Scale", level = 58, requiredLevel = 55, faction = "Both",
+			turnin = "Betina Bigglezink, Eastern Plaguelands",
+			endMap = { mapID = 1423, x = 0.717, y = 0.499 },
+			objective = "Take the Healthy Dragon Scale to Betina Bigglezink at Light's Hope Chapel.",
+			note = "Starts from the Healthy Dragon Scale, dropped in Scholomance. Repeatable.",
+			prerequisites = { { questID = 5529, name = "Plagued Hatchlings" } },
+		},
+	},
+})
+
+Update("StratholmeMainGate", {
+	addQuests = {
+		{
+			questID = 5122, name = "The Medallion of Faith", level = 60, requiredLevel = 55, faction = "Both",
+			pickup = "Aurius, inside Stratholme",
+			turnin = "Aurius, inside Stratholme",
+			objective = "Get the Medallion of Faith from Malor's Strongbox and bring it to Aurius.",
+			note = "Malor's Strongbox is on the Scarlet side of Stratholme.",
+		},
+	},
+})
+
+Update("StratholmeServiceGate", {
+	addQuests = {
+		{
+			questID = 5122, name = "The Medallion of Faith", level = 60, requiredLevel = 55, faction = "Both",
+			pickup = "Aurius, inside Stratholme",
+			turnin = "Aurius, inside Stratholme",
+			objective = "Get the Medallion of Faith from Malor's Strongbox and bring it to Aurius.",
+			note = "Malor's Strongbox is on the Scarlet side of Stratholme.",
+		},
+	},
+})
+
+Update("HallOfThanes", {
+	questPatches = {
+		[96403] = { faction = "Alliance" }, -- Important Heirlooms
+	},
+})
+
+Update("RuinsOfLordaeron", {
+	addQuests = {
+		{
+			questID = 97289, name = "Unending Torment", level = 21, requiredLevel = 16, faction = "Horde",
+			note = "New in Forever: part 2, given in the Undercity once the Abominable Head is with Master Apothecary Faranell.",
+			prerequisites = { { questID = 97288, name = "Unending Torment" } },
+		},
+		{
+			questID = 97291, name = "Unending Torment", level = 21, requiredLevel = 16, faction = "Horde",
+			note = "New in Forever: part 4, in the Undercity.",
+			prerequisites = { { questID = 97288, name = "Unending Torment" }, { questID = 97289, name = "Unending Torment" }, { questID = 97290, name = "Unending Torment" } },
+		},
+		{
+			questID = 97292, name = "Unending Torment", level = 21, requiredLevel = 16, faction = "Horde",
+			note = "New in Forever: the last part, back to Master Apothecary Faranell in the Undercity.",
+			prerequisites = { { questID = 97288, name = "Unending Torment" }, { questID = 97289, name = "Unending Torment" }, { questID = 97290, name = "Unending Torment" }, { questID = 97291, name = "Unending Torment" } },
+		},
+	},
+})
+
+--[[
+	Quests the site files under a class, a profession or a zone rather than the dungeon, read on
+	their own pages: done in the dungeon, so listed with it.
+]]
+Update("CityOfDalaran", {
+	questPatches = { [92458] = { prerequisites = { { questID = 92432, name = "An Alarming Request" } } } },
+})
+Update("DireMaulEast", {
+	addQuests = {
+		{
+			questID = 5526, name = "Shards of the Felvine", level = 60, requiredLevel = 56, faction = "Both",
+			pickup = "Rabine Saturna, Nighthaven, Moonglade", turnin = "Rabine Saturna, Nighthaven, Moonglade",
+			startMap = { mapID = 1450, x = 0.517, y = 0.451 }, endMap = { mapID = 1450, x = 0.517, y = 0.451 },
+			objective = "Take a shard of the Felvine once Alzzin the Wildshaper falls, seal it in the Reliquary of Purity and bring it to Rabine Saturna.",
+			prerequisites = { { questID = 5527, name = "A Reliquary of Purity" } },
+		},
+	},
+})
+Update("LowerBlackrockSpire", {
+	addQuests = {
+		{
+			questID = 5306, name = "Snakestone of the Shadow Huntress", level = 60, requiredLevel = 50, faction = "Both",
+			pickup = "Kilram, Everlook, Winterspring", turnin = "Kilram, Everlook, Winterspring",
+			startMap = { mapID = 1452, x = 0.613, y = 0.371 }, endMap = { mapID = 1452, x = 0.613, y = 0.371 },
+			objective = "Kill Shadow Hunter Vosh'gajin and bring her Snakestone to Kilram.",
+			note = "For blacksmiths with a skill of 250.",
+		},
+	},
+})
+Update("TempleOfAtalHakkar", {
+	addQuests = {
+		{
+			questID = 8232, name = "The Green Drake", level = 52, requiredLevel = 50, faction = "Both", classOnly = "HUNTER",
+			pickup = "Ogtinc, Azshara", turnin = "Ogtinc, Azshara",
+			startMap = { mapID = 1447, x = 0.424, y = 0.426 }, endMap = { mapID = 1447, x = 0.424, y = 0.426 },
+			objective = "Kill the green drake Morphaz and bring his tooth to Ogtinc.",
+		},
+		{
+			questID = 8236, name = "The Azure Key", level = 52, requiredLevel = 50, faction = "Both", classOnly = "ROGUE",
+			pickup = "Archmage Xylem, Azshara", turnin = "Lord Jorach Ravenholdt, Ravenholdt Manor, Alterac Mountains",
+			startMap = { mapID = 1447, x = 0.292, y = 0.402 }, endMap = { mapID = 1416, x = 0.860, y = 0.789 },
+			objective = "Take the Azure Key, which Morphaz carries, to Lord Jorach Ravenholdt.",
+		},
+		{
+			questID = 8253, name = "Destroy Morphaz", level = 52, requiredLevel = 50, faction = "Both", classOnly = "MAGE",
+			pickup = "Archmage Xylem, Azshara", turnin = "Archmage Xylem, Azshara",
+			startMap = { mapID = 1447, x = 0.292, y = 0.402 }, endMap = { mapID = 1447, x = 0.292, y = 0.402 },
+			objective = "Take the Arcane Shard from Morphaz and bring it back to Archmage Xylem.",
+		},
+		{
+			questID = 8257, name = "Blood of Morphaz", level = 52, requiredLevel = 50, faction = "Both", classOnly = "PRIEST",
+			pickup = "Ogtinc, Azshara", turnin = "Greta Mosshoof, Felwood",
+			startMap = { mapID = 1447, x = 0.424, y = 0.426 }, endMap = { mapID = 1448, x = 0.512, y = 0.821 },
+			objective = "Kill Morphaz and take his blood to Greta Mosshoof in Felwood.",
+		},
+		{
+			questID = 8413, name = "Da Voodoo", level = 52, requiredLevel = 50, faction = "Horde", classOnly = "SHAMAN",
+			pickup = "Bath'rah the Windwatcher, Alterac Mountains", turnin = "Bath'rah the Windwatcher, Alterac Mountains",
+			startMap = { mapID = 1416, x = 0.805, y = 0.669 }, endMap = { mapID = 1416, x = 0.805, y = 0.669 },
+			objective = "Bring Bath'rah voodoo feathers from the temple's troll leaders.",
+		},
+		{
+			questID = 8418, name = "Forging the Mightstone", level = 52, requiredLevel = 50, faction = "Alliance", classOnly = "PALADIN",
+			pickup = "Commander Ashlam Valorfist, Chillwind Camp, Western Plaguelands",
+			turnin = "Commander Ashlam Valorfist, Chillwind Camp, Western Plaguelands",
+			startMap = { mapID = 1422, x = 0.427, y = 0.840 }, endMap = { mapID = 1422, x = 0.427, y = 0.840 },
+			objective = "Bring Ashlam Valorfist voodoo feathers from the temple's troll leaders.",
+		},
+		{
+			questID = 8422, name = "Trolls of a Feather", level = 52, requiredLevel = 50, faction = "Both", classOnly = "WARLOCK",
+			pickup = "Impsy, Felwood", turnin = "Impsy, Felwood",
+			startMap = { mapID = 1448, x = 0.415, y = 0.450 }, endMap = { mapID = 1448, x = 0.415, y = 0.450 },
+			objective = "Bring Impsy six voodoo feathers from the temple's troll leaders.",
+		},
+		{
+			questID = 8425, name = "Voodoo Feathers", level = 52, requiredLevel = 50, faction = "Both", classOnly = "WARRIOR",
+			pickup = "Fallen Hero of the Horde, Swamp of Sorrows", turnin = "Fallen Hero of the Horde, Swamp of Sorrows",
+			startMap = { mapID = 1435, x = 0.343, y = 0.661 }, endMap = { mapID = 1435, x = 0.343, y = 0.661 },
+			objective = "Bring the Fallen Hero of the Horde voodoo feathers from the temple's troll leaders.",
+		},
+	},
+})

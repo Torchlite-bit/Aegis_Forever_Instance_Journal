@@ -307,6 +307,96 @@ end
 check(page.Bosses.Buttons[7].Portrait._portrait == 139050 and not page.Bosses.Buttons[7].DefaultArt:IsShown(),
 	"the rare's portrait, from its model on Wowhead")
 
+-- Each boss's level on its portrait's rim, as the target frame shows a creature's, coloured against
+-- the player's own level (20 here)
+do
+	local button = page.Bosses.Buttons[1]
+	local badge = button.Level
+	local _, _, _, x, y = badge:GetPoint(1)
+	check(button.boss.level == 17 and badge:IsShown() and badge.Text:IsShown() and tostring(badge.Text:GetText()) == "17"
+		and badge._atlas == "UI-HUD-UnitFrame-SmallCircle" and x > 33.5 and y < 0
+		and math.abs(math.sqrt((x - 33.5) ^ 2 + y ^ 2) - 27) < 1,
+		"the boss's level in the target frame's badge, on the portrait's rim at the bottom right")
+	check(badge.Text._layer == badge._layer and badge.Text._subLevel > badge._subLevel,
+		"the number drawn above its circle, not under it")
+	local LevelColor = Page.LevelColor
+	local function Same(level, r, g, b)
+		local cr, cg, cb = LevelColor(level)
+		return math.abs(cr - r) < 0.01 and math.abs(cg - g) < 0.01 and math.abs(cb - b) < 0.01
+	end
+	check(Same(25, 1, 0.1, 0.1) and Same(23, 1, 0.5, 0.25) and Same(21, 1, 1, 0) and Same(18, 1, 1, 0)
+		and Same(17, 0.25, 0.75, 0.25) and Same(13, 0.5, 0.5, 0.5),
+		"red five levels up, orange three, yellow near, green below, grey once it is nothing to the player")
+	local color = badge.Text._textColor
+	local r, g, b = LevelColor(17)
+	check(color[1] == r and color[2] == g and color[3] == b, "the badge in its level's colour")
+	GetCreatureDifficultyColor = function() return { r = 0.3, g = 0.2, b = 0.1 } end
+	check(Same(40, 0.3, 0.2, 0.1), "the client's own colours where it has them")
+	GetCreatureDifficultyColor = nil
+	-- Turned off in the journal's options (Options > AddOns), the badges go at once, and come back
+	local category, boxes = Mock.settingsCategory, Mock.settings
+	check(category and category.name == ns.L.OPTIONS_TITLE and #category.controls == 5
+		and boxes.AEGIS_JOURNAL_BOSS_LEVELS and boxes.AEGIS_JOURNAL_BOSS_LEVELS:GetValue() == true
+		and boxes.AEGIS_JOURNAL_BOSS_LEVELS.tooltip == ns.L.OPTIONS_BOSS_LEVELS_TIP,
+		"the journal's page in the game's options, the boss levels shown")
+	boxes.AEGIS_JOURNAL_BOSS_LEVELS:SetValue(false)
+	check(ns.db.hideBossLevels and not badge:IsShown() and not badge.Text:IsShown()
+		and boxes.AEGIS_JOURNAL_BOSS_LEVELS:GetValue() == false, "unticked: no badges on the open list")
+	boxes.AEGIS_JOURNAL_BOSS_LEVELS:SetValue(true)
+	check(not ns.db.hideBossLevels and badge:IsShown(), "ticked again: back")
+	boxes.AEGIS_JOURNAL_ITEM_TIPS:SetValue(false)
+	check(ns.db.hideGearTipGains and not ns.GearPanel.ShowsGains(), "the stat weights in tooltips, the same box as the weights editor's")
+	boxes.AEGIS_JOURNAL_ITEM_TIPS:SetValue(true)
+	check(not ns.db.hideGearTipGains and boxes.AEGIS_JOURNAL_ITEM_TIPS:GetValue() == true, "and back")
+	check(SLASH_AEGISJOURNAL1 == "/aegis" and SLASH_AEGISJOURNAL3 == "/ij" and ns.L.SLASH_HELP:find("/ij", 1, true),
+		"/ij opens the journal as /aegis does, and the help says so")
+	SlashCmdList.AEGISJOURNAL("options")
+	check(Mock.openedSettings == category:GetID(), "/aegis options opens it")
+	-- The journal's button on the minimap's edge
+	local mini = ns.MinimapButton.button
+	local _, anchor, _, x, y = mini:GetPoint(1)
+	check(mini and mini:GetParent() == Minimap and anchor == Minimap and mini:IsShown()
+		and math.abs(math.sqrt(x * x + y * y) - 80) < 0.01 and mini.Icon:GetTexture() == 1109508
+		and not mini.Icon._desaturated and mini.Icon._texCoord[1] == 0.08 and AegisJournalFrame._portrait == 1109508,
+		"a button on the minimap's edge with the journal's icon, the Ashbringer, which its window wears too, its edge cropped")
+	local wasShown = AegisJournalFrame:IsShown()
+	mini:Click("LeftButton")
+	check(AegisJournalFrame:IsShown() ~= wasShown, "a click opens or closes the journal")
+	mini:Click("LeftButton")
+	Mock.openedSettings = nil
+	mini:Click("RightButton")
+	check(Mock.openedSettings == category:GetID(), "a right-click opens its options")
+	mini:_RunScript("OnEnter")
+	check(GameTooltip:HasLine(ns.L.MINIMAP_LEFT_CLICK) and GameTooltip:HasLine(ns.L.MINIMAP_DRAG), "its tooltip says what it does")
+	-- Dragged round the edge to the top: it stays there
+	Mock.cursorX, Mock.cursorY = 500, 600
+	mini:_RunScript("OnDragStart")
+	mini:_RunScript("OnUpdate")
+	mini:_RunScript("OnDragStop")
+	_, _, _, x, y = mini:GetPoint(1)
+	check(math.abs(ns.db.minimapAngle - 90) < 0.01 and math.abs(x) < 0.01 and math.abs(y - 80) < 0.01
+		and mini:GetScript("OnUpdate") == nil, "dragged, it goes round the edge and stays, and stops following the cursor")
+	-- A minimap button collector hooks the button's own Show and Hide to lay out its grid again
+	local heard = {}
+	hooksecurefunc(mini, "Show", function() heard[#heard + 1] = "Show" end)
+	hooksecurefunc(mini, "Hide", function() heard[#heard + 1] = "Hide" end)
+	boxes.AEGIS_JOURNAL_MINIMAP:SetValue(false)
+	check(not mini:IsShown() and ns.db.hideMinimapButton, "turned off in the options: gone")
+	boxes.AEGIS_JOURNAL_MINIMAP:SetValue(true)
+	check(mini:IsShown() and heard[1] == "Hide" and heard[2] == "Show", "and back, and a minimap button collector hears both")
+	mini.Show, mini.Hide = nil, nil
+	ns.db.minimapAngle = nil
+	-- A level up repaints them for the new level
+	Mock.level = 25
+	Mock.Fire("PLAYER_LEVEL_CHANGED", 20, 25)
+	local now = badge.Text._textColor
+	r, g, b = LevelColor(17)
+	check(now[1] == r and now[2] == g and now[3] == b and Same(17, 0.25, 0.75, 0.25) == false,
+		"a new level recolours them")
+	Mock.level = 20
+	Mock.Fire("PLAYER_LEVEL_CHANGED", 25, 20)
+end
+
 -- Side tabs on the instance overview
 local tabs = page.Tabs
 check(#tabs == 5, "five side tabs: retail's four and the quests")
@@ -494,6 +584,12 @@ rows = lootRows()
 check(rows[1].itemID == 270230 and rows[1].Pin:IsShown() and rows[1].Boss:GetText() == "Boss: Magmatus",
 	"the pinned girdle leads, naming its boss")
 check(loot.Dividers[2]:IsShown() and loot.Dividers[2].Name:GetText() == "Faldrim Anvilmar", "then the boss's own loot under its name")
+do
+	local classNames = {}
+	for _, radio in ipairs(loot.ClassFilter._menu.radios) do classNames[#classNames + 1] = radio.text end
+	check(table.concat(classNames, ", ") == "All Classes, Warrior, Paladin, Hunter, Rogue, Priest, Shaman, Mage, Warlock, Druid",
+		"every class in the filter, the Druid (id 11, past the client's count of nine) too: " .. table.concat(classNames, ", "))
+end
 loot.ClassFilter._menu.radios[1 + 1].setSelected() -- Warrior
 loot.ArmorFilter._menu.radios[2].setSelected() -- the first armour type present here: Cloth
 check(lootRows()[1].itemID == 270230, "a pin ignores the filters")
@@ -733,6 +829,73 @@ do
 	check(slamText and slamText:find("Hits 25-30, first cast at 4s, then every 12s", 1, true),
 		"recorded numbers read plainly: " .. tostring(slamText))
 end
+-- The quests checked against the site's dungeon lists: Forever's new ones, a quest of several wings in
+-- each, class quests marked for their class, and the required levels Forever changed
+do
+	local function Quest(key, questID)
+		for _, quest in ipairs(ns.GetInstance(key).quests) do
+			if quest.questID == questID then return quest end
+		end
+	end
+	check(Quest("WailingCaverns", 1500) and Quest("WailingCaverns", 914).requiredLevel == 10
+		and Quest("DireMaulEast", 7483) and Quest("DireMaulNorth", 7483) and Quest("DireMaulWest", 7483)
+		and Quest("DireMaulEast", 5526) and Quest("TempleOfAtalHakkar", 8232).classOnly == "HUNTER"
+		and Quest("HallOfThanes", 96403).faction == "Alliance" and Quest("BlackrockDepths", 4341).prerequisites[1].questID == 3701,
+		"the quests the site lists for each dungeon, Forever's changes to them, and the class quests done inside")
+	check(#Quest("RuinsOfLordaeron", 97292).prerequisites == 4 and #Quest("DireMaulNorth", 5525).prerequisites == 0
+		and #Quest("DireMaulNorth", 5518).prerequisites == 0 and Quest("DireMaulNorth", 5519).prerequisites[1].questID == 5518
+		and not Quest("DireMaulNorth", 7703) and Quest("LowerBlackrockSpire", 4981)
+		and Quest("LowerBlackrockSpire", 4981).turnin:find("Lower", 1, true) and Quest("Gnomeregan", 2923).endMap.mapID == 1455
+		and not Quest("ZulFarrak", 2861).startMap and Quest("Uldaman", 721).endMap.mapID == 1432,
+		"chains in order and no loops, Bijou where she is, Ironforge's givers on its own map, no capital's mark for every side")
+end
+-- A recorded run of Excavation Site: each boss's encounter id and spells, the Relic Guardian's though
+-- the game calls him neutral, and the spiders that were fighting the dig nearby left out of the adds
+do
+	local dig = ns.GetInstance("ExcavationSiteWetlands")
+	local bosses = {}
+	for _, boss in ipairs(dig.bosses) do bosses[boss.name] = boss end
+	local function Spell(boss, spellID)
+		for _, row in ipairs(boss.abilities or {}) do
+			if row.spellID == spellID then return row end
+		end
+	end
+	local function AddIDs(boss)
+		local ids = {}
+		for _, add in ipairs(boss.adds or {}) do ids[#ids + 1] = add.npcID end
+		table.sort(ids)
+		return table.concat(ids, ",")
+	end
+	local guardian = bosses["Relic Guardian"]
+	check(bosses["Saltspine"].encounterID == 3480 and guardian.encounterID == 3482 and Spell(guardian, 10101)
+		and Spell(guardian, 8374) and Spell(guardian, 8374).every[1] == 9 and Spell(guardian, 8374).text,
+		"Excavation Site's encounter ids, and the Relic Guardian's spells with their written text and recorded numbers")
+	check(AddIDs(bosses["Saltspine"]) == "" and AddIDs(bosses["Shadetooth"]) == "",
+		"the creatures that cast in the fights are the thicket's and the dig's, not listed as adds: " .. AddIDs(bosses["Shadetooth"]))
+	-- What the creatures on the way put on players, and who can take it off, on the boss they lead to
+	local function Extra(boss, title)
+		for _, entry in ipairs(boss.extraAbilities or {}) do
+			if entry.title == title then return entry end
+		end
+	end
+	local venom = Extra(guardian, "Highland Venom")
+	check(Extra(bosses["Saltspine"], "Muculent Rot") and Extra(bosses["Shadetooth"], "Infected Wound")
+		and Extra(bosses["Highland Horror"], "Curse of Weakness") and Spell(bosses["Highland Horror"], 1316480)
+		and Extra(guardian, "Poison on the spider trail") and venom and venom.description:find("Cure Disease", 1, true),
+		"each boss notes the debuffs of the creatures on the way to him, and who can take them off")
+	-- Shadetooth's page: the Thicket Hunters' disease noted, and nothing more of the thicket's raptors
+	local shadetooth = bosses["Shadetooth"]
+	ns.Journal:OpenBoss(dig, shadetooth)
+	tabs[3]:Click()
+	local wound, raptors = nil, 0
+	for _, header in ipairs(shownHeaders()) do
+		local title = header.Button.Title:GetText()
+		if title == "Infected Wound" then wound = header end
+		if title == "Raptors in the grass" or title == "The wave before him" or title == "Thicket Hunter" then raptors = raptors + 1 end
+	end
+	check(wound and (wound.Description:GetText() or ""):find("Cure Disease", 1, true) and raptors == 0,
+		"Infected Wound says it's a disease and who can take it off; the raptor notes and adds are gone")
+end
 ns.Journal:OpenBoss(thanes, magmatus)
 local magmatusHeaders = shownHeaders()
 local addHeader
@@ -912,7 +1075,8 @@ ns.Recorder:GetState().quests[96395] = nil
 -- A Horde character sees only the quests open to them
 Mock.faction = "Horde"
 Mock.Fire("QUEST_LOG_UPDATE")
-check(#questRows() == 2, "Horde sees the two quests open to both factions, got " .. #questRows())
+check(#questRows() == 1 and questRows()[1].quest.questID == 96395,
+	"Horde sees only the quest open to both factions (Important Heirlooms is the Alliance's), got " .. #questRows())
 Mock.faction = "Alliance"
 tabs[1]:Click()
 check(page.Bosses:IsShown() and not page.QuestList:IsShown(), "leaving the quests brings the boss list back")
@@ -974,6 +1138,24 @@ tabs[5]:Click()
 check(rowFor(95810) and rowFor(95647) and not rowFor(95664), "the Excavation Site's added quests, by faction")
 rowFor(95810):Click()
 check(detail.Title:GetText() == "Lost Relic Carry", "a quest that begins with an item opens")
+check(detail.ShowEnd:IsEnabled() and detail.ShowEnd.point.x == 0.388 and not detail.Also:IsShown(),
+	"handed in at Whelgar's camp, with nothing given beside the choice")
+-- Rewards given with the choice, and how many of each.
+do
+	if not rowFor(95809) then rowFor(95647).Expand:Click() end
+	rowFor(95809):Click()
+	local heartBoxes = {}
+	for _, box in ipairs(detail.RewardBoxes) do if box:IsShown() then heartBoxes[#heartBoxes + 1] = box end end
+	check(#heartBoxes == 4 and tostring(heartBoxes[1].Count:GetText()) == "4" and heartBoxes[3].itemID == 2459
+		and heartBoxes[3].Count:GetText() == "" and detail.Also:IsShown() and detail.Also:GetText():find("also", 1, true)
+		and select(2, detail.Also:GetPoint()) ~= nil and detail.ShowEnd.point.mapID == 1437,
+		"Heartwoven: four of each potion to choose from, two more items with them, and where Caitlin is")
+	local _, _, _, _, alsoY = detail.Also:GetPoint()
+	local _, _, _, _, boxY = heartBoxes[3]:GetPoint()
+	check(boxY < alsoY, "the items given with it sit below their label")
+	rowFor(95810):Click()
+	check(not detail.Also:IsShown() and not heartBoxes[3]:IsShown(), "and are gone on the next quest")
+end
 ns.Journal:OpenInstance(ns.GetInstance("ScarletMonasteryLibrary"))
 tabs[5]:Click()
 check(rowFor(1951) and not rowFor(1160), "a Mage sees Rituals of Power; the Horde's Test of Lore is not for this character")
@@ -1234,8 +1416,9 @@ do
 	-- A Horde character sees only the marks of the quests open to them
 	Mock.faction = "Horde"
 	ironforge = marksOn(1455)
-	check(ironforge[96403] and not ironforge[96394], "the Horde keep the quest open to both, not the Alliance's")
+	check(not ironforge[96403] and not ironforge[96394], "the Horde see neither of the Alliance's quests in Ironforge")
 	Mock.faction = "Alliance"
+	check(marksOn(1455)[96403], "and the Alliance see Important Heirlooms there")
 	-- A quest two wings list (the Cathedral's Herod quests, in the Armory too) has one mark
 	local raleigh = 0
 	for _, entry in ipairs(ns.QuestMap:MarksOn(1424)) do
@@ -2159,6 +2342,8 @@ for _, tab in ipairs(tabs) do if tab:IsShown() then tabsHidden = false end end
 check(tabsHidden, "no side tabs on a faction")
 check(page.Loot:IsShown() and not page.InstanceOverview:IsShown() and not page.QuestList:IsShown(), "rewards fill the right page")
 check(table.concat(visibleBosses(), ", ") == "Friendly, Honored, Revered, Exalted", "standings in order")
+check(not page.Bosses.Buttons[1].Level:IsShown() and not page.Bosses.Buttons[4].Level.Text:IsShown(),
+	"a standing has no level badge")
 local standingButtons = page.Bosses.Buttons
 check(standingButtons[1].Portrait:GetTexture() == "Interface\\Icons\\Achievement_Reputation_06"
 	and standingButtons[4].Portrait:GetTexture() == "Interface\\Icons\\Achievement_Reputation_07"
@@ -2526,8 +2711,11 @@ local record = f.Panels[5]
 f.Tabs[5]:Click()
 check(record:IsShown(), "Record tab shows its panel")
 check(not ns.Recorder:IsRecording() and record.Toggle:GetText() == "Start Recording", "starts stopped")
+-- The upgrade arrows watch the loot window whether recording or not (UI/UpgradeArrows.lua).
 local function listening(event)
-	for _, frame in ipairs(Mock.frames) do if frame._events[event] then return true end end
+	for _, frame in ipairs(Mock.frames) do
+		if frame._events[event] and frame ~= ns.UpgradeArrows.events then return true end
+	end
 	return false
 end
 check(not listening("LOOT_OPENED") and not listening("QUEST_DETAIL"), "stopped, the recorder does not listen to the game")
@@ -3075,7 +3263,7 @@ end)()
 		end
 	end
 	local back, main, ranged = Cell("back"), Cell("mainhand"), Cell("ranged")
-	check(back.entry and back.entry.itemID == CAPE and back.Gain:GetText() == "+268%" and back.Arrow:IsShown(),
+	check(back.entry and back.entry.itemID == CAPE and back.Gain:GetText() == "+268%" and rawget(back, "Arrow") == nil,
 		"the cape, marked as an upgrade, adds to all the gear worn (the old cape alone): " .. tostring(back.Gain:GetText()))
 	local share = main.entry and main.entry.compare.share
 	check(main.entry and main.entry.itemID == FELBLADE and main.entry.compare.emptySlot and share
@@ -3089,8 +3277,8 @@ end)()
 		and ns.GearPanel.GainText({ delta = 31.2 }) == "+31", "small gains with a decimal, big ones without, a bare gain with nothing worn")
 	check(ranged.entry and ranged.entry.itemID == CROSSBOW and ranged.Level:GetText() == 17,
 		"one the player can wear in two levels shows that level on its icon")
-	check(not Cell("wrist").entry and Cell("wrist").Name:GetText() == "Wrist" and Cell("wrist").Source:GetText() == "No upgrade found"
-		and not Cell("wrist").Arrow:IsShown(), "fire resistance is worth nothing to Arms: no upgrade, the slot's name instead")
+	check(not Cell("wrist").entry and Cell("wrist").Name:GetText() == "Wrist" and Cell("wrist").Source:GetText() == "No upgrade found",
+		"fire resistance is worth nothing to Arms: no upgrade, the slot's name instead")
 	do
 		-- A cell's words grow back after shorter ones, up to the room the gain leaves them.
 		local cell = Cell("wrist")
@@ -3271,6 +3459,419 @@ end)()
 	CanDualWield, IsPlayerSpell, IsSpellKnown, C_SpellBook = nil, isPlayerSpell, isSpellKnown, spellBook
 	IS:Forget()
 	check(not IS:CanDualWield(), "and not when none says so")
+
+	-- Every item's tooltip: a line per spec with the item's worth to it, and the green
+	-- arrow with what it adds to the gear where it beats what is worn
+	do
+		local function TipLines(link)
+			GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+			GameTooltip:SetHyperlink(link)
+			return GameTooltip._lines
+		end
+		local function Has(lines, text)
+			for _, line in ipairs(lines) do
+				if type(line) == "string" and line:find(text, 1, true) then return line end
+			end
+		end
+		-- A spec's line: "Arms<tab>65", or "<arrow> Arms<tab>+4.2%  65" for an upgrade; and where it is.
+		local function Row(lines, label)
+			for index, line in ipairs(lines) do
+				local left = type(line) == "string" and line:match("^(.-)\t")
+				if left and (left == label or left:sub(-#label - 1) == " " .. label) then return line, index end
+			end
+		end
+		local function Upgraded(lines)
+			for _, line in ipairs(lines) do
+				if type(line) == "string" and (line:find("greenarrow", 1, true) or line:find("MicroStream", 1, true)) then
+					return true
+				end
+			end
+			return false
+		end
+		local label = IS:SpecLabel(IS:Spec())
+		local lines = TipLines(Mock.ItemLink(CAPE))
+		local wrong, rows, last = {}, 0, 0
+		for _, spec in ipairs(IS:Specs()) do
+			local compare = IS:Compare(Mock.ItemLink(CAPE), IS:Weights(spec.key))
+			local row, at = Row(lines, spec.label)
+			if compare.score > 0 then
+				rows = rows + 1
+				local value = ns.GearPanel.Points(compare.score)
+				local upgrade = compare.delta > 0
+				if not row or row:sub(-#value) ~= value or (at or 0) < last
+					or (upgrade ~= (row:find(ns.GearPanel.GainText(compare), 1, true) ~= nil))
+					or (upgrade ~= (row:find("greenarrow", 1, true) ~= nil or row:find("MicroStream", 1, true) ~= nil)) then
+					wrong[#wrong + 1] = spec.label .. ": " .. tostring(row)
+				end
+				last = at or last
+			elseif row then
+				wrong[#wrong + 1] = spec.label .. " (worth nothing): " .. row
+			end
+		end
+		check(#wrong == 0 and rows == #IS:Specs() and Row(lines, label) and Upgraded(lines),
+			"an item's tooltip: each spec in order, its worth, and the upgrade it makes: " .. table.concat(wrong, "; "))
+		lines = TipLines(Mock.ItemLink(WORN_CAPE))
+		check(Row(lines, label) and not Upgraded(lines), "what is worn: its worth, no upgrade")
+		check(not Row(TipLines(Mock.ItemLink(ROBE)), label), "nothing for an item the class cannot use")
+		lines = TipLines(Mock.ItemLink(CUFFS))
+		local anyRow = false
+		for _, spec in ipairs(IS:Specs()) do anyRow = anyRow or Row(lines, spec.label) ~= nil end
+		check(not anyRow, "nor for one worth nothing to any spec")
+		-- The stronger of two rings worn is measured against the weaker, but is no upgrade on itself
+		Mock.worn[11], Mock.worn[12] = RING_B, RING_X
+		IS:Forget()
+		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+		GameTooltip:SetInventoryItem("player", 12)
+		lines = GameTooltip._lines
+		check(IS:Compare(Mock.ItemLink(RING_X)).delta > 0 and Row(lines, label) and not Upgraded(lines),
+			"a worn ring better than the other is not called an upgrade, on the character sheet")
+		Mock.noItemGUIDs = true
+		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+		GameTooltip:SetInventoryItem("player", 12)
+		check(Row(GameTooltip._lines, label) and not Upgraded(GameTooltip._lines),
+			"nor by a client that names no copies: the sheet's own slot says it")
+		Mock.noItemGUIDs = nil
+		-- A link of the same ring, or the same ring dropping, is the item, as the Gear Finder weighs it
+		check(Upgraded(TipLines(Mock.ItemLink(RING_X))), "a link or drop of that ring: a second one, an upgrade")
+		-- Another copy of it is one, over the weaker ring: in the bags, or another green of the same name
+		Mock.bagItems["0:1"] = { RING_X, "Item-bag-0-1" }
+		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+		GameTooltip:SetBagItem(0, 1)
+		check(Upgraded(GameTooltip._lines), "a second copy of the better ring, in the bags, is an upgrade over the other")
+		local variant = Mock.ItemLink(RING_X):gsub("::::::::", ":::::1017:::")
+		check(Upgraded(TipLines(variant)), "and so is the same green with another suffix")
+		-- Unless only one may be worn
+		Mock.itemLines[RING_X] = { "Unique" }
+		IS:Forget()
+		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+		GameTooltip:SetBagItem(0, 1)
+		local unique = IS:Compare(Mock.ItemLink(RING_X))
+		check(unique.slot == 12 and unique.delta == 0 and not Upgraded(GameTooltip._lines),
+			"a unique ring worn already can only take its own place: no upgrade, here or in the Gear Finder")
+		Mock.itemLines[RING_X] = { "Unique (2)" }
+		IS:Forget()
+		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+		GameTooltip:SetBagItem(0, 1)
+		check(IS:Compare(Mock.ItemLink(RING_X)).slot == 11 and Upgraded(GameTooltip._lines),
+			"two may be had of a Unique (2) ring, and worn: still an upgrade")
+		Mock.itemLines[RING_X] = { "Unique-Equipped" }
+		IS:Forget()
+		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+		GameTooltip:SetBagItem(0, 1)
+		check(IS:Compare(Mock.ItemLink(RING_X)).slot == 12 and not Upgraded(GameTooltip._lines),
+			"a Unique-Equipped ring worn already: no second one")
+		-- Every way the client words it, in its own words: each language's format strings
+		local wrong = {}
+		local function Judge(cases)
+			for _, case in ipairs(cases) do
+				if IS.IsUniqueLine(case[1]) ~= case[2] then wrong[#wrong + 1] = case[1] end
+			end
+		end
+		Judge({ { "Unique", true }, { "Unique-Equipped", true }, { "Unique (1)", true }, { "Unique (2)", false },
+			{ "Unique: Rings (1)", true }, { "Unique: Rings (2)", false }, { "Unique-Equipped: Rings (1)", true },
+			{ "Unique-Equipped: Rings (2)", false }, { "Binds when picked up", false }, { "Uniquely crafted", false } })
+		local strings = { "ITEM_UNIQUE", "ITEM_UNIQUE_MULTIPLE", "ITEM_UNIQUE_EQUIPPABLE", "ITEM_LIMIT_CATEGORY",
+			"ITEM_LIMIT_CATEGORY_MULTIPLE" }
+		local function Words(values)
+			for index, name in ipairs(strings) do _G[name] = values[index] end
+		end
+		Words({ "唯一", "唯一（%d）", "装备唯一", "唯一：%s（%d）", "装备唯一：%s （%d）" })
+		Judge({ { "装备唯一", true }, { "装备唯一：饰品 （1）", true }, { "装备唯一：饰品 （2）", false }, { "唯一：戒指（1）", true } })
+		Words({ "Único", "Único (%d)", "Único equipado", "Único: %s (%d)", "Máximo equipado: %s (%d)" })
+		Judge({ { "Máximo equipado: Anéis (1)", true }, { "Máximo equipado: Anéis (2)", false } })
+		Words({ nil, nil, nil, "Unique: %1$s (%2$d)", "Unique-Equipped: %s" })
+		Judge({ { "Unique: Rings (1)", true }, { "Unique: Rings (3)", false }, { "Unique-Equipped: Rings", true } })
+		Words({})
+		check(#wrong == 0, "unique, in every wording and language the client has: " .. table.concat(wrong, ", "))
+		-- Without the client's guids: a bag's copy is not the worn one, nor another player's slot
+		Mock.itemLines[RING_X] = nil
+		IS:Forget()
+		Mock.noItemGUIDs = true
+		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+		GameTooltip:SetBagItem(0, 1)
+		local fromBag = Upgraded(GameTooltip._lines)
+		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+		GameTooltip._lines[1] = "Inspected"
+		GameTooltip._info = { getterName = "GetInventoryItem", getterArgs = { "target", 12 } }
+		for _, callback in ipairs(Mock.tooltipPostCalls[Enum.TooltipDataType.Item]) do
+			callback(GameTooltip, { hyperlink = Mock.ItemLink(RING_X) })
+		end
+		Mock.noItemGUIDs = nil
+		check(fromBag and Upgraded(GameTooltip._lines),
+			"with no guids, a bag's copy and another player's worn ring are still weighed as upgrades")
+		Mock.itemLines[RING_X], Mock.bagItems["0:1"] = nil, nil
+		Mock.worn[11], Mock.worn[12] = nil, nil
+		IS:Forget()
+		-- An item for later: an upgrade within the Gear Finder's few levels ahead, saying when; not past them
+		local bow = IS:Compare(Mock.ItemLink(CROSSBOW))
+		local bowRow = Row(TipLines(Mock.ItemLink(CROSSBOW)), label)
+		check(bow.later and bow.delta > 0 and bowRow and bowRow:find(ns.GearPanel.GainText(bow), 1, true)
+			and bowRow:find("(17)", 1, true), "an upgrade two levels ahead says the level it is worn at: " .. tostring(bowRow))
+		lines = TipLines(Mock.ItemLink(SCEPTER))
+		check(IS:Compare(Mock.ItemLink(SCEPTER)).delta > 0 and Row(lines, label) and not Upgraded(lines),
+			"one ten levels ahead is given its worth, not called an upgrade")
+		-- The Gear Finder's cell for a slot with no upgrade: what is worn, with its worth
+		back:_RunScript("OnEnter")
+		Mock.worn[15] = CAPE
+		Mock.Fire("PLAYER_EQUIPMENT_CHANGED")
+		Mock.RunTimers(1)
+		back:_RunScript("OnEnter")
+		check(not back.entry and Row(GameTooltip._lines, label),
+			"a Gear Finder cell that showed an upgrade, and now what is worn, gives its worth too")
+		Mock.worn[15] = WORN_CAPE
+		Mock.Fire("PLAYER_EQUIPMENT_CHANGED")
+		Mock.RunTimers(1)
+		-- The Gear Finder's own tooltip: the same lines once, then what it adds over what is worn
+		back:_RunScript("OnEnter")
+		local finderLines, count = GameTooltip._lines, 0
+		for _, line in ipairs(finderLines) do
+			local left = type(line) == "string" and line:match("^(.-)\t")
+			if left and left:sub(-#label) == label then count = count + 1 end
+		end
+		check(back.entry and count == 1 and Upgraded(finderLines) and not Has(finderLines, "Worth ")
+			and not Has(finderLines, "Gear Finder (") and not Has(finderLines, "Other upgrades")
+			and Has(finderLines, ns.L.GEAR_TIP_CELL_CLICK),
+			"the Gear Finder's tooltips kept plain: the item, each spec's line once, where it drops, the click")
+		-- The gain it shows for its own spec is the one the Gear Finder found (a second ring's, over
+		-- the other); another frame's tooltip weighs the item afresh.
+		local owner, given = CreateFrame("Button"), { score = 50, usable = true, delta = 9, share = 77, minLevel = 1 }
+		ns.ItemTooltip:UseCompare(owner, Mock.ItemLink(CAPE), given)
+		GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
+		GameTooltip:SetHyperlink(Mock.ItemLink(CAPE))
+		local givenRow = Row(GameTooltip._lines, label)
+		check(givenRow and givenRow:find("+77%", 1, true) and givenRow:sub(-4) == "  50",
+			"the Gear Finder's own gain for its spec: " .. tostring(givenRow))
+		check(not Row(TipLines(Mock.ItemLink(CAPE)), label):find("+77%", 1, true), "and only on its own tooltip")
+		ns.ItemTooltip:UseCompare(owner, nil)
+		local found = back.entry.compare
+		back.entry.compare = setmetatable({ share = 66 }, { __index = found })
+		back:_RunScript("OnEnter")
+		local cellRow = Row(GameTooltip._lines, label)
+		back.entry.compare = found
+		check(cellRow and cellRow:find("+66%", 1, true), "a Gear Finder cell's tooltip shows the gain the cell found: " .. tostring(cellRow))
+		ns.GearPanel.SetShowsGains(false)
+		check(not Row(TipLines(Mock.ItemLink(CAPE)), label), "the Show stat weights in tooltips box turns them off")
+		back:_RunScript("OnEnter")
+		check(not Row(GameTooltip._lines, label), "the Gear Finder's too")
+		ns.GearPanel.SetShowsGains(true)
+		local other = { _lines = {}, AddLine = GameTooltip.AddLine, AddDoubleLine = GameTooltip.AddDoubleLine }
+		for _, callback in ipairs(Mock.tooltipPostCalls[Enum.TooltipDataType.Item]) do
+			callback(other, { hyperlink = Mock.ItemLink(CAPE) })
+		end
+		check(#other._lines == 0, "another tooltip that shows an item, not one of the client's own, is left alone")
+	end
+
+	-- Green arrows on upgrades: in the bags, in the loot window and on a roll
+	do
+		local UA = ns.UpgradeArrows
+		local bagCape, bagRobe, bagWorn = Mock.BagButton(0, 1), Mock.BagButton(0, 2), Mock.BagButton(0, 3)
+		Mock.bagItems["0:1"], Mock.bagItems["0:2"], Mock.bagItems["0:3"] = { CAPE }, { ROBE }, { WORN_CAPE }
+		ContainerFrameCombinedBags:Show()
+		ContainerFrameCombinedBags:UpdateItems()
+		check(UA:Marked(bagCape) and not UA:Marked(bagRobe) and not UA:Marked(bagWorn),
+			"an upgrade in the bags gets the green arrow; one the class cannot use, or no better, does not")
+		check(select(1, UA:ArrowOf(bagCape):GetPoint(1)) == "TOPLEFT", "at the top left, as the bags' own")
+		bagCape.JunkIcon:Show()
+		ContainerFrameCombinedBags:UpdateItems()
+		check(UA:Marked(bagCape) and select(1, UA:ArrowOf(bagCape):GetPoint(1)) == "TOPRIGHT",
+			"at a vendor, a grey upgrade's junk coin keeps the top left: the arrow takes the top right")
+		bagCape.JunkIcon:Hide()
+		ContainerFrameCombinedBags:UpdateItems()
+		check(select(1, UA:ArrowOf(bagCape):GetPoint(1)) == "TOPLEFT", "and goes back when the coin does")
+		Mock.lootSlots = { { link = Mock.ItemLink(CAPE), name = "Cape" }, { link = Mock.ItemLink(WORN_CAPE), name = "Old" } }
+		LootFrame:Show()
+		local lootRows = { Mock.LootRow(1), Mock.LootRow(2) }
+		check(UA:Marked(lootRows[1].Item) and not UA:Marked(lootRows[2].Item), "and in the loot window")
+		-- Scrolled, the list gives a row another slot: the arrow follows the slot, not the row
+		Mock.lootSlots[3] = { link = Mock.ItemLink(WORN_CAPE), name = "Old" }
+		Mock.LootRow(3, lootRows[1])
+		Mock.LootRow(1, lootRows[2])
+		check(not UA:Marked(lootRows[1].Item) and UA:Marked(lootRows[2].Item), "a row scrolled to another slot is marked for it")
+		Mock.LootRow(1, lootRows[1])
+		Mock.LootRow(2, lootRows[2])
+		Mock.rolls[7] = Mock.ItemLink(CAPE)
+		GroupLootFrame1.rollID = 7
+		GroupLootFrame1:Show()
+		check(UA:Marked(GroupLootFrame1.IconFrame), "and on a roll")
+		local card = Mock.RollCard(7)
+		check(UA:Marked(card.IconFrame), "and on the gamepad's roll cards")
+		local arrow = UA:ArrowOf(card.IconFrame)
+		check(arrow._atlas == "bags-greenarrow" and arrow._layer == "OVERLAY" and arrow._subLevel == 1,
+			"the bags' own arrow where it sits, under the cover a search lays: " .. tostring(arrow._subLevel))
+		Mock.settings.AEGIS_JOURNAL_UPGRADE_ARROWS:SetValue(false)
+		check(not UA:Marked(bagCape) and not UA:Marked(lootRows[1].Item) and not UA:Marked(GroupLootFrame1.IconFrame),
+			"turned off in the options: gone everywhere at once")
+		Mock.settings.AEGIS_JOURNAL_UPGRADE_ARROWS:SetValue(true)
+		check(UA:Marked(bagCape) and UA:Marked(GroupLootFrame1.IconFrame), "and back")
+		-- Once it is worn, the copy in the bags is no upgrade
+		Mock.worn[15] = CAPE
+		Mock.Fire("PLAYER_EQUIPMENT_CHANGED")
+		check(not UA:Marked(bagCape), "the item put on: the arrow on its twin in the bags goes")
+		Mock.worn[15] = WORN_CAPE
+		Mock.Fire("PLAYER_EQUIPMENT_CHANGED")
+		GroupLootFrame1:Hide()
+		LootFrame:Hide()
+		ContainerFrameCombinedBags:Hide()
+		Mock.lootSlots, Mock.lootRows, Mock.rolls = {}, {}, {}
+		Mock.bagItems["0:1"], Mock.bagItems["0:2"], Mock.bagItems["0:3"] = nil, nil, nil
+		ContainerFrameCombinedBags._buttons = {}
+	end
+
+	-- In Baganator's bags: a corner widget of the journal's, through Baganator's own API
+	do
+		local UA, widget, refreshes, reasons, active = ns.UpgradeArrows, nil, 0, nil, true
+		Baganator = { API = {
+			RegisterCornerWidget = function(label, id, onUpdate, onInit, position)
+				widget = { label = label, id = id, onUpdate = onUpdate, onInit = onInit, position = position }
+			end,
+			RequestItemButtonsRefresh = function(why) refreshes, reasons = refreshes + 1, why end,
+			IsCornerWidgetActive = function(id) return active and id == "aegis_journal_upgrade" end,
+		}, Constants = { RefreshReason = { ItemWidgets = 4, Searches = 16 } } }
+		UA.baganator = nil
+		UA:HookBaganator()
+		local region = widget and widget.onInit(CreateFrame("Button"))
+		check(widget and widget.id == "aegis_journal_upgrade" and widget.position.corner == "top_right"
+			and region and region._atlas == "bags-greenarrow",
+			"a corner widget in Baganator's bags: the bags' green arrow, in the top right, which Baganator leaves empty")
+		local function Shows(itemID) return widget.onUpdate(region, { itemLink = Mock.ItemLink(itemID) }) end
+		Mock.itemInstant[990899], Mock.itemsCached[990899] = { "", 0, 0, "Consumable" }, true
+		check(Shows(CAPE) == true and Shows(WORN_CAPE) == false and Shows(ROBE) == false and Shows(990899) == false,
+			"an upgrade gets it; what is no better, what the class cannot use and what is no gear do not")
+		Mock.itemInstant[990898] = { "INVTYPE_NECK", 4, 0, "Miscellaneous" }
+		check(Shows(990898) == nil, "an item the client has not described yet: asked again later")
+		local before = refreshes
+		IS:Changed()
+		check(refreshes > before and type(reasons) == "table" and #reasons == 1 and reasons[1] == 4,
+			"a change of gear or weights has Baganator draw its buttons' corners again, not its whole layout")
+		active, before = false, refreshes
+		IS:Changed()
+		check(refreshes == before, "not while the arrow is in none of Baganator's corners")
+		active = true
+		Mock.settings.AEGIS_JOURNAL_UPGRADE_ARROWS:SetValue(false)
+		check(Shows(CAPE) == false, "turned off in the options")
+		Mock.settings.AEGIS_JOURNAL_UPGRADE_ARROWS:SetValue(true)
+		Mock.itemInstant[990898], Mock.itemInstant[990899], Mock.itemsCached[990899] = nil, nil, nil
+		Baganator, UA.baganator = nil, nil
+	end
+
+	-- With Pawn installed and enabled: its tooltips and arrows are shown, and the player is asked once
+	-- whose stat weights the Gear Finder uses
+	do
+		local UA, PL = ns.UpgradeArrows, ns.PawnLink
+		local ready, resets = true, 0
+		PawnIsReady = function() return ready end
+		-- Pawn's starter scales, as its Classic provider makes them; the player's own have no provider
+		local function Starter(classID, specID, name, values)
+			return { ClassID = classID, SpecID = specID, LocalizedName = name, Values = values,
+				Provider = "Classic", ProviderActive = true, PerCharacterOptions = {} }
+		end
+		local function Own(classID, specID, values)
+			return { ClassID = classID, SpecID = specID, Values = values, PerCharacterOptions = {} }
+		end
+		PawnCommon = { Scales = {
+			['"Classic":WARRIOR1'] = Starter(1, 1, "Warrior: Arms",
+				{ Strength = 3, Stamina = 0.5, Agility = 1, MeleeDps = 2, Dps = 1, Unheard = 4 }),
+			['"Classic":WARRIOR3'] = Starter(1, 3, "Warrior: Protection", { Stamina = 2 }),
+			['"Classic":MAGE1'] = Starter(8, 1, "Mage: Arcane", { Intellect = 1 }),
+		} }
+		local visible = { ['"Classic":WARRIOR1'] = true, ['"Classic":WARRIOR3'] = true, ['"Classic":MAGE1'] = true }
+		PawnIsScaleVisible = function(name) return visible[name] == true end
+		PawnGetAllStatValues = function(name) return PawnCommon.Scales[name].Values end
+		PawnResetTooltips = function() resets = resets + 1 end
+		ns.db.weightsSource, Mock.popup = nil, nil
+		PL:Check()
+		check(Mock.popup == "AEGIS_JOURNAL_WEIGHTS_SOURCE", "Pawn there and nothing chosen yet: asked whose stat weights to use")
+		-- The journal's own lines and arrows stand aside for Pawn's
+		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+		GameTooltip:SetHyperlink(Mock.ItemLink(CAPE))
+		local bagCape = Mock.BagButton(0, 1)
+		Mock.bagItems["0:1"] = { CAPE }
+		ContainerFrameCombinedBags:Show()
+		ContainerFrameCombinedBags:UpdateItems()
+		check(#GameTooltip._lines == 1 and not UA:Marked(bagCape), "Pawn's tooltips and arrows are the ones shown")
+		local redraws = 0
+		UA.baganator = { RequestItemButtonsRefresh = function() redraws = redraws + 1 end }
+		UA:Refresh()
+		check(redraws == 0, "nor are Baganator's corners drawn again for the journal's arrow")
+		UA.baganator = nil
+		-- Escape puts the question off: the client tells OnCancel "clicked" for it, as for the second button
+		Mock.EscapePopup()
+		check(Mock.popup == nil and PL:Source() == nil, "Escape puts the question off, to be asked again")
+		-- Closed some other way: asked again; the journal's chosen: kept
+		local popup = StaticPopupDialogs.AEGIS_JOURNAL_WEIGHTS_SOURCE
+		popup.OnCancel(nil, nil, "override")
+		check(PL:Source() == nil, "a question closed without an answer is asked again")
+		popup.OnCancel(nil, nil, "clicked")
+		check(PL:Source() == "journal" and not PL:UsesWeights() and IS:Weights("Arms").STRENGTH == 2.16,
+			"the journal's weights chosen: the Gear Finder keeps them")
+		Mock.popup = nil
+		PL:Check()
+		check(Mock.popup == nil, "and is not asked again")
+		-- Pawn's chosen: the Gear Finder scores with Pawn's scale for its spec, in the journal's stat names
+		popup.OnAccept()
+		local arms, scaleName = IS:Weights("Arms"), select(2, PL:ScaleFor("Arms"))
+		check(PL:UsesWeights() and scaleName == "Warrior: Arms" and arms.STRENGTH == 3 and arms.STAMINA == 0.5
+			and arms.AGILITY == 1 and arms.DPS == 3 and IS:Weights("Protection").STAMINA == 2
+			and Mock.settings.AEGIS_JOURNAL_PAWN_WEIGHTS:GetValue() == true,
+			"Pawn's weights chosen: its scale for the spec, read as the journal's stats")
+		-- Hidden in Pawn: its PawnSetScaleVisible resets its tooltips
+		visible['"Classic":WARRIOR3'] = nil
+		PawnResetTooltips()
+		check(select(2, PL:ScaleFor("Protection")) == "Warrior: Arms", "a spec whose scale is hidden: another of the class's")
+		-- Pawn's scales changed: read again
+		PawnCommon.Scales['"Classic":WARRIOR1'].Values.Strength = 5
+		PawnResetTooltips()
+		check(resets == 2 and IS:Weights("Arms").STRENGTH == 5, "a change in Pawn is read again")
+		-- The player's own scales before Pawn's starter ones, which on Forever hold one template for the
+		-- class: an imported or new one has no spec there, one copied keeps it
+		PawnCommon.Scales["My warrior"] = Own(1, nil, { Strength = 9 })
+		PawnCommon.Scales["My fury"] = Own(1, 2, { Strength = 7 })
+		PawnCommon.Scales["A new scale"] = Own(nil, nil, {})
+		PawnCommon.Scales['"Gone":WARRIOR2'] = { ClassID = 1, SpecID = 2, Provider = "Gone", Values = { Strength = 1 },
+			PerCharacterOptions = {} }
+		for _, name in ipairs({ "My warrior", "My fury", "A new scale", '"Gone":WARRIOR2' }) do visible[name] = true end
+		PawnResetTooltips()
+		check(select(2, PL:ScaleFor("Arms")) == "My warrior" and IS:Weights("Arms").STRENGTH == 9
+			and PL:ScaleFor("Fury") == "My fury" and IS:Weights("Fury").STRENGTH == 7,
+			"the player's own scale before Pawn's starter ones, and one copied for the spec before that")
+		visible["My warrior"], visible["My fury"] = nil, nil
+		PawnResetTooltips()
+		check(PL:ScaleFor("Fury") == '"Classic":WARRIOR1' and IS:Weights("Fury").STRENGTH == 5,
+			"a new scale with nothing in it yet, and one left by a provider no longer loaded, are passed over")
+		visible['"Classic":WARRIOR1'], visible['"Classic":MAGE1'] = nil, nil
+		PawnResetTooltips()
+		check(PL:ScaleFor("Arms") == nil and IS:Weights("Arms").STRENGTH == 2.16,
+			"no scale with weights shown: the journal's own, not called Pawn's")
+		visible['"Classic":WARRIOR1'], visible['"Classic":MAGE1'] = true, true
+		check(PL.PawnSpec("DRUID", "FeralCat") == 2 and PL.PawnSpec("DRUID", "FeralBear") == 3
+			and PL.PawnSpec("SHAMAN", "EnhancementTank") == 2 and PL.PawnSpec("SHAMAN", "Restoration") == 3
+			and PL.PawnSpec("WARRIOR", "Fury") == 2 and PL.PawnSpec("ROGUE", "Subtlety") == 3,
+			"Pawn's numbers for the specs: the Druid's cat before its bear, the Shaman's Enhancement for its tank")
+		local class = Mock.playerClass
+		Mock.playerClass = "DRUID"
+		PawnCommon.Scales['"Classic":DRUID2'] = Starter(11, 2, "Druid: Feral", { Agility = 2 })
+		PawnCommon.Scales['"Classic":DRUID3'] = Starter(11, 3, "Druid: Guardian", { Stamina = 2 })
+		visible['"Classic":DRUID2'], visible['"Classic":DRUID3'] = true, true
+		PawnResetTooltips()
+		check(PL:ScaleFor("FeralCat") == '"Classic":DRUID2' and PL:ScaleFor("FeralBear") == '"Classic":DRUID3',
+			"a druid's cat takes Pawn's Feral Damage scale, the bear its Feral Tank")
+		Mock.playerClass = class
+		PawnResetTooltips()
+		-- The choice in the options
+		Mock.settings.AEGIS_JOURNAL_PAWN_WEIGHTS:SetValue(false)
+		check(PL:Source() == "journal" and IS:Weights("Arms").STRENGTH == 2.16, "and changed back in the options")
+		-- Pawn gone (or not ready): the journal's own again
+		ready = false
+		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+		GameTooltip:SetHyperlink(Mock.ItemLink(CAPE))
+		ContainerFrameCombinedBags:UpdateItems()
+		check(#GameTooltip._lines > 1 and UA:Marked(bagCape), "without Pawn, the journal's own tooltips and arrows")
+		ContainerFrameCombinedBags:Hide()
+		Mock.bagItems["0:1"], ContainerFrameCombinedBags._buttons = nil, {}
+		PawnIsReady, PawnCommon, PawnIsScaleVisible, PawnGetAllStatValues, PawnResetTooltips = nil, nil, nil, nil, nil
+		ns.db.weightsSource = nil
+		IS:Forget()
+	end
 	Mock.RunTimers(1)
 
 	-- Wearing an upgrade: it is no longer one
@@ -3580,6 +4181,33 @@ end)()
 		agility.Value:_RunScript("OnEditFocusLost")
 		check(IS:Weights().AGILITY == 0.68691, "and nothing changed by passing through it")
 		editor.Reset:Click()
+
+		-- The box under the weights: the tooltips without what items are worth and add, and back
+		local function GainLine()
+			back:_RunScript("OnEnter")
+			for _, line in ipairs(GameTooltip._lines or {}) do
+				local left = type(line) == "string" and line:match("^(.-)\t")
+				if left and left:sub(-#IS:SpecLabel(IS:Spec())) == IS:SpecLabel(IS:Spec()) then return true end
+			end
+			return false
+		end
+		check(editor.ShowGains:GetChecked() and GainLine(), "each spec's worth in the Gear Finder's tooltips, the box ticked")
+		local function Told() return (Mock.settingsNotified.AEGIS_JOURNAL_ITEM_TIPS or 0) end
+		local toldBefore = Told()
+		editor.ShowGains:SetChecked(false)
+		editor.ShowGains:_RunScript("OnClick")
+		check(ns.db.hideGearTipGains and not GainLine(), "unticked: the tooltips leave out what items are worth")
+		-- The same box in the journal's options follows, and the editor's follows the options'
+		check(Mock.settings.AEGIS_JOURNAL_ITEM_TIPS:GetValue() == false, "the options' box says the same")
+		Mock.settings.AEGIS_JOURNAL_ITEM_TIPS:SetValue(true)
+		check(editor.ShowGains:GetChecked(), "ticked in the options: the editor's box follows at once")
+		Mock.settings.AEGIS_JOURNAL_ITEM_TIPS:SetValue(false)
+		check(not editor.ShowGains:GetChecked() and Told() == toldBefore + 1,
+			"and unticked; the editor's change told to the options, theirs not told back to them")
+		editor.ShowGains:SetChecked(true)
+		editor.ShowGains:_RunScript("OnClick")
+		check(not ns.db.hideGearTipGains and GainLine(), "ticked again: back")
+		check(Told() == toldBefore + 2, "and the options' box told of the editor's every change")
 
 		-- The window closes when the panel turns to another page; its button opens the Gear Finder
 		CharacterFrame:ShowSubFrame("ReputationFrame")

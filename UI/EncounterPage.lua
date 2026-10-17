@@ -156,6 +156,75 @@ local function DropPlateCap(button)
 	end
 end
 
+--[[
+	A boss's level, as Forever's target frame shows a creature's: its small round badge
+	(UI-HUD-UnitFrame-SmallCircle, Blizzard_UnitFrame/Camelot) on the portrait's rim at the bottom
+	right, the number in the colour the client gives that level against the player's own, grey
+	to red. Shown unless the player turns it off in the journal's options (UI/Options.lua).
+]]
+local LEVEL_BADGE_ATLAS = "UI-HUD-UnitFrame-SmallCircle"
+local LEVEL_BADGE_OFFSET = 19   -- right of and below the portrait's centre: on its rim
+
+function EncounterPage.ShowsBossLevels()
+	return not (ns.db and ns.db.hideBossLevels)
+end
+
+function EncounterPage.SetShowsBossLevels(shown)
+	ns.db.hideBossLevels = not shown or nil
+	EncounterPage:PaintLevels()
+end
+
+-- The level a creature turns grey to the player at, classic's rule, for a client without its own.
+local function GreyLevel(level)
+	if level <= 5 then return 0 end
+	if level <= 39 then return level - math.floor(level / 10) - 5 end
+	if level <= 59 then return level - math.floor(level / 5) - 1 end
+	return level - 9
+end
+
+function EncounterPage.LevelColor(level)
+	if type(GetCreatureDifficultyColor) == "function" then
+		local ok, color = pcall(GetCreatureDifficultyColor, level)
+		if ok and type(color) == "table" and type(color.r) == "number" then return color.r, color.g, color.b end
+	end
+	local player = UnitLevel("player") or 1
+	local above = level - player
+	if above >= 5 then return 1, 0.1, 0.1 end
+	if above >= 3 then return 1, 0.5, 0.25 end
+	if above >= -2 then return 1, 1, 0 end
+	if level > GreyLevel(player) then return 0.25, 0.75, 0.25 end
+	return 0.5, 0.5, 0.5
+end
+
+local function CreateLevelBadge(button, holder)
+	local badge = holder:CreateTexture(nil, "OVERLAY", nil, 1)
+	if ns.AtlasExists(LEVEL_BADGE_ATLAS) then
+		badge:SetAtlas(LEVEL_BADGE_ATLAS, true)
+	else
+		badge:SetSize(24, 24)
+		badge:SetColorTexture(0.05, 0.04, 0.02, 1)
+		Masked(holder, badge)
+	end
+	badge:SetPoint("CENTER", button, "LEFT", PORTRAIT.x + LEVEL_BADGE_OFFSET, -LEVEL_BADGE_OFFSET)
+	badge.Text = holder:CreateFontString(nil, "OVERLAY", ns.Font("WhiteLargeNumberFont", "NumberFontNormal"))
+	-- Text and textures share the sublevels: the number above its circle.
+	badge.Text:SetDrawLayer("OVERLAY", 2)
+	badge.Text:SetPoint("CENTER", badge, "CENTER", 0, -0.5)
+	return badge
+end
+
+local function SetLevelBadge(button)
+	local boss, badge = button.boss, button.Level
+	local level = boss and not boss.standing and tonumber(boss.level) or nil
+	local shown = level ~= nil and level > 0 and EncounterPage.ShowsBossLevels()
+	badge:SetShown(shown)
+	badge.Text:SetShown(shown)
+	if shown then
+		badge.Text:SetText(level)
+		badge.Text:SetTextColor(EncounterPage.LevelColor(level))
+	end
+end
+
 -- A circle of the given radius, centred on the portrait.
 local function PortraitCircle(button, holder, subLevel, radius)
 	local texture = Masked(holder, holder:CreateTexture(nil, "ARTWORK", nil, subLevel))
@@ -183,6 +252,7 @@ local function CreateBossButton(parent)
 	button.DefaultArt:SetTexture(DEFAULT_BOSS)
 	button.DefaultArt:SetSize(128, 64)
 	button.DefaultArt:SetPoint("BOTTOMLEFT", button, "LEFT", PORTRAIT.x - 37.5, -PORTRAIT.radius)
+	button.Level = CreateLevelBadge(button, holder)
 
 	button.Name = button:CreateFontString(nil, "OVERLAY", ns.Font("GameFontNormalMed3", "GameFontNormal"))
 	button.Name:SetJustifyH("LEFT")
@@ -239,6 +309,7 @@ local function SetBossButton(button, instance, boss)
 	button.Reached:SetShown(boss.standing == true and ns.Reputation:Reached(instance, boss.reaction))
 	button.Portrait:SetShown(hasPortrait)
 	button.DefaultArt:SetShown(not hasPortrait)
+	SetLevelBadge(button)
 end
 
 --[[
@@ -553,12 +624,15 @@ end
 -- Building the page
 ------------------------------------------------------------------------------------------
 
+local pages = {}
+
 function EncounterPage:Create(parent)
 	local page = CreateFrame("Frame", nil, parent)
 	page:SetPoint("TOPLEFT")
 	page:SetPoint("BOTTOMRIGHT", -3, 0)
 	page:Hide()
 	page.tab = TAB_OVERVIEW
+	pages[#pages + 1] = page
 
 	local info = CreateFrame("Frame", nil, page)
 	info:SetSize(785, 425)
@@ -909,3 +983,18 @@ end
 EncounterPage.TAB_OVERVIEW, EncounterPage.TAB_LOOT = TAB_OVERVIEW, TAB_LOOT
 EncounterPage.TAB_ABILITIES, EncounterPage.TAB_QUESTS = TAB_ABILITIES, TAB_QUESTS
 EncounterPage.TAB_MODEL = TAB_MODEL
+
+-- The boss list's level badges again: shown or not, and their colours for the player's level.
+function EncounterPage:PaintLevels()
+	for _, page in ipairs(pages) do
+		for _, button in ipairs(page.Bosses and page.Bosses.Buttons or {}) do
+			if button:IsShown() then SetLevelBadge(button) end
+		end
+	end
+end
+
+-- A new level changes what each boss's level means. PLAYER_LEVEL_UP comes before the client has
+-- the new level; PLAYER_LEVEL_CHANGED, after.
+local levelEvents = CreateFrame("Frame")
+ns.RegisterEvents(levelEvents, "PLAYER_LEVEL_CHANGED")
+levelEvents:SetScript("OnEvent", function() EncounterPage:PaintLevels() end)

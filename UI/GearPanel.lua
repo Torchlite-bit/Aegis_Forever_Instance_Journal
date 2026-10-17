@@ -104,6 +104,7 @@ local function Points(value)
 	if value >= 10 then return tostring(math.floor(value + 0.5)) end
 	return string.format("%.1f", value)
 end
+GearPanel.Points = Points
 
 --[[
 	"+4.2%", "+12%": what an upgrade adds to everything worn. While nothing worn is worth
@@ -122,12 +123,6 @@ local function SourceName(entry)
 	return entry.boss.trash and L.LOOT_TRASH or entry.boss.name
 end
 
--- The name of what is worn in a slot, from its link.
-local function WornName(slotID)
-	local link = GetInventoryItemLink("player", slotID)
-	return link and link:match("%[(.-)%]") or nil
-end
-
 local function QualityRGB(quality)
 	local r, g, b = ns.Items:QualityColor(quality)
 	return r, g, b
@@ -137,59 +132,39 @@ end
 -- Tooltips and clicks
 ------------------------------------------------------------------------------------------
 
--- What the upgrade is worth: against everything worn, and in the spec's unit against the item
--- it replaces.
-local function AddGainLines(compare)
-	local IS = ns.ItemScore
-	local spec = IS:Spec()
-	local data = ns.GEAR_WEIGHTS[IS:Class()]
-	-- The journal's weights count in one stat (attack power, healing...); a player's own in points.
-	local unit = (not IS:CustomWeights(spec) and data and data[spec] and data[spec].unit) or L.GEAR_UNIT_POINTS
-	GameTooltip:AddLine(string.format(L.GEAR_TIP_GAIN, IS:SpecLabel(spec), GainText(compare)),
-		GAIN_COLOR[1], GAIN_COLOR[2], GAIN_COLOR[3])
-	-- What it replaces: a two-hander takes the off hand's place too.
-	local names = {}
-	for _, slot in ipairs({ compare.slot, compare.alsoSlot }) do
-		local name = WornName(slot)
-		if name then names[#names + 1] = name end
-	end
-	if #names == 0 then
-		GameTooltip:AddLine(string.format(L.GEAR_TIP_EMPTY, Points(compare.delta), unit), 1, 1, 1, true)
-	elseif #names == 1 then
-		GameTooltip:AddLine(string.format(L.GEAR_TIP_OVER, Points(compare.delta), unit, names[1]), 1, 1, 1, true)
-	else
-		GameTooltip:AddLine(string.format(L.GEAR_TIP_OVER_BOTH, Points(compare.delta), unit, names[1], names[2]),
-			1, 1, 1, true)
-	end
-end
-
 local function ShowCompare()
 	if type(GameTooltip_ShowCompareItem) == "function" and IsModifiedClick and IsModifiedClick("COMPAREITEMS") then
 		pcall(GameTooltip_ShowCompareItem)
 	end
 end
 
--- An upgrade's tooltip: the item, what it adds, where it drops; `clickText` says what a click on
--- `owner` does, `picked` that the player chose it for its slot.
-local function ShowEntryTooltip(owner, entry, anchor, others, clickText, picked)
+-- Whether every item's tooltip, the Gear Finder's too, says what it is worth to each spec
+-- (UI/ItemTooltip.lua): the player's choice for every character, shown unless turned off. The
+-- same box is in the weights editor and the journal's options: each shown one follows a change.
+function GearPanel.ShowsGains()
+	return not (ns.db and ns.db.hideGearTipGains)
+end
+
+-- `fromOptions`: the change came from the options' own box, which needs no telling.
+function GearPanel.SetShowsGains(shown, fromOptions)
+	ns.db.hideGearTipGains = not shown or nil
+	if ns.WeightsEditor then ns.WeightsEditor:SyncShowGains() end
+	if not fromOptions and Settings and Settings.NotifyUpdate then
+		pcall(Settings.NotifyUpdate, "AEGIS_JOURNAL_ITEM_TIPS")
+	end
+end
+
+-- An upgrade's tooltip, kept plain: the item with what it is worth to each spec (UI/
+-- ItemTooltip.lua, which shows the gain the Gear Finder found for its own spec: on a second ring,
+-- over the other one), where it drops, and what a click on `owner` does; `picked`, that the
+-- player chose it for its slot.
+local function ShowEntryTooltip(owner, entry, anchor, clickText, picked)
+	ns.ItemTooltip:UseCompare(owner, entry.link, entry.compare)
 	GameTooltip:SetOwner(owner, anchor or "ANCHOR_RIGHT")
 	GameTooltip:SetHyperlink(entry.link)
-	GameTooltip:AddLine(" ")
-	AddGainLines(entry.compare)
 	GameTooltip:AddLine(entry.instance.name .. " \194\183 " .. SourceName(entry), 1, 0.82, 0)
-	if entry.compare.later then GameTooltip:AddLine(string.format(L.GEAR_TIP_LATER, entry.compare.minLevel), 1, 0.2, 0.2) end
 	if picked then GameTooltip:AddLine(L.GEAR_TIP_PICKED, 1, 0.82, 0) end
-	-- The next best for the slot, so a pick isn't the only thing it says.
-	local listed = 0
-	for _, other in ipairs(others or {}) do
-		if other.itemID ~= entry.itemID and listed < 3 then
-			if listed == 0 then GameTooltip:AddLine(L.GEAR_TIP_MORE, 0.75, 0.75, 0.75) end
-			GameTooltip:AddDoubleLine((other.info.name or other.link) .. " (" .. other.instance.name .. ")",
-				GainText(other.compare), 1, 1, 1, GAIN_COLOR[1], GAIN_COLOR[2], GAIN_COLOR[3])
-			listed = listed + 1
-		end
-	end
-	GameTooltip:AddLine(clickText or L.GEAR_TIP_CLICK, 0.5, 0.8, 1, true)
+	GameTooltip:AddLine(clickText or L.GEAR_TIP_CLICK, 0.5, 0.5, 0.5, true)
 	GameTooltip:Show()
 	ShowCompare()
 end
@@ -240,10 +215,11 @@ local function ShowCellTooltip(cell)
 	local entry = cell.entry
 	local anchor = cell.mirrored and "ANCHOR_LEFT" or "ANCHOR_RIGHT"
 	if entry then
-		ShowEntryTooltip(cell, entry, anchor, cell.others, L.GEAR_TIP_CELL_CLICK, cell.picked)
+		ShowEntryTooltip(cell, entry, anchor, L.GEAR_TIP_CELL_CLICK, cell.picked)
 		return
 	end
-	-- No upgrade: what is worn, as the sheet's own slot shows it.
+	-- No upgrade: what is worn, as the sheet's own slot shows it, with what it is worth.
+	ns.ItemTooltip:UseCompare(cell, nil)
 	GameTooltip:SetOwner(cell, anchor)
 	local slotID = cell.def.slot
 	if GetInventoryItemLink("player", slotID) then
@@ -294,14 +270,6 @@ local function CreateCell(panel, def)
 	cell.IconBorder = cell:CreateTexture(nil, "OVERLAY")
 	cell.IconBorder:SetTexture("Interface\\Common\\WhiteIconFrame")
 	cell.IconBorder:SetAllPoints(cell.Icon)
-
-	-- The equipment flyout's mark for an upgrade.
-	cell.Arrow = cell:CreateTexture(nil, "OVERLAY", nil, 2)
-	if not Atlas(cell.Arrow, "bags-greenarrow", true) then
-		cell.Arrow:SetSize(14, 14)
-		cell.Arrow:SetTexture("Interface\\Buttons\\UI-MicroStream-Green")
-	end
-	cell.Arrow:SetPoint("TOPLEFT", cell.Icon, -2, 2)
 
 	-- The level an item waits for, where the sheet puts a count.
 	cell.Level = cell:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
@@ -394,7 +362,6 @@ local function SetCell(cell, shown, entries, picked)
 	if shown then
 		local compare = shown.compare
 		SetIcon(cell, ns.Items:Icon(shown.itemID), shown.info.quality)
-		cell.Arrow:Show()
 		cell.Level:SetText(compare.later and compare.minLevel or "")
 		cell.Level:SetTextColor(LATER_COLOR[1], LATER_COLOR[2], LATER_COLOR[3])
 		cell.Name:SetText(shown.info.name or "")
@@ -405,7 +372,6 @@ local function SetCell(cell, shown, entries, picked)
 	end
 	local slotID = cell.def.slot
 	local link = GetInventoryItemLink("player", slotID)
-	cell.Arrow:Hide()
 	cell.Level:SetText("")
 	if link then
 		local quality = GetInventoryItemQuality("player", slotID)
@@ -435,7 +401,7 @@ local PICKER_WIDTH, PICK_ROW_WIDTH, PICK_ROW_HEIGHT = 268, 252, 42
 local PICKER_TOP, PICKER_BOTTOM = 46, 38
 
 local function ShowPickRowTooltip(row)
-	ShowEntryTooltip(row, row.entry, "ANCHOR_RIGHT", nil, L.GEAR_TIP_PICK_CLICK, row.picked)
+	ShowEntryTooltip(row, row.entry, "ANCHOR_RIGHT", L.GEAR_TIP_PICK_CLICK, row.picked)
 end
 
 -- A row's click: shift and ctrl as on any item; a right click opens its loot, a plain one picks it.

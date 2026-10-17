@@ -215,12 +215,52 @@ local function LevelLine(minLevel)
 	return string.format(ITEM_MIN_LEVEL or "Requires Level %d", minLevel or 0)
 end
 local EQUIP_PREFIX = "^" .. (ITEM_SPELL_TRIGGER_ONEQUIP or "Equip:"):gsub("%p", "%%%0") .. "%s*(.+)$"
+--[[
+	Only one may be worn: "Unique", "Unique-Equipped", or a limit of one ("Unique (1)",
+	"Unique: Rings (1)", "Unique-Equipped: Rings (1)"); "Unique (2)" lets two be had, and worn.
+	Read in the client's own words, its format strings made patterns: other languages word
+	these, and bracket the count, their own way ("装备唯一：%s （%d）").
+]]
+local function FormatPattern(format)
+	local pattern = format:gsub("[%^%$%(%)%%%.%[%]%*%+%-%?]", "%%%0")
+	-- The format's own %d and %s (or %1$s), escaped above: the count, and anything.
+	pattern = pattern:gsub("%%%%%d+%%%$([ds])", "%%%%%1"):gsub("%%%%d", "(%%d+)"):gsub("%%%%s", ".-")
+	return "^" .. pattern .. "$"
+end
+
+local uniqueWordsOf, uniqueExact, uniqueLimits
+local function UniqueWords()
+	local words = { ITEM_UNIQUE or "Unique", ITEM_UNIQUE_EQUIPPABLE or "Unique-Equipped" }
+	local formats = { ITEM_UNIQUE_MULTIPLE or "Unique (%d)", ITEM_LIMIT_CATEGORY or "Unique: %s (%d)",
+		ITEM_LIMIT_CATEGORY_MULTIPLE or "Unique-Equipped: %s (%d)" }
+	local key = table.concat(words, "\1") .. "\1" .. table.concat(formats, "\1")
+	if key ~= uniqueWordsOf then
+		uniqueWordsOf, uniqueExact, uniqueLimits = key, words, {}
+		for _, format in ipairs(formats) do
+			uniqueLimits[#uniqueLimits + 1] = { pattern = FormatPattern(format), counted = format:find("%%%d*%$?d") ~= nil }
+		end
+	end
+	return uniqueExact, uniqueLimits
+end
+
+function ItemScore.IsUniqueLine(text)
+	local exact, limits = UniqueWords()
+	for _, words in ipairs(exact) do
+		if text == words then return true end
+	end
+	for _, limit in ipairs(limits) do
+		local count = text:match(limit.pattern)
+		if count then return not limit.counted or tonumber(count) == 1 end
+	end
+	return false
+end
+local IsUniqueLine = ItemScore.IsUniqueLine
 
 local readCache, linkOfData = {}, {}
 
 --[[
-	Everything about an item a score needs: { stats, equipLoc, minLevel, usable, link }, or nil
-	while the client has not described it. Kept per link: stats never change, though the client
+	Everything about an item a score needs: { stats, equipLoc, minLevel, usable, unique, link },
+	or nil while the client has not described it. Kept per link: stats never change, though the client
 	may describe its Equip: lines later (TOOLTIP_DATA_UPDATE), and then it is read again.
 	`usable` is false when its tooltip has a red line other than the level it needs (armour or
 	weapon the class cannot use, a class it is not for).
@@ -259,6 +299,7 @@ function ItemScore:Read(link)
 			if (line.red and text ~= levelLine and not text:find("^Requires Level")) or line.rightRed then
 				item.usable = false
 			end
+			if IsUniqueLine(text) then item.unique = true end
 			local equip = text:match(EQUIP_PREFIX)
 			if equip then
 				ReadLine(equip, item.stats, given, LINE_PATTERNS)
@@ -311,11 +352,18 @@ function ItemScore:Level()
 	return UnitLevel("player") or 1
 end
 
+-- A spec's name in the client's language: the locale's (L.GEAR_SPEC_NAMES, by spec), else the
+-- English in the generated weights.
+local function SpecName(data, spec)
+	local names = ns.L.GEAR_SPEC_NAMES
+	return names and names[spec] or data and data[spec] and data[spec].label or spec
+end
+
 -- The class's specs, in order: { key, label }.
 function ItemScore:Specs(classFile)
 	local data = ns.GEAR_WEIGHTS[classFile or self:Class()]
 	local out = {}
-	for _, key in ipairs(data and data.order or {}) do out[#out + 1] = { key = key, label = data[key].label } end
+	for _, key in ipairs(data and data.order or {}) do out[#out + 1] = { key = key, label = SpecName(data, key) } end
 	return out
 end
 
@@ -391,8 +439,16 @@ function ItemScore:SetSpec(spec)
 end
 
 function ItemScore:SpecLabel(spec)
+	return SpecName(ns.GEAR_WEIGHTS[self:Class()], spec)
+end
+
+-- What the journal's weights for a spec count in ("attack power"...), in the client's language
+-- (L.GEAR_UNITS, by the English word); nil for a spec it has no weights for.
+function ItemScore:SpecUnit(spec)
 	local data = ns.GEAR_WEIGHTS[self:Class()]
-	return data and data[spec] and data[spec].label or spec
+	local unit = data and data[spec] and data[spec].unit
+	local units = ns.L.GEAR_UNITS
+	return unit and (units and units[unit] or unit)
 end
 
 -- The journal's own weights for a spec: the levelling set below 60 (tanks have one set).
@@ -417,9 +473,12 @@ end
 -- The journal's weights with the player's changes laid over them, kept until anything changes.
 local merged = {}
 
--- The weights in use: the player's own for the spec, else the journal's.
+-- The weights in use: Pawn's where the player chose them (Core/PawnLink.lua), else the player's own
+-- for the spec, else the journal's.
 function ItemScore:Weights(spec)
 	spec = spec or self:Spec()
+	local fromPawn = ns.PawnLink and ns.PawnLink:UsesWeights() and ns.PawnLink:Weights(spec)
+	if fromPawn then return fromPawn end
 	local custom = self:CustomWeights(spec)
 	if not custom then return self:DefaultWeights(spec) end
 	if custom.weights then return custom.weights end
@@ -510,6 +569,48 @@ local PAWN_DPS = { dps = true, meleedps = true, rangeddps = true, mainhanddps = 
 local PAWN_SETTINGS = { class = true, spec = true, speedbaseline = true }
 
 --[[
+	Pawn's stat values as the journal's weights: { { name, value }, ... } in Pawn's stat names, from
+	a scale tag or from one of Pawn's scales. The weights and the names the journal doesn't know;
+	nil (and those names) when none is one it knows.
+]]
+local function FromPawnPairs(pairsList)
+	local weights, unknown, dps, found = {}, {}, {}, 0
+	for _, pair in ipairs(pairsList) do
+		local key, number = pair[1], tonumber(pair[2])
+		local lower = key:lower()
+		local stat = PAWN_STATS[lower]
+		if PAWN_DPS[lower] then
+			if SaneWeight(number) then dps[lower], found = number, found + 1 end
+		elseif stat and SaneWeight(number) then
+			for _, target in ipairs(type(stat) == "table" and stat or { stat }) do
+				weights[target] = math.max(weights[target] or number, number)
+			end
+			found = found + 1
+		elseif stat == nil and not PAWN_SETTINGS[lower] then
+			unknown[#unknown + 1] = key
+		end
+	end
+	if found == 0 then return nil, unknown end
+	local hand = math.max(dps.mainhanddps or 0, dps.onehanddps or 0, dps.twohanddps or 0)
+	weights.DPS = (dps.dps or 0) + (dps.meleedps or 0) + hand
+	weights["RANGED DPS"] = (dps.dps or 0) + (dps.rangeddps or 0)
+	for stat, value in pairs(weights) do
+		if value == 0 then weights[stat] = nil end
+	end
+	return weights, unknown
+end
+
+-- One of Pawn's scales ({ [stat] = value }, as PawnGetAllStatValues gives it) as weights.
+function ItemScore.FromPawnValues(values)
+	local pairsList = {}
+	for key, value in pairs(values or {}) do
+		if type(key) == "string" then pairsList[#pairsList + 1] = { key, value } end
+	end
+	table.sort(pairsList, function(a, b) return a[1] < b[1] end)
+	return FromPawnPairs(pairsList)
+end
+
+--[[
 	The weights in a Pawn scale tag, its name, the stat names it has that the journal doesn't know,
 	and the class it says it is for; nil when the text holds no tag, or no stat the journal knows.
 ]]
@@ -517,33 +618,19 @@ function ItemScore:ParsePawn(text)
 	if type(text) ~= "string" then return nil end
 	local name, body = text:match('%(%s*Pawn%s*:%s*v%d+%s*:%s*"([^"]*)"%s*:(.-)%)')
 	if not body then return nil end
-	local weights, unknown, dps, found, class = {}, {}, {}, 0, nil
+	local pairsList, class = {}, nil
 	for pair in body:gmatch("[^,]+") do
 		local key, value = pair:match("^%s*([%w_]+)%s*=%s*(.-)%s*$")
 		if key then
-			local lower, number = key:lower(), tonumber(value)
-			local stat = PAWN_STATS[lower]
-			if lower == "class" then
+			if key:lower() == "class" then
 				class = value
-			elseif PAWN_DPS[lower] then
-				if SaneWeight(number) then dps[lower], found = number, found + 1 end
-			elseif stat and SaneWeight(number) then
-				for _, target in ipairs(type(stat) == "table" and stat or { stat }) do
-					weights[target] = math.max(weights[target] or number, number)
-				end
-				found = found + 1
-			elseif stat == nil and not PAWN_SETTINGS[lower] then
-				unknown[#unknown + 1] = key
+			else
+				pairsList[#pairsList + 1] = { key, value }
 			end
 		end
 	end
-	if found == 0 then return nil end
-	local hand = math.max(dps.mainhanddps or 0, dps.onehanddps or 0, dps.twohanddps or 0)
-	weights.DPS = (dps.dps or 0) + (dps.meleedps or 0) + hand
-	weights["RANGED DPS"] = (dps.dps or 0) + (dps.rangeddps or 0)
-	for stat, value in pairs(weights) do
-		if value == 0 then weights[stat] = nil end
-	end
+	local weights, unknown = FromPawnPairs(pairsList)
+	if not weights then return nil end
 	return weights, name, unknown, class
 end
 
@@ -624,6 +711,16 @@ end
 -- Rings and trinkets: two slots, and a second upgrade replaces the other one.
 local PAIRED = { INVTYPE_FINGER = true, INVTYPE_TRINKET = true }
 
+-- Which of these slots wears the same item (by its id), if one does.
+function ItemScore:WornSlot(link, slots)
+	local itemID = ns.ItemIDFromLink(link)
+	if not itemID then return nil end
+	for _, slot in ipairs(slots or EQUIPMENT_SLOTS) do
+		if ns.ItemIDFromLink(GetInventoryItemLink("player", slot)) == itemID then return slot end
+	end
+	return nil
+end
+
 --[[
 	How an item compares with what is worn, for these weights: { score, slot, worn (its score),
 	delta, pct (nil against an empty slot or one worth nothing), alsoSlot (the off hand a two-hander
@@ -664,11 +761,17 @@ function ItemScore:Compare(link, weights, total)
 		out.slot, out.noCompare = OFFHAND, true
 		return out
 	else
-		-- The slot it would replace: the weaker of those it fits.
+		-- The slot it would replace: the weaker of those it fits. A unique item worn already can only
+		-- take its own place: a second one cannot go beside it.
+		local own = item.unique and self:WornSlot(link, slots)
 		local scores = {}
 		for index, slot in ipairs(slots) do
 			scores[index] = self:Worn(slot, weights)
-			if not out.slot or scores[index] < out.worn then out.slot, out.worn = slot, scores[index] end
+			if own then
+				if slot == own then out.slot, out.worn = slot, scores[index] end
+			elseif not out.slot or scores[index] < out.worn then
+				out.slot, out.worn = slot, scores[index]
+			end
 		end
 		if twoHanded and out.slot == OFFHAND then out.slot, out.worn = MAINHAND, mainScore end
 		if PAIRED[loc] then

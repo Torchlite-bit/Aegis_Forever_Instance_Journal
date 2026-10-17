@@ -1,6 +1,6 @@
 <p align="center"><img src="docs/images/logo.png" alt="Aegis Instance Journal" width="220"></p>
 
-# Aegis: Forever Instance Journal (v0.31.0)
+# Aegis: Forever Instance Journal (v0.31.1)
 
 **Retail's instance journal and dungeon maps, brought to WoW: Forever.**
 

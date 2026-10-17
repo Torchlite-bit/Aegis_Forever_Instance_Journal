@@ -31,8 +31,8 @@ ns.AddInstance({
 	},
 	zoneEntrance = {
 		mapID = 1437,
-		x = 0.477,
-		y = 0.562,
+		x = 0.478,
+		y = 0.565,
 	},
 	bosses = {
 		{
@@ -445,7 +445,7 @@ ns.AddInstance({
 			pickup = "Daewyn Songblade, inside Excavation Site: Wetlands",
 			turnin = "Dorin Songblade, Lakeshire, Redridge Mountains",
 			rewards = {
-				xp = 3150,
+				xp = 6150,
 				items = {
 					{
 						itemID = 271769,

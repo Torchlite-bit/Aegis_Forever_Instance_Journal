@@ -199,8 +199,10 @@ end
 	other data file. A recorded spell the boss's written abilities name gives them its numbers
 	(damage, timings); one they lack is added, unless it is nothing to watch for: a hand-written
 	file says so (boss.notAbilities, { [spellID] = true }), or it is only a buff the boss cast on
-	itself and hit no one with (Kam Deepfury's Defensive Stance). What a hand-written file gave a
-	boss is kept.
+	itself and hit no one with (Kam Deepfury's Defensive Stance). Recorded adds are the creatures
+	that cast during the fight, less those a hand-written file says took no part (boss.notAdds,
+	{ [npcID] = true }: trash nearby still fighting something else). What a hand-written file
+	gave a boss is kept.
 ]]
 local RECORDED_FIELDS = { "hit", "tick", "firstCast", "every", "school", "onSelf" }
 
@@ -229,6 +231,15 @@ local function MergeRecorded(boss, recorded)
 	end
 end
 
+local function RecordedAdds(boss, adds)
+	if not (adds and boss.notAdds) then return adds end
+	local out = {}
+	for _, add in ipairs(adds) do
+		if not boss.notAdds[add.npcID] then out[#out + 1] = add end
+	end
+	return out
+end
+
 function ns.SetAbilities(byInstance)
 	for key, bosses in pairs(byInstance) do
 		local instance = byKey[key]
@@ -236,7 +247,7 @@ function ns.SetAbilities(byInstance)
 			local boss = FindBoss(instance, name)
 			if boss then
 				MergeRecorded(boss, found.abilities)
-				if boss.adds == nil then boss.adds = found.adds end
+				if boss.adds == nil then boss.adds = RecordedAdds(boss, found.adds) end
 				if boss.encounterID == nil then boss.encounterID = found.encounterID end
 			end
 		end

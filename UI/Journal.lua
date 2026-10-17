@@ -12,7 +12,14 @@ ns.Journal = Journal
 
 local FRAME_NAME = "AegisJournalFrame"
 local WIDTH, HEIGHT = 800, 496
-local PORTRAIT = "Interface\\EncounterJournal\\UI-EJ-PortraitIcon"
+
+--[[
+	The journal's icon, on its window and its minimap button: the Ashbringer, the game's icon
+	inv_sword_2h_artifactashbringer_d_01, by its file ID. Shown round; the crop leaves out the
+	icon's dark edge, so the circle holds only the picture.
+]]
+Journal.ICON = 1109508
+Journal.ICON_CROP = { 0.08, 0.92, 0.08, 0.92 }
 
 -- Retail's journal opens in the left panel slot.
 local DEFAULT_POINT = { point = "TOPLEFT", relativePoint = "TOPLEFT", x = 16, y = -116 }
@@ -173,11 +180,14 @@ local function CreateJournalFrame()
 	elseif f.TitleText then
 		f.TitleText:SetText(L.JOURNAL_TITLE)
 	end
+	-- The window's portrait is masked round by its template.
 	if f.SetPortraitToAsset then
-		f:SetPortraitToAsset(PORTRAIT)
+		f:SetPortraitToAsset(Journal.ICON)
 	elseif f.portrait then
-		f.portrait:SetTexture(PORTRAIT)
+		f.portrait:SetTexture(Journal.ICON)
 	end
+	local portrait = (f.GetPortrait and f:GetPortrait()) or f.portrait
+	if portrait and portrait.SetTexCoord then portrait:SetTexCoord(unpack(Journal.ICON_CROP)) end
 
 	f.Inset = ns.CreateFrameWithTemplate("Frame", nil, f, "InsetFrameTemplate")
 	f.Inset:SetPoint("TOPRIGHT", -4, -60)

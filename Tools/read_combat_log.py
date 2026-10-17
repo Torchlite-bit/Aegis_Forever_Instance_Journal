@@ -100,7 +100,9 @@ def read_log(path):
                 continue
             source_guid, source_name, source_flags = row[1], row[2], int(row[3], 16)
             npc = npc_id(source_guid)
-            if npc is None or not source_flags & HOSTILE:
+            # The boss the fight is named for counts even when the game calls him neutral
+            # (Excavation Site's Relic Guardian); anything else only when hostile.
+            if npc is None or not (source_flags & HOSTILE or source_name == current.name):
                 continue
             current.creatures[npc] = source_name
             spell_id, spell_name, school = int(row[9]), row[10], int(row[11], 16)

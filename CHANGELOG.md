@@ -12,6 +12,65 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.31.1]
+
+### Added
+- **73 dungeon quests** the journal lacked, after checking every dungeon's quests against
+  foreverchanges.pro's lists: chain steps given far from the dungeon (Gnomeregan, Uldaman,
+  Blackrock Depths and Spire), Forever's new ones in Wailing Caverns, Blackrock Depths and the
+  Ruins of Lordaeron, Dire Maul's librams, the Sunken Temple's class quests and more.
+- **Excavation Site: Wetlands, from a recorded run**: each boss's spells (the Relic Guardian's
+  Knock Away is his threat drop; Shadetooth's roar fears up to three players), their areas and
+  the entrance. Thank you, Genesys Firstborn.
+- **What can be dispelled on the way**, on the boss each pack leads to: the Marsh Skulkers'
+  Muculent Rot, the Thicket Hunters' Infected Wound, the Dragonmaw Thaumaturgists' Curse of
+  Weakness and the spider trail's poison and Highland Venom, with the classes that can take each
+  off; and the Highland Horror's roots, which Blessing of Freedom breaks.
+- **"You will also receive"** on a quest's page, for the items that come with the choice, and
+  how many of each item you get.
+- **The Gear Finder's stat weights on every item's tooltip**: in your bags, on the character
+  sheet, in loot, at merchants, in chat links and in the Gear Finder, a short line for each of
+  your specs with what the item is worth to it, and a green arrow with what it adds to your gear
+  when it beats what you wear (with the level, for gear a few levels ahead).
+- **Show stat weights in tooltips**, a box under the stat weights: untick it and items'
+  tooltips, the Gear Finder's too, leave out what each item is worth and adds to your gear.
+- **Green arrows on upgrades**: in your bags (Baganator's too, in its top right corner), in the
+  loot window and on loot rolls, an item that is an upgrade for your spec has the bags' green arrow
+  at its corner, so you can tell at a glance what to keep, take or roll on.
+- **Working alongside Pawn**: with Pawn installed and enabled, its item tooltips and upgrade arrows
+  are the ones shown, and the journal asks once whether the Gear Finder should score with Pawn's
+  stat weights or the journal's own. With Pawn's, it takes your own Pawn scale for the class (a
+  copied one for its spec) before Pawn's starter scales. Change it any time in the options;
+  without Pawn, the journal shows its own.
+- **Boss levels on the boss list**: each boss's level on its portrait, in the target frame's
+  badge, coloured from grey to red by how hard the boss is for you.
+- **The journal's options**, in the game's Options under AddOns (or `/aegis options`): boss
+  levels, stat weights in tooltips and the green arrows can each be turned off.
+- **`/ij`** opens the journal too, as `/aegis` does.
+- **A minimap button**, with the journal's new icon, the Ashbringer. Click it to open the
+  journal, right-click it for the options, drag it round the minimap's edge; the options can hide
+  it.
+- **The Gear Finder and its stat weights in Russian**, with every spec's name and unit, by
+  Staree4ok. The new top 3 picker is still in English for now.
+
+### Changed
+- **18 quests' levels or side**, to Forever's: mostly the level they open at.
+- **Excavation Site's quests**, checked one by one against foreverchanges.pro: where each is
+  given and handed in, the right experience, Heartwoven's four of each potion, and no quests
+  needed first that only lead the way there (Seeking Caitlin, Young Crocolisk Skins, Rethiel's
+  Wetlands quests).
+- The Log Reader page keeps a boss's spells when the game calls him neutral (the Relic Guardian).
+- The Gear Finder no longer suggests a unique ring or trinket you already wear in the other slot.
+- **The Gear Finder's tooltips are plainer**: the item, what it is worth to each spec, where it
+  drops and a short hint, without the slot's other upgrades or the long lines.
+- **The Gear Finder's slots no longer carry the green arrow**: everything it shows is an upgrade;
+  the arrow now marks upgrades in your bags, the loot window and rolls instead.
+- **The journal's own icon**: its window's round portrait, top left, is now the Ashbringer, as on
+  its minimap button, in place of the game's journal book.
+
+### Fixed
+- The loot's class filter was missing the Druid.
+
 ## [0.31.0]
 
 ### Added

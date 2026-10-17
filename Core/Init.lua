@@ -73,6 +73,7 @@ end
 
 SLASH_AEGISJOURNAL1 = "/aegis"
 SLASH_AEGISJOURNAL2 = "/instancejournal"
+SLASH_AEGISJOURNAL3 = "/ij"
 SlashCmdList.AEGISJOURNAL = function(message)
 	-- The first word is the command; the rest keeps its capitals (place names).
 	local command, rest = strtrim(message or ""):match("^(%S*)%s*(.-)$")
@@ -101,6 +102,8 @@ SlashCmdList.AEGISJOURNAL = function(message)
 		ns.GearPanel:ShowWeights(ns.GearPanel.panel, true)
 	elseif command == "gearscan" then
 		ns.GearFinder:Scan()
+	elseif command == "options" then
+		ns.Options:Open()
 	else
 		ns.Print(L.SLASH_HELP)
 	end
