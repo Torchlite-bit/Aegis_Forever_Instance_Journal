@@ -3636,6 +3636,14 @@ end)()
 		ContainerFrameCombinedBags:UpdateItems()
 		check(UA:Marked(bagCape) and not UA:Marked(bagRobe) and not UA:Marked(bagWorn),
 			"an upgrade in the bags gets the green arrow; one the class cannot use, or no better, does not")
+		check(select(1, UA:ArrowOf(bagCape):GetPoint(1)) == "TOPLEFT", "at the top left, as the bags' own")
+		bagCape.JunkIcon:Show()
+		ContainerFrameCombinedBags:UpdateItems()
+		check(UA:Marked(bagCape) and select(1, UA:ArrowOf(bagCape):GetPoint(1)) == "TOPRIGHT",
+			"at a vendor, a grey upgrade's junk coin keeps the top left: the arrow takes the top right")
+		bagCape.JunkIcon:Hide()
+		ContainerFrameCombinedBags:UpdateItems()
+		check(select(1, UA:ArrowOf(bagCape):GetPoint(1)) == "TOPLEFT", "and goes back when the coin does")
 		Mock.lootSlots = { { link = Mock.ItemLink(CAPE), name = "Cape" }, { link = Mock.ItemLink(WORN_CAPE), name = "Old" } }
 		LootFrame:Show()
 		local lootRows = { Mock.LootRow(1), Mock.LootRow(2) }

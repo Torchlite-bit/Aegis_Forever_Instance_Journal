@@ -33,7 +33,8 @@ function UpgradeArrows.SetShows(shown)
 end
 
 -- The arrow on a button, made the first time one is needed, where the bags' own sits: its top
--- left, at its sublevel, under the cover a bag search lays on what does not match.
+-- left, at its sublevel, under the cover a bag search lays on what does not match. The junk coin
+-- a vendor shows on grey items is there too, above it: then the arrow takes the top right.
 local function Arrow(button)
 	local arrow = arrows[button]
 	if not arrow then
@@ -55,7 +56,12 @@ function UpgradeArrows:Mark(button, link)
 	local upgrade = type(link) == "string" and not ns.IsSecret(link) and ns.charDB ~= nil and UpgradeArrows.Shows()
 		and ns.ItemTooltip:IsUpgrade(link)
 	if upgrade then
-		Arrow(button):Show()
+		local arrow = Arrow(button)
+		local junk = button.JunkIcon
+		local corner = type(junk) == "table" and junk.IsShown and junk:IsShown() and "TOPRIGHT" or "TOPLEFT"
+		arrow:ClearAllPoints()
+		arrow:SetPoint(corner, button, corner, 0, 0)
+		arrow:Show()
 	elseif arrows[button] then
 		arrows[button]:Hide()
 	end

@@ -1059,6 +1059,9 @@ function ContainerFrameCombinedBags:EnumerateValidItems() return ipairs(self._bu
 function Mock.BagButton(bag, slot)
 	local button = CreateFrame("Button", nil, ContainerFrameCombinedBags)
 	button:SetID(slot)
+	-- The vendor's junk coin, in the top left as the arrow (ContainerFrame.xml), hidden.
+	button.JunkIcon = button:CreateTexture(nil, "OVERLAY", nil, 5)
+	button.JunkIcon:Hide()
 	function button:GetBagID() return bag end
 	table.insert(ContainerFrameCombinedBags._buttons, button)
 	return button
