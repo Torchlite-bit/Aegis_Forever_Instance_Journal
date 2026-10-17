@@ -7,7 +7,7 @@ local _, ns = ...
 	name to follow. Every other client skips it.
 ]]
 
-if GetLocale() ~= "frFR" then return end
+if not ns.Speaks("frFR") then return end
 
 local L = ns.L
 

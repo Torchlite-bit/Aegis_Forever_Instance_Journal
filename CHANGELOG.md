@@ -20,6 +20,9 @@ and the version shown in the AddOns list. Quote it in bug reports.
   and places). Drafted with Claude AI and not yet checked by native speakers: a wrong word or a
   better one is welcome as an issue or a pull request. A few of the newest lines (the minimap
   button, working with Pawn, the options) are still in English.
+- **`/aegis lang`** to see a translation on any client: `/aegis lang de`, `fr`, `ru`, `cn` or `tw`
+  shows the journal's own words in that language from your next `/reload` (the game's names stay
+  your client's), and `/aegis lang off` goes back.
 - **Dungeon rooms and areas in your language**: "you are here", recorded areas and zone levels
   match the client's own area names in every language, not English ones only.
 

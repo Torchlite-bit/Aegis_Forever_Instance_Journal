@@ -5,6 +5,20 @@ local _, ns = ...
 local L = {}
 ns.L = L
 
+--[[
+	The language the journal speaks: the client's, or the one /aegis lang previews (saved as
+	AegisJournalDB.previewLocale, which the client reads before these files: the TOC's
+	LoadSavedVariablesFirst). Each translation asks before it lays itself over this table.
+]]
+local preview = type(AegisJournalDB) == "table" and type(AegisJournalDB.previewLocale) == "string"
+	and AegisJournalDB.previewLocale or nil
+ns.previewLocale = preview
+
+function ns.Speaks(locale)
+	if preview then return preview == locale end
+	return GetLocale() == locale
+end
+
 L.JOURNAL_TITLE = "Instance Journal"
 L.HOME = HOME or "Home"
 L.TAB_DUNGEONS = DUNGEONS or "Dungeons"
@@ -15,7 +29,14 @@ L.BINDING_TOGGLE = "Toggle Instance Journal"
 L.KEY_CLAIMED = "Shift+J now opens the Instance Journal."
 L.KEY_TAKEN = "Shift+J is already bound to %s. Choose a key under Key Bindings > AddOns > Toggle Instance Journal."
 L.POSITION_RESET = "Window position reset."
-L.SLASH_HELP = "/aegis (or /ij) opens the journal. /aegis record starts or stops recording. /aegis reset moves the window back to its default place. /aegis perf measures the journal's memory and speed. /aegis where and /aegis taxi report where you stand and the flight points on your map. /aegis travel saves a boat, zeppelin, tram or portal for the world map. /aegis items finds the listed items the server knows nothing of. /aegis gear opens the Gear Finder, /aegis weights its stat weights; /aegis gearscan saves what it reads from your gear, for checking its scoring. /aegis options opens the journal's options."
+L.SLASH_HELP = "/aegis (or /ij) opens the journal. /aegis record starts or stops recording. /aegis reset moves the window back to its default place. /aegis perf measures the journal's memory and speed. /aegis where and /aegis taxi report where you stand and the flight points on your map. /aegis travel saves a boat, zeppelin, tram or portal for the world map. /aegis items finds the listed items the server knows nothing of. /aegis gear opens the Gear Finder, /aegis weights its stat weights; /aegis gearscan saves what it reads from your gear, for checking its scoring. /aegis options opens the journal's options. /aegis lang previews the journal in another of its languages."
+-- /aegis lang (Core/Init.lua)
+L.LANG_USAGE = "/aegis lang de, fr, ru, cn or tw shows the journal in German, French, Russian or Chinese (Simplified or Traditional) from your next /reload, to check a translation; /aegis lang off goes back to your client's language. Now: %s."
+L.LANG_SET = "From your next /reload the journal speaks %s: only its own words, as the game's own names stay your client's. Type /reload now; /aegis lang off goes back."
+L.LANG_OFF = "From your next /reload the journal speaks your client's language again. Type /reload now."
+L.LANG_FONTS = "Chinese needs a Chinese client's fonts: on yours some of its letters may not show."
+L.LANG_ON = "Previewing the journal in %s. /aegis lang off ends it."
+L.LANG_UNAVAILABLE = "This client read the journal before its saved settings, so the language preview could not start."
 L.ITEMS_START = "Asking the server about the %d items the journal lists. The answer comes in about %d seconds; carry on as you like."
 L.ITEMS_SCANNING = "Still asking the server; the answer comes in a moment."
 L.ITEMS_DONE = "Of %d items, the server knows nothing of %d: most likely they are not in Forever yet. The journal hides them until the server or a recorded run confirms them. The full list goes in the saved file at your next /reload or logout."

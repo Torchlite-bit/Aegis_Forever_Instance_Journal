@@ -8,6 +8,7 @@
 ## OptionalDeps: Pawn, Syndicator, Baganator
 ## SavedVariables: AegisJournalDB
 ## SavedVariablesPerCharacter: AegisJournalCharDB
+## LoadSavedVariablesFirst: 1
 ## IconTexture: Interface\AddOns\Aegis_Forever_Instance_Journal\Media\Logo
 
 Locales\enUS.lua

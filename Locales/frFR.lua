@@ -6,7 +6,7 @@ local _, ns = ...
 	already holds ns.L sees these strings, and anything not translated here stays English. Every
 	other client skips it.
 ]]
-if GetLocale() ~= "frFR" then return end
+if not ns.Speaks("frFR") then return end
 
 local L = ns.L
 

@@ -20,7 +20,7 @@ local _, ns = ...
 
 	By Staree4ok, for a client set to Russian; every other client skips it.
 ]]
-if GetLocale() ~= "ruRU" then return end
+if not ns.Speaks("ruRU") then return end
 
 local L = ns.L
 

@@ -36,7 +36,7 @@ def read(path):
         return handle.read()
 
 
-def run_pass(scenario, locale="enUS"):
+def run_pass(scenario, locale="enUS", saved=None):
     # As the game: Lua's string.lower and the like know ASCII letters only. Python sets the C
     # library to the system's code page, which would lower UTF-8 bytes of accented letters.
     import locale as c_locale
@@ -45,6 +45,9 @@ def run_pass(scenario, locale="enUS"):
     lua.execute("date = os.date; debugstack = function() return debug.traceback() end")
     lua.execute("WOWMOCK_LOCALE = '%s'" % locale)
     lua.execute(read(os.path.join(TOOLS, "wow_mock.lua")))
+    # Saved variables the client reads before the files (the TOC's LoadSavedVariablesFirst).
+    if saved:
+        lua.execute(saved)
     # The English strings as enUS.lua leaves them, before another language is laid over them.
     keep_english = lua.eval("""function(ns)
         local copy = {}
@@ -100,7 +103,9 @@ def main():
     # Then each language the TOC lists a translation for.
     locales = [name[len("Locales/"):-len(".lua")] for name in (f.replace(os.sep, "/") for f in toc_files())
                if name.startswith("Locales/") and len(name) == len("Locales/xxXX.lua") and not name.endswith("enUS.lua")]
-    return run_pass("smoke_scenario.lua") or next((1 for code in locales if run_pass("locale_scenario.lua", code)), 0)
+    return (run_pass("smoke_scenario.lua") or next((1 for code in locales if run_pass("locale_scenario.lua", code)), 0)
+            # /aegis lang: German previewed on an English client.
+            or run_pass("preview_scenario.lua", "enUS", "AegisJournalDB = { previewLocale = 'deDE' }"))
 
 
 if __name__ == "__main__":

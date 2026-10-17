@@ -5,7 +5,7 @@ local _, ns = ...
 	the English table (Locales/enUS.lua), so every file that already holds ns.L sees these
 	strings, and anything not translated here stays English. Every other client skips it.
 ]]
-if GetLocale() ~= "ruRU" then return end
+if not ns.Speaks("ruRU") then return end
 
 local L = ns.L
 
