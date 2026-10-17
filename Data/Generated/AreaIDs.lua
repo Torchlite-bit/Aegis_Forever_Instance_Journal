@@ -4,4 +4,17 @@
 
 local _, ns = ...
 
-ns.AREA_IDS = {}
+ns.AREA_IDS = {
+	["Deeprun Tram"] = { 2257 },
+	["Ironclad Cove"] = { 1582 },
+	Ironforge = { 1537 },
+	["King's Alley"] = { 16612 },
+	["Lordaeron Graveyard"] = { 16614 },
+	["Lordamere Overlook"] = { 16615 },
+	["Lost Dig Site"] = { 16880 },
+	["Lost Marsh"] = { 16877 },
+	["Market Street"] = { 16617 },
+	["Site of the Guardian"] = { 16879 },
+	["Stalker's Thicket"] = { 16878 },
+	["The Deadmines"] = { 1581 },
+}

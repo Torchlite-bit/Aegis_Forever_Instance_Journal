@@ -10,6 +10,7 @@ addon loads: from the ids, every client names the journal's areas in its own lan
 """
 
 import glob
+import re
 import os
 import sys
 
@@ -60,19 +61,49 @@ def used_names():
     return [line[len("AREA "):] for line in buf.getvalue().splitlines() if line.startswith("AREA ")]
 
 
+EXPLICIT = re.compile(r'^\s*\[(\d+)\]\s*=\s*"((?:[^"\\]|\\.)*)",?\s*(?:--.*)?$')
+POSITIONAL = re.compile(r'^\s*"((?:[^"\\]|\\.)*)",?\s*(?:-- \[(\d+)\])?\s*$')
+NIL = re.compile(r'^\s*nil,?\s*(?:-- \[(\d+)\])?\s*$')
+
+
+def area_list(text):
+    """The game's saved id -> name list. It writes the run of ids from 1 as a plain list, with a
+    `nil,` for each id without an area, and the rest as [id] = "name": a general Lua reader drops
+    the nils and shifts every id after them, so the lines are read here, counting positions."""
+    start = text.index('["allAreas"] = {')
+    names, index = {}, 0
+    for line in text[start:].splitlines()[1:]:
+        if re.match(r"^\s*},?\s*$", line):
+            break
+        match = EXPLICIT.match(line)
+        if match:
+            names[int(match.group(1))] = match.group(2).replace('\\"', '"').replace("\\\\", "\\")
+            continue
+        match = POSITIONAL.match(line)
+        if match:
+            index = int(match.group(2)) if match.group(2) else index + 1
+            names[index] = match.group(1).replace('\\"', '"').replace("\\\\", "\\")
+            continue
+        match = NIL.match(line)
+        if match:
+            index = int(match.group(1)) if match.group(1) else index + 1
+            continue
+        raise SystemExit("an allAreas line not understood: %r" % line)
+    return names
+
+
 def full_lists():
     """Every saved full list of the client's areas (AegisJournalDB.allAreas: id -> name, from a /run
     line on an English client): (path, {name: [ids]})."""
     files = sorted(glob.glob(AEGIS_SAVED)) + glob.glob(os.path.join(RECORDINGS, "**", "Aegis_Forever_Instance_Journal.lua"),
                                                      recursive=True)
     for path in files:
-        if '["allAreas"] = {' not in read(path):
+        text = read(path)
+        if '["allAreas"] = {' not in text:
             continue
-        names = table_from_block(path, '["allAreas"] = {') or {}
         by_name = {}
-        for area_id, name in (names.items() if isinstance(names, dict) else enumerate(names, 1)):
-            if isinstance(name, str):
-                by_name.setdefault(name, []).append(int(area_id))
+        for area_id, name in area_list(text).items():
+            by_name.setdefault(name, []).append(area_id)
         yield path, by_name
 
 
