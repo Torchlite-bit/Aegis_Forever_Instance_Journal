@@ -391,6 +391,9 @@ L.BULLET_NOTHING_YET = "尚无关于此首领战的任何已知信息。"
 
 -- The Simplified Chinese client's classic "Equip:" wordings (drafted; check against items in game).
 L.EQUIP_PATTERNS = {
+	-- Bonuses against undead only, and effects on being struck or on a hit: worth nothing.
+	{ "亡灵", false },
+	{ "击中时", false },
 	{ "神圣.-致命一击.-提高%s*{n}", "HOLY CRIT" },
 	{ "法术.-致命一击.-提高%s*{n}", "SPELL CRIT" },
 	{ "远程.-致命一击.-提高%s*{n}", "RANGED CRIT" },

@@ -1265,6 +1265,13 @@ do
 		"two rooms one translation names alike are each found by that name")
 	ns.L.AREA_NAMES, ns.AREA_IDS = nil, ids
 	Mock.areaNames[9001] = nil
+	-- A Forever zone the world map gives a level range by name: by its name in the client's words too
+	local hyjal = ns.AREA_IDS["Mount Hyjal"] and ns.AREA_IDS["Mount Hyjal"][1]
+	Mock.areaNames[hyjal or 0] = "Mont Hyjal"
+	ns.Areas:Forget()
+	local low, high = ns.ZoneMap:Levels(999999, "Mont Hyjal")
+	check(hyjal and low == 60 and high == 60, "a zone's level range found by the client's own name for it")
+	Mock.areaNames[hyjal or 0] = nil
 	ns.Areas:Forget()
 	Mock.subzone = "Somewhere unmapped"
 	Mock.Fire("ZONE_CHANGED")

@@ -391,6 +391,8 @@ L.BULLET_NOTHING_YET = "On ne sait encore rien de cette rencontre."
 
 -- The French client's classic "Equip:" wordings (drafted; check against items in game).
 L.EQUIP_PATTERNS = {
+	-- Bonuses against undead only, and effects on being struck or on a hit: worth nothing.
+	{ "morts%-vivants", false },
 	{ "de {n}.-chance.-critique.-sacr", "HOLY CRIT" },
 	{ "critique.-sacr.-de {n}", "HOLY CRIT" },
 	{ "de {n}.-chance.-critique.-sorts", "SPELL CRIT" },

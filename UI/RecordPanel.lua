@@ -47,8 +47,17 @@ local GREEN, RED = "|cff0f4f0f", "|cff8c1010"
 -- Item qualities, darkened from the game's colours to read on parchment.
 local QUALITY_INK = { [0] = "|cff3c3c3c", "|cff3d2a12", "|cff0b4a0b", "|cff083e7c", "|cff52186e", "|cff7a3200" }
 
--- A log line saying something was missed ("Entrance of X not recorded: ...").
-local PROBLEM_MARK = L.RECORD_LOG_NO_ENTRANCE:match("%%s(.-)%%s")
+-- A log line saying something was missed ("Entrance of X not recorded: ..."), told by the longest
+-- part of its wording that is not a name: " not recorded: ", "Entrée non enregistrée pour ".
+local PROBLEM_MARK
+for part in (L.RECORD_LOG_NO_ENTRANCE .. "%s"):gmatch("(.-)%%s") do
+	if #part > #(PROBLEM_MARK or "") then PROBLEM_MARK = part end
+end
+if PROBLEM_MARK and #PROBLEM_MARK < 4 then PROBLEM_MARK = nil end
+
+function RecordPanel.IsProblemLine(line)
+	return PROBLEM_MARK ~= nil and line:find(PROBLEM_MARK, 1, true) ~= nil
+end
 
 StaticPopupDialogs[CLEAR_POPUP] = {
 	text = L.RECORD_CLEAR_CONFIRM,
@@ -380,7 +389,7 @@ local function CatchLines(catch, log)
 		Add(L.RECORD_RECENT, MEDIUM, 0, 16)
 		for index = #log, math.max(1, #log - RECENT_LINES + 1), -1 do
 			local line = log[index]
-			Add(line, BODY, 10, 1, PROBLEM_MARK and line:find(PROBLEM_MARK, 1, true) and PROBLEM_INK or nil)
+			Add(line, BODY, 10, 1, RecordPanel.IsProblemLine(line) and PROBLEM_INK or nil)
 		end
 	end
 	return lines

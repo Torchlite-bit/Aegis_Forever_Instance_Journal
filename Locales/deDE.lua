@@ -392,6 +392,8 @@ L.BULLET_NOTHING_YET = "Über diese Begegnung ist noch nichts bekannt."
 
 -- The German client's classic "Equip:" wordings (drafted; check against items in game).
 L.EQUIP_PATTERNS = {
+	-- Bonuses against undead only, and effects on being struck or on a hit: worth nothing.
+	{ "untot", false },
 	{ "kritisch.-heilig.-um {n}", "HOLY CRIT" },
 	{ "heilig.-kritisch.-um {n}", "HOLY CRIT" },
 	{ "kritisch.-zauber.-um {n}", "SPELL CRIT" },

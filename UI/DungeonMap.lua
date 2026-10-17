@@ -1134,14 +1134,19 @@ local SHARED_DOOR = 0.01
 
 -- What a shared door is called: the building its wings are named after ("Scarlet Monastery:
 -- Library"), else the place they all are (Blackrock Mountain).
+local function Building(name)
+	return name:match("^(.-)%s*\239\188\154") or name:match("^(.-)%s*:")
+end
+
 local function SharedDoorName(instances)
-	local building, location = instances[1].name:match("^(.-):"), instances[1].location
+	local building, location = Building(instances[1].name), instances[1].location
 	for _, instance in ipairs(instances) do
-		if instance.name:match("^(.-):") ~= building then building = nil end
+		if Building(instance.name) ~= building then building = nil end
 		if instance.location ~= location then location = nil end
 	end
 	return building or location or instances[1].name
 end
+DungeonMap.SharedDoorName = SharedDoorName
 
 -- "Dungeons  Level 30-45": the range they span together.
 local function SharedDoorDescription(instances)

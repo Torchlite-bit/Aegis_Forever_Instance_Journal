@@ -53,6 +53,8 @@ function ns.AreaNamesUsed()
 		Keys(subMap.sharedAreas)
 		Keys(subMap.zones)
 	end
+	-- Forever's zones the world map gives a level range by name (Data/Authored/ZoneLevels.lua).
+	Keys(ns.ZONE_LEVELS_BY_NAME)
 	table.sort(names)
 	return names
 end

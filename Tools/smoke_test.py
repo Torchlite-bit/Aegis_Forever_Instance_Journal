@@ -37,6 +37,10 @@ def read(path):
 
 
 def run_pass(scenario, locale="enUS"):
+    # As the game: Lua's string.lower and the like know ASCII letters only. Python sets the C
+    # library to the system's code page, which would lower UTF-8 bytes of accented letters.
+    import locale as c_locale
+    c_locale.setlocale(c_locale.LC_CTYPE, "C")
     lua = lupa.LuaRuntime(unpack_returned_tuples=True)
     lua.execute("date = os.date; debugstack = function() return debug.traceback() end")
     lua.execute("WOWMOCK_LOCALE = '%s'" % locale)

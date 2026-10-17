@@ -498,6 +498,8 @@ L.FACTION_NAMES = {
 
 -- The Russian client's classic "Equip:" wordings (drafted; check against items in game).
 L.EQUIP_PATTERNS = {
+	-- Bonuses against undead only, and effects on being struck or on a hit: worth nothing.
+	{ "нежит", false },
 	{ "критическ.-свет.-на {n}%%", "HOLY CRIT" },
 	{ "критическ.-Свет.-на {n}%%", "HOLY CRIT" },
 	{ "критическ.-свят.-на {n}%%", "HOLY CRIT" },

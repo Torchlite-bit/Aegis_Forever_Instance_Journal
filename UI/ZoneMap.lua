@@ -31,7 +31,7 @@ function ZoneMap:Levels(mapID, name)
 		local ok, low, high = pcall(C_Map.GetMapLevels, mapID)
 		if ok and low and high and low > 0 and high > 0 then return low, high, true end
 	end
-	local range = ns.ZONE_LEVELS[mapID] or (name and ns.ZONE_LEVELS_BY_NAME[name])
+	local range = ns.ZONE_LEVELS[mapID] or (name and ns.AreaIn(ns.ZONE_LEVELS_BY_NAME, name))
 	if range then return range[1], range[2], false end
 end
 

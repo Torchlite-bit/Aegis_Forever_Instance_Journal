@@ -24,6 +24,12 @@ local function InLanguage(text, englishText)
 end
 
 check(LANGUAGE ~= nil, "a client in a language the journal is translated into: " .. tostring(LOCALE))
+-- The Excavation Site's quest notes and starting places as the data writes them, before the
+-- translation is laid over them at ADDON_LOADED.
+local excavationEnglish = {}
+for _, quest in ipairs(ns.GetInstance("ExcavationSiteWetlands").quests) do
+	excavationEnglish[quest.questID] = { note = quest.note, label = quest.startMap and quest.startMap.label }
+end
 Mock.Fire("ADDON_LOADED", "Aegis_Forever_Instance_Journal")
 Mock.Fire("PLAYER_LOGIN")
 
@@ -89,6 +95,37 @@ if L.EQUIP_PATTERNS then
 	end
 	check(#L.EQUIP_PATTERNS > 20 and #bad == 0, "the client's Equip: wordings, each one usable: " .. table.concat(bad, "; "))
 end
+check(("\195\137"):lower() == "\195\137" and ("\208\154"):lower() == "\208\154",
+	"letters lowered as the game does, ASCII only, so the wordings are tested as the client reads them")
+-- Classic lines in the client's words: the stat and number each should give, nil for none.
+local SAMPLES = ({
+	deDE = { { "Erhöht Eure Chance, einen kritischen Treffer zu erzielen, um 1%.", "CRIT", 1 },
+		{ "Erhöht den durch Zauber und magische Effekte zugefügten Schaden gegen Untote um bis zu 48." } },
+	frFR = { { "Augmente vos chances d'infliger un coup critique de 1%.", "CRIT", 1 },
+		{ "Augmente les dégâts et les soins produits par les sorts et effets magiques de 12 au maximum.", "SPELL POWER", 12 },
+		{ "Augmente les dégâts infligés aux morts-vivants par les sorts et effets magiques de 48 au maximum." } },
+	zhCN = { { "使你造成致命一击的几率提高1%。", "CRIT", 1 },
+		{ "被击中时有2%的几率使所有小队成员的所有属性提高25点，持续1分钟。" } },
+	ruRU = { { "Увеличивает урон, наносимый нежити магическими заклинаниями и эффектами, не более чем на 48 ед." } },
+})[LOCALE] or {}
+local misread = {}
+for index, sample in ipairs(SAMPLES) do
+	local itemID = 990900 + index
+	Mock.itemInstant[itemID] = { "INVTYPE_NECK", 4, 0, "Miscellaneous" }
+	Mock.itemsCached[itemID] = true
+	Mock.itemLines[itemID] = { "Equip: " .. sample[1] }
+	IS:Forget()
+	local stats = IS:Read(Mock.ItemLink(itemID)).stats
+	local right = sample[2] and stats[sample[2]] == sample[3] or (not sample[2] and next(stats) == nil)
+	if not right then
+		local got = {}
+		for key, value in pairs(stats) do got[#got + 1] = key .. "=" .. value end
+		misread[#misread + 1] = index .. " (" .. table.concat(got, ", ") .. ")"
+	end
+	Mock.itemLines[itemID], Mock.itemsCached[itemID] = nil, nil
+end
+IS:Forget()
+check(#misread == 0, "classic Equip: lines read right in " .. LANGUAGE .. ": " .. table.concat(misread, "; "))
 
 -- The rooms inside dungeons, in the client's words (Core/Areas.lua): each one the journal uses,
 -- and found again by its translated name. Two English spellings of one room (Lower Blackrock
@@ -123,6 +160,18 @@ check(ragefire.enName == "Ragefire Chasm" and deadmines.bosses[1].enName and (no
 check(ns.GetInstance("ScarletMonasteryLibrary").name:find(":", 1, true) or ns.GetInstance("ScarletMonasteryLibrary").name:find("\239\188\154", 1, true),
 	"Scarlet Monastery's wings named 'building: wing', as its shared door reads them")
 check(L.STRINGS == nil and L.BOSS_NAMES == nil, "the lookup tables let go once used")
+local library, graveyard = ns.GetInstance("ScarletMonasteryLibrary"), ns.GetInstance("ScarletMonasteryGraveyard")
+local door = ns.DungeonMap.SharedDoorName({ library, graveyard })
+check(door ~= library.location and library.name:sub(1, #door) == door and graveyard.name:sub(1, #door) == door,
+	"the Scarlet Monastery's shared door is named after the building its wings share: " .. tostring(door))
+local problem = string.format(L.RECORD_LOG_NO_ENTRANCE, library.name, "x")
+local fine = {}
+for _, key in ipairs({ "RECORD_LOG_ENTERED", "RECORD_LOG_AREA", "RECORD_LOG_PULL", "RECORD_LOG_KILL", "RECORD_LOG_WIPE",
+	"RECORD_LOG_QUEST_OFFERED", "RECORD_LOG_QUEST_DONE", "RECORD_LOG_ENTRANCE" }) do
+	if ns.RecordPanel.IsProblemLine(string.format(L[key], library.name)) then fine[#fine + 1] = key end
+end
+check(ns.RecordPanel.IsProblemLine(problem) and #fine == 0,
+	"the record log marks a missed entrance, and no other line, as a problem: " .. table.concat(fine, ", "))
 
 -- A route's note follows its destination's new name
 local noted = 0
@@ -131,7 +180,8 @@ for _, spot in ipairs(ns.GetTransports()) do
 		local note = spot.notes and spot.notes[destination]
 		if note then
 			noted = noted + 1
-			check(InLanguage(note, "Skyborne only"), "a route's note under its translated destination: " .. destination)
+			check(InLanguage(note, "Skyborne only") and (not SCRIPT or InLanguage(destination)),
+				"a route's note under its translated destination: " .. destination)
 		end
 	end
 end
@@ -178,7 +228,13 @@ check(#ns.Search:Find(ragefire.name) > 0, "search finds a dungeon by its " .. LA
 local untold = {}
 for _, quest in ipairs(ns.GetInstance("ExcavationSiteWetlands").quests) do
 	for _, text in ipairs({ quest.note or "", quest.startMap and quest.startMap.label or "" }) do
-		if SCRIPT and text ~= "" and not InLanguage(text) then untold[#untold + 1] = quest.questID .. ": " .. text end
+		local was = excavationEnglish[quest.questID] or {}
+		local englishText = text == quest.note and was.note or was.label
+		-- A bare name ("Zaruk") is the same in German and French; anything longer is not.
+		local bareName = not SCRIPT and not (englishText or ""):find("[%s,]")
+		if text ~= "" and not bareName and not InLanguage(text, englishText) then
+			untold[#untold + 1] = quest.questID .. ": " .. text
+		end
 	end
 end
 check(#untold == 0, "the Excavation Site's quest notes and starting places in " .. LANGUAGE .. ": " .. table.concat(untold, "; "))
