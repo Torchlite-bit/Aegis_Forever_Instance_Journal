@@ -47,7 +47,7 @@ and the version shown in the AddOns list. Quote it in bug reports.
 - **The journal's options**, in the game's Options under AddOns (or `/aegis options`): boss
   levels, stat weights in tooltips and the green arrows can each be turned off.
 - **`/ij`** opens the journal too, as `/aegis` does.
-- **A minimap button**, with the journal's new icon, Ashbringer's. Click it to open the
+- **A minimap button**, with the journal's new icon, the Ashbringer. Click it to open the
   journal, right-click it for the options, drag it round the minimap's edge; the options can hide
   it.
 - **The Gear Finder and its stat weights in Russian**, with every spec's name and unit, by
@@ -65,8 +65,8 @@ and the version shown in the AddOns list. Quote it in bug reports.
   drops and a short hint, without the slot's other upgrades or the long lines.
 - **The Gear Finder's slots no longer carry the green arrow**: everything it shows is an upgrade;
   the arrow now marks upgrades in your bags, the loot window and rolls instead.
-- **The journal's own icon**: its window's round portrait, top left, is now Ashbringer's icon, as
-  on its minimap button, in place of the game's journal book.
+- **The journal's own icon**: its window's round portrait, top left, is now the Ashbringer, as on
+  its minimap button, in place of the game's journal book.
 
 ### Fixed
 - The loot's class filter was missing the Druid.

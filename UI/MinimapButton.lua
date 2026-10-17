@@ -2,7 +2,7 @@ local _, ns = ...
 local L = ns.L
 
 --[[
-	The journal's button on the minimap's edge: the journal's icon, Ashbringer's, which its window
+	The journal's button on the minimap's edge: the journal's icon, the Ashbringer, which its window
 	wears too (UI/Journal.lua), round. Left-click opens or closes the journal, right-click opens its options; dragged, it goes round
 	the minimap's edge and stays where it is left. Forever has no add-on compartment, so it is a
 	button on the edge as classic ones are; a minimap button collector gathers it like the rest.
@@ -78,7 +78,7 @@ function MinimapButton:Create()
 	button.Background:SetSize(20, 20)
 	button.Background:SetPoint("TOPLEFT", 7, -5)
 	button.Icon = button:CreateTexture(nil, "ARTWORK")
-	button.Icon:SetTexture(ns.Journal.Icon())
+	button.Icon:SetTexture(ns.Journal.ICON)
 	button.Icon:SetTexCoord(unpack(ns.Journal.ICON_CROP))
 	button.Icon:SetSize(19, 19)
 	button.Icon:SetPoint("TOPLEFT", 6, -5)

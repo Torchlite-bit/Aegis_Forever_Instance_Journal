@@ -356,9 +356,9 @@ do
 	local mini = ns.MinimapButton.button
 	local _, anchor, _, x, y = mini:GetPoint(1)
 	check(mini and mini:GetParent() == Minimap and anchor == Minimap and mini:IsShown()
-		and math.abs(math.sqrt(x * x + y * y) - 80) < 0.01 and mini.Icon:GetTexture() == select(5, C_Item.GetItemInfoInstant(13262))
-		and not mini.Icon._desaturated and mini.Icon._texCoord[1] == 0.08 and AegisJournalFrame._portrait == mini.Icon:GetTexture(),
-		"a button on the minimap's edge with the journal's icon, Ashbringer's, which its window wears too, its edge cropped")
+		and math.abs(math.sqrt(x * x + y * y) - 80) < 0.01 and mini.Icon:GetTexture() == 1109508
+		and not mini.Icon._desaturated and mini.Icon._texCoord[1] == 0.08 and AegisJournalFrame._portrait == 1109508,
+		"a button on the minimap's edge with the journal's icon, the Ashbringer, which its window wears too, its edge cropped")
 	local wasShown = AegisJournalFrame:IsShown()
 	mini:Click("LeftButton")
 	check(AegisJournalFrame:IsShown() ~= wasShown, "a click opens or closes the journal")

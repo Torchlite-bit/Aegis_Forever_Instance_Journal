@@ -14,19 +14,12 @@ local FRAME_NAME = "AegisJournalFrame"
 local WIDTH, HEIGHT = 800, 496
 
 --[[
-	The journal's icon, on its window and its minimap button: Ashbringer's, read from the item
-	(13262) so it is the very icon the game shows for it, or its icon file where the client has no
-	such item. Shown round; the crop leaves out the icon's dark edge, so the circle holds only the
-	picture.
+	The journal's icon, on its window and its minimap button: the Ashbringer, the game's icon
+	inv_sword_2h_artifactashbringer_d_01, by its file ID. Shown round; the crop leaves out the
+	icon's dark edge, so the circle holds only the picture.
 ]]
-local ASHBRINGER = 13262
-Journal.ICON_FALLBACK = "Interface\\Icons\\INV_Sword_48"
+Journal.ICON = 1109508
 Journal.ICON_CROP = { 0.08, 0.92, 0.08, 0.92 }
-
-function Journal.Icon()
-	local icon = C_Item and C_Item.GetItemInfoInstant and select(5, C_Item.GetItemInfoInstant(ASHBRINGER))
-	return icon or Journal.ICON_FALLBACK
-end
 
 -- Retail's journal opens in the left panel slot.
 local DEFAULT_POINT = { point = "TOPLEFT", relativePoint = "TOPLEFT", x = 16, y = -116 }
@@ -189,9 +182,9 @@ local function CreateJournalFrame()
 	end
 	-- The window's portrait is masked round by its template.
 	if f.SetPortraitToAsset then
-		f:SetPortraitToAsset(Journal.Icon())
+		f:SetPortraitToAsset(Journal.ICON)
 	elseif f.portrait then
-		f.portrait:SetTexture(Journal.Icon())
+		f.portrait:SetTexture(Journal.ICON)
 	end
 	local portrait = (f.GetPortrait and f:GetPortrait()) or f.portrait
 	if portrait and portrait.SetTexCoord then portrait:SetTexCoord(unpack(Journal.ICON_CROP)) end
