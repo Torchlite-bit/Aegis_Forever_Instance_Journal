@@ -5,6 +5,7 @@
 ## Author: Aegis
 ## Version: 0.31.1
 ## X-Credits: Alex Brandson and the Alex Atlas Loot contributors; Santiago Reyes (Atlas de Azeroth: Forever); Lionel Schramm (paintings); Staree4ok (Russian translation); made with the help of Claude AI. See CREDITS.md.
+## OptionalDeps: Pawn, Syndicator, Baganator
 ## SavedVariables: AegisJournalDB
 ## SavedVariablesPerCharacter: AegisJournalCharDB
 ## IconTexture: Interface\AddOns\Aegis_Forever_Instance_Journal\Media\Logo
@@ -21,6 +22,7 @@ Core\Recorder.lua
 Core\Perf.lua
 Core\ItemScore.lua
 Core\GearFinder.lua
+Core\PawnLink.lua
 
 Data\Authored\LevelBrackets.lua
 Data\Authored\ZoneLevels.lua

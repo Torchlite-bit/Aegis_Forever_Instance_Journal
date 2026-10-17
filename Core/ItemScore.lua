@@ -473,9 +473,12 @@ end
 -- The journal's weights with the player's changes laid over them, kept until anything changes.
 local merged = {}
 
--- The weights in use: the player's own for the spec, else the journal's.
+-- The weights in use: Pawn's where the player chose them (Core/PawnLink.lua), else the player's own
+-- for the spec, else the journal's.
 function ItemScore:Weights(spec)
 	spec = spec or self:Spec()
+	local fromPawn = ns.PawnLink and ns.PawnLink:UsesWeights() and ns.PawnLink:Weights(spec)
+	if fromPawn then return fromPawn end
 	local custom = self:CustomWeights(spec)
 	if not custom then return self:DefaultWeights(spec) end
 	if custom.weights then return custom.weights end
@@ -566,6 +569,48 @@ local PAWN_DPS = { dps = true, meleedps = true, rangeddps = true, mainhanddps = 
 local PAWN_SETTINGS = { class = true, spec = true, speedbaseline = true }
 
 --[[
+	Pawn's stat values as the journal's weights: { { name, value }, ... } in Pawn's stat names, from
+	a scale tag or from one of Pawn's scales. The weights and the names the journal doesn't know;
+	nil (and those names) when none is one it knows.
+]]
+local function FromPawnPairs(pairsList)
+	local weights, unknown, dps, found = {}, {}, {}, 0
+	for _, pair in ipairs(pairsList) do
+		local key, number = pair[1], tonumber(pair[2])
+		local lower = key:lower()
+		local stat = PAWN_STATS[lower]
+		if PAWN_DPS[lower] then
+			if SaneWeight(number) then dps[lower], found = number, found + 1 end
+		elseif stat and SaneWeight(number) then
+			for _, target in ipairs(type(stat) == "table" and stat or { stat }) do
+				weights[target] = math.max(weights[target] or number, number)
+			end
+			found = found + 1
+		elseif stat == nil and not PAWN_SETTINGS[lower] then
+			unknown[#unknown + 1] = key
+		end
+	end
+	if found == 0 then return nil, unknown end
+	local hand = math.max(dps.mainhanddps or 0, dps.onehanddps or 0, dps.twohanddps or 0)
+	weights.DPS = (dps.dps or 0) + (dps.meleedps or 0) + hand
+	weights["RANGED DPS"] = (dps.dps or 0) + (dps.rangeddps or 0)
+	for stat, value in pairs(weights) do
+		if value == 0 then weights[stat] = nil end
+	end
+	return weights, unknown
+end
+
+-- One of Pawn's scales ({ [stat] = value }, as PawnGetAllStatValues gives it) as weights.
+function ItemScore.FromPawnValues(values)
+	local pairsList = {}
+	for key, value in pairs(values or {}) do
+		if type(key) == "string" then pairsList[#pairsList + 1] = { key, value } end
+	end
+	table.sort(pairsList, function(a, b) return a[1] < b[1] end)
+	return FromPawnPairs(pairsList)
+end
+
+--[[
 	The weights in a Pawn scale tag, its name, the stat names it has that the journal doesn't know,
 	and the class it says it is for; nil when the text holds no tag, or no stat the journal knows.
 ]]
@@ -573,33 +618,19 @@ function ItemScore:ParsePawn(text)
 	if type(text) ~= "string" then return nil end
 	local name, body = text:match('%(%s*Pawn%s*:%s*v%d+%s*:%s*"([^"]*)"%s*:(.-)%)')
 	if not body then return nil end
-	local weights, unknown, dps, found, class = {}, {}, {}, 0, nil
+	local pairsList, class = {}, nil
 	for pair in body:gmatch("[^,]+") do
 		local key, value = pair:match("^%s*([%w_]+)%s*=%s*(.-)%s*$")
 		if key then
-			local lower, number = key:lower(), tonumber(value)
-			local stat = PAWN_STATS[lower]
-			if lower == "class" then
+			if key:lower() == "class" then
 				class = value
-			elseif PAWN_DPS[lower] then
-				if SaneWeight(number) then dps[lower], found = number, found + 1 end
-			elseif stat and SaneWeight(number) then
-				for _, target in ipairs(type(stat) == "table" and stat or { stat }) do
-					weights[target] = math.max(weights[target] or number, number)
-				end
-				found = found + 1
-			elseif stat == nil and not PAWN_SETTINGS[lower] then
-				unknown[#unknown + 1] = key
+			else
+				pairsList[#pairsList + 1] = { key, value }
 			end
 		end
 	end
-	if found == 0 then return nil end
-	local hand = math.max(dps.mainhanddps or 0, dps.onehanddps or 0, dps.twohanddps or 0)
-	weights.DPS = (dps.dps or 0) + (dps.meleedps or 0) + hand
-	weights["RANGED DPS"] = (dps.dps or 0) + (dps.rangeddps or 0)
-	for stat, value in pairs(weights) do
-		if value == 0 then weights[stat] = nil end
-	end
+	local weights, unknown = FromPawnPairs(pairsList)
+	if not weights then return nil end
 	return weights, name, unknown, class
 end
 

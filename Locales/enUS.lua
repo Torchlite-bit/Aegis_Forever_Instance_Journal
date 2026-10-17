@@ -114,6 +114,13 @@ L.OPTIONS_BOSS_LEVELS = "Show boss levels on the boss list"
 L.OPTIONS_BOSS_LEVELS_TIP = "A badge on each boss's portrait with its level, coloured by how hard the boss is for you: grey, green, yellow, orange or red."
 L.OPTIONS_ARROWS = "Mark upgrades with a green arrow"
 L.OPTIONS_MINIMAP = "Show the minimap button"
+L.OPTIONS_PAWN_WEIGHTS = "Use Pawn's stat weights in the Gear Finder"
+L.OPTIONS_PAWN_WEIGHTS_TIP = "With Pawn installed: the Gear Finder scores items with the weights of Pawn's scale for your spec instead of the journal's. Pawn's item tooltips and upgrade arrows are shown either way while Pawn is installed."
+-- Asked once, when Pawn is installed too (Core/PawnLink.lua).
+L.PAWN_ASK = "Pawn is installed too. Its item tooltips and upgrade arrows will be shown.\n\nWhich stat weights should the Gear Finder use?"
+L.PAWN_USE_PAWN = "Pawn's"
+L.PAWN_USE_JOURNAL = "The journal's"
+L.WEIGHTS_SOURCE_PAWN_LIVE = "Pawn's %s scale. Change it in Pawn, or choose the journal's in its options."
 L.OPTIONS_MINIMAP_TIP = "The journal's book on the edge of the minimap: click it to open the journal, right-click it for these options, drag it to move it."
 -- The minimap button's tooltip.
 L.MINIMAP_LEFT_CLICK = "Click to open or close the journal."

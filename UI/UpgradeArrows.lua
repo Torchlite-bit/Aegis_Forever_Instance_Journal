@@ -10,7 +10,10 @@ local _, ns = ...
 	hooked, not replaced: each bag frame's UpdateItems; the loot window's item rows' Init, which
 	runs for every row shown, a row the list takes back for another slot as it scrolls too; and
 	GroupLootFrame_SetupItemDisplay, which sets up a roll's item on the roll frames and on the
-	gamepad's roll cards alike. Shown unless the player turns them off in the journal's options.
+	gamepad's roll cards alike. In Baganator's bags, the arrow is a corner widget of the journal's,
+	through Baganator's own API (Baganator.API.RegisterCornerWidget). Shown unless the player turns
+	them off in the journal's options; while Pawn is installed and enabled, its arrows are the ones
+	shown, and these stand aside (Core/PawnLink.lua).
 ]]
 
 local UpgradeArrows = {}
@@ -54,7 +57,7 @@ end
 function UpgradeArrows:Mark(button, link)
 	if not button then return end
 	local upgrade = type(link) == "string" and not ns.IsSecret(link) and ns.charDB ~= nil and UpgradeArrows.Shows()
-		and ns.ItemTooltip:IsUpgrade(link)
+		and not ns.PawnLink:Present() and ns.ItemTooltip:IsUpgrade(link)
 	if upgrade then
 		local arrow = Arrow(button)
 		local junk = button.JunkIcon
@@ -100,8 +103,45 @@ local function MarkRoll(frame)
 	UpgradeArrows:Mark(frame.IconFrame, frame.rollID and GetLootRollItemLink(frame.rollID) or nil)
 end
 
+--[[
+	Baganator's bags: an item button's corner shows the arrow when this says so. True or false, or
+	nil while the client has not described the item yet (Baganator asks again). Only gear.
+]]
+local BAGANATOR_WIDGET = "aegis_journal_upgrade"
+local ARMOR, WEAPON = 4, 2
+
+function UpgradeArrows.BaganatorShows(itemLink)
+	if type(itemLink) ~= "string" or ns.IsSecret(itemLink) or not ns.charDB then return false end
+	if not UpgradeArrows.Shows() or ns.PawnLink:Present() then return false end
+	local classID = select(6, C_Item.GetItemInfoInstant(itemLink))
+	if classID ~= ARMOR and classID ~= WEAPON then return false end
+	if not ns.ItemScore:Read(itemLink) then return nil end
+	return ns.ItemTooltip:IsUpgrade(itemLink) == true
+end
+
+function UpgradeArrows:HookBaganator()
+	local api = type(Baganator) == "table" and type(Baganator.API) == "table" and Baganator.API
+	if self.baganator or not (api and api.RegisterCornerWidget) then return end
+	self.baganator = api
+	local ok = pcall(api.RegisterCornerWidget, ns.L.OPTIONS_TITLE, BAGANATOR_WIDGET,
+		function(_, details) return UpgradeArrows.BaganatorShows(details and details.itemLink) end,
+		function(itemButton)
+			local arrow = itemButton:CreateTexture(nil, "OVERLAY")
+			if ns.AtlasExists(ATLAS) then
+				arrow:SetAtlas(ATLAS, true)
+			else
+				arrow:SetTexture(FALLBACK)
+				arrow:SetSize(16, 16)
+			end
+			return arrow
+		end,
+		{ corner = "top_left", priority = 1 })
+	if not ok then self.baganator = nil end
+end
+
 -- Everything showing again: a change of gear, spec or weights, or the option.
 function UpgradeArrows:Refresh()
+	if self.baganator and self.baganator.RequestItemButtonsRefresh then pcall(self.baganator.RequestItemButtonsRefresh) end
 	for _, frame in ipairs(bagFrames) do MarkBag(frame) end
 	MarkLoot()
 	for _, frame in ipairs(rollFrames) do
@@ -137,6 +177,7 @@ function UpgradeArrows:Hook()
 			rollFrames[#rollFrames + 1] = frame
 		end
 	end
+	self:HookBaganator()
 	ns.ItemScore:OnChange(function() UpgradeArrows:Refresh() end)
 end
 

@@ -193,6 +193,10 @@ end
 
 local function SourceText(spec)
 	local IS = ns.ItemScore
+	if ns.PawnLink:UsesWeights() then
+		local _, scaleName = ns.PawnLink:ScaleFor(spec)
+		if scaleName then return string.format(L.WEIGHTS_SOURCE_PAWN_LIVE, scaleName) end
+	end
 	local custom = IS:CustomWeights(spec)
 	if custom and custom.source then return string.format(L.WEIGHTS_SOURCE_PAWN, custom.source) end
 	if custom then return L.WEIGHTS_SOURCE_CUSTOM end
@@ -414,8 +418,15 @@ function WeightsEditor:Refresh(editor)
 			row.Value:SetTextColor(1, 1, 1)
 		end
 	end
+	-- Pawn's weights are changed in Pawn: here they are only shown.
+	local fromPawn = ns.PawnLink:UsesWeights() and ns.PawnLink:ScaleFor(spec) ~= nil
+	for _, row in ipairs(editor.Rows) do
+		row.Value:EnableMouse(not fromPawn)
+		if fromPawn and row.Value:HasFocus() then row.Value:ClearFocus() end
+	end
 	editor.Source:SetText(SourceText(spec))
-	editor.Reset:SetEnabled(IS:CustomWeights(spec) ~= nil)
+	editor.Reset:SetEnabled(not fromPawn and IS:CustomWeights(spec) ~= nil)
+	editor.Pawn:SetEnabled(not fromPawn)
 	editor.ShowGains:SetChecked(ns.GearPanel.ShowsGains())
 	local menu = rawget(editor, "Spec")
 	if menu then ns.GearPanel.UpdateSpecMenu(menu) end

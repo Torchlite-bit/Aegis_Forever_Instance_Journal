@@ -11,7 +11,8 @@ local L = ns.L
 
 	Left out: items the class cannot use, ones with no slot, and specs the item is worth nothing to.
 	The Show stat weights in tooltips box (the weights editor, the journal's options) turns them off,
-	with the Gear Finder's own lines.
+	with the Gear Finder's own lines. While Pawn is installed and enabled its own tooltip lines are
+	the ones shown, and these stand aside (Core/PawnLink.lua).
 ]]
 
 local ItemTooltip = {}
@@ -154,7 +155,7 @@ function ItemTooltip:Lines(link, tooltip, data)
 end
 
 local function OnItem(tooltip, data)
-	if not (ns.charDB and ns.GearPanel.ShowsGains()) then return end
+	if not (ns.charDB and ns.GearPanel.ShowsGains()) or ns.PawnLink:Present() then return end
 	if tooltip.IsForbidden and tooltip:IsForbidden() then return end
 	if not Wanted(tooltip) then return end
 	local link = ShownLink(tooltip, data)

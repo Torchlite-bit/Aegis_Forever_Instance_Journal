@@ -24,6 +24,9 @@ local CHECKBOXES = {
 	{ variable = "AEGIS_JOURNAL_UPGRADE_ARROWS", name = "OPTIONS_ARROWS", tip = "OPTIONS_ARROWS_TIP",
 		get = function() return ns.UpgradeArrows.Shows() end,
 		set = function(shown) ns.UpgradeArrows.SetShows(shown) end },
+	{ variable = "AEGIS_JOURNAL_PAWN_WEIGHTS", name = "OPTIONS_PAWN_WEIGHTS", tip = "OPTIONS_PAWN_WEIGHTS_TIP",
+		get = function() return ns.PawnLink:Source() == "pawn" end,
+		set = function(on) ns.PawnLink:SetSource(on and "pawn" or "journal") end, default = false },
 	{ variable = "AEGIS_JOURNAL_MINIMAP", name = "OPTIONS_MINIMAP", tip = "OPTIONS_MINIMAP_TIP",
 		get = function() return ns.MinimapButton.Shows() end,
 		set = function(shown) ns.MinimapButton.SetShows(shown) end },
@@ -37,7 +40,8 @@ function Options:Register()
 	local category = Settings.RegisterVerticalLayoutCategory(L.OPTIONS_TITLE)
 	local boolean = Settings.VarType and Settings.VarType.Boolean or BOOLEAN
 	for _, box in ipairs(CHECKBOXES) do
-		local setting = Settings.RegisterProxySetting(category, box.variable, boolean, L[box.name], true, box.get, box.set)
+		local default = box.default == nil and true or box.default
+		local setting = Settings.RegisterProxySetting(category, box.variable, boolean, L[box.name], default, box.get, box.set)
 		Settings.CreateCheckbox(category, setting, L[box.tip])
 	end
 	Settings.RegisterAddOnCategory(category)

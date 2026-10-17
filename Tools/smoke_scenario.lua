@@ -335,7 +335,7 @@ do
 	GetCreatureDifficultyColor = nil
 	-- Turned off in the journal's options (Options > AddOns), the badges go at once, and come back
 	local category, boxes = Mock.settingsCategory, Mock.settings
-	check(category and category.name == ns.L.OPTIONS_TITLE and #category.controls == 4
+	check(category and category.name == ns.L.OPTIONS_TITLE and #category.controls == 5
 		and boxes.AEGIS_JOURNAL_BOSS_LEVELS and boxes.AEGIS_JOURNAL_BOSS_LEVELS:GetValue() == true
 		and boxes.AEGIS_JOURNAL_BOSS_LEVELS.tooltip == ns.L.OPTIONS_BOSS_LEVELS_TIP,
 		"the journal's page in the game's options, the boss levels shown")
@@ -3709,6 +3709,102 @@ end)()
 		Mock.lootSlots, Mock.lootRows, Mock.rolls = {}, {}, {}
 		Mock.bagItems["0:1"], Mock.bagItems["0:2"], Mock.bagItems["0:3"] = nil, nil, nil
 		ContainerFrameCombinedBags._buttons = {}
+	end
+
+	-- In Baganator's bags: a corner widget of the journal's, through Baganator's own API
+	do
+		local UA, widget, refreshes = ns.UpgradeArrows, nil, 0
+		Baganator = { API = {
+			RegisterCornerWidget = function(label, id, onUpdate, onInit, position)
+				widget = { label = label, id = id, onUpdate = onUpdate, onInit = onInit, position = position }
+			end,
+			RequestItemButtonsRefresh = function() refreshes = refreshes + 1 end,
+		} }
+		UA.baganator = nil
+		UA:HookBaganator()
+		local region = widget and widget.onInit(CreateFrame("Button"))
+		check(widget and widget.id == "aegis_journal_upgrade" and widget.position.corner == "top_left"
+			and region and region._atlas == "bags-greenarrow", "a corner widget in Baganator's bags: the bags' green arrow, top left")
+		local function Shows(itemID) return widget.onUpdate(region, { itemLink = Mock.ItemLink(itemID) }) end
+		Mock.itemInstant[990899], Mock.itemsCached[990899] = { "", 0, 0, "Consumable" }, true
+		check(Shows(CAPE) == true and Shows(WORN_CAPE) == false and Shows(ROBE) == false and Shows(990899) == false,
+			"an upgrade gets it; what is no better, what the class cannot use and what is no gear do not")
+		Mock.itemInstant[990898] = { "INVTYPE_NECK", 4, 0, "Miscellaneous" }
+		check(Shows(990898) == nil, "an item the client has not described yet: asked again later")
+		local before = refreshes
+		IS:Changed()
+		check(refreshes > before, "a change of gear or weights has Baganator draw its buttons again")
+		Mock.settings.AEGIS_JOURNAL_UPGRADE_ARROWS:SetValue(false)
+		check(Shows(CAPE) == false, "turned off in the options")
+		Mock.settings.AEGIS_JOURNAL_UPGRADE_ARROWS:SetValue(true)
+		Mock.itemInstant[990898], Mock.itemInstant[990899], Mock.itemsCached[990899] = nil, nil, nil
+		Baganator, UA.baganator = nil, nil
+	end
+
+	-- With Pawn installed and enabled: its tooltips and arrows are shown, and the player is asked once
+	-- whose stat weights the Gear Finder uses
+	do
+		local UA, PL = ns.UpgradeArrows, ns.PawnLink
+		local ready, resets = true, 0
+		PawnIsReady = function() return ready end
+		PawnCommon = { Scales = {
+			['"Classic":WARRIOR1'] = { ClassID = 1, SpecID = 1, LocalizedName = "Warrior: Arms",
+				Values = { Strength = 3, Stamina = 0.5, Agility = 1, MeleeDps = 2, Dps = 1, Unheard = 4 } },
+			['"Classic":WARRIOR3'] = { ClassID = 1, SpecID = 3, LocalizedName = "Warrior: Protection", Values = { Stamina = 2 } },
+			['"Classic":MAGE1'] = { ClassID = 8, SpecID = 1, LocalizedName = "Mage: Arcane", Values = { Intellect = 1 } },
+		} }
+		local visible = { ['"Classic":WARRIOR1'] = true, ['"Classic":WARRIOR3'] = true, ['"Classic":MAGE1'] = true }
+		PawnIsScaleVisible = function(name) return visible[name] == true end
+		PawnGetAllStatValues = function(name) return PawnCommon.Scales[name].Values end
+		PawnResetTooltips = function() resets = resets + 1 end
+		ns.db.weightsSource, Mock.popup = nil, nil
+		PL:Check()
+		check(Mock.popup == "AEGIS_JOURNAL_WEIGHTS_SOURCE", "Pawn there and nothing chosen yet: asked whose stat weights to use")
+		-- The journal's own lines and arrows stand aside for Pawn's
+		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+		GameTooltip:SetHyperlink(Mock.ItemLink(CAPE))
+		local bagCape = Mock.BagButton(0, 1)
+		Mock.bagItems["0:1"] = { CAPE }
+		ContainerFrameCombinedBags:Show()
+		ContainerFrameCombinedBags:UpdateItems()
+		check(#GameTooltip._lines == 1 and not UA:Marked(bagCape), "Pawn's tooltips and arrows are the ones shown")
+		-- Closed some other way: asked again; the journal's chosen: kept
+		local popup = StaticPopupDialogs.AEGIS_JOURNAL_WEIGHTS_SOURCE
+		popup.OnCancel(nil, nil, "override")
+		check(PL:Source() == nil, "a question closed without an answer is asked again")
+		popup.OnCancel(nil, nil, "clicked")
+		check(PL:Source() == "journal" and not PL:UsesWeights() and IS:Weights("Arms").STRENGTH == 2.16,
+			"the journal's weights chosen: the Gear Finder keeps them")
+		Mock.popup = nil
+		PL:Check()
+		check(Mock.popup == nil, "and is not asked again")
+		-- Pawn's chosen: the Gear Finder scores with Pawn's scale for its spec, in the journal's stat names
+		popup.OnAccept()
+		local arms, scaleName = IS:Weights("Arms"), select(2, PL:ScaleFor("Arms"))
+		check(PL:UsesWeights() and scaleName == "Warrior: Arms" and arms.STRENGTH == 3 and arms.STAMINA == 0.5
+			and arms.AGILITY == 1 and arms.DPS == 3 and IS:Weights("Protection").STAMINA == 2
+			and Mock.settings.AEGIS_JOURNAL_PAWN_WEIGHTS:GetValue() == true,
+			"Pawn's weights chosen: its scale for the spec, read as the journal's stats")
+		visible['"Classic":WARRIOR3'] = nil
+		check(select(2, PL:ScaleFor("Protection")) == "Warrior: Arms", "a spec whose scale is hidden: another of the class's")
+		-- Pawn's scales changed: read again
+		PawnCommon.Scales['"Classic":WARRIOR1'].Values.Strength = 5
+		PawnResetTooltips()
+		check(resets == 1 and IS:Weights("Arms").STRENGTH == 5, "a change in Pawn is read again")
+		-- The choice in the options
+		Mock.settings.AEGIS_JOURNAL_PAWN_WEIGHTS:SetValue(false)
+		check(PL:Source() == "journal" and IS:Weights("Arms").STRENGTH == 2.16, "and changed back in the options")
+		-- Pawn gone (or not ready): the journal's own again
+		ready = false
+		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+		GameTooltip:SetHyperlink(Mock.ItemLink(CAPE))
+		ContainerFrameCombinedBags:UpdateItems()
+		check(#GameTooltip._lines > 1 and UA:Marked(bagCape), "without Pawn, the journal's own tooltips and arrows")
+		ContainerFrameCombinedBags:Hide()
+		Mock.bagItems["0:1"], ContainerFrameCombinedBags._buttons = nil, {}
+		PawnIsReady, PawnCommon, PawnIsScaleVisible, PawnGetAllStatValues, PawnResetTooltips = nil, nil, nil, nil, nil
+		ns.db.weightsSource = nil
+		IS:Forget()
 	end
 	Mock.RunTimers(1)
 

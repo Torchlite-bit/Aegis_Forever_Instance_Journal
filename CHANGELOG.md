@@ -34,9 +34,13 @@ and the version shown in the AddOns list. Quote it in bug reports.
   when it beats what you wear (with the level, for gear a few levels ahead).
 - **Show stat weights in tooltips**, a box under the stat weights: untick it and items'
   tooltips, the Gear Finder's too, leave out what each item is worth and adds to your gear.
-- **Green arrows on upgrades**: in your bags, in the loot window and on loot rolls, an item that
-  is an upgrade for your spec has the bags' green arrow at its corner, so you can tell at a glance
-  what to keep, take or roll on.
+- **Green arrows on upgrades**: in your bags (Baganator's too), in the loot window and on loot
+  rolls, an item that is an upgrade for your spec has the bags' green arrow at its corner, so you
+  can tell at a glance what to keep, take or roll on.
+- **Working alongside Pawn**: with Pawn installed and enabled, its item tooltips and upgrade arrows
+  are the ones shown, and the journal asks once whether the Gear Finder should score with Pawn's
+  stat weights (its scale for your spec) or the journal's own. Change it any time in the options;
+  without Pawn, the journal shows its own.
 - **Boss levels on the boss list**: each boss's level on its portrait, in the target frame's
   badge, coloured from grey to red by how hard the boss is for you.
 - **The journal's options**, in the game's Options under AddOns (or `/aegis options`): boss

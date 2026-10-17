@@ -961,7 +961,10 @@ Mock.ItemLink = ItemLink
 -- gives an item's tooltip data, where a test gives one (Mock.tooltipDataIDs[itemID]).
 Mock.itemStats, Mock.itemMinLevels, Mock.itemLines, Mock.tooltipDataIDs = {}, {}, {}, {}
 C_Item = {
-	GetItemInfoInstant = function(itemID)
+	-- By id, or by link as the client also takes it.
+	GetItemInfoInstant = function(item)
+		local itemID = ItemIDOf(item)
+		if not itemID then return nil end
 		local entry = Mock.itemInstant[itemID] or { "INVTYPE_CHEST", 4, 1, "Cloth" }
 		return itemID, ITEM_CLASS_NAMES[entry[2]], entry[4], entry[1], 134400 + itemID % 7, entry[2], entry[3]
 	end,
@@ -1158,7 +1161,13 @@ function GetClassInfo(classID)
 	return class[1], class[2], classID
 end
 Mock.playerClass = "MAGE"
-function UnitClass() return "Mage", Mock.playerClass, 8 end
+-- The player's class, with its id as the client numbers it.
+function UnitClass()
+	for classID, class in pairs(Mock.classes) do
+		if class[2] == Mock.playerClass then return class[1], class[2], classID end
+	end
+	return "Mage", Mock.playerClass, 8
+end
 function HandleModifiedItemClick() return false end
 function IsModifiedClick() return false end
 INVTYPE_NECK, INVTYPE_WRIST, INVTYPE_CLOAK, INVTYPE_WAIST, INVTYPE_HAND = "Neck", "Wrist", "Back", "Waist", "Hands"
