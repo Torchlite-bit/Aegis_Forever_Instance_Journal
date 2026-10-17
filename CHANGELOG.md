@@ -12,6 +12,26 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.32.0]
+
+### Added
+- **The journal's stat weights in Pawn**: with Pawn installed, the journal adds a scale of its
+  own to Pawn for each of your specs ("Journal: Holy" and so on), holding the weights the Gear
+  Finder uses. Choose the journal's weights and Pawn shows the one for the spec the Gear Finder
+  scores for, and hides its own scales on that character, so Pawn's tooltips and upgrade arrows
+  weigh items just as the Gear Finder does. A weight you change in the journal reaches Pawn at
+  once, and a new spec's scale takes over when you change spec. Untick **Show stat weights in
+  tooltips** and the journal's scale leaves Pawn's tooltips too (and with it Pawn's arrows for it,
+  as Pawn marks upgrades only for the scales it shows). Choose Pawn's weights (in the journal's
+  options) and Pawn's own scales come back. Baganator keeps Pawn's answer for each item until
+  your gear changes, so where it draws Pawn's arrows the journal offers a reload after such a
+  change, for the arrows to follow.
+
+### Changed
+- **The question asked when Pawn is installed** now offers the journal's weights first, for Pawn
+  and the Gear Finder both. A scale you show again in Pawn yourself stays shown. If you ever
+  remove the journal, show Pawn's own scales again in Pawn.
+
 ## [0.31.1]
 
 ### Added

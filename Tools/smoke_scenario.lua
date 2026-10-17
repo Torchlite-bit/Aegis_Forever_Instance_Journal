@@ -3778,7 +3778,42 @@ end)()
 		PawnIsScaleVisible = function(name) return visible[name] == true end
 		PawnGetAllStatValues = function(name) return PawnCommon.Scales[name].Values end
 		PawnResetTooltips = function() resets = resets + 1 end
-		ns.db.weightsSource, Mock.popup = nil, nil
+		-- Pawn's scale providers: a provider's scale is added each session and overwritten when added again;
+		-- showing or hiding one resets Pawn's tooltips
+		local providers, adds = {}, 0
+		PawnAddPluginScaleProvider = function(name, label, init) providers[name] = label; init() end
+		PawnGetProviderScaleName = function(provider, scale) return '"' .. provider .. '":' .. scale end
+		PawnAddPluginScale = function(provider, scale, label, color, values)
+			adds = adds + 1
+			local full = PawnGetProviderScaleName(provider, scale)
+			local added = PawnCommon.Scales[full] or { PerCharacterOptions = {}, Color = color }
+			added.Provider, added.ProviderActive, added.LocalizedName, added.Values = provider, true, label, values
+			PawnCommon.Scales[full] = added
+		end
+		PawnSetScaleVisible = function(name, shown)
+			if (visible[name] == true) ~= shown then visible[name] = shown or nil; PawnResetTooltips() end
+		end
+		PawnRecalculateScaleTotal, PawnInvalidateBestItemsForScale, PawnResetBags = function() end, function() end, function() end
+		ns.db.weightsSource, Mock.popup, ns.charDB.pawnHidden = nil, nil, nil
+		-- At login: the journal joins Pawn as a scale provider, its scales hidden until the player chooses
+		-- Baganator draws Pawn's arrows in its bags, keeping Pawn's answers until the gear changes. A reload is
+		-- offered on the next frame (Asked: the popup shown then)
+		local function Asked() Mock.RunTimers(0) return Mock.popup end
+		Baganator = { API = { IsCornerWidgetActive = function(id) return id == "pawn" end } }
+		PL:Register()
+		Mock.popup = nil
+		PL:AskReload()
+		check(Asked() == nil, "what the journal gives Pawn at login asks for no reload")
+		local function JournalScale(spec) return PawnCommon.Scales['"AegisJournal":' .. spec] end
+		check(providers.AegisJournal == ns.L.OPTIONS_TITLE and JournalScale("Arms") and JournalScale("Fury") and JournalScale("Protection")
+			and JournalScale("Arms").LocalizedName == "Journal: Arms" and not visible['"AegisJournal":Arms']
+			and visible['"Classic":WARRIOR1'], "the journal's scales in Pawn, one a spec, hidden until the player chooses")
+		local armsOwn = IS:OwnWeights("Arms")
+		check(JournalScale("Arms").Values.Strength == armsOwn.STRENGTH and JournalScale("Arms").Values.MeleeDps == armsOwn.DPS
+			and JournalScale("Arms").Values.HitRating == armsOwn.HIT and JournalScale("Arms").Values.STRENGTH == nil
+			and IS.FromPawnValues(JournalScale("Arms").Values).STRENGTH == armsOwn.STRENGTH
+			and IS.FromPawnValues(JournalScale("Arms").Values).DPS == armsOwn.DPS,
+			"in Pawn's stat names, which read back as the journal's weights")
 		PL:Check()
 		check(Mock.popup == "AEGIS_JOURNAL_WEIGHTS_SOURCE", "Pawn there and nothing chosen yet: asked whose stat weights to use")
 		-- The journal's own lines and arrows stand aside for Pawn's
@@ -3801,19 +3836,80 @@ end)()
 		local popup = StaticPopupDialogs.AEGIS_JOURNAL_WEIGHTS_SOURCE
 		popup.OnCancel(nil, nil, "override")
 		check(PL:Source() == nil, "a question closed without an answer is asked again")
-		popup.OnCancel(nil, nil, "clicked")
+		popup.OnAccept()
 		check(PL:Source() == "journal" and not PL:UsesWeights() and IS:Weights("Arms").STRENGTH == 2.16,
 			"the journal's weights chosen: the Gear Finder keeps them")
+		check(Asked() == "AEGIS_JOURNAL_RELOAD_FOR_PAWN", "and a reload is offered, for Baganator's arrows")
+		-- and Pawn shows them: the journal's scale for the Gear Finder's spec, none of Pawn's own
+		local spec = IS:Spec()
+		local other = spec == "Fury" and "Arms" or "Fury"
+		check(visible['"AegisJournal":' .. spec] and not visible['"AegisJournal":' .. other]
+			and not visible['"Classic":WARRIOR1'] and not visible['"Classic":MAGE1']
+			and table.concat(ns.charDB.pawnHidden, ",") == '"Classic":MAGE1,"Classic":WARRIOR1,"Classic":WARRIOR3',
+			"Pawn shows the journal's scale for the spec, and its own are hidden on this character, remembered")
+		-- Stat weights not wanted in tooltips: the journal's scale leaves Pawn's too, and a reload is offered
+		Mock.popup = nil
+		Mock.settings.AEGIS_JOURNAL_ITEM_TIPS:SetValue(false)
+		check(not visible['"AegisJournal":' .. spec] and not visible['"Classic":WARRIOR1'] and Asked() == "AEGIS_JOURNAL_RELOAD_FOR_PAWN",
+			"stat weights not wanted in tooltips: the journal's scale leaves Pawn's tooltips too, and a reload is offered")
+		Mock.popup = nil
+		PL:AskReload()
+		check(Asked() == nil, "asked once for those changes")
+		Mock.settings.AEGIS_JOURNAL_ITEM_TIPS:SetValue(true)
+		check(visible['"AegisJournal":' .. spec] and Asked() == "AEGIS_JOURNAL_RELOAD_FOR_PAWN", "and comes back with the box")
+		-- The weights window: a reload offered as it closes, for weights edited while it was open
+		Mock.popup = nil
+		local opened = PL:Changes()
+		PL:AskReload(opened)
+		check(Asked() == nil, "a weights window closed with nothing changed asks for nothing")
+		IS:SetWeight(spec, "STRENGTH", 9)
+		check(Asked() == nil, "an edit asks for nothing while the window is open")
+		PL:AskReload(opened)
+		check(Asked() == "AEGIS_JOURNAL_RELOAD_FOR_PAWN", "and a reload is offered as it closes")
+		IS:ResetWeights(spec)
+		-- Without Baganator: nothing to reload for
+		Baganator, Mock.popup = nil, nil
+		Mock.settings.AEGIS_JOURNAL_ITEM_TIPS:SetValue(false)
+		Mock.settings.AEGIS_JOURNAL_ITEM_TIPS:SetValue(true)
+		check(Asked() == nil, "without Baganator, Pawn's arrows follow at once: no reload asked")
+		Baganator = { API = { IsCornerWidgetActive = function(id) return id == "pawn" end } }
+		-- A weight changed in the journal: Pawn is given it; nothing changed: nothing given
+		local given, resetsBefore = adds, resets
+		IS:SetWeight(spec, "STRENGTH", 7)
+		check(JournalScale(spec).Values.Strength == 7 and adds > given and resets > resetsBefore,
+			"a weight changed in the journal reaches Pawn, which reads its tooltips anew")
+		given = adds
+		IS:Changed()
+		check(adds == given, "nothing changed: Pawn is not given its scales again")
+		IS:ResetWeights(spec)
+		-- Another spec: its scale shown instead, and a reload offered
+		Mock.popup = nil
+		IS:SetSpec(other)
+		check(visible['"AegisJournal":' .. other] and not visible['"AegisJournal":' .. spec] and Asked() == "AEGIS_JOURNAL_RELOAD_FOR_PAWN",
+			"another spec: its scale instead, and a reload offered")
+		IS:SetSpec(nil)
+		-- A scale of Pawn's the player shows again in Pawn stays shown
+		PawnSetScaleVisible('"Classic":MAGE1', true)
+		IS:SetWeight(spec, "STRENGTH", 6)
+		check(visible['"Classic":MAGE1'], "a scale of Pawn's the player shows again stays shown")
+		IS:ResetWeights(spec)
+		PawnSetScaleVisible('"Classic":MAGE1', false)
 		Mock.popup = nil
 		PL:Check()
 		check(Mock.popup == nil, "and is not asked again")
-		-- Pawn's chosen: the Gear Finder scores with Pawn's scale for its spec, in the journal's stat names
-		popup.OnAccept()
+		-- Pawn's chosen: the Gear Finder scores with Pawn's scale for its spec, in the journal's stat names,
+		-- and Pawn shows its own scales again, not the journal's
+		popup.OnCancel(nil, nil, "clicked")
+		check(PL:Source() == "pawn" and visible['"Classic":WARRIOR1'] and visible['"Classic":WARRIOR3']
+			and visible['"Classic":MAGE1'] and not visible['"AegisJournal":' .. spec] and ns.charDB.pawnHidden == nil,
+			"Pawn's weights chosen: Pawn shows its own scales again, and none of the journal's")
 		local arms, scaleName = IS:Weights("Arms"), select(2, PL:ScaleFor("Arms"))
 		check(PL:UsesWeights() and scaleName == "Warrior: Arms" and arms.STRENGTH == 3 and arms.STAMINA == 0.5
 			and arms.AGILITY == 1 and arms.DPS == 3 and IS:Weights("Protection").STAMINA == 2
 			and Mock.settings.AEGIS_JOURNAL_PAWN_WEIGHTS:GetValue() == true,
 			"Pawn's weights chosen: its scale for the spec, read as the journal's stats")
+		check(JournalScale("Arms").Values.Strength == IS:OwnWeights("Arms").STRENGTH,
+			"the journal's scales in Pawn keep the journal's own weights")
 		-- Hidden in Pawn: its PawnSetScaleVisible resets its tooltips
 		visible['"Classic":WARRIOR3'] = nil
 		PawnResetTooltips()
@@ -3821,7 +3917,14 @@ end)()
 		-- Pawn's scales changed: read again
 		PawnCommon.Scales['"Classic":WARRIOR1'].Values.Strength = 5
 		PawnResetTooltips()
-		check(resets == 2 and IS:Weights("Arms").STRENGTH == 5, "a change in Pawn is read again")
+		check(IS:Weights("Arms").STRENGTH == 5, "a change in Pawn is read again")
+		-- The journal's scales are never taken for Pawn's
+		visible['"AegisJournal":Arms'], visible['"Classic":WARRIOR1'] = true, nil
+		PawnResetTooltips()
+		check(PL:ScaleFor("Arms") == '"Classic":MAGE1',
+			"the journal's own scale in Pawn is never read as Pawn's, even where it would fit best")
+		visible['"AegisJournal":Arms'], visible['"Classic":WARRIOR1'] = nil, true
+		PawnResetTooltips()
 		-- The player's own scales before Pawn's starter ones, which on Forever hold one template for the
 		-- class: an imported or new one has no spec there, one copied keeps it
 		PawnCommon.Scales["My warrior"] = Own(1, nil, { Strength = 9 })
@@ -3869,7 +3972,9 @@ end)()
 		ContainerFrameCombinedBags:Hide()
 		Mock.bagItems["0:1"], ContainerFrameCombinedBags._buttons = nil, {}
 		PawnIsReady, PawnCommon, PawnIsScaleVisible, PawnGetAllStatValues, PawnResetTooltips = nil, nil, nil, nil, nil
-		ns.db.weightsSource = nil
+		PawnAddPluginScaleProvider, PawnGetProviderScaleName, PawnAddPluginScale, PawnSetScaleVisible = nil, nil, nil, nil
+		PawnRecalculateScaleTotal, PawnInvalidateBestItemsForScale, PawnResetBags = nil, nil, nil
+		ns.db.weightsSource, ns.charDB.pawnHidden, Baganator, Mock.popup = nil, nil, nil, nil
 		IS:Forget()
 	end
 	Mock.RunTimers(1)

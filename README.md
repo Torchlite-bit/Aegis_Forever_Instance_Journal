@@ -142,6 +142,9 @@ Five side tabs, as in retail, plus one:
 - **Scored for your spec**: the one your talents say, or one you pick. Change any
   **stat weight** in game, or **bring in a scale from Pawn**; your weights are kept
   for each character.
+- **Works with Pawn**: with Pawn installed, choose once whose stat weights both use.
+  The journal's: Pawn shows them for your spec, so its tooltips and upgrade arrows
+  agree with the Gear Finder. Pawn's: the Gear Finder scores with your Pawn scale.
 - **On the character panel too**: its own tab turns the panel to your character,
   with your stat weights where the stats are, and a button to the Gear Finder.
 

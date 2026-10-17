@@ -115,20 +115,26 @@ L.OPTIONS_BOSS_LEVELS_TIP = "A badge on each boss's portrait with its level, col
 L.OPTIONS_ARROWS = "Mark upgrades with a green arrow"
 L.OPTIONS_MINIMAP = "Show the minimap button"
 L.OPTIONS_PAWN_WEIGHTS = "Use Pawn's stat weights in the Gear Finder"
-L.OPTIONS_PAWN_WEIGHTS_TIP = "With Pawn installed: the Gear Finder scores items with the weights of Pawn's scale for your spec instead of the journal's. Pawn's item tooltips and upgrade arrows are shown either way while Pawn is installed."
+L.OPTIONS_PAWN_WEIGHTS_TIP = "With Pawn installed, its item tooltips and upgrade arrows are the ones shown. Ticked: the Gear Finder scores items with your Pawn scale for your spec. Unticked: Pawn shows the journal's weights for your spec instead, as a scale of the journal's, and its own scales are hidden on this character until you tick this."
 -- Asked once, when Pawn is installed too (Core/PawnLink.lua).
-L.PAWN_ASK = "Pawn is installed too. Its item tooltips and upgrade arrows will be shown.\n\nWhich stat weights should the Gear Finder use?"
+L.PAWN_ASK = "Pawn is installed too. Its item tooltips and upgrade arrows will be shown.\n\nWhose stat weights should Pawn and the Gear Finder both use?\n\nThe journal's: Pawn shows them for your spec, and hides its own scales on this character.\nPawn's: the Gear Finder uses your Pawn scales."
 L.PAWN_USE_PAWN = "Pawn's"
 L.PAWN_USE_JOURNAL = "The journal's"
+-- The journal's scale for a spec, as Pawn lists it.
+L.PAWN_SCALE = "Journal: %s"
+-- After the journal's scales in Pawn change, where Baganator draws Pawn's arrows.
+L.PAWN_RELOAD = "Pawn's upgrade arrows in your Baganator bags change only after a reload: Baganator keeps Pawn's answers until your gear changes.\n\nReload now?"
+L.PAWN_RELOAD_NOW = "Reload"
+L.PAWN_RELOAD_LATER = "Later"
 L.WEIGHTS_SOURCE_PAWN_LIVE = "Pawn's %s scale. Change it in Pawn, or choose the journal's in its options."
-L.OPTIONS_MINIMAP_TIP = "The journal's book on the edge of the minimap: click it to open the journal, right-click it for these options, drag it to move it."
+L.OPTIONS_MINIMAP_TIP = "The journal's button on the edge of the minimap: click it to open the journal, right-click it for these options, drag it to move it."
 -- The minimap button's tooltip.
 L.MINIMAP_LEFT_CLICK = "Click to open or close the journal."
 L.MINIMAP_RIGHT_CLICK = "Right-click for its options."
 L.MINIMAP_DRAG = "Drag to move it around the minimap."
 L.OPTIONS_ARROWS_TIP = "A green arrow on items that are upgrades for your spec, as the Gear Finder counts them: in your bags, in the loot window and on loot rolls."
 L.WEIGHTS_SHOW_GAINS = "Show stat weights in tooltips"
-L.WEIGHTS_SHOW_GAINS_TIP = "Under every item, a line for each of your specs: what the item is worth by its weights, and a green arrow with what it adds to your gear when it is an upgrade. For all your characters."
+L.WEIGHTS_SHOW_GAINS_TIP = "Under every item, a line for each of your specs: what the item is worth by its weights, and a green arrow with what it adds to your gear when it is an upgrade. For all your characters. With Pawn installed, this shows or hides the journal's scale in Pawn instead, and with it Pawn's upgrade arrows for the journal's weights: Pawn marks upgrades only for the scales it shows."
 L.GEAR_WHY_CUSTOM = "%s (your weights)"
 -- The specs' names and the units their weights count in are the generated weights' own English
 -- (Data/Generated/GearWeights.lua). A translation names them here: by spec key

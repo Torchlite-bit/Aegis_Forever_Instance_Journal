@@ -6,11 +6,17 @@ local L = ns.L
 
 	While Pawn is there, its own item tooltips and upgrade arrows are the ones shown: the journal's
 	(UI/ItemTooltip.lua, UI/UpgradeArrows.lua) stand aside, so an item never carries two. The player
-	is asked once which stat weights the Gear Finder should score with, Pawn's or the journal's own,
-	and can change that in the journal's options. With Pawn's, the Gear Finder takes the weights of
-	Pawn's scale for the spec it scores for, read through Pawn's own functions (PawnIsReady,
-	PawnCommon.Scales, PawnIsScaleVisible, PawnGetAllStatValues) and named as the journal names its
-	stats (ItemScore.FromPawnValues); nothing of Pawn's is changed.
+	is asked once whose stat weights Pawn and the Gear Finder should both use, and can change that in
+	the journal's options:
+	  - The journal's: the journal adds itself to Pawn as a scale provider, with a scale for each
+	    spec of the player's class holding the weights the Gear Finder has for it (PawnLink:Push).
+	    Pawn shows the one for the spec the Gear Finder scores for, and none of its own, so Pawn's
+	    tooltips and arrows weigh items as the Gear Finder does.
+	  - Pawn's: the Gear Finder takes the weights of Pawn's scale for the spec it scores for, read
+	    through Pawn's own functions (PawnCommon.Scales, PawnIsScaleVisible, PawnGetAllStatValues)
+	    and named as the journal names its stats (ItemScore.FromPawnValues).
+	Pawn's own scales are only ever hidden and shown again, on this character, through
+	PawnSetScaleVisible; their weights are never changed.
 
 	Without Pawn, the journal's own weights, tooltips and arrows are used, as before.
 ]]
@@ -19,6 +25,9 @@ local PawnLink = {}
 ns.PawnLink = PawnLink
 
 local POPUP = "AEGIS_JOURNAL_WEIGHTS_SOURCE"
+-- The journal as a scale provider in Pawn, and its scales' colour there (Ashbringer's gold).
+local PROVIDER = "AegisJournal"
+local COLOR = "e6cc80"
 
 -- A call into Pawn that cannot break the journal: Pawn reports its own errors in chat.
 local function Call(fn, ...)
@@ -29,12 +38,16 @@ local function Call(fn, ...)
 end
 
 local hooked, weightsOf, scaleOf = false, {}, {}
+-- While the journal is giving Pawn its scales; what it gave last; how many times it changed them,
+-- and how many of those the player was last asked to reload for (PawnLink:AskReload).
+local pushing, pushed, changes, askedAt = false, nil, 0, 0
 
--- Pawn's scales or settings changed: its weights are read again, and the journal scores anew.
+-- Pawn's scales or settings changed: its weights are read again, and the journal scores anew
+-- (not for the journal's own changes to its scales in Pawn).
 local function PawnChanged()
 	wipe(weightsOf)
 	wipe(scaleOf)
-	if PawnLink:UsesWeights() then ns.ItemScore:Changed() end
+	if not pushing and PawnLink:UsesWeights() then ns.ItemScore:Changed() end
 end
 
 -- Whether Pawn is installed, enabled and ready.
@@ -54,12 +67,15 @@ function PawnLink:Source()
 	return ns.db and ns.db.weightsSource
 end
 
+-- Pawn shows the scales for the choice before the Gear Finder scores again.
 function PawnLink:SetSource(source)
 	ns.db.weightsSource = source
 	wipe(weightsOf)
 	wipe(scaleOf)
+	self:Push()
 	ns.ItemScore:Changed()
 	if Settings and Settings.NotifyUpdate then pcall(Settings.NotifyUpdate, "AEGIS_JOURNAL_PAWN_WEIGHTS") end
+	self:AskReload()
 end
 
 -- Whether the Gear Finder scores with Pawn's weights now.
@@ -118,9 +134,9 @@ end
 
 --[[
 	Pawn's scale for a spec of the player's class: of the scales shown for this character with weights
-	the journal can read (not one a provider no longer loaded left behind, nor a new one still
-	empty), the one that fits it best, and the first by name of those, so the choice does not change
-	between sessions. Its name and its name as Pawn shows it.
+	the journal can read (not the journal's own, nor one a provider no longer loaded left behind, nor
+	a new one still empty), the one that fits it best, and the first by name of those, so the choice
+	does not change between sessions. Its name and its name as Pawn shows it.
 ]]
 function PawnLink:ScaleFor(spec)
 	local scales = type(PawnCommon) == "table" and type(PawnCommon.Scales) == "table" and PawnCommon.Scales
@@ -131,7 +147,7 @@ function PawnLink:ScaleFor(spec)
 		local best, bestFit
 		for name, scale in pairs(scales) do
 			if type(scale) == "table" and type(scale.PerCharacterOptions) == "table"
-				and (scale.Provider == nil or scale.ProviderActive)
+				and scale.Provider ~= PROVIDER and (scale.Provider == nil or scale.ProviderActive)
 				and Call(PawnIsScaleVisible, name) == true and WeightsOf(name) then
 				local fit = Fit(scale, classID, pawnSpec)
 				if not bestFit or fit > bestFit or (fit == bestFit and name < best) then
@@ -152,15 +168,159 @@ function PawnLink:Weights(spec)
 	return name and WeightsOf(name) or nil
 end
 
+------------------------------------------------------------------------------------------
+-- The journal's scales in Pawn
+------------------------------------------------------------------------------------------
+
+-- The name Pawn knows a scale of the journal's by: "AegisJournal":<spec>.
+function PawnLink.OwnScaleName(spec)
+	return Call(PawnGetProviderScaleName, PROVIDER, spec) or ('"' .. PROVIDER .. '":' .. spec)
+end
+
+local function Shown(name)
+	local scale = PawnCommon.Scales[name]
+	return type(scale) == "table" and type(scale.PerCharacterOptions) == "table" and Call(PawnIsScaleVisible, name) == true
+end
+
+local function Show(name, shown)
+	if type(PawnCommon.Scales[name]) == "table" and Shown(name) ~= shown then Call(PawnSetScaleVisible, name, shown) end
+end
+
+-- Whether the journal's weights are wanted in tooltips (its "Show stat weights in tooltips" box).
+local function ShowsLines()
+	return not (ns.GearPanel and ns.GearPanel.ShowsGains) or ns.GearPanel.ShowsGains() == true
+end
+
+--[[
+	Which scales Pawn shows on this character. With the journal's weights: the journal's for the spec
+	the Gear Finder scores for, unless the journal's weights are not wanted in tooltips, and none of
+	Pawn's own: those shown are hidden once and remembered (charDB.pawnHidden), so a scale the player
+	shows again in Pawn afterwards stays shown. Otherwise none of the journal's, and Pawn's hidden ones
+	are shown again.
+]]
+local function ShowScales(spec)
+	local journal = PawnLink:Source() == "journal"
+	if journal and ns.charDB.pawnHidden == nil then
+		local hidden = {}
+		for name, scale in pairs(PawnCommon.Scales) do
+			if type(scale) == "table" and scale.Provider ~= PROVIDER and Shown(name) then hidden[#hidden + 1] = name end
+		end
+		table.sort(hidden)
+		ns.charDB.pawnHidden = hidden
+		for _, name in ipairs(hidden) do Show(name, false) end
+	elseif not journal and ns.charDB.pawnHidden then
+		for _, name in ipairs(ns.charDB.pawnHidden) do Show(name, true) end
+		ns.charDB.pawnHidden = nil
+	end
+	for _, entry in ipairs(ns.ItemScore:Specs()) do
+		Show(PawnLink.OwnScaleName(entry.key), journal and entry.key == spec and ShowsLines())
+	end
+end
+
+--[[
+	Give Pawn the journal's scales: one for each spec of the player's class, with the weights the
+	journal has for it, in Pawn's stat names (ItemScore.ToPawnValues), then show the right ones.
+	Pawn adds a provider's scale again each session, and overwrites it when given it again; a changed
+	scale is read anew as Pawn does for its own (its total, best items, tooltips and bag arrows). Only
+	when the weights, the spec or the choice changed since last time.
+]]
+local registered = false
+
+local function PushNow(spec, specs, values)
+	for _, entry in ipairs(specs) do
+		local name = PawnLink.OwnScaleName(entry.key)
+		Call(PawnAddPluginScale, PROVIDER, entry.key, string.format(L.PAWN_SCALE, entry.label), COLOR, values[entry.key])
+		Call(PawnRecalculateScaleTotal, name)
+		Call(PawnInvalidateBestItemsForScale, name)
+	end
+	ShowScales(spec)
+	Call(PawnResetTooltips)
+	Call(PawnResetBags)
+end
+
+function PawnLink:Push()
+	if pushing or not (registered and ns.charDB and self:Present()) then return end
+	local IS = ns.ItemScore
+	local spec, specs = IS:Spec(), IS:Specs()
+	local values, parts = {}, { tostring(self:Source()), tostring(spec), tostring(ShowsLines()) }
+	for _, entry in ipairs(specs) do
+		values[entry.key] = IS.ToPawnValues(IS:OwnWeights(entry.key))
+		local stats = {}
+		for stat in pairs(values[entry.key]) do stats[#stats + 1] = stat end
+		table.sort(stats)
+		parts[#parts + 1] = entry.key .. "|" .. entry.label
+		for _, stat in ipairs(stats) do parts[#parts + 1] = stat .. "=" .. values[entry.key][stat] end
+	end
+	local signature = table.concat(parts, ";")
+	if signature == pushed then return end
+	pushing = true
+	local ok = pcall(PushNow, spec, specs, values)
+	pushing = false
+	if ok then pushed, changes = signature, changes + 1 end
+end
+
+-- How many times the journal has changed its scales in Pawn this session.
+function PawnLink:Changes()
+	return changes
+end
+
+-- The journal as one of Pawn's scale providers; Pawn calls back for the scales. What it gives Pawn
+-- at login is no change to ask a reload for.
+function PawnLink:Register()
+	if registered or not self:Present() or type(PawnAddPluginScaleProvider) ~= "function" then return end
+	registered = true
+	Call(PawnAddPluginScaleProvider, PROVIDER, L.OPTIONS_TITLE, function() PawnLink:Push() end)
+	self:Push()
+	askedAt = changes
+end
+
+--[[
+	Baganator draws Pawn's arrows in its bags, and keeps Pawn's answer for each item until the gear
+	worn changes; nothing else clears it. So after the player changes the journal's scales in Pawn
+	(its box for stat weights in tooltips, whose weights are used, a spec picked, weights edited),
+	its arrows follow only after a reload: the player is asked for one, once for the changes since
+	they were last asked, or since `since` (PawnLink:Changes() when a window that changes them
+	opened). Pawn's own bag arrows and its tooltips follow at once.
+]]
+local RELOAD = "AEGIS_JOURNAL_RELOAD_FOR_PAWN"
+
+local function BaganatorKeepsPawnArrows()
+	local api = type(Baganator) == "table" and type(Baganator.API) == "table" and Baganator.API
+	if not api then return false end
+	return Call(api.IsCornerWidgetActive, "pawn") == true or Call(api.IsUpgradePluginActive, "pawn") == true
+end
+
+function PawnLink:AskReload(since)
+	if changes <= math.max(since or 0, askedAt) then return end
+	if not (self:Present() and BaganatorKeepsPawnArrows()) then return end
+	askedAt = changes
+	-- After the click or menu that led here has closed its own popup.
+	C_Timer.After(0, function() StaticPopup_Show(RELOAD) end)
+end
+
+StaticPopupDialogs[RELOAD] = {
+	text = L.PAWN_RELOAD,
+	button1 = L.PAWN_RELOAD_NOW,
+	button2 = L.PAWN_RELOAD_LATER,
+	OnAccept = function() ReloadUI() end,
+	timeout = 0,
+	whileDead = true,
+	hideOnEscape = true,
+}
+
+------------------------------------------------------------------------------------------
+-- The question
+------------------------------------------------------------------------------------------
+
 -- Asked once, when Pawn is there and the player has not chosen.
 StaticPopupDialogs[POPUP] = {
 	text = L.PAWN_ASK,
-	button1 = L.PAWN_USE_PAWN,
-	button2 = L.PAWN_USE_JOURNAL,
-	OnAccept = function() PawnLink:SetSource("pawn") end,
+	button1 = L.PAWN_USE_JOURNAL,
+	button2 = L.PAWN_USE_PAWN,
+	OnAccept = function() PawnLink:SetSource("journal") end,
 	OnCancel = function(_, _, reason)
 		-- Closed some other way: asked again next time.
-		if reason == "clicked" then PawnLink:SetSource("journal") end
+		if reason == "clicked" then PawnLink:SetSource("pawn") end
 	end,
 	timeout = 0,
 	whileDead = true,
@@ -176,6 +336,8 @@ end
 local events = CreateFrame("Frame")
 ns.RegisterEvents(events, "PLAYER_LOGIN")
 events:SetScript("OnEvent", function()
-	-- After Pawn has set itself up, on the same login.
+	-- Pawn set itself up at the same event, first (the journal loads after it).
+	PawnLink:Register()
+	ns.ItemScore:OnChange(function() PawnLink:Push() end)
 	C_Timer.After(1, function() PawnLink:Check() end)
 end)
