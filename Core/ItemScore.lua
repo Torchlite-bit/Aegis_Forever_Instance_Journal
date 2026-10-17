@@ -473,12 +473,17 @@ end
 -- The journal's weights with the player's changes laid over them, kept until anything changes.
 local merged = {}
 
--- The weights in use: Pawn's where the player chose them (Core/PawnLink.lua), else the player's own
--- for the spec, else the journal's.
+-- The weights in use: Pawn's where the player chose them (Core/PawnLink.lua), else the journal's own.
 function ItemScore:Weights(spec)
 	spec = spec or self:Spec()
 	local fromPawn = ns.PawnLink and ns.PawnLink:UsesWeights() and ns.PawnLink:Weights(spec)
 	if fromPawn then return fromPawn end
+	return self:OwnWeights(spec)
+end
+
+-- The journal's own weights for a spec: the player's, else the journal's.
+function ItemScore:OwnWeights(spec)
+	spec = spec or self:Spec()
 	local custom = self:CustomWeights(spec)
 	if not custom then return self:DefaultWeights(spec) end
 	if custom.weights then return custom.weights end
@@ -608,6 +613,39 @@ function ItemScore.FromPawnValues(values)
 	end
 	table.sort(pairsList, function(a, b) return a[1] < b[1] end)
 	return FromPawnPairs(pairsList)
+end
+
+--[[
+	The journal's weights in Pawn's stat names on Forever, for the journal's scales in Pawn
+	(Core/PawnLink.lua); FromPawnValues reads them back as the same weights. Both count a "damage and
+	healing" item as spell damage and healing, so Pawn's spell damage takes the journal's (its spell
+	power's where it has none). A melee weapon's damage is Pawn's MeleeDps, a ranged one's RangedDps.
+	What Pawn has no stat for here (ranged crit and haste, holy crit and resistance, mana, health,
+	regeneration while casting) is left out.
+]]
+local TO_PAWN = {
+	STRENGTH = "Strength", AGILITY = "Agility", STAMINA = "Stamina", INTELLECT = "Intellect", SPIRIT = "Spirit",
+	ARMOR = "Armor", ["ATTACK POWER"] = "Ap", ["RANGED ATTACK POWER"] = "Rap", ["FERAL ATTACK POWER"] = "FeralAp",
+	HIT = "HitRating", CRIT = "CritRating", HASTE = "HasteRating", ["SPELL HIT"] = "SpellHitRating",
+	["SPELL CRIT"] = "SpellCritRating", HEALING = "Healing", ["SPELL PENETRATION"] = "SpellPenetration",
+	["HOLY DAMAGE"] = "HolySpellDamage", ["FIRE DAMAGE"] = "FireSpellDamage", ["FROST DAMAGE"] = "FrostSpellDamage",
+	["NATURE DAMAGE"] = "NatureSpellDamage", ["SHADOW DAMAGE"] = "ShadowSpellDamage",
+	["ARCANE DAMAGE"] = "ArcaneSpellDamage", ["MANA PER 5"] = "Mp5", ["HEALTH PER 5"] = "Hp5",
+	DEFENSE = "DefenseRating", DODGE = "DodgeRating", PARRY = "ParryRating", BLOCK = "BlockRating",
+	["BLOCK VALUE"] = "BlockValue", ["FIRE RESISTANCE"] = "FireResist", ["NATURE RESISTANCE"] = "NatureResist",
+	["FROST RESISTANCE"] = "FrostResist", ["SHADOW RESISTANCE"] = "ShadowResist",
+	["ARCANE RESISTANCE"] = "ArcaneResist", DPS = "MeleeDps", ["RANGED DPS"] = "RangedDps",
+}
+
+function ItemScore.ToPawnValues(weights)
+	local values = {}
+	for stat, value in pairs(weights or {}) do
+		local name = TO_PAWN[stat]
+		if name and SaneWeight(value) and value ~= 0 then values[name] = value end
+	end
+	local spell = weights and (weights["SPELL DAMAGE"] or weights["SPELL POWER"])
+	if SaneWeight(spell) and spell ~= 0 then values.SpellDamage = spell end
+	return values
 end
 
 --[[
