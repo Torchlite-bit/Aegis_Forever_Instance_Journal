@@ -145,10 +145,13 @@ function GearPanel.ShowsGains()
 	return not (ns.db and ns.db.hideGearTipGains)
 end
 
-function GearPanel.SetShowsGains(shown)
+-- `fromOptions`: the change came from the options' own box, which needs no telling.
+function GearPanel.SetShowsGains(shown, fromOptions)
 	ns.db.hideGearTipGains = not shown or nil
 	if ns.WeightsEditor then ns.WeightsEditor:SyncShowGains() end
-	if Settings and Settings.NotifyUpdate then pcall(Settings.NotifyUpdate, "AEGIS_JOURNAL_ITEM_TIPS") end
+	if not fromOptions and Settings and Settings.NotifyUpdate then
+		pcall(Settings.NotifyUpdate, "AEGIS_JOURNAL_ITEM_TIPS")
+	end
 end
 
 -- An upgrade's tooltip, as plain as Pawn's: the item with what it is worth to each spec (UI/

@@ -999,7 +999,7 @@ TooltipDataProcessor = {
 }
 -- The client's settings panel (Blizzard_Settings_Shared): an addon's page, its proxy settings by
 -- variable (Mock.settings) and the page last opened (Mock.openedSettings).
-Mock.settings = {}
+Mock.settings, Mock.settingsNotified = {}, {}
 Settings = {
 	VarType = { Boolean = "boolean", Number = "number", String = "string" },
 	RegisterVerticalLayoutCategory = function(name)
@@ -1019,6 +1019,7 @@ Settings = {
 		table.insert(category.controls, setting)
 	end,
 	RegisterAddOnCategory = function(category) Mock.settingsCategory = category end,
+	NotifyUpdate = function(variable) Mock.settingsNotified[variable] = (Mock.settingsNotified[variable] or 0) + 1 end,
 	OpenToCategory = function(categoryID) Mock.openedSettings = categoryID end,
 }
 -- Each copy of an item has its own guid: a worn one's names its slot (Mock.WornGUID).
@@ -1067,11 +1068,17 @@ Mock.lootRows = {}
 LootFrame = CreateFrame("Frame", "LootFrame", UIParent)
 LootFrame:Hide()
 LootFrame.ScrollBox = { ForEachFrame = function(_, callback) for _, row in ipairs(Mock.lootRows) do callback(row) end end }
-function Mock.LootRow(slot)
-	local row = CreateFrame("Frame", nil, LootFrame)
-	row.Item = CreateFrame("Button", nil, row)
-	function row:GetSlotIndex() return slot end
-	table.insert(Mock.lootRows, row)
+LootFrameItemElementMixin = { Init = function() end }
+function LootFrameItemElementMixin:GetSlotIndex() return self._slot end
+-- A row the list made, or took back and gave another slot (Mock.LootRow(slot, row)).
+function Mock.LootRow(slot, row)
+	if not row then
+		row = Mixin(CreateFrame("Frame", nil, LootFrame), LootFrameItemElementMixin)
+		row.Item = CreateFrame("Button", nil, row)
+		table.insert(Mock.lootRows, row)
+	end
+	row._slot = slot
+	row:Init()
 	return row
 end
 LOOT_SLOT_ITEM = 1
@@ -1079,10 +1086,20 @@ function GetLootSlotType(slot) return Mock.lootSlots[slot] and Mock.lootSlots[sl
 -- Group loot rolls: GroupLootFrame1-4, each with its item's icon; the item by roll (Mock.rolls).
 Mock.rolls = {}
 function GetLootRollItemLink(rollID) return Mock.rolls[rollID] end
+function GroupLootFrame_SetupItemDisplay(frame) return frame.rollID ~= nil end
 for index = 1, 4 do
 	local frame = CreateFrame("Frame", "GroupLootFrame" .. index, UIParent)
 	frame.IconFrame = CreateFrame("Button", nil, frame)
+	frame:SetScript("OnShow", function(self) GroupLootFrame_SetupItemDisplay(self) end)
 	frame:Hide()
+end
+-- The gamepad's roll cards (Mock.RollCard): set up by the same function, never shown as frames 1-4.
+function Mock.RollCard(rollID)
+	local card = CreateFrame("Frame", nil, UIParent)
+	card.IconFrame = CreateFrame("Button", nil, card)
+	card.rollID = rollID
+	GroupLootFrame_SetupItemDisplay(card)
+	return card
 end
 function GameTooltip:SetBagItem(bag, slot)
 	local item = Mock.bagItems[bag .. ":" .. slot]

@@ -6,9 +6,11 @@ local _, ns = ...
 	green arrow at its top left: in the bags, in the loot window and on a group loot roll.
 
 	Each arrow is the journal's own texture on Blizzard's button, kept in a table of the journal's:
-	nothing of Blizzard's is changed or written to. The bags are followed through each bag frame's
-	UpdateItems, the rolls through their frames' OnShow (both hooked, not replaced), the loot
-	window by the loot events. Shown unless the player turns them off in the journal's options.
+	nothing of Blizzard's is changed or written to. Followed through Blizzard's own functions,
+	hooked, not replaced: each bag frame's UpdateItems; the loot window's item rows' Init, which
+	runs for every row shown, a row the list takes back for another slot as it scrolls too; and
+	GroupLootFrame_SetupItemDisplay, which sets up a roll's item on the roll frames and on the
+	gamepad's roll cards alike. Shown unless the player turns them off in the journal's options.
 ]]
 
 local UpgradeArrows = {}
@@ -30,11 +32,12 @@ function UpgradeArrows.SetShows(shown)
 	UpgradeArrows:Refresh()
 end
 
--- The arrow on a button, made the first time one is needed, at its top left as the bags' own sits.
+-- The arrow on a button, made the first time one is needed, where the bags' own sits: its top
+-- left, at its sublevel, under the cover a bag search lays on what does not match.
 local function Arrow(button)
 	local arrow = arrows[button]
 	if not arrow then
-		arrow = button:CreateTexture(nil, "OVERLAY", nil, 7)
+		arrow = button:CreateTexture(nil, "OVERLAY", nil, 1)
 		if ns.AtlasExists(ATLAS) then
 			arrow:SetAtlas(ATLAS, true)
 		else
@@ -62,6 +65,10 @@ function UpgradeArrows:Marked(button)
 	return arrows[button] ~= nil and arrows[button]:IsShown()
 end
 
+function UpgradeArrows:ArrowOf(button)
+	return arrows[button]
+end
+
 -- A bag frame's items, after Blizzard has drawn them.
 local function MarkBag(frame)
 	if not frame:IsShown() then return end
@@ -71,15 +78,16 @@ local function MarkBag(frame)
 	end
 end
 
--- The loot window's rows: each row's item button and the loot slot it shows.
+-- A loot window row: its item button and the loot slot it shows now.
+local function MarkLootRow(row)
+	local slot = row.GetSlotIndex and row:GetSlotIndex()
+	local isItem = slot and GetLootSlotType(slot) == LOOT_ITEM
+	UpgradeArrows:Mark(row.Item, isItem and GetLootSlotLink(slot) or nil)
+end
+
 local function MarkLoot()
 	local scrollBox = LootFrame and LootFrame:IsShown() and LootFrame.ScrollBox
-	if not (scrollBox and scrollBox.ForEachFrame) then return end
-	scrollBox:ForEachFrame(function(row)
-		local slot = row.GetSlotIndex and row:GetSlotIndex()
-		local isItem = slot and GetLootSlotType(slot) == LOOT_ITEM
-		UpgradeArrows:Mark(row.Item, isItem and GetLootSlotLink(slot) or nil)
-	end)
+	if scrollBox and scrollBox.ForEachFrame then scrollBox:ForEachFrame(MarkLootRow) end
 end
 
 local function MarkRoll(frame)
@@ -93,6 +101,13 @@ function UpgradeArrows:Refresh()
 	for _, frame in ipairs(rollFrames) do
 		if frame:IsShown() then MarkRoll(frame) end
 	end
+	local cards = GamepadGroupLootRollFrame and GamepadGroupLootRollFrame:IsShown() and GamepadGroupLootRollFrame.ScrollBox
+	if cards and cards.ForEachFrame then cards:ForEachFrame(MarkRoll) end
+end
+
+-- The loot window's item rows take their mixin's Init when made: hooked before any is.
+if LootFrameItemElementMixin and LootFrameItemElementMixin.Init then
+	hooksecurefunc(LootFrameItemElementMixin, "Init", MarkLootRow)
 end
 
 function UpgradeArrows:Hook()
@@ -106,10 +121,13 @@ function UpgradeArrows:Hook()
 			bagFrames[#bagFrames + 1] = frame
 		end
 	end
+	-- A roll's item is set up by one function for the roll frames and the gamepad's cards.
+	local rollHooked = type(GroupLootFrame_SetupItemDisplay) == "function"
+	if rollHooked then hooksecurefunc("GroupLootFrame_SetupItemDisplay", MarkRoll) end
 	for index = 1, NUM_GROUP_LOOT_FRAMES or 4 do
 		local frame = _G["GroupLootFrame" .. index]
 		if type(frame) == "table" and frame.HookScript then
-			frame:HookScript("OnShow", MarkRoll)
+			if not rollHooked then frame:HookScript("OnShow", MarkRoll) end
 			rollFrames[#rollFrames + 1] = frame
 		end
 	end

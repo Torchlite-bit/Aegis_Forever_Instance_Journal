@@ -3637,15 +3637,25 @@ end)()
 		check(UA:Marked(bagCape) and not UA:Marked(bagRobe) and not UA:Marked(bagWorn),
 			"an upgrade in the bags gets the green arrow; one the class cannot use, or no better, does not")
 		Mock.lootSlots = { { link = Mock.ItemLink(CAPE), name = "Cape" }, { link = Mock.ItemLink(WORN_CAPE), name = "Old" } }
-		local lootRows = { Mock.LootRow(1), Mock.LootRow(2) }
 		LootFrame:Show()
-		Mock.Fire("LOOT_OPENED")
-		Mock.RunTimers(0)
+		local lootRows = { Mock.LootRow(1), Mock.LootRow(2) }
 		check(UA:Marked(lootRows[1].Item) and not UA:Marked(lootRows[2].Item), "and in the loot window")
+		-- Scrolled, the list gives a row another slot: the arrow follows the slot, not the row
+		Mock.lootSlots[3] = { link = Mock.ItemLink(WORN_CAPE), name = "Old" }
+		Mock.LootRow(3, lootRows[1])
+		Mock.LootRow(1, lootRows[2])
+		check(not UA:Marked(lootRows[1].Item) and UA:Marked(lootRows[2].Item), "a row scrolled to another slot is marked for it")
+		Mock.LootRow(1, lootRows[1])
+		Mock.LootRow(2, lootRows[2])
 		Mock.rolls[7] = Mock.ItemLink(CAPE)
 		GroupLootFrame1.rollID = 7
 		GroupLootFrame1:Show()
 		check(UA:Marked(GroupLootFrame1.IconFrame), "and on a roll")
+		local card = Mock.RollCard(7)
+		check(UA:Marked(card.IconFrame), "and on the gamepad's roll cards")
+		local arrow = UA:ArrowOf(card.IconFrame)
+		check(arrow._atlas == "bags-greenarrow" and arrow._layer == "OVERLAY" and arrow._subLevel == 1,
+			"the bags' own arrow where it sits, under the cover a search lays: " .. tostring(arrow._subLevel))
 		Mock.settings.AEGIS_JOURNAL_UPGRADE_ARROWS:SetValue(false)
 		check(not UA:Marked(bagCape) and not UA:Marked(lootRows[1].Item) and not UA:Marked(GroupLootFrame1.IconFrame),
 			"turned off in the options: gone everywhere at once")
@@ -3984,6 +3994,8 @@ end)()
 			return false
 		end
 		check(editor.ShowGains:GetChecked() and GainLine(), "each spec's worth in the Gear Finder's tooltips, the box ticked")
+		local function Told() return (Mock.settingsNotified.AEGIS_JOURNAL_ITEM_TIPS or 0) end
+		local toldBefore = Told()
 		editor.ShowGains:SetChecked(false)
 		editor.ShowGains:_RunScript("OnClick")
 		check(ns.db.hideGearTipGains and not GainLine(), "unticked: the tooltips leave out what items are worth")
@@ -3992,10 +4004,12 @@ end)()
 		Mock.settings.AEGIS_JOURNAL_ITEM_TIPS:SetValue(true)
 		check(editor.ShowGains:GetChecked(), "ticked in the options: the editor's box follows at once")
 		Mock.settings.AEGIS_JOURNAL_ITEM_TIPS:SetValue(false)
-		check(not editor.ShowGains:GetChecked(), "and unticked")
+		check(not editor.ShowGains:GetChecked() and Told() == toldBefore + 1,
+			"and unticked; the editor's change told to the options, theirs not told back to them")
 		editor.ShowGains:SetChecked(true)
 		editor.ShowGains:_RunScript("OnClick")
 		check(not ns.db.hideGearTipGains and GainLine(), "ticked again: back")
+		check(Told() == toldBefore + 2, "and the options' box told of the editor's every change")
 
 		-- The window closes when the panel turns to another page; its button opens the Gear Finder
 		CharacterFrame:ShowSubFrame("ReputationFrame")
