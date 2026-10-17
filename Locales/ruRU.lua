@@ -20,6 +20,11 @@ L.KEY_CLAIMED = "Shift+J теперь открывает путеводител�
 L.KEY_TAKEN = "Shift+J уже назначена на %s. Выберите клавишу в Назначение клавиш > Модификации > Открыть путеводитель по подземельям."
 L.POSITION_RESET = "Положение окна сброшено."
 L.SLASH_HELP = "/aegis (или /ij) открывает путеводитель. /aegis record включает или выключает запись. /aegis reset возвращает окно на место по умолчанию. /aegis perf измеряет память и скорость путеводителя. /aegis where и /aegis taxi показывают, где вы стоите и точки полетов на карте. /aegis travel сохраняет корабль, дирижабль, подземку или портал для карты мира. /aegis items находит предметы из списка, о которых сервер ничего не знает. /aegis gear открывает поиск снаряжения, /aegis weights — настройку приоритетов характеристик; /aegis gearscan сохраняет данные экипировки для проверки расчета улучшений."
+L.AREAS_START = "Поиск в клиенте идентификаторов для %d названий зон журнала..."
+L.AREAS_DONE = "Найдены идентификаторы %d из %d названий зон. Введите /reload, чтобы сохранить их."
+L.AREAS_MISSING = "Не найдено: %s."
+L.AREAS_SCANNING = "Поиск названий зон еще не завершен."
+L.AREAS_ENGLISH = "Запустите /aegis areas в английском клиенте: команда ищет английские названия."
 L.ITEMS_START = "Запрос к серверу о %d предметах из списка путеводителя. Ответ придет примерно через %d сек.; можете продолжать игру."
 L.ITEMS_SCANNING = "Ожидание ответа от сервера; данные появятся через секунду."
 L.ITEMS_DONE = "Из %d предметов сервер ничего не знает о %d: скорее всего, их еще нет на сервере Forever. Путеводитель скрывает их, пока сервер или записанное прохождение не подтвердят их наличие. Полный список будет сохранен в файл при следующем /reload или выходе из игры."
@@ -568,4 +573,74 @@ L.EQUIP_PATTERNS = {
 	{ "парир.-на {n}%%", "PARRY" },
 	{ "блок.-на {n}%%", "BLOCK" },
 	{ "блок.-на {n}", "BLOCK VALUE" },
+}
+
+-- The rooms inside dungeons, as the client names them where the player stands: "You are
+-- here" and a wing's areas match these (Core/Areas.lua). Unconfirmed ones are listed in
+-- the translation's to-check list.
+L.AREA_NAMES = {
+	["Aku'mai's Lair"] = "Логово Аку'Мая",
+	["Anvilmar's Rest"] = "Покой Анвилмара",
+	["Athenaeum"] = "Атенеум",
+	["Blackrock Stadium"] = "Стадион Черной горы",
+	["Capital Gardens"] = "Столичные сады",
+	["Cavern of Mists"] = "Пещера Туманов",
+	["Chamber of Atonement"] = "Зал Искупления",
+	["Chamber of Battle"] = "Зал Битвы",
+	["Chapel Gardens"] = "Сады часовни",
+	["Court of the Highborne"] = "Двор Высокорожденных",
+	["Crag of the Everliving"] = "Утес Неумирающего",
+	["Crusader's Armory"] = "Оружейная крестоносцев",
+	["Crusader's Chapel"] = "Часовня крестоносцев",
+	["Crusaders' Square"] = "Площадь Крестоносцев",
+	["Dark Iron Ingress"] = "Проход Темного Железа",
+	["Defias Hideout"] = "Укрытие Братства",
+	["Dragonspire Hall"] = "Зал Драконьего Шпиля",
+	["Dreamer's Rock"] = "Камень Мечтателя",
+	["Elders' Square"] = "Площадь Старейшин",
+	["Engineering Labs"] = "Инженерные лаборатории",
+	["Festival Lane"] = "Праздничный переулок",
+	["Footman's Armory"] = "Оружейная пехотинцев",
+	["Forlorn Cloister"] = "Заброшенная галерея",
+	["Gallery of Treasures"] = "Галерея сокровищ",
+	["Goblin Foundry"] = "Гоблинская литейная",
+	["Gordok Commons"] = "Общий зал Гордока",
+	["Hall of Champions"] = "Зал Чемпионов",
+	["Halycon's Lair"] = "Логово Халикон",
+	["Honor's Tomb"] = "Гробница Чести",
+	["Hordemar City"] = "Город Хордемар",
+	["Huntsman's Cloister"] = "Галерея Охотника",
+	["King's Square"] = "Королевская площадь",
+	["Launch Bay"] = "Пусковой отсек",
+	["Market Row"] = "Торговый ряд",
+	["Mast Room"] = "Мачтовый зал",
+	["Mok'Doom"] = "Мок'Дум",
+	["Moonshrine Ruins"] = "Руины Лунного святилища",
+	["Moonshrine Sanctum"] = "Святилище Лунного Света",
+	["Pit of Fangs"] = "Яма Клыков",
+	["Prison of Immol'thar"] = "Темница Имол'тара",
+	["Reliquary of Kings"] = "Реликварий королей",
+	["Screaming Gully"] = "Кричащая лощина",
+	["Skitterweb Tunnels"] = "Туннели Снующей Паутины",
+	["Slaughter Square"] = "Площадь Бойни",
+	["Tazz'Alaor"] = "Тазз'Алаор",
+	["Tazz'Alor"] = "Тазз'Алор",
+	["The Clockwerk Run"] = "Заводной проход",
+	["The Dormitory"] = "Общежитие",
+	["The Drowned Sacellum"] = "Затопленное святилище",
+	["The Forgotten Pool"] = "Забытый пруд",
+	["The Gauntlet"] = "Испытание",
+	["The Hall of Gears"] = "Зал Шестеренок",
+	["The Hall of Lights"] = "Зал Света",
+	["The High Seat"] = "Высокий трон",
+	["The Hoard"] = "Сокровищница",
+	["The Pool of Ask'ar"] = "Пруд Аск'ара",
+	["The Rookery"] = "Гнездовье",
+	["The Scarlet Bastion"] = "Бастион Алого ордена",
+	["The Shrine of Eldretharr"] = "Святилище Эльдретарра",
+	["The Slaughter House"] = "Бойня",
+	["The Storehouse"] = "Склад",
+	["Tinkers' Court"] = "Двор Механиков",
+	["Training Grounds"] = "Тренировочная площадка",
+	["Warpwood Quarter"] = "Криводревесный квартал",
 }

@@ -93,7 +93,8 @@ end
 -- The rooms inside dungeons, in the client's words (Core/Areas.lua): each one the journal uses,
 -- and found again by its translated name. Two English spellings of one room (Lower Blackrock
 -- Spire's Tazz'Alaor and Tazz'Alor) may share it: either is found.
-if L.AREA_NAMES then
+check(type(L.AREA_NAMES) == "table", "the rooms inside dungeons named in " .. LANGUAGE)
+do
 	local used, stray = {}, {}
 	for _, name in ipairs(ns.AreaNamesUsed()) do used[name] = true end
 	for english, translated in pairs(L.AREA_NAMES) do
