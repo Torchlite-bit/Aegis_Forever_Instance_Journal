@@ -46,6 +46,36 @@ def scans():
         yield path, {name: list(ids.values() if isinstance(ids, dict) else ids) for name, ids in found.items()}
 
 
+def used_names():
+    """Every English area name the journal uses, as Core/Areas.lua lists them (the addon run in Lua)."""
+    import io
+    import smoke_test
+    scenario = os.path.join(ROOT, "Tools", "area_names.lua")
+    buf, real = io.StringIO(), sys.stdout
+    sys.stdout = buf
+    try:
+        smoke_test.run_pass(scenario)
+    finally:
+        sys.stdout = real
+    return [line[len("AREA "):] for line in buf.getvalue().splitlines() if line.startswith("AREA ")]
+
+
+def full_lists():
+    """Every saved full list of the client's areas (AegisJournalDB.allAreas: id -> name, from a /run
+    line on an English client): (path, {name: [ids]})."""
+    files = sorted(glob.glob(AEGIS_SAVED)) + glob.glob(os.path.join(RECORDINGS, "**", "Aegis_Forever_Instance_Journal.lua"),
+                                                     recursive=True)
+    for path in files:
+        if '["allAreas"] = {' not in read(path):
+            continue
+        names = table_from_block(path, '["allAreas"] = {') or {}
+        by_name = {}
+        for area_id, name in (names.items() if isinstance(names, dict) else enumerate(names, 1)):
+            if isinstance(name, str):
+                by_name.setdefault(name, []).append(int(area_id))
+        yield path, by_name
+
+
 def main():
     ids = baked()
     before = sum(len(v) for v in ids.values())
@@ -53,6 +83,18 @@ def main():
         for name, new in found.items():
             ids[name] = sorted(set(ids.get(name, [])) | {int(i) for i in new})
         print("read %d names from %s" % (len(found), path))
+    lists = list(full_lists())
+    if lists:
+        wanted = used_names()
+        for path, by_name in lists:
+            hits = [name for name in wanted if name in by_name]
+            for name in hits:
+                ids[name] = sorted(set(ids.get(name, [])) | set(by_name[name]))
+            print("found %d of the journal's %d area names among the %d areas listed in %s" % (
+                len(hits), len(wanted), sum(len(v) for v in by_name.values()), path))
+            missing = [name for name in wanted if name not in by_name]
+            if missing:
+                print("not listed: " + ", ".join(missing))
     build_data.write(os.path.basename(OUT), HEADER + "ns.AREA_IDS = %s\n" % lua(dict(sorted(ids.items()))),
                      folder=os.path.dirname(OUT))
     print("%d area names, %d ids (%d before)" % (len(ids), sum(len(v) for v in ids.values()), before))
