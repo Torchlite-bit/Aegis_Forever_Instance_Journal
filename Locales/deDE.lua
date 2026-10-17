@@ -20,7 +20,12 @@ L.BINDING_TOGGLE = "Dungeonkompendium ein-/ausblenden"
 L.KEY_CLAIMED = "Umschalt+J öffnet jetzt das Dungeonkompendium."
 L.KEY_TAKEN = "Umschalt+J ist bereits mit %s belegt. Wählt eine Taste unter Tastenbelegungen > AddOns > Dungeonkompendium ein-/ausblenden."
 L.POSITION_RESET = "Fensterposition zurückgesetzt."
-L.SLASH_HELP = "/aegis öffnet das Kompendium. /aegis record startet oder beendet die Aufzeichnung. /aegis reset setzt das Fenster an seinen Standardplatz zurück. /aegis perf misst Speicherbedarf und Geschwindigkeit des Kompendiums. /aegis where und /aegis taxi melden, wo Ihr steht und welche Flugpunkte auf Eurer Karte liegen. /aegis travel speichert ein Schiff, einen Zeppelin, eine Bahn oder ein Portal für die Weltkarte. /aegis items sucht die aufgeführten Gegenstände, die der Server nicht kennt. /aegis gear öffnet die Ausrüstungssuche, /aegis weights ihre Wertgewichtung; /aegis gearscan speichert, was sie aus Eurer Ausrüstung ausliest, um ihre Bewertung zu prüfen. /aegis options öffnet die Optionen des Kompendiums."
+L.SLASH_HELP = "/aegis (oder /ij) öffnet das Kompendium. /aegis record startet oder beendet die Aufzeichnung. /aegis reset setzt das Fenster an seinen Standardplatz zurück. /aegis perf misst Speicherbedarf und Geschwindigkeit des Kompendiums. /aegis where und /aegis taxi melden, wo Ihr steht und welche Flugpunkte auf Eurer Karte liegen. /aegis travel speichert ein Schiff, einen Zeppelin, eine Bahn oder ein Portal für die Weltkarte. /aegis items sucht die aufgeführten Gegenstände, die der Server nicht kennt. /aegis gear öffnet die Ausrüstungssuche, /aegis weights ihre Wertgewichtung; /aegis gearscan speichert, was sie aus Eurer Ausrüstung ausliest, um ihre Bewertung zu prüfen. /aegis options öffnet die Optionen des Kompendiums."
+L.AREAS_START = "Die IDs der %d Gebietsnamen des Kompendiums werden im Client gesucht..."
+L.AREAS_DONE = "IDs für %d der %d Gebietsnamen gefunden. Gebt /reload ein, um sie zu speichern."
+L.AREAS_MISSING = "Nicht gefunden: %s."
+L.AREAS_SCANNING = "Die Gebietsnamen werden noch gesucht."
+L.AREAS_ENGLISH = "Führt /aegis areas auf einem englischen Client aus: Die gesuchten Namen sind englisch."
 L.ITEMS_START = "Der Server wird nach den %d Gegenständen gefragt, die das Kompendium aufführt. Die Antwort kommt in etwa %d Sekunden; spielt ruhig weiter."
 L.ITEMS_SCANNING = "Der Server wird noch gefragt; die Antwort kommt gleich."
 L.ITEMS_DONE = "Von %d Gegenständen kennt der Server %d nicht: Wahrscheinlich gibt es sie in Forever noch nicht. Das Kompendium blendet sie aus, bis der Server oder ein aufgezeichneter Durchlauf sie bestätigt. Die vollständige Liste kommt beim nächsten /reload oder Ausloggen in die gespeicherte Datei."
@@ -440,4 +445,74 @@ L.EQUIP_PATTERNS = {
 	{ "blockwert[^u].-um {n}", "BLOCK VALUE" },
 	{ "angriffstempo.-um {n}", "HASTE" },
 	{ "angriffsgeschwindigkeit.-um {n}", "HASTE" },
+}
+
+-- The rooms inside dungeons, as the client names them where the player stands: "You are
+-- here" and a wing's areas match these (Core/Areas.lua). Unconfirmed ones are listed in
+-- the translation's to-check list.
+L.AREA_NAMES = {
+	["Aku'mai's Lair"] = "Aku'mais Hort",
+	["Anvilmar's Rest"] = "Ambossars Ruhestätte",
+	["Athenaeum"] = "Athenaeum",
+	["Blackrock Stadium"] = "Schwarzfelsstadion",
+	["Capital Gardens"] = "Hauptstadtgärten",
+	["Cavern of Mists"] = "Nebelhöhle",
+	["Chamber of Atonement"] = "Kammer der Buße",
+	["Chamber of Battle"] = "Kammer der Schlacht",
+	["Chapel Gardens"] = "Kapellengärten",
+	["Court of the Highborne"] = "Hof der Hochgeborenen",
+	["Crag of the Everliving"] = "Klippe des Ewiglebenden",
+	["Crusader's Armory"] = "Waffenkammer der Kreuzfahrer",
+	["Crusader's Chapel"] = "Kapelle der Kreuzfahrer",
+	["Crusaders' Square"] = "Platz der Kreuzfahrer",
+	["Dark Iron Ingress"] = "Zugang der Dunkeleisen",
+	["Defias Hideout"] = "Versteck der Defias",
+	["Dragonspire Hall"] = "Halle der Drachenspitze",
+	["Dreamer's Rock"] = "Fels des Träumers",
+	["Elders' Square"] = "Platz der Ältesten",
+	["Engineering Labs"] = "Ingenieurslabore",
+	["Festival Lane"] = "Festgasse",
+	["Footman's Armory"] = "Waffenkammer der Fußsoldaten",
+	["Forlorn Cloister"] = "Verlassener Kreuzgang",
+	["Gallery of Treasures"] = "Galerie der Schätze",
+	["Goblin Foundry"] = "Goblingießerei",
+	["Gordok Commons"] = "Gordokplatz",
+	["Hall of Champions"] = "Halle der Champions",
+	["Halycon's Lair"] = "Halycons Hort",
+	["Honor's Tomb"] = "Grab der Ehre",
+	["Hordemar City"] = "Stadt Hordemar",
+	["Huntsman's Cloister"] = "Kreuzgang des Jägers",
+	["King's Square"] = "Königsplatz",
+	["Launch Bay"] = "Startbucht",
+	["Market Row"] = "Marktgasse",
+	["Mast Room"] = "Mastraum",
+	["Mok'Doom"] = "Mok'Doom",
+	["Moonshrine Ruins"] = "Ruinen des Mondschreins",
+	["Moonshrine Sanctum"] = "Sanktum des Mondschreins",
+	["Pit of Fangs"] = "Grube der Fänge",
+	["Prison of Immol'thar"] = "Gefängnis von Immol'thar",
+	["Reliquary of Kings"] = "Reliquiar der Könige",
+	["Screaming Gully"] = "Schreiende Schlucht",
+	["Skitterweb Tunnels"] = "Huschnetztunnel",
+	["Slaughter Square"] = "Schlachthofplatz",
+	["Tazz'Alaor"] = "Tazz'Alaor",
+	["Tazz'Alor"] = "Tazz'Alor",
+	["The Clockwerk Run"] = "Der Uhrwerkgang",
+	["The Dormitory"] = "Der Schlafsaal",
+	["The Drowned Sacellum"] = "Das Versunkene Sacellum",
+	["The Forgotten Pool"] = "Der Vergessene Teich",
+	["The Gauntlet"] = "Der Spießrutenlauf",
+	["The Hall of Gears"] = "Die Halle der Zahnräder",
+	["The Hall of Lights"] = "Die Halle der Lichter",
+	["The High Seat"] = "Der Hohe Sitz",
+	["The Hoard"] = "Der Hort",
+	["The Pool of Ask'ar"] = "Der Teich von Ask'ar",
+	["The Rookery"] = "Die Brutstätte",
+	["The Scarlet Bastion"] = "Die Scharlachrote Bastion",
+	["The Shrine of Eldretharr"] = "Der Schrein von Eldretharr",
+	["The Slaughter House"] = "Das Schlachthaus",
+	["The Storehouse"] = "Das Lagerhaus",
+	["Tinkers' Court"] = "Tüftlerhof",
+	["Training Grounds"] = "Übungsplatz",
+	["Warpwood Quarter"] = "Wucherborkenviertel",
 }

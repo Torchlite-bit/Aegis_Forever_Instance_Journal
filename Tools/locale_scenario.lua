@@ -90,6 +90,18 @@ if L.EQUIP_PATTERNS then
 	check(#L.EQUIP_PATTERNS > 20 and #bad == 0, "the client's Equip: wordings, each one usable: " .. table.concat(bad, "; "))
 end
 
+-- The rooms inside dungeons, in the client's words (Core/Areas.lua): each one the journal uses,
+-- and found again by its translated name. Two English spellings of one room (Lower Blackrock
+-- Spire's Tazz'Alaor and Tazz'Alor) may share it: either is found.
+if L.AREA_NAMES then
+	local used, stray = {}, {}
+	for _, name in ipairs(ns.AreaNamesUsed()) do used[name] = true end
+	for english, translated in pairs(L.AREA_NAMES) do
+		if not used[english] or L.AREA_NAMES[ns.AreaKey(translated)] ~= translated then stray[#stray + 1] = english end
+	end
+	check(#stray == 0, "every translated room is one the journal uses, and is found by its name: " .. table.concat(stray, ", "))
+end
+
 -- The content: names laid over the data once it has loaded.
 local ragefire = ns.GetInstance("RagefireChasm")
 check(InLanguage(ragefire.name, ragefire.enName), "dungeon names in " .. LANGUAGE .. ": " .. tostring(ragefire.name))

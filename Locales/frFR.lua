@@ -20,7 +20,12 @@ L.BINDING_TOGGLE = "Ouvrir/fermer le journal des instances"
 L.KEY_CLAIMED = "Maj+J ouvre désormais le journal des instances."
 L.KEY_TAKEN = "Maj+J est déjà attribué à %s. Choisissez une touche dans Raccourcis > AddOns > Ouvrir/fermer le journal des instances."
 L.POSITION_RESET = "Position de la fenêtre réinitialisée."
-L.SLASH_HELP = "/aegis ouvre le journal. /aegis record lance ou arrête l'enregistrement. /aegis reset replace la fenêtre à son emplacement par défaut. /aegis perf mesure la mémoire et la vitesse du journal. /aegis where et /aegis taxi indiquent votre position et les points de vol de votre carte. /aegis travel enregistre un bateau, un zeppelin, un tram ou un portail pour la carte du monde. /aegis items repère les objets listés que le serveur ne connaît pas. /aegis gear ouvre la recherche d'équipement, /aegis weights ses poids de caractéristiques ; /aegis gearscan enregistre ce qu'elle lit sur votre équipement, pour vérifier ses calculs. /aegis options ouvre les options du journal."
+L.SLASH_HELP = "/aegis (ou /ij) ouvre le journal. /aegis record lance ou arrête l'enregistrement. /aegis reset replace la fenêtre à son emplacement par défaut. /aegis perf mesure la mémoire et la vitesse du journal. /aegis where et /aegis taxi indiquent votre position et les points de vol de votre carte. /aegis travel enregistre un bateau, un zeppelin, un tram ou un portail pour la carte du monde. /aegis items repère les objets listés que le serveur ne connaît pas. /aegis gear ouvre la recherche d'équipement, /aegis weights ses poids de caractéristiques ; /aegis gearscan enregistre ce qu'elle lit sur votre équipement, pour vérifier ses calculs. /aegis options ouvre les options du journal."
+L.AREAS_START = "Recherche des identifiants client des %d noms de zones du journal..."
+L.AREAS_DONE = "Identifiants trouvés pour %d des %d noms de zones. Tapez /reload pour les enregistrer."
+L.AREAS_MISSING = "Introuvables : %s."
+L.AREAS_SCANNING = "Recherche des noms de zones toujours en cours."
+L.AREAS_ENGLISH = "Lancez /aegis areas sur un client anglais : les noms recherchés sont en anglais."
 L.ITEMS_START = "Interrogation du serveur sur les %d objets listés par le journal. La réponse arrive dans environ %d secondes ; vous pouvez continuer à jouer."
 L.ITEMS_SCANNING = "Interrogation du serveur en cours ; la réponse arrive dans un instant."
 L.ITEMS_DONE = "Sur %d objets, le serveur n'en connaît pas %d : ils ne sont sans doute pas encore dans Forever. Le journal les masque jusqu'à ce que le serveur ou un parcours enregistré les confirme. La liste complète est écrite dans le fichier de sauvegarde à votre prochain /reload ou à votre déconnexion."
@@ -441,4 +446,74 @@ L.EQUIP_PATTERNS = {
 	{ "de {n}.-valeur de blocage", "BLOCK VALUE" },
 	{ "vitesse d.-attaque.-de {n}", "HASTE" },
 	{ "de {n}.-vitesse d.-attaque", "HASTE" },
+}
+
+-- The rooms inside dungeons, as the client names them where the player stands: "You are
+-- here" and a wing's areas match these (Core/Areas.lua). Unconfirmed ones are listed in
+-- the translation's to-check list.
+L.AREA_NAMES = {
+	["Aku'mai's Lair"] = "Antre d'Aku'mai",
+	["Anvilmar's Rest"] = "Repos d'Anvilmar",
+	["Athenaeum"] = "Athénée",
+	["Blackrock Stadium"] = "Stade de Rochenoire",
+	["Capital Gardens"] = "Jardins de la Capitale",
+	["Cavern of Mists"] = "Caverne des brumes",
+	["Chamber of Atonement"] = "Chambre d'expiation",
+	["Chamber of Battle"] = "Chambre de bataille",
+	["Chapel Gardens"] = "Jardins de la chapelle",
+	["Court of the Highborne"] = "Cour des Bien-nés",
+	["Crag of the Everliving"] = "Escarpement de l'Immortel",
+	["Crusader's Armory"] = "Armurerie du croisé",
+	["Crusader's Chapel"] = "Chapelle du croisé",
+	["Crusaders' Square"] = "Place des croisés",
+	["Dark Iron Ingress"] = "Accès des Sombrefer",
+	["Defias Hideout"] = "Planque des Défias",
+	["Dragonspire Hall"] = "Salle de la Flèche-du-Dragon",
+	["Dreamer's Rock"] = "Rocher du rêveur",
+	["Elders' Square"] = "Place des anciens",
+	["Engineering Labs"] = "Laboratoires d'ingénierie",
+	["Festival Lane"] = "Allée du festival",
+	["Footman's Armory"] = "Armurerie du fantassin",
+	["Forlorn Cloister"] = "Cloître désolé",
+	["Gallery of Treasures"] = "Galerie des trésors",
+	["Goblin Foundry"] = "Fonderie gobeline",
+	["Gordok Commons"] = "Communs gordok",
+	["Hall of Champions"] = "Salle des champions",
+	["Halycon's Lair"] = "Antre d'Halycon",
+	["Honor's Tomb"] = "Tombe de l'honneur",
+	["Hordemar City"] = "Cité de Hordemar",
+	["Huntsman's Cloister"] = "Cloître du veneur",
+	["King's Square"] = "Place du roi",
+	["Launch Bay"] = "Aire de lancement",
+	["Market Row"] = "Allée du marché",
+	["Mast Room"] = "Salle du mât",
+	["Mok'Doom"] = "Mok'Doom",
+	["Moonshrine Ruins"] = "Ruines du sanctuaire lunaire",
+	["Moonshrine Sanctum"] = "Sanctum du sanctuaire lunaire",
+	["Pit of Fangs"] = "Fosse aux crocs",
+	["Prison of Immol'thar"] = "Prison d'Immol'thar",
+	["Reliquary of Kings"] = "Reliquaire des rois",
+	["Screaming Gully"] = "Ravine hurlante",
+	["Skitterweb Tunnels"] = "Tunnels de Grouilletoile",
+	["Slaughter Square"] = "Place du massacre",
+	["Tazz'Alaor"] = "Tazz'Alaor",
+	["Tazz'Alor"] = "Tazz'Alor",
+	["The Clockwerk Run"] = "Le couloir des rouages",
+	["The Dormitory"] = "Le Dortoir",
+	["The Drowned Sacellum"] = "Le sacellum englouti",
+	["The Forgotten Pool"] = "Le bassin oublié",
+	["The Gauntlet"] = "Le Défilé",
+	["The Hall of Gears"] = "La salle des engrenages",
+	["The Hall of Lights"] = "La salle des lumières",
+	["The High Seat"] = "Le Haut-Siège",
+	["The Hoard"] = "Le Trésor",
+	["The Pool of Ask'ar"] = "Le bassin d'Ask'ar",
+	["The Rookery"] = "Le Nid",
+	["The Scarlet Bastion"] = "Le bastion écarlate",
+	["The Shrine of Eldretharr"] = "Le sanctuaire d'Eldretharr",
+	["The Slaughter House"] = "L'Abattoir",
+	["The Storehouse"] = "L'Entrepôt",
+	["Tinkers' Court"] = "Cour des bricoleurs",
+	["Training Grounds"] = "Terrain d'entraînement",
+	["Warpwood Quarter"] = "Quartier de Crochebois",
 }

@@ -20,7 +20,12 @@ L.BINDING_TOGGLE = "打开/关闭地下城手册"
 L.KEY_CLAIMED = "现在按Shift+J即可打开地下城手册。"
 L.KEY_TAKEN = "Shift+J已绑定到%s。请在“按键设置 > 插件 > 打开/关闭地下城手册”中另选一个按键。"
 L.POSITION_RESET = "窗口位置已重置。"
-L.SLASH_HELP = "/aegis 打开手册。/aegis record 开始或停止记录。/aegis reset 将窗口移回默认位置。/aegis perf 测量手册的内存占用和速度。/aegis where 和 /aegis taxi 报告你所在的位置和地图上的飞行点。/aegis travel 为世界地图保存一处船、飞艇、地铁或传送门。/aegis items 找出手册所列物品中服务器一无所知的那些。/aegis gear 打开装备查找器，/aegis weights 打开其属性权重；/aegis gearscan 保存它从你的装备中读取的内容，用于检查其评分。/aegis options 打开手册的选项。"
+L.SLASH_HELP = "/aegis（或 /ij）打开手册。/aegis record 开始或停止记录。/aegis reset 将窗口移回默认位置。/aegis perf 测量手册的内存占用和速度。/aegis where 和 /aegis taxi 报告你所在的位置和地图上的飞行点。/aegis travel 为世界地图保存一处船、飞艇、地铁或传送门。/aegis items 找出手册所列物品中服务器一无所知的那些。/aegis gear 打开装备查找器，/aegis weights 打开其属性权重；/aegis gearscan 保存它从你的装备中读取的内容，用于检查其评分。/aegis options 打开手册的选项。"
+L.AREAS_START = "正在为手册中的%d个区域名称查找其在客户端中的ID……"
+L.AREAS_DONE = "已找到%d个区域名称的ID（共%d个）。输入/reload即可保存。"
+L.AREAS_MISSING = "未找到：%s。"
+L.AREAS_SCANNING = "仍在查找区域名称。"
+L.AREAS_ENGLISH = "请在英文客户端上运行 /aegis areas：它查找的名称是英文的。"
 L.ITEMS_START = "正在向服务器查询手册所列的%d件物品。大约%d秒后会有结果，你可以继续游戏。"
 L.ITEMS_SCANNING = "仍在查询服务器，结果马上就到。"
 L.ITEMS_DONE = "在%d件物品中，服务器对其中%d件一无所知：它们很可能尚未加入Forever。在服务器或一次记录下的通关确认之前，手册会隐藏它们。完整列表将在你下次/reload或登出时写入保存文件。"
@@ -431,4 +436,74 @@ L.EQUIP_PATTERNS = {
 	{ "格挡.-几率.-提高%s*{n}", "BLOCK" },
 	{ "格挡值.-提高%s*{n}", "BLOCK VALUE" },
 	{ "攻击速度.-提高%s*{n}", "HASTE" },
+}
+
+-- The rooms inside dungeons, as the client names them where the player stands: "You are
+-- here" and a wing's areas match these (Core/Areas.lua). Unconfirmed ones are listed in
+-- the translation's to-check list.
+L.AREA_NAMES = {
+	["Aku'mai's Lair"] = "阿库麦尔的巢穴",
+	["Anvilmar's Rest"] = "安威玛尔安息之地",
+	["Athenaeum"] = "藏书馆",
+	["Blackrock Stadium"] = "黑石竞技场",
+	["Capital Gardens"] = "中心花园",
+	["Cavern of Mists"] = "迷雾洞穴",
+	["Chamber of Atonement"] = "赎罪大厅",
+	["Chamber of Battle"] = "战斗大厅",
+	["Chapel Gardens"] = "礼拜堂花园",
+	["Court of the Highborne"] = "上层精灵庭院",
+	["Crag of the Everliving"] = "永生者峭壁",
+	["Crusader's Armory"] = "十字军军械库",
+	["Crusader's Chapel"] = "十字军礼拜堂",
+	["Crusaders' Square"] = "十字军广场",
+	["Dark Iron Ingress"] = "黑铁入口",
+	["Defias Hideout"] = "迪菲亚藏身处",
+	["Dragonspire Hall"] = "龙塔大厅",
+	["Dreamer's Rock"] = "沉睡者之岩",
+	["Elders' Square"] = "长者广场",
+	["Engineering Labs"] = "工程实验室",
+	["Festival Lane"] = "节日小道",
+	["Footman's Armory"] = "步兵军械库",
+	["Forlorn Cloister"] = "荒凉回廊",
+	["Gallery of Treasures"] = "珍宝陈列馆",
+	["Goblin Foundry"] = "地精铸造厂",
+	["Gordok Commons"] = "戈多克议会",
+	["Hall of Champions"] = "勇士大厅",
+	["Halycon's Lair"] = "哈雷肯的巢穴",
+	["Honor's Tomb"] = "荣誉之墓",
+	["Hordemar City"] = "霍德玛尔城",
+	["Huntsman's Cloister"] = "猎手回廊",
+	["King's Square"] = "国王广场",
+	["Launch Bay"] = "发射台",
+	["Market Row"] = "市场街",
+	["Mast Room"] = "桅杆室",
+	["Mok'Doom"] = "莫克杜姆",
+	["Moonshrine Ruins"] = "月神殿废墟",
+	["Moonshrine Sanctum"] = "月神圣殿",
+	["Pit of Fangs"] = "尖牙之坑",
+	["Prison of Immol'thar"] = "伊莫塔尔的监牢",
+	["Reliquary of Kings"] = "诸王圣物堂",
+	["Screaming Gully"] = "尖啸沟壑",
+	["Skitterweb Tunnels"] = "蛛网隧道",
+	["Slaughter Square"] = "屠杀广场",
+	["Tazz'Alaor"] = "塔萨洛尔",
+	["Tazz'Alor"] = "塔萨洛尔",
+	["The Clockwerk Run"] = "发条小径",
+	["The Dormitory"] = "宿舍",
+	["The Drowned Sacellum"] = "沉没圣祠",
+	["The Forgotten Pool"] = "被遗忘的池塘",
+	["The Gauntlet"] = "试炼之路",
+	["The Hall of Gears"] = "齿轮大厅",
+	["The Hall of Lights"] = "圣光大厅",
+	["The High Seat"] = "王座大厅",
+	["The Hoard"] = "宝库",
+	["The Pool of Ask'ar"] = "阿斯卡之池",
+	["The Rookery"] = "孵化室",
+	["The Scarlet Bastion"] = "血色堡垒",
+	["The Shrine of Eldretharr"] = "埃德雷萨之祠",
+	["The Slaughter House"] = "屠宰场",
+	["The Storehouse"] = "仓库",
+	["Tinkers' Court"] = "工匠议会",
+	["Training Grounds"] = "训练场",
+	["Warpwood Quarter"] = "扭木广场",
 }
