@@ -38,8 +38,9 @@ local function Call(fn, ...)
 end
 
 local hooked, weightsOf, scaleOf = false, {}, {}
--- While the journal is giving Pawn its scales; what it gave last.
-local pushing, pushed = false, nil
+-- While the journal is giving Pawn its scales; what it gave last; how many times it changed them,
+-- and how many of those the player was last asked to reload for (PawnLink:AskReload).
+local pushing, pushed, changes, askedAt = false, nil, 0, 0
 
 -- Pawn's scales or settings changed: its weights are read again, and the journal scores anew
 -- (not for the journal's own changes to its scales in Pawn).
@@ -74,6 +75,7 @@ function PawnLink:SetSource(source)
 	self:Push()
 	ns.ItemScore:Changed()
 	if Settings and Settings.NotifyUpdate then pcall(Settings.NotifyUpdate, "AEGIS_JOURNAL_PAWN_WEIGHTS") end
+	self:AskReload()
 end
 
 -- Whether the Gear Finder scores with Pawn's weights now.
@@ -254,16 +256,57 @@ function PawnLink:Push()
 	pushing = true
 	local ok = pcall(PushNow, spec, specs, values)
 	pushing = false
-	if ok then pushed = signature end
+	if ok then pushed, changes = signature, changes + 1 end
 end
 
--- The journal as one of Pawn's scale providers; Pawn calls back for the scales.
+-- How many times the journal has changed its scales in Pawn this session.
+function PawnLink:Changes()
+	return changes
+end
+
+-- The journal as one of Pawn's scale providers; Pawn calls back for the scales. What it gives Pawn
+-- at login is no change to ask a reload for.
 function PawnLink:Register()
 	if registered or not self:Present() or type(PawnAddPluginScaleProvider) ~= "function" then return end
 	registered = true
 	Call(PawnAddPluginScaleProvider, PROVIDER, L.OPTIONS_TITLE, function() PawnLink:Push() end)
 	self:Push()
+	askedAt = changes
 end
+
+--[[
+	Baganator draws Pawn's arrows in its bags, and keeps Pawn's answer for each item until the gear
+	worn changes; nothing else clears it. So after the player changes the journal's scales in Pawn
+	(its box for stat weights in tooltips, whose weights are used, a spec picked, weights edited),
+	its arrows follow only after a reload: the player is asked for one, once for the changes since
+	they were last asked, or since `since` (PawnLink:Changes() when a window that changes them
+	opened). Pawn's own bag arrows and its tooltips follow at once.
+]]
+local RELOAD = "AEGIS_JOURNAL_RELOAD_FOR_PAWN"
+
+local function BaganatorKeepsPawnArrows()
+	local api = type(Baganator) == "table" and type(Baganator.API) == "table" and Baganator.API
+	if not api then return false end
+	return Call(api.IsCornerWidgetActive, "pawn") == true or Call(api.IsUpgradePluginActive, "pawn") == true
+end
+
+function PawnLink:AskReload(since)
+	if changes <= math.max(since or 0, askedAt) then return end
+	if not (self:Present() and BaganatorKeepsPawnArrows()) then return end
+	askedAt = changes
+	-- After the click or menu that led here has closed its own popup.
+	C_Timer.After(0, function() StaticPopup_Show(RELOAD) end)
+end
+
+StaticPopupDialogs[RELOAD] = {
+	text = L.PAWN_RELOAD,
+	button1 = L.PAWN_RELOAD_NOW,
+	button2 = L.PAWN_RELOAD_LATER,
+	OnAccept = function() ReloadUI() end,
+	timeout = 0,
+	whileDead = true,
+	hideOnEscape = true,
+}
 
 ------------------------------------------------------------------------------------------
 -- The question

@@ -23,7 +23,9 @@ and the version shown in the AddOns list. Quote it in bug reports.
   once, and a new spec's scale takes over when you change spec. Untick **Show stat weights in
   tooltips** and the journal's scale leaves Pawn's tooltips too (and with it Pawn's arrows for it,
   as Pawn marks upgrades only for the scales it shows). Choose Pawn's weights (in the journal's
-  options) and Pawn's own scales come back.
+  options) and Pawn's own scales come back. Baganator keeps Pawn's answer for each item until
+  your gear changes, so where it draws Pawn's arrows the journal offers a reload after such a
+  change, for the arrows to follow.
 
 ### Changed
 - **The question asked when Pawn is installed** now offers the journal's weights first, for Pawn

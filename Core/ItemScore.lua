@@ -433,9 +433,11 @@ function ItemScore:Spec()
 	return self:AutoSpec()
 end
 
+-- Picked by the player (the spec menus): Baganator's arrows for Pawn may want a reload.
 function ItemScore:SetSpec(spec)
 	Settings().spec = spec
 	self:Changed()
+	if ns.PawnLink then ns.PawnLink:AskReload() end
 end
 
 function ItemScore:SpecLabel(spec)

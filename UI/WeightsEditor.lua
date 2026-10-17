@@ -394,7 +394,12 @@ function WeightsEditor:Create(parent, options)
 	function editor:Refresh()
 		WeightsEditor:Refresh(self)
 	end
-	editor:SetScript("OnShow", function(self) self:Refresh() end)
+	-- Weights edited while it was open: Baganator's arrows for Pawn may want a reload once it closes.
+	editor:SetScript("OnShow", function(self)
+		self.pawnChanges = ns.PawnLink:Changes()
+		self:Refresh()
+	end)
+	editor:SetScript("OnHide", function(self) ns.PawnLink:AskReload(self.pawnChanges) end)
 	editors[#editors + 1] = editor
 	return editor
 end

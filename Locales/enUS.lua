@@ -122,6 +122,10 @@ L.PAWN_USE_PAWN = "Pawn's"
 L.PAWN_USE_JOURNAL = "The journal's"
 -- The journal's scale for a spec, as Pawn lists it.
 L.PAWN_SCALE = "Journal: %s"
+-- After the journal's scales in Pawn change, where Baganator draws Pawn's arrows.
+L.PAWN_RELOAD = "Pawn's upgrade arrows in your Baganator bags change only after a reload: Baganator keeps Pawn's answers until your gear changes.\n\nReload now?"
+L.PAWN_RELOAD_NOW = "Reload"
+L.PAWN_RELOAD_LATER = "Later"
 L.WEIGHTS_SOURCE_PAWN_LIVE = "Pawn's %s scale. Change it in Pawn, or choose the journal's in its options."
 L.OPTIONS_MINIMAP_TIP = "The journal's button on the edge of the minimap: click it to open the journal, right-click it for these options, drag it to move it."
 -- The minimap button's tooltip.
