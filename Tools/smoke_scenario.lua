@@ -3426,7 +3426,7 @@ end)()
 	IS:Forget()
 	check(not IS:CanDualWield(), "and not when none says so")
 
-	-- Every item's tooltip, as Pawn's: a line per spec with the item's worth to it, and the green
+	-- Every item's tooltip: a line per spec with the item's worth to it, and the green
 	-- arrow with what it adds to the gear where it beats what is worn
 	do
 		local function TipLines(link)
@@ -3597,7 +3597,7 @@ end)()
 		check(back.entry and count == 1 and Upgraded(finderLines) and not Has(finderLines, "Worth ")
 			and not Has(finderLines, "Gear Finder (") and not Has(finderLines, "Other upgrades")
 			and Has(finderLines, ns.L.GEAR_TIP_CELL_CLICK),
-			"the Gear Finder's tooltips as plain as Pawn's: the item, each spec's line once, where it drops, the click")
+			"the Gear Finder's tooltips kept plain: the item, each spec's line once, where it drops, the click")
 		-- The gain it shows for its own spec is the one the Gear Finder found (a second ring's, over
 		-- the other); another frame's tooltip weighs the item afresh.
 		local owner, given = CreateFrame("Button"), { score = 50, usable = true, delta = 9, share = 77, minLevel = 1 }
@@ -3627,7 +3627,7 @@ end)()
 		check(#other._lines == 0, "another tooltip that shows an item, not one of the client's own, is left alone")
 	end
 
-	-- Pawn's green arrows: on an upgrade in the bags, in the loot window and on a roll
+	-- Green arrows on upgrades: in the bags, in the loot window and on a roll
 	do
 		local UA = ns.UpgradeArrows
 		local bagCape, bagRobe, bagWorn = Mock.BagButton(0, 1), Mock.BagButton(0, 2), Mock.BagButton(0, 3)

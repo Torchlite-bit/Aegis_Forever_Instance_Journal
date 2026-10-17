@@ -154,7 +154,7 @@ function GearPanel.SetShowsGains(shown, fromOptions)
 	end
 end
 
--- An upgrade's tooltip, as plain as Pawn's: the item with what it is worth to each spec (UI/
+-- An upgrade's tooltip, kept plain: the item with what it is worth to each spec (UI/
 -- ItemTooltip.lua, which shows the gain the Gear Finder found for its own spec: on a second ring,
 -- over the other one), where it drops, and what a click on `owner` does; `picked`, that the
 -- player chose it for its slot.

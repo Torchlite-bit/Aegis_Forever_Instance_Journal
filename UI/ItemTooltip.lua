@@ -2,8 +2,8 @@ local _, ns = ...
 local L = ns.L
 
 --[[
-	The Gear Finder's stat weights on every item's tooltip, as Pawn shows its scales: in the bags,
-	on the character sheet, in loot, a merchant's wares, links in chat and the Gear Finder's own.
+	The Gear Finder's stat weights on every item's tooltip: in the bags, on the character sheet, in
+	loot, a merchant's wares, links in chat and the Gear Finder's own.
 	Under the item, a line for each spec of the class, in its order: the spec, and what the item is
 	worth to it. Where it beats what is worn, the green arrow before the spec and, beside its worth,
 	what it adds to the gear: the share the Gear Finder shows ("+4.2%"). These are the journal's own

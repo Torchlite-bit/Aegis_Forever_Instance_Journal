@@ -28,14 +28,15 @@ and the version shown in the AddOns list. Quote it in bug reports.
   off; and the Highland Horror's roots, which Blessing of Freedom breaks.
 - **"You will also receive"** on a quest's page, for the items that come with the choice, and
   how many of each item you get.
-- **The Gear Finder's stat weights on every item's tooltip**, as Pawn shows its scales: in your
-  bags, on the character sheet, in loot, at merchants, in chat links and in the Gear Finder, a
-  line for each of your specs with what the item is worth to it, and a green arrow with what it
-  adds to your gear when it beats what you wear (with the level, for gear a few levels ahead).
+- **The Gear Finder's stat weights on every item's tooltip**: in your bags, on the character
+  sheet, in loot, at merchants, in chat links and in the Gear Finder, a short line for each of
+  your specs with what the item is worth to it, and a green arrow with what it adds to your gear
+  when it beats what you wear (with the level, for gear a few levels ahead).
 - **Show stat weights in tooltips**, a box under the stat weights: untick it and items'
   tooltips, the Gear Finder's too, leave out what each item is worth and adds to your gear.
-- **Green arrows on upgrades**, as Pawn marks them: in your bags, in the loot window and on loot
-  rolls, an item that is an upgrade for your spec has the bags' green arrow at its corner.
+- **Green arrows on upgrades**: in your bags, in the loot window and on loot rolls, an item that
+  is an upgrade for your spec has the bags' green arrow at its corner, so you can tell at a glance
+  what to keep, take or roll on.
 - **Boss levels on the boss list**: each boss's level on its portrait, in the target frame's
   badge, coloured from grey to red by how hard the boss is for you.
 - **The journal's options**, in the game's Options under AddOns (or `/aegis options`): boss
@@ -52,8 +53,8 @@ and the version shown in the AddOns list. Quote it in bug reports.
   Wetlands quests).
 - The Log Reader page keeps a boss's spells when the game calls him neutral (the Relic Guardian).
 - The Gear Finder no longer suggests a unique ring or trinket you already wear in the other slot.
-- **The Gear Finder's tooltips are as plain as Pawn's**: the item, what it is worth to each spec,
-  where it drops and a short hint, without the slot's other upgrades or the long lines.
+- **The Gear Finder's tooltips are plainer**: the item, what it is worth to each spec, where it
+  drops and a short hint, without the slot's other upgrades or the long lines.
 
 ### Fixed
 - The loot's class filter was missing the Druid.

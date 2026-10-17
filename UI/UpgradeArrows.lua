@@ -1,7 +1,7 @@
 local _, ns = ...
 
 --[[
-	Pawn's green arrows: an item that is an upgrade for the player, by the Gear Finder's spec and
+	Green arrows on upgrades: an item that is an upgrade for the player, by the Gear Finder's spec and
 	weights and as the item tooltips count one (UI/ItemTooltip.lua), is marked with the bags' own
 	green arrow at its top left: in the bags, in the loot window and on a group loot roll.
 
