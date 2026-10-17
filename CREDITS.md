@@ -57,6 +57,13 @@ content, the dungeons', raids' and factions' names, bosses, abilities, quests an
 [pull request #25](https://github.com/Torchlite-bit/Aegis_Forever_Instance_Journal/pull/25) and
 shows on a client set to Russian.
 
+## German, French and Chinese
+
+The German, French, Simplified Chinese and Traditional Chinese translations
+(`Locales/deDE`, `frFR`, `zhCN`, `zhTW` and their `_content` files) were drafted with Claude AI
+and have not yet been checked by native speakers. Corrections are welcome, and so is anyone who
+would like to take one of them on.
+
 ## Claude AI
 
 This addon was created with the help of Claude AI, Anthropic's assistant.
