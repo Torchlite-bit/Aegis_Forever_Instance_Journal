@@ -67,6 +67,29 @@ check(#untranslated == 0 and InLanguage(IS:SpecLabel(IS:Specs()[1].key)) and InL
 	"every spec and unit of the Gear Finder in " .. LANGUAGE .. ", the weights themselves untouched: "
 	.. table.concat(untranslated, ", "))
 
+-- The client's Equip: wordings, where the language gives them (Core/ItemScore.lua): each a pattern
+-- Lua can run, for a stat the scoring knows, false (a line worth nothing) or a pair of stats.
+if L.EQUIP_PATTERNS then
+	local known = {}
+	for _, key in ipairs({ "HOLY CRIT", "SPELL CRIT", "RANGED CRIT", "CRIT", "SPELL HIT", "HIT", "HEALING", "SPELL POWER",
+		"SPELL DAMAGE", "CASTING REGEN", "SPELL PENETRATION", "RANGED ATTACK POWER", "FERAL ATTACK POWER", "ATTACK POWER",
+		"MANA PER 5", "HEALTH PER 5", "DEFENSE", "DODGE", "PARRY", "BLOCK", "BLOCK VALUE", "HASTE", "HOLY DAMAGE",
+		"FIRE DAMAGE", "FROST DAMAGE", "NATURE DAMAGE", "SHADOW DAMAGE", "ARCANE DAMAGE" }) do
+		known[key] = true
+	end
+	local bad = {}
+	for index, entry in ipairs(L.EQUIP_PATTERNS) do
+		local pattern = type(entry[1]) == "string" and entry[1]:gsub("{n}", function() return "(%d+%.?%d*)" end)
+		local ok = pattern and pcall(string.find, "equip", pattern)
+		local keys = type(entry[2]) == "table" and entry[2] or { entry[2] }
+		if entry[2] ~= false then
+			for _, key in ipairs(keys) do ok = ok and known[key] == true end
+		end
+		if not ok then bad[#bad + 1] = index .. " " .. tostring(entry[1]) .. " " .. tostring(entry[2]) end
+	end
+	check(#L.EQUIP_PATTERNS > 20 and #bad == 0, "the client's Equip: wordings, each one usable: " .. table.concat(bad, "; "))
+end
+
 -- The content: names laid over the data once it has loaded.
 local ragefire = ns.GetInstance("RagefireChasm")
 check(InLanguage(ragefire.name, ragefire.enName), "dungeon names in " .. LANGUAGE .. ": " .. tostring(ragefire.name))

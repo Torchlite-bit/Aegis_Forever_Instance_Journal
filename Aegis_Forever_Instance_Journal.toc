@@ -13,6 +13,14 @@
 Locales\enUS.lua
 Locales\ruRU.lua
 Locales\ruRU_content.lua
+Locales\deDE.lua
+Locales\deDE_content.lua
+Locales\frFR.lua
+Locales\frFR_content.lua
+Locales\zhCN.lua
+Locales\zhCN_content.lua
+Locales\zhTW.lua
+Locales\zhTW_content.lua
 Core\Init.lua
 Core\Compat.lua
 Core\Registry.lua
