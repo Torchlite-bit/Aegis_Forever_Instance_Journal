@@ -3839,6 +3839,12 @@ end)()
 			and not visible['"Classic":WARRIOR1'] and not visible['"Classic":MAGE1']
 			and table.concat(ns.charDB.pawnHidden, ",") == '"Classic":MAGE1,"Classic":WARRIOR1,"Classic":WARRIOR3',
 			"Pawn shows the journal's scale for the spec, and its own are hidden on this character, remembered")
+		-- Stat weights not wanted in tooltips: the journal's scale leaves Pawn's too
+		Mock.settings.AEGIS_JOURNAL_ITEM_TIPS:SetValue(false)
+		check(not visible['"AegisJournal":' .. spec] and not visible['"Classic":WARRIOR1'],
+			"stat weights not wanted in tooltips: the journal's scale leaves Pawn's tooltips too")
+		Mock.settings.AEGIS_JOURNAL_ITEM_TIPS:SetValue(true)
+		check(visible['"AegisJournal":' .. spec], "and comes back with the box")
 		-- A weight changed in the journal: Pawn is given it; nothing changed: nothing given
 		local given, resetsBefore = adds, resets
 		IS:SetWeight(spec, "STRENGTH", 7)

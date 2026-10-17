@@ -184,11 +184,17 @@ local function Show(name, shown)
 	if type(PawnCommon.Scales[name]) == "table" and Shown(name) ~= shown then Call(PawnSetScaleVisible, name, shown) end
 end
 
+-- Whether the journal's weights are wanted in tooltips (its "Show stat weights in tooltips" box).
+local function ShowsLines()
+	return not (ns.GearPanel and ns.GearPanel.ShowsGains) or ns.GearPanel.ShowsGains() == true
+end
+
 --[[
 	Which scales Pawn shows on this character. With the journal's weights: the journal's for the spec
-	the Gear Finder scores for, and none of Pawn's own: those shown are hidden once and remembered
-	(charDB.pawnHidden), so a scale the player shows again in Pawn afterwards stays shown. Otherwise
-	none of the journal's, and Pawn's hidden ones are shown again.
+	the Gear Finder scores for, unless the journal's weights are not wanted in tooltips, and none of
+	Pawn's own: those shown are hidden once and remembered (charDB.pawnHidden), so a scale the player
+	shows again in Pawn afterwards stays shown. Otherwise none of the journal's, and Pawn's hidden ones
+	are shown again.
 ]]
 local function ShowScales(spec)
 	local journal = PawnLink:Source() == "journal"
@@ -205,7 +211,7 @@ local function ShowScales(spec)
 		ns.charDB.pawnHidden = nil
 	end
 	for _, entry in ipairs(ns.ItemScore:Specs()) do
-		Show(PawnLink.OwnScaleName(entry.key), journal and entry.key == spec)
+		Show(PawnLink.OwnScaleName(entry.key), journal and entry.key == spec and ShowsLines())
 	end
 end
 
@@ -234,7 +240,7 @@ function PawnLink:Push()
 	if pushing or not (registered and ns.charDB and self:Present()) then return end
 	local IS = ns.ItemScore
 	local spec, specs = IS:Spec(), IS:Specs()
-	local values, parts = {}, { tostring(self:Source()), tostring(spec) }
+	local values, parts = {}, { tostring(self:Source()), tostring(spec), tostring(ShowsLines()) }
 	for _, entry in ipairs(specs) do
 		values[entry.key] = IS.ToPawnValues(IS:OwnWeights(entry.key))
 		local stats = {}

@@ -20,8 +20,10 @@ and the version shown in the AddOns list. Quote it in bug reports.
   Finder uses. Choose the journal's weights and Pawn shows the one for the spec the Gear Finder
   scores for, and hides its own scales on that character, so Pawn's tooltips and upgrade arrows
   weigh items just as the Gear Finder does. A weight you change in the journal reaches Pawn at
-  once, and a new spec's scale takes over when you change spec. Choose Pawn's weights (in the
-  journal's options) and Pawn's own scales come back.
+  once, and a new spec's scale takes over when you change spec. Untick **Show stat weights in
+  tooltips** and the journal's scale leaves Pawn's tooltips too (and with it Pawn's arrows for it,
+  as Pawn marks upgrades only for the scales it shows). Choose Pawn's weights (in the journal's
+  options) and Pawn's own scales come back.
 
 ### Changed
 - **The question asked when Pawn is installed** now offers the journal's weights first, for Pawn

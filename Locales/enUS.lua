@@ -130,7 +130,7 @@ L.MINIMAP_RIGHT_CLICK = "Right-click for its options."
 L.MINIMAP_DRAG = "Drag to move it around the minimap."
 L.OPTIONS_ARROWS_TIP = "A green arrow on items that are upgrades for your spec, as the Gear Finder counts them: in your bags, in the loot window and on loot rolls."
 L.WEIGHTS_SHOW_GAINS = "Show stat weights in tooltips"
-L.WEIGHTS_SHOW_GAINS_TIP = "Under every item, a line for each of your specs: what the item is worth by its weights, and a green arrow with what it adds to your gear when it is an upgrade. For all your characters."
+L.WEIGHTS_SHOW_GAINS_TIP = "Under every item, a line for each of your specs: what the item is worth by its weights, and a green arrow with what it adds to your gear when it is an upgrade. For all your characters. With Pawn installed, this shows or hides the journal's scale in Pawn instead, and with it Pawn's upgrade arrows for the journal's weights: Pawn marks upgrades only for the scales it shows."
 L.GEAR_WHY_CUSTOM = "%s (your weights)"
 -- The specs' names and the units their weights count in are the generated weights' own English
 -- (Data/Generated/GearWeights.lua). A translation names them here: by spec key

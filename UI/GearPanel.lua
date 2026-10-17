@@ -149,6 +149,8 @@ end
 function GearPanel.SetShowsGains(shown, fromOptions)
 	ns.db.hideGearTipGains = not shown or nil
 	if ns.WeightsEditor then ns.WeightsEditor:SyncShowGains() end
+	-- With Pawn, the journal's scale there shows or hides with it.
+	if ns.PawnLink then ns.PawnLink:Push() end
 	if not fromOptions and Settings and Settings.NotifyUpdate then
 		pcall(Settings.NotifyUpdate, "AEGIS_JOURNAL_ITEM_TIPS")
 	end
