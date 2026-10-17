@@ -14,12 +14,18 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ## [0.33.0]
 
+> ⚠️ **About the new languages.** The German, French and Chinese (Simplified and Traditional)
+> translations were drafted with AI (Claude) and have **not yet been checked by native
+> speakers**. Expect some awkward or wrong words, names that differ from Blizzard's own, and a
+> few lines still in English. If you play in one of these languages, corrections are very
+> welcome: open an issue or a pull request on GitHub, or tell us on Discord. The Russian
+> translation is Staree4ok's own work and is not affected.
+
 ### Added
 - **German, French, Simplified Chinese and Traditional Chinese**: the journal follows a game
   client set to any of them, its interface and its content (dungeons, bosses, abilities, quests
-  and places). Drafted with Claude AI and not yet checked by native speakers: a wrong word or a
-  better one is welcome as an issue or a pull request. A few of the newest lines (the minimap
-  button, working with Pawn, the options) are still in English.
+  and places), drafted as the note above says. A few of the newest lines (the minimap button,
+  working with Pawn, the options) are still in English.
 - **`/aegis lang`** to see a translation on any client: `/aegis lang de`, `fr`, `ru`, `cn` or `tw`
   shows the journal's own words in that language from your next `/reload` (the game's names stay
   your client's), and `/aegis lang off` goes back.
