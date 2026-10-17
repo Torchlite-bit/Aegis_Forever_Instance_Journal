@@ -133,6 +133,21 @@ local LINE_PATTERNS = {
 	{ "block value of your shield by " .. NUMBER, "BLOCK VALUE" },
 	{ "attack speed by " .. NUMBER, "HASTE" },
 }
+-- A client in another language words these its own way: its locale file's L.EQUIP_PATTERNS, the
+-- same pairs with "{n}" where the number is.
+local localPatterns, localFrom
+local function LinePatterns()
+	local given = ns.L.EQUIP_PATTERNS
+	if type(given) ~= "table" then return LINE_PATTERNS end
+	if localFrom ~= given then
+		localPatterns, localFrom = {}, given
+		for index, entry in ipairs(given) do
+			localPatterns[index] = { (entry[1]:gsub("{n}", function() return NUMBER end)), entry[2] }
+		end
+	end
+	return localPatterns
+end
+
 -- Without the client's stats (a client that lacks C_Item.GetItemStats), the plain lines too.
 local PLAIN_PATTERNS = {
 	{ "^%+" .. NUMBER .. " strength", "STRENGTH" }, { "^%+" .. NUMBER .. " agility", "AGILITY" },
@@ -302,7 +317,7 @@ function ItemScore:Read(link)
 			if IsUniqueLine(text) then item.unique = true end
 			local equip = text:match(EQUIP_PREFIX)
 			if equip then
-				ReadLine(equip, item.stats, given, LINE_PATTERNS)
+				ReadLine(equip, item.stats, given, LinePatterns())
 			elseif not haveStats then
 				ReadLine(text, item.stats, given, PLAIN_PATTERNS)
 			end

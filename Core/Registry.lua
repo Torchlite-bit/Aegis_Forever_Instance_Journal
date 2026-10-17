@@ -526,7 +526,7 @@ local function WingHere(instanceID, wings)
 	local ok, area = pcall(GetSubZoneText)
 	area = ok and ns.Readable(area) or nil
 	for _, wing in ipairs(wings) do
-		if area and wing.wingAreas and wing.wingAreas[area] then return wing end
+		if area and ns.AreaIn(wing.wingAreas, area) then return wing end
 	end
 	local mapID = ns.PlayerMapPosition()
 	for _, wing in ipairs(wings) do
@@ -686,7 +686,11 @@ function ns.ApplyLocale()
 		end
 		if boss.description then boss.description = Tr(boss.description) end
 		if boss.fightNote then boss.fightNote = Tr(boss.fightNote) end
-		if boss.area then boss.area = Tr(boss.area) end
+		if boss.area then
+			boss.enArea = boss.enArea or boss.area
+			local named = ns.AreaName(boss.enArea)
+			boss.area = named ~= boss.enArea and named or Tr(boss.enArea)
+		end
 		if boss.notes then
 			for index, note in ipairs(boss.notes) do boss.notes[index] = Tr(note) end
 		end

@@ -29,6 +29,7 @@ its address goes in the text. Uploads themselves are automatic: each new `## Ver
 - 🎯 **Gear Finder**: the best upgrade for every slot in the dungeons near your level (or your pick of its top 3), and the dungeon with the most of them. Scored for your spec, with **stat weights you can change** or bring in from **Pawn**, on the journal's tab or the character panel's
 - 🔍 **Search** across everything
 - 🇷🇺 **In Russian** on a Russian game client, translated by **Staree4ok**
+- 🌍 **In German, French and Chinese** (Simplified and Traditional) too, drafted and awaiting native speakers' corrections
 - 🔴 **Record tab** and **Log Reader**: help fill in Forever's journal
 
 ![A boss's abilities](https://media.forgecdn.net/attachments/2059/704/screenshot-2026-10-15-142526-png.png)

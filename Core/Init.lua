@@ -71,6 +71,35 @@ function AegisJournal_Toggle()
 	ns.Journal:Toggle()
 end
 
+--[[
+	/aegis lang <de|fr|ru|cn|tw|en|off>: the journal in another of its languages from the next
+	/reload, whatever the client's, to check a translation. Only its own words change: the game's
+	names (spells, items, the client's own interface words) stay the client's. Saved for the
+	account until /aegis lang off.
+]]
+local LANGUAGE_CODES = { de = "deDE", dede = "deDE", fr = "frFR", frfr = "frFR", ru = "ruRU", ruru = "ruRU",
+	cn = "zhCN", zhcn = "zhCN", tw = "zhTW", zhtw = "zhTW", en = "enUS", enus = "enUS" }
+local LANGUAGE_NAMES = { deDE = "German", frFR = "French", ruRU = "Russian", zhCN = "Simplified Chinese",
+	zhTW = "Traditional Chinese", enUS = "English" }
+
+local function PreviewLanguage(typed)
+	typed = ((typed or ""):lower():gsub("[^%a]", ""))
+	if typed == "off" then
+		ns.db.previewLocale = nil
+		ns.Print(L.LANG_OFF)
+		return
+	end
+	local code = LANGUAGE_CODES[typed]
+	if not code then
+		local now = ns.previewLocale or GetLocale()
+		ns.Print(string.format(L.LANG_USAGE, LANGUAGE_NAMES[now] or now))
+		return
+	end
+	ns.db.previewLocale = code
+	ns.Print(string.format(L.LANG_SET, LANGUAGE_NAMES[code]))
+	if code == "zhCN" or code == "zhTW" then ns.Print(L.LANG_FONTS) end
+end
+
 SLASH_AEGISJOURNAL1 = "/aegis"
 SLASH_AEGISJOURNAL2 = "/instancejournal"
 SLASH_AEGISJOURNAL3 = "/ij"
@@ -104,6 +133,10 @@ SlashCmdList.AEGISJOURNAL = function(message)
 		ns.GearFinder:Scan()
 	elseif command == "options" then
 		ns.Options:Open()
+	elseif command == "areas" then
+		ns.Areas:Scan()
+	elseif command == "lang" then
+		PreviewLanguage(rest)
 	else
 		ns.Print(L.SLASH_HELP)
 	end
@@ -124,6 +157,11 @@ events:SetScript("OnEvent", function(self, event, arg1)
 	elseif event == "PLAYER_LOGIN" then
 		self:UnregisterEvent("PLAYER_LOGIN")
 		ClaimDefaultKey()
+		if ns.previewLocale then
+			ns.Print(string.format(L.LANG_ON, LANGUAGE_NAMES[ns.previewLocale] or ns.previewLocale))
+		elseif ns.db.previewLocale then
+			ns.Print(L.LANG_UNAVAILABLE)
+		end
 		C_Timer.After(RECHECK_DELAY, function() ns.Items:RecheckUnconfirmed() end)
 		-- Switching between the account's and the character's bindings brings another set.
 		self:RegisterEvent("UPDATE_BINDINGS")

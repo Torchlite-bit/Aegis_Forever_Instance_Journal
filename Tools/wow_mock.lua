@@ -762,7 +762,10 @@ function GetMinimapZoneText()
 	if Mock.subzone ~= "" then return Mock.subzone end
 	return GetRealZoneText()
 end
+-- The client's name for each area id (C_Map.GetAreaInfo): Mock.areaNames[areaID] = name.
+Mock.areaNames = {}
 C_Map = {
+	GetAreaInfo = function(areaID) return Mock.areaNames[areaID] end,
 	-- Inside Forever's dungeons the client gives no map, except while the loading screen into one
 	-- begins, when it may already say "inside" but still report the street outside (Mock.mapAsLeaving).
 	GetBestMapForUnit = function()
