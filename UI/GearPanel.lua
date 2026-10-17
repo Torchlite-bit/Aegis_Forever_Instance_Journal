@@ -271,14 +271,6 @@ local function CreateCell(panel, def)
 	cell.IconBorder:SetTexture("Interface\\Common\\WhiteIconFrame")
 	cell.IconBorder:SetAllPoints(cell.Icon)
 
-	-- The equipment flyout's mark for an upgrade.
-	cell.Arrow = cell:CreateTexture(nil, "OVERLAY", nil, 2)
-	if not Atlas(cell.Arrow, "bags-greenarrow", true) then
-		cell.Arrow:SetSize(14, 14)
-		cell.Arrow:SetTexture("Interface\\Buttons\\UI-MicroStream-Green")
-	end
-	cell.Arrow:SetPoint("TOPLEFT", cell.Icon, -2, 2)
-
 	-- The level an item waits for, where the sheet puts a count.
 	cell.Level = cell:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
 	cell.Level:SetPoint("BOTTOMRIGHT", cell.Icon, -3, 2)
@@ -370,7 +362,6 @@ local function SetCell(cell, shown, entries, picked)
 	if shown then
 		local compare = shown.compare
 		SetIcon(cell, ns.Items:Icon(shown.itemID), shown.info.quality)
-		cell.Arrow:Show()
 		cell.Level:SetText(compare.later and compare.minLevel or "")
 		cell.Level:SetTextColor(LATER_COLOR[1], LATER_COLOR[2], LATER_COLOR[3])
 		cell.Name:SetText(shown.info.name or "")
@@ -381,7 +372,6 @@ local function SetCell(cell, shown, entries, picked)
 	end
 	local slotID = cell.def.slot
 	local link = GetInventoryItemLink("player", slotID)
-	cell.Arrow:Hide()
 	cell.Level:SetText("")
 	if link then
 		local quality = GetInventoryItemQuality("player", slotID)

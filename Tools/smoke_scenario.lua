@@ -335,7 +335,7 @@ do
 	GetCreatureDifficultyColor = nil
 	-- Turned off in the journal's options (Options > AddOns), the badges go at once, and come back
 	local category, boxes = Mock.settingsCategory, Mock.settings
-	check(category and category.name == ns.L.OPTIONS_TITLE and #category.controls == 3
+	check(category and category.name == ns.L.OPTIONS_TITLE and #category.controls == 4
 		and boxes.AEGIS_JOURNAL_BOSS_LEVELS and boxes.AEGIS_JOURNAL_BOSS_LEVELS:GetValue() == true
 		and boxes.AEGIS_JOURNAL_BOSS_LEVELS.tooltip == ns.L.OPTIONS_BOSS_LEVELS_TIP,
 		"the journal's page in the game's options, the boss levels shown")
@@ -352,6 +352,34 @@ do
 		"/ij opens the journal as /aegis does, and the help says so")
 	SlashCmdList.AEGISJOURNAL("options")
 	check(Mock.openedSettings == category:GetID(), "/aegis options opens it")
+	-- The journal's button on the minimap's edge
+	local mini = ns.MinimapButton.button
+	local _, anchor, _, x, y = mini:GetPoint(1)
+	check(mini and mini:GetParent() == Minimap and anchor == Minimap and mini:IsShown()
+		and math.abs(math.sqrt(x * x + y * y) - 80) < 0.01 and mini.Icon:GetTexture() == "Interface\\EncounterJournal\\UI-EJ-PortraitIcon"
+		and mini.Icon._desaturated, "a button on the minimap's edge, the journal's own book in its colour")
+	local wasShown = AegisJournalFrame:IsShown()
+	mini:Click("LeftButton")
+	check(AegisJournalFrame:IsShown() ~= wasShown, "a click opens or closes the journal")
+	mini:Click("LeftButton")
+	Mock.openedSettings = nil
+	mini:Click("RightButton")
+	check(Mock.openedSettings == category:GetID(), "a right-click opens its options")
+	mini:_RunScript("OnEnter")
+	check(GameTooltip:HasLine(ns.L.MINIMAP_LEFT_CLICK) and GameTooltip:HasLine(ns.L.MINIMAP_DRAG), "its tooltip says what it does")
+	-- Dragged round the edge to the top: it stays there
+	Mock.cursorX, Mock.cursorY = 500, 600
+	mini:_RunScript("OnDragStart")
+	mini:_RunScript("OnUpdate")
+	mini:_RunScript("OnDragStop")
+	_, _, _, x, y = mini:GetPoint(1)
+	check(math.abs(ns.db.minimapAngle - 90) < 0.01 and math.abs(x) < 0.01 and math.abs(y - 80) < 0.01
+		and mini:GetScript("OnUpdate") == nil, "dragged, it goes round the edge and stays, and stops following the cursor")
+	boxes.AEGIS_JOURNAL_MINIMAP:SetValue(false)
+	check(not mini:IsShown() and ns.db.hideMinimapButton, "turned off in the options: gone")
+	boxes.AEGIS_JOURNAL_MINIMAP:SetValue(true)
+	check(mini:IsShown(), "and back")
+	ns.db.minimapAngle = nil
 	-- A level up repaints them for the new level
 	Mock.level = 25
 	Mock.Fire("PLAYER_LEVEL_CHANGED", 20, 25)
@@ -3229,7 +3257,7 @@ end)()
 		end
 	end
 	local back, main, ranged = Cell("back"), Cell("mainhand"), Cell("ranged")
-	check(back.entry and back.entry.itemID == CAPE and back.Gain:GetText() == "+268%" and back.Arrow:IsShown(),
+	check(back.entry and back.entry.itemID == CAPE and back.Gain:GetText() == "+268%" and rawget(back, "Arrow") == nil,
 		"the cape, marked as an upgrade, adds to all the gear worn (the old cape alone): " .. tostring(back.Gain:GetText()))
 	local share = main.entry and main.entry.compare.share
 	check(main.entry and main.entry.itemID == FELBLADE and main.entry.compare.emptySlot and share
@@ -3243,8 +3271,8 @@ end)()
 		and ns.GearPanel.GainText({ delta = 31.2 }) == "+31", "small gains with a decimal, big ones without, a bare gain with nothing worn")
 	check(ranged.entry and ranged.entry.itemID == CROSSBOW and ranged.Level:GetText() == 17,
 		"one the player can wear in two levels shows that level on its icon")
-	check(not Cell("wrist").entry and Cell("wrist").Name:GetText() == "Wrist" and Cell("wrist").Source:GetText() == "No upgrade found"
-		and not Cell("wrist").Arrow:IsShown(), "fire resistance is worth nothing to Arms: no upgrade, the slot's name instead")
+	check(not Cell("wrist").entry and Cell("wrist").Name:GetText() == "Wrist" and Cell("wrist").Source:GetText() == "No upgrade found",
+		"fire resistance is worth nothing to Arms: no upgrade, the slot's name instead")
 	do
 		-- A cell's words grow back after shorter ones, up to the room the gain leaves them.
 		local cell = Cell("wrist")

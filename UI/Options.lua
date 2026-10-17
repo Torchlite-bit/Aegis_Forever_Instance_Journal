@@ -24,6 +24,9 @@ local CHECKBOXES = {
 	{ variable = "AEGIS_JOURNAL_UPGRADE_ARROWS", name = "OPTIONS_ARROWS", tip = "OPTIONS_ARROWS_TIP",
 		get = function() return ns.UpgradeArrows.Shows() end,
 		set = function(shown) ns.UpgradeArrows.SetShows(shown) end },
+	{ variable = "AEGIS_JOURNAL_MINIMAP", name = "OPTIONS_MINIMAP", tip = "OPTIONS_MINIMAP_TIP",
+		get = function() return ns.MinimapButton.Shows() end,
+		set = function(shown) ns.MinimapButton.SetShows(shown) end },
 }
 
 function Options:Register()

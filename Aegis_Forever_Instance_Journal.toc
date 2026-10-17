@@ -115,3 +115,4 @@ UI\CharacterTab.lua
 UI\Search.lua
 UI\Journal.lua
 UI\Options.lua
+UI\MinimapButton.lua

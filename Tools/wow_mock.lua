@@ -840,6 +840,11 @@ function LoggingCombat(on)
 	return Mock.combatLogging
 end
 
+-- The minimap: 140 wide, its centre at (500, 400) on a scale of 1.
+Minimap = CreateFrame("Frame", "Minimap", UIParent)
+Minimap:SetSize(140, 140)
+function Minimap:GetCenter() return 500, 400 end
+function Minimap:GetEffectiveScale() return 1 end
 -- The cursor, for dragging: Mock.cursorX, Mock.cursorY.
 Mock.cursorX, Mock.cursorY = 0, 0
 function GetCursorPosition() return Mock.cursorX, Mock.cursorY end

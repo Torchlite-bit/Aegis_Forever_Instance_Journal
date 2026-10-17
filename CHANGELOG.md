@@ -42,6 +42,8 @@ and the version shown in the AddOns list. Quote it in bug reports.
 - **The journal's options**, in the game's Options under AddOns (or `/aegis options`): boss
   levels, stat weights in tooltips and the green arrows can each be turned off.
 - **`/ij`** opens the journal too, as `/aegis` does.
+- **A minimap button**: the journal's book, in its own colour. Click it to open the journal,
+  right-click it for the options, drag it round the minimap's edge; the options can hide it.
 - **The Gear Finder and its stat weights in Russian**, with every spec's name and unit, by
   Staree4ok. The new top 3 picker is still in English for now.
 
@@ -55,6 +57,8 @@ and the version shown in the AddOns list. Quote it in bug reports.
 - The Gear Finder no longer suggests a unique ring or trinket you already wear in the other slot.
 - **The Gear Finder's tooltips are plainer**: the item, what it is worth to each spec, where it
   drops and a short hint, without the slot's other upgrades or the long lines.
+- **The Gear Finder's slots no longer carry the green arrow**: everything it shows is an upgrade;
+  the arrow now marks upgrades in your bags, the loot window and rolls instead.
 
 ### Fixed
 - The loot's class filter was missing the Druid.
