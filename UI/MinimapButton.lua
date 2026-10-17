@@ -2,9 +2,8 @@ local _, ns = ...
 local L = ns.L
 
 --[[
-	The journal's button on the minimap's edge: the Instance Journal's own book, the picture its
-	window wears (UI-EJ-PortraitIcon), in the journal's colour so it is not taken for the game's.
-	Left-click opens or closes the journal, right-click opens its options; dragged, it goes round
+	The journal's button on the minimap's edge: the journal's icon, Ashbringer's, which its window
+	wears too (UI/Journal.lua), round. Left-click opens or closes the journal, right-click opens its options; dragged, it goes round
 	the minimap's edge and stays where it is left. Forever has no add-on compartment, so it is a
 	button on the edge as classic ones are; a minimap button collector gathers it like the rest.
 	Shown unless turned off in the journal's options.
@@ -13,10 +12,7 @@ local L = ns.L
 local MinimapButton = {}
 ns.MinimapButton = MinimapButton
 
-local ICON = "Interface\\EncounterJournal\\UI-EJ-PortraitIcon"
 local CIRCLE_MASK = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
--- The book's colour: the picture greyed, then tinted.
-local TINT = { 0.45, 0.72, 1 }
 local DEFAULT_ANGLE = 210       -- degrees round the minimap, from its right, anticlockwise
 local OUTSIDE = 10              -- how far past the minimap's edge the button's centre sits
 
@@ -24,9 +20,14 @@ function MinimapButton.Shows()
 	return not (ns.db and ns.db.hideMinimapButton)
 end
 
+-- Shown or hidden by Show and Hide, not SetShown: a minimap button collector hears only those.
+local function SetShown(button, shown)
+	if shown then button:Show() else button:Hide() end
+end
+
 function MinimapButton.SetShows(shown)
 	ns.db.hideMinimapButton = not shown or nil
-	if MinimapButton.button then MinimapButton.button:SetShown(shown) end
+	if MinimapButton.button then SetShown(MinimapButton.button, shown) end
 end
 
 -- Where the button goes for an angle: on a round minimap's edge, or a square one's.
@@ -77,11 +78,10 @@ function MinimapButton:Create()
 	button.Background:SetSize(20, 20)
 	button.Background:SetPoint("TOPLEFT", 7, -5)
 	button.Icon = button:CreateTexture(nil, "ARTWORK")
-	button.Icon:SetTexture(ICON)
+	button.Icon:SetTexture(ns.Journal.Icon())
+	button.Icon:SetTexCoord(unpack(ns.Journal.ICON_CROP))
 	button.Icon:SetSize(19, 19)
 	button.Icon:SetPoint("TOPLEFT", 6, -5)
-	button.Icon:SetDesaturated(true)
-	button.Icon:SetVertexColor(TINT[1], TINT[2], TINT[3])
 	if button.CreateMaskTexture and button.Icon.AddMaskTexture then
 		local mask = button:CreateMaskTexture()
 		mask:SetTexture(CIRCLE_MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
@@ -116,7 +116,7 @@ function MinimapButton:Create()
 	button:SetScript("OnDragStop", function(self) self:SetScript("OnUpdate", nil) end)
 
 	Place(button, ns.db.minimapAngle or DEFAULT_ANGLE)
-	button:SetShown(MinimapButton.Shows())
+	SetShown(button, MinimapButton.Shows())
 	self.button = button
 	return button
 end

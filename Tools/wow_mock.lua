@@ -75,7 +75,8 @@ function Region:GetParent() return self._parent end
 function Region:SetParent(parent) self._parent = parent end
 function Region:Show() self._shown = true; self:_RunScript("OnShow") end
 function Region:Hide() local was = self._shown; self._shown = false; if was then self:_RunScript("OnHide") end end
-function Region:SetShown(shown) if shown then self:Show() else self:Hide() end end
+-- The client's SetShown does not go through a frame's own Show or Hide: a hook on those does not hear it.
+function Region:SetShown(shown) if shown then Region.Show(self) else Region.Hide(self) end end
 function Region:IsShown() return self._shown end
 function Region:IsVisible()
 	if not self._shown then return false end
@@ -1235,6 +1236,18 @@ function UnitGUID(unit) return Mock.units[unit] and Mock.units[unit].guid end
 
 StaticPopupDialogs = {}
 function StaticPopup_Show(name) Mock.popup = name end
+-- Escape on the popup shown, as the client's StaticPopup_EscapePressed takes it (Blizzard_StaticPopup):
+-- its OnEscape, else its OnCancel unless noCancelOnEscape, each told "clicked", as the second button is.
+function Mock.EscapePopup()
+	local info = Mock.popup and StaticPopupDialogs[Mock.popup]
+	if not (info and info.hideOnEscape) then return end
+	if info.OnEscape then
+		info.OnEscape(nil, nil, "clicked")
+	elseif info.OnCancel and not info.noCancelOnEscape then
+		info.OnCancel(nil, nil, "clicked")
+	end
+	Mock.popup = nil
+end
 YES, NO = "Yes", "No"
 
 function strsplit(delimiter, text)

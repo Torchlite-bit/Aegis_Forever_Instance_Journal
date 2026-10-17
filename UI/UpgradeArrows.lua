@@ -105,7 +105,9 @@ end
 
 --[[
 	Baganator's bags: an item button's corner shows the arrow when this says so. True or false, or
-	nil while the client has not described the item yet (Baganator asks again). Only gear.
+	nil while the client has not described the item yet (Baganator asks again). Only gear. It goes
+	in the top right, which Baganator leaves empty: Baganator draws one widget a corner, and the top
+	left holds the junk coin and the item level (the player can move it in Baganator's settings).
 ]]
 local BAGANATOR_WIDGET = "aegis_journal_upgrade"
 local ARMOR, WEAPON = 4, 2
@@ -135,13 +137,28 @@ function UpgradeArrows:HookBaganator()
 			end
 			return arrow
 		end,
-		{ corner = "top_left", priority = 1 })
+		{ corner = "top_right", priority = 1 })
 	if not ok then self.baganator = nil end
+end
+
+--[[
+	Baganator draws its buttons' corners again: only while the arrow is in one of them and could
+	show (not while Pawn's are shown), and only the corners, not the bags' whole layout.
+]]
+local function RefreshBaganator(api)
+	if not (api and api.RequestItemButtonsRefresh) or ns.PawnLink:Present() then return end
+	if api.IsCornerWidgetActive then
+		local ok, active = pcall(api.IsCornerWidgetActive, BAGANATOR_WIDGET)
+		if ok and not active then return end
+	end
+	local constants = type(Baganator) == "table" and Baganator.Constants
+	local reasons = type(constants) == "table" and type(constants.RefreshReason) == "table" and constants.RefreshReason
+	pcall(api.RequestItemButtonsRefresh, reasons and reasons.ItemWidgets and { reasons.ItemWidgets } or nil)
 end
 
 -- Everything showing again: a change of gear, spec or weights, or the option.
 function UpgradeArrows:Refresh()
-	if self.baganator and self.baganator.RequestItemButtonsRefresh then pcall(self.baganator.RequestItemButtonsRefresh) end
+	RefreshBaganator(self.baganator)
 	for _, frame in ipairs(bagFrames) do MarkBag(frame) end
 	MarkLoot()
 	for _, frame in ipairs(rollFrames) do

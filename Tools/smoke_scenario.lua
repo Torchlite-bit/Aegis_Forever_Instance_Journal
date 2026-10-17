@@ -356,8 +356,9 @@ do
 	local mini = ns.MinimapButton.button
 	local _, anchor, _, x, y = mini:GetPoint(1)
 	check(mini and mini:GetParent() == Minimap and anchor == Minimap and mini:IsShown()
-		and math.abs(math.sqrt(x * x + y * y) - 80) < 0.01 and mini.Icon:GetTexture() == "Interface\\EncounterJournal\\UI-EJ-PortraitIcon"
-		and mini.Icon._desaturated, "a button on the minimap's edge, the journal's own book in its colour")
+		and math.abs(math.sqrt(x * x + y * y) - 80) < 0.01 and mini.Icon:GetTexture() == select(5, C_Item.GetItemInfoInstant(13262))
+		and not mini.Icon._desaturated and mini.Icon._texCoord[1] == 0.08 and AegisJournalFrame._portrait == mini.Icon:GetTexture(),
+		"a button on the minimap's edge with the journal's icon, Ashbringer's, which its window wears too, its edge cropped")
 	local wasShown = AegisJournalFrame:IsShown()
 	mini:Click("LeftButton")
 	check(AegisJournalFrame:IsShown() ~= wasShown, "a click opens or closes the journal")
@@ -375,10 +376,15 @@ do
 	_, _, _, x, y = mini:GetPoint(1)
 	check(math.abs(ns.db.minimapAngle - 90) < 0.01 and math.abs(x) < 0.01 and math.abs(y - 80) < 0.01
 		and mini:GetScript("OnUpdate") == nil, "dragged, it goes round the edge and stays, and stops following the cursor")
+	-- A minimap button collector hooks the button's own Show and Hide to lay out its grid again
+	local heard = {}
+	hooksecurefunc(mini, "Show", function() heard[#heard + 1] = "Show" end)
+	hooksecurefunc(mini, "Hide", function() heard[#heard + 1] = "Hide" end)
 	boxes.AEGIS_JOURNAL_MINIMAP:SetValue(false)
 	check(not mini:IsShown() and ns.db.hideMinimapButton, "turned off in the options: gone")
 	boxes.AEGIS_JOURNAL_MINIMAP:SetValue(true)
-	check(mini:IsShown(), "and back")
+	check(mini:IsShown() and heard[1] == "Hide" and heard[2] == "Show", "and back, and a minimap button collector hears both")
+	mini.Show, mini.Hide = nil, nil
 	ns.db.minimapAngle = nil
 	-- A level up repaints them for the new level
 	Mock.level = 25
@@ -3713,18 +3719,20 @@ end)()
 
 	-- In Baganator's bags: a corner widget of the journal's, through Baganator's own API
 	do
-		local UA, widget, refreshes = ns.UpgradeArrows, nil, 0
+		local UA, widget, refreshes, reasons, active = ns.UpgradeArrows, nil, 0, nil, true
 		Baganator = { API = {
 			RegisterCornerWidget = function(label, id, onUpdate, onInit, position)
 				widget = { label = label, id = id, onUpdate = onUpdate, onInit = onInit, position = position }
 			end,
-			RequestItemButtonsRefresh = function() refreshes = refreshes + 1 end,
-		} }
+			RequestItemButtonsRefresh = function(why) refreshes, reasons = refreshes + 1, why end,
+			IsCornerWidgetActive = function(id) return active and id == "aegis_journal_upgrade" end,
+		}, Constants = { RefreshReason = { ItemWidgets = 4, Searches = 16 } } }
 		UA.baganator = nil
 		UA:HookBaganator()
 		local region = widget and widget.onInit(CreateFrame("Button"))
-		check(widget and widget.id == "aegis_journal_upgrade" and widget.position.corner == "top_left"
-			and region and region._atlas == "bags-greenarrow", "a corner widget in Baganator's bags: the bags' green arrow, top left")
+		check(widget and widget.id == "aegis_journal_upgrade" and widget.position.corner == "top_right"
+			and region and region._atlas == "bags-greenarrow",
+			"a corner widget in Baganator's bags: the bags' green arrow, in the top right, which Baganator leaves empty")
 		local function Shows(itemID) return widget.onUpdate(region, { itemLink = Mock.ItemLink(itemID) }) end
 		Mock.itemInstant[990899], Mock.itemsCached[990899] = { "", 0, 0, "Consumable" }, true
 		check(Shows(CAPE) == true and Shows(WORN_CAPE) == false and Shows(ROBE) == false and Shows(990899) == false,
@@ -3733,7 +3741,12 @@ end)()
 		check(Shows(990898) == nil, "an item the client has not described yet: asked again later")
 		local before = refreshes
 		IS:Changed()
-		check(refreshes > before, "a change of gear or weights has Baganator draw its buttons again")
+		check(refreshes > before and type(reasons) == "table" and #reasons == 1 and reasons[1] == 4,
+			"a change of gear or weights has Baganator draw its buttons' corners again, not its whole layout")
+		active, before = false, refreshes
+		IS:Changed()
+		check(refreshes == before, "not while the arrow is in none of Baganator's corners")
+		active = true
 		Mock.settings.AEGIS_JOURNAL_UPGRADE_ARROWS:SetValue(false)
 		check(Shows(CAPE) == false, "turned off in the options")
 		Mock.settings.AEGIS_JOURNAL_UPGRADE_ARROWS:SetValue(true)
@@ -3747,11 +3760,19 @@ end)()
 		local UA, PL = ns.UpgradeArrows, ns.PawnLink
 		local ready, resets = true, 0
 		PawnIsReady = function() return ready end
+		-- Pawn's starter scales, as its Classic provider makes them; the player's own have no provider
+		local function Starter(classID, specID, name, values)
+			return { ClassID = classID, SpecID = specID, LocalizedName = name, Values = values,
+				Provider = "Classic", ProviderActive = true, PerCharacterOptions = {} }
+		end
+		local function Own(classID, specID, values)
+			return { ClassID = classID, SpecID = specID, Values = values, PerCharacterOptions = {} }
+		end
 		PawnCommon = { Scales = {
-			['"Classic":WARRIOR1'] = { ClassID = 1, SpecID = 1, LocalizedName = "Warrior: Arms",
-				Values = { Strength = 3, Stamina = 0.5, Agility = 1, MeleeDps = 2, Dps = 1, Unheard = 4 } },
-			['"Classic":WARRIOR3'] = { ClassID = 1, SpecID = 3, LocalizedName = "Warrior: Protection", Values = { Stamina = 2 } },
-			['"Classic":MAGE1'] = { ClassID = 8, SpecID = 1, LocalizedName = "Mage: Arcane", Values = { Intellect = 1 } },
+			['"Classic":WARRIOR1'] = Starter(1, 1, "Warrior: Arms",
+				{ Strength = 3, Stamina = 0.5, Agility = 1, MeleeDps = 2, Dps = 1, Unheard = 4 }),
+			['"Classic":WARRIOR3'] = Starter(1, 3, "Warrior: Protection", { Stamina = 2 }),
+			['"Classic":MAGE1'] = Starter(8, 1, "Mage: Arcane", { Intellect = 1 }),
 		} }
 		local visible = { ['"Classic":WARRIOR1'] = true, ['"Classic":WARRIOR3'] = true, ['"Classic":MAGE1'] = true }
 		PawnIsScaleVisible = function(name) return visible[name] == true end
@@ -3768,6 +3789,14 @@ end)()
 		ContainerFrameCombinedBags:Show()
 		ContainerFrameCombinedBags:UpdateItems()
 		check(#GameTooltip._lines == 1 and not UA:Marked(bagCape), "Pawn's tooltips and arrows are the ones shown")
+		local redraws = 0
+		UA.baganator = { RequestItemButtonsRefresh = function() redraws = redraws + 1 end }
+		UA:Refresh()
+		check(redraws == 0, "nor are Baganator's corners drawn again for the journal's arrow")
+		UA.baganator = nil
+		-- Escape puts the question off: the client tells OnCancel "clicked" for it, as for the second button
+		Mock.EscapePopup()
+		check(Mock.popup == nil and PL:Source() == nil, "Escape puts the question off, to be asked again")
 		-- Closed some other way: asked again; the journal's chosen: kept
 		local popup = StaticPopupDialogs.AEGIS_JOURNAL_WEIGHTS_SOURCE
 		popup.OnCancel(nil, nil, "override")
@@ -3785,12 +3814,49 @@ end)()
 			and arms.AGILITY == 1 and arms.DPS == 3 and IS:Weights("Protection").STAMINA == 2
 			and Mock.settings.AEGIS_JOURNAL_PAWN_WEIGHTS:GetValue() == true,
 			"Pawn's weights chosen: its scale for the spec, read as the journal's stats")
+		-- Hidden in Pawn: its PawnSetScaleVisible resets its tooltips
 		visible['"Classic":WARRIOR3'] = nil
+		PawnResetTooltips()
 		check(select(2, PL:ScaleFor("Protection")) == "Warrior: Arms", "a spec whose scale is hidden: another of the class's")
 		-- Pawn's scales changed: read again
 		PawnCommon.Scales['"Classic":WARRIOR1'].Values.Strength = 5
 		PawnResetTooltips()
-		check(resets == 1 and IS:Weights("Arms").STRENGTH == 5, "a change in Pawn is read again")
+		check(resets == 2 and IS:Weights("Arms").STRENGTH == 5, "a change in Pawn is read again")
+		-- The player's own scales before Pawn's starter ones, which on Forever hold one template for the
+		-- class: an imported or new one has no spec there, one copied keeps it
+		PawnCommon.Scales["My warrior"] = Own(1, nil, { Strength = 9 })
+		PawnCommon.Scales["My fury"] = Own(1, 2, { Strength = 7 })
+		PawnCommon.Scales["A new scale"] = Own(nil, nil, {})
+		PawnCommon.Scales['"Gone":WARRIOR2'] = { ClassID = 1, SpecID = 2, Provider = "Gone", Values = { Strength = 1 },
+			PerCharacterOptions = {} }
+		for _, name in ipairs({ "My warrior", "My fury", "A new scale", '"Gone":WARRIOR2' }) do visible[name] = true end
+		PawnResetTooltips()
+		check(select(2, PL:ScaleFor("Arms")) == "My warrior" and IS:Weights("Arms").STRENGTH == 9
+			and PL:ScaleFor("Fury") == "My fury" and IS:Weights("Fury").STRENGTH == 7,
+			"the player's own scale before Pawn's starter ones, and one copied for the spec before that")
+		visible["My warrior"], visible["My fury"] = nil, nil
+		PawnResetTooltips()
+		check(PL:ScaleFor("Fury") == '"Classic":WARRIOR1' and IS:Weights("Fury").STRENGTH == 5,
+			"a new scale with nothing in it yet, and one left by a provider no longer loaded, are passed over")
+		visible['"Classic":WARRIOR1'], visible['"Classic":MAGE1'] = nil, nil
+		PawnResetTooltips()
+		check(PL:ScaleFor("Arms") == nil and IS:Weights("Arms").STRENGTH == 2.16,
+			"no scale with weights shown: the journal's own, not called Pawn's")
+		visible['"Classic":WARRIOR1'], visible['"Classic":MAGE1'] = true, true
+		check(PL.PawnSpec("DRUID", "FeralCat") == 2 and PL.PawnSpec("DRUID", "FeralBear") == 3
+			and PL.PawnSpec("SHAMAN", "EnhancementTank") == 2 and PL.PawnSpec("SHAMAN", "Restoration") == 3
+			and PL.PawnSpec("WARRIOR", "Fury") == 2 and PL.PawnSpec("ROGUE", "Subtlety") == 3,
+			"Pawn's numbers for the specs: the Druid's cat before its bear, the Shaman's Enhancement for its tank")
+		local class = Mock.playerClass
+		Mock.playerClass = "DRUID"
+		PawnCommon.Scales['"Classic":DRUID2'] = Starter(11, 2, "Druid: Feral", { Agility = 2 })
+		PawnCommon.Scales['"Classic":DRUID3'] = Starter(11, 3, "Druid: Guardian", { Stamina = 2 })
+		visible['"Classic":DRUID2'], visible['"Classic":DRUID3'] = true, true
+		PawnResetTooltips()
+		check(PL:ScaleFor("FeralCat") == '"Classic":DRUID2' and PL:ScaleFor("FeralBear") == '"Classic":DRUID3',
+			"a druid's cat takes Pawn's Feral Damage scale, the bear its Feral Tank")
+		Mock.playerClass = class
+		PawnResetTooltips()
 		-- The choice in the options
 		Mock.settings.AEGIS_JOURNAL_PAWN_WEIGHTS:SetValue(false)
 		check(PL:Source() == "journal" and IS:Weights("Arms").STRENGTH == 2.16, "and changed back in the options")

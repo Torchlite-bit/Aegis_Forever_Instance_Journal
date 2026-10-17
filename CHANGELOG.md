@@ -34,20 +34,22 @@ and the version shown in the AddOns list. Quote it in bug reports.
   when it beats what you wear (with the level, for gear a few levels ahead).
 - **Show stat weights in tooltips**, a box under the stat weights: untick it and items'
   tooltips, the Gear Finder's too, leave out what each item is worth and adds to your gear.
-- **Green arrows on upgrades**: in your bags (Baganator's too), in the loot window and on loot
-  rolls, an item that is an upgrade for your spec has the bags' green arrow at its corner, so you
-  can tell at a glance what to keep, take or roll on.
+- **Green arrows on upgrades**: in your bags (Baganator's too, in its top right corner), in the
+  loot window and on loot rolls, an item that is an upgrade for your spec has the bags' green arrow
+  at its corner, so you can tell at a glance what to keep, take or roll on.
 - **Working alongside Pawn**: with Pawn installed and enabled, its item tooltips and upgrade arrows
   are the ones shown, and the journal asks once whether the Gear Finder should score with Pawn's
-  stat weights (its scale for your spec) or the journal's own. Change it any time in the options;
+  stat weights or the journal's own. With Pawn's, it takes your own Pawn scale for the class (a
+  copied one for its spec) before Pawn's starter scales. Change it any time in the options;
   without Pawn, the journal shows its own.
 - **Boss levels on the boss list**: each boss's level on its portrait, in the target frame's
   badge, coloured from grey to red by how hard the boss is for you.
 - **The journal's options**, in the game's Options under AddOns (or `/aegis options`): boss
   levels, stat weights in tooltips and the green arrows can each be turned off.
 - **`/ij`** opens the journal too, as `/aegis` does.
-- **A minimap button**: the journal's book, in its own colour. Click it to open the journal,
-  right-click it for the options, drag it round the minimap's edge; the options can hide it.
+- **A minimap button**, with the journal's new icon, Ashbringer's. Click it to open the
+  journal, right-click it for the options, drag it round the minimap's edge; the options can hide
+  it.
 - **The Gear Finder and its stat weights in Russian**, with every spec's name and unit, by
   Staree4ok. The new top 3 picker is still in English for now.
 
@@ -63,6 +65,8 @@ and the version shown in the AddOns list. Quote it in bug reports.
   drops and a short hint, without the slot's other upgrades or the long lines.
 - **The Gear Finder's slots no longer carry the green arrow**: everything it shows is an upgrade;
   the arrow now marks upgrades in your bags, the loot window and rolls instead.
+- **The journal's own icon**: its window's round portrait, top left, is now Ashbringer's icon, as
+  on its minimap button, in place of the game's journal book.
 
 ### Fixed
 - The loot's class filter was missing the Druid.
