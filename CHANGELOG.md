@@ -36,6 +36,10 @@ and the version shown in the AddOns list. Quote it in bug reports.
 - **Show Start and Show End** on a quest now set the game's own waypoint there, on the map, the
   minimap and in the world.
 
+### Fixed
+- **On a dungeon's map**, the quest log's button in the map's corner could not be clicked once the
+  log was closed: the map's own buttons now stay above the dungeon map.
+
 ## [0.33.0]
 
 > ⚠️ **About the new languages.** The German, French and Chinese (Simplified and Traditional)

@@ -1262,9 +1262,22 @@ tabs[1]:Click()
 local mapButton = page.InstanceOverview.MapButton
 check(mapButton:IsShown() and mapButton.Text:GetText() == "Show Map" and mapButton.Shadow._texCoord[1] == 0.00195313,
 	"retail's Show Map on the dungeon page")
+-- (the map's quest log toggle, in the map's corner, as the client adds it)
+WorldMapFrame.SidePanelToggle = CreateFrame("Frame", nil, WorldMapFrame)
+WorldMapFrame.SidePanelToggle:SetFrameLevel(3)
 mapButton:Click()
 local overlay = DungeonMap:Overlay()
 check(WorldMapFrame:IsShown() and overlay and overlay:IsShown() and overlay.instance.key == "HallOfThanes", "the Hall of Thanes over the world map")
+-- The map's own buttons stay above the dungeon map, so the quest log can still be opened and closed
+-- from its corner, and get their own level back when it goes
+do
+	local toggle = WorldMapFrame.SidePanelToggle
+	check(toggle:GetFrameLevel() > overlay:GetFrameLevel(), "the quest log's toggle lifted above the dungeon map")
+	overlay:Hide()
+	check(toggle:GetFrameLevel() == 3, "and put back as it was when the dungeon map goes")
+	mapButton:Click()
+	check(overlay:IsShown() and toggle:GetFrameLevel() > overlay:GetFrameLevel(), "lifted again when it comes back")
+end
 check(overlay.Art.Picture:GetTexture():find("Media\\Maps\\HallOfThanes", 1, true) and overlay.Art.Picture._texCoord[4] == 0.667,
 	"our picture of it, cut to the map")
 local artW, artH = overlay.Art._width, overlay.Art._height

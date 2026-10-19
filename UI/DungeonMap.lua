@@ -417,7 +417,42 @@ local function TuckForeignPins()
 	end
 end
 
+--[[
+	The map's own buttons over the canvas (the quest log's toggle in its corner, the filter and pin
+	buttons, the floor menu) stay above the dungeon map, so they can still be pointed at and clicked
+	while it shows: one the overlay would sit over is lifted just above it, and put back as it was
+	when the overlay goes. Only their strata and level change.
+]]
+local lifted = {}                                    -- frame -> { strata, level } it had
+local MAX_FRAME_LEVEL = 10000
+
+local function LiftMapButtons()
+	if not (overlay and overlay:IsShown() and WorldMapFrame) then return end
+	local buttons = {}
+	for _, frame in ipairs(WorldMapFrame.overlayFrames or {}) do buttons[#buttons + 1] = frame end
+	if WorldMapFrame.SidePanelToggle then buttons[#buttons + 1] = WorldMapFrame.SidePanelToggle end
+	local strata, level = overlay:GetFrameStrata(), overlay:GetFrameLevel()
+	local own = STRATA_RANK[strata] or 0
+	for _, frame in ipairs(buttons) do
+		local rank = STRATA_RANK[frame:GetFrameStrata()] or 0
+		if rank < own or (rank == own and frame:GetFrameLevel() <= level) then
+			lifted[frame] = lifted[frame] or { frame:GetFrameStrata(), frame:GetFrameLevel() }
+			if rank < own then frame:SetFrameStrata(strata) end
+			frame:SetFrameLevel(math.min(level + 20, MAX_FRAME_LEVEL))
+		end
+	end
+end
+
+local function DropMapButtons()
+	for frame, was in pairs(lifted) do
+		frame:SetFrameStrata(was[1])
+		frame:SetFrameLevel(was[2])
+		lifted[frame] = nil
+	end
+end
+
 local function UntuckForeignPins()
+	DropMapButtons()
 	for frame, was in pairs(tucked) do
 		frame:SetFrameStrata(was[1])
 		frame:SetFrameLevel(was[2])
@@ -428,6 +463,7 @@ end
 -- After drawing: and once more on the next frame, for providers that refresh after this one.
 local function TuckAfterDraw()
 	TuckForeignPins()
+	LiftMapButtons()
 	if C_Timer and C_Timer.After then C_Timer.After(0, TuckForeignPins) end
 end
 
