@@ -122,6 +122,7 @@ local function Available(entry)
 	-- Nothing hidden until confirmed (Core/Items.lua) is found either.
 	if entry.kind == "item" then
 		return not ns.Items:IsHidden(entry.itemID) and not ns.Items:Superseded(entry.boss, entry.row)
+			and not ns.Items:Unremarkable(entry.boss, entry.row)
 	end
 	if entry.kind == "boss" then return not ns.Items:HidesBoss(entry.boss) end
 	return true

@@ -13,23 +13,54 @@ local addonName, ns = ...
 	Alliance's key quest, what follows Heart of Disruption, and the boss spots on its two floors
 	(the sewers and the city, on Santiago Reyes's map, the frame our spots were already in).
 
-	Nobody has checked it in game with the journal yet, so it is marked untested until a run is
-	recorded.
+	Marked tested at the owner's request (2026-10-19), after trying it with the journal; no run of
+	it has been recorded yet.
 ]]
 
 ns.AmendInstance("CityOfDalaran", {
-	untested = true,
 	description = "Dalaran, the city of the Kirin Tor, stands rebuilt in the Alterac Mountains, its magic barrier "
 		.. "gone and its streets overrun. Go in through the sewers, to a portal at the end of a long pipe, then "
 		.. "fight up through the streets to the Shade of the Archmage.\n\n"
-		.. "Getting in: the Image of Archmage Modera, by Lordamere Lake outside the city, gives Heart of Disruption "
-		.. "and with it the Dalaran Sewer Key; one key in the group lets everyone in. The Alliance reach her from "
-		.. "Emissary Jacques in Southshore; the Horde through a longer chain from Magus Wordeen Voidglare in Tarren "
-		.. "Mill (see the Quests tab).\n\n"
 		.. "Immunities: much of the city takes no Arcane damage. Constructs and elementals ignore bleeds and "
 		.. "poisons, and the treants take no Nature damage, though they bleed.\n\n"
 		.. "Trash: interrupt the Mana Phantoms' Mana Burn, and stand in the pool a Saturated Remnant leaves behind "
 		.. "to regain mana. Every kill gives Kirin Tor reputation.",
+
+	--[[
+		Before you go (the overview, for the player's own side): the Dalaran Sewer Key, from Heart of
+		Disruption, which the Image of Archmage Modera gives by Lordamere Lake; and Lyn the Ignored,
+		the hidden boss, who needs the Tome of Dalaran. The Horde's chain and the tome checked against
+		Wowhead's news posts (Serenal, Riyani, October 2026) and foreverchanges.pro's quest pages, read
+		by hand: facts only. Keeper Bel'varil's Stone Tokens and Bracers of Binding, which the Horde
+		post lists alongside, are not steps of the chain (Blood in the Streets needs only the patrols
+		and the Grimy Key) and are left out.
+	]]
+	prepare = {
+		{
+			faction = "Alliance",
+			title = "The Dalaran Sewer Key",
+			text = "Emissary Jacques in Southshore starts An Alarming Request, which leads to the Image of Archmage "
+				.. "Modera by Lordamere Lake, outside the city. Her Heart of Disruption gives the key; one key in the "
+				.. "group lets everyone in.",
+			quests = { 92432, 92458 },
+		},
+		{
+			faction = "Horde",
+			title = "The Dalaran Sewer Key",
+			text = "Magus Wordeen Voidglare in Tarren Mill gives Prison Break In and Key to the City (the Grimy Key, "
+				.. "from the Warden's Footlocker at the Lordamere Internment Camp), then Dalaran Patrols and Blood in "
+				.. "the Streets, which leads to the Image of Archmage Modera by Lordamere Lake. Her Heart of Disruption "
+				.. "gives the key; one key in the group lets everyone in.",
+			quests = { 544, 93680, 545, 92434, 96984 },
+		},
+		{
+			title = "Lyn the Ignored, a hidden boss",
+			text = "Bring the Tome of Dalaran to summon him. Take the Black Tome from Archmage Arugal's table in "
+				.. "Shadowfang Keep after his kill, and use it beside the Leyline Focus in Ambermill's keep, in "
+				.. "Silverpine Forest. In the sewers, past Atrexis, go straight on into the tunnel to the purple rune "
+				.. "and use the tome there. It is not used up: it can be used again after 3 minutes.",
+		},
+	},
 
 	-- Lyn is summoned in the sewers past Atrexis; the Fel Ancient waits behind his barrier until
 	-- the city around him is cleared.
@@ -105,7 +136,7 @@ ns.AmendInstance("CityOfDalaran", {
 			notes = {
 				"A hidden boss you summon. Take the Black Tome from Archmage Arugal's table in Shadowfang Keep after his kill, and turn it into the Tome of Dalaran at the Leyline Focus, a blue crystal in a back room at Ambermill in Silverpine Forest.",
 				"Past Atrexis, clear the north-east room with the market stalls and the small pink summoning circle. Whoever carries the tome clicks the circle, and Lyn comes out of the big round grate.",
-				"Shadow Bolt Volley and Curse of Thorns together hurt: remove the curse, melee above all. She raises skeletons as Atrexis does.",
+				"Shadow Bolt Volley and Curse of Thorns together hurt: remove the curse, melee above all. He raises skeletons as Atrexis does.",
 			},
 			mapPin = { x = 0.690, y = 0.166, floor = 1 },
 			-- Her abilities: Data/Authored/Abilities.lua.

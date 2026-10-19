@@ -3,9 +3,10 @@ local L = ns.L
 
 --[[
 	The journal's quests on the maps, as the client marks its own: a "!" where a dungeon or
-	raid quest starts, while it can be taken (greyed while it cannot yet: a step of its chain
-	or the level still to come); a "?" where it is handed in, once it is ready to; nothing while
-	it is under way, or once it is done.
+	raid quest starts, only while the player can take it (its chain's earlier steps done, the
+	level reached) and it is not yet grey for their level; a "?" where it is handed in, once it is
+	ready to; nothing while it is under way, or once it is done. The Quests tab still lists them
+	all.
 
 	On Blizzard's world map the marks stand where each quest's giver does (the quest's start,
 	as the Quests tab's Show Start has it); quests that start inside a dungeon have their mark
@@ -25,9 +26,10 @@ local QUEST_PIN_TEMPLATE = "AegisJournalQuestPinTemplate"
 -- and the quests in the player's log, a "?" once one can be handed in (QuestDataProvider).
 local CLIENT_TEMPLATES = { "QuestOfferPinTemplate", "QuestPinTemplate" }
 local START_ATLAS, TURN_IN_ATLAS = "QuestNormal", "QuestTurnin"
-local LOCKED_ALPHA = 0.8
-local RED, GREEN = { 1, 0.3, 0.3 }, { 0.1, 1, 0.1 }
+local GREEN = { 0.1, 1, 0.1 }
 local REFRESH_DELAY = 0.2
+-- How far below the player's level a quest goes grey, where the client does not say.
+local GREY_RANGE = 5
 
 local provider
 
@@ -35,21 +37,39 @@ local provider
 -- What each quest shows
 ------------------------------------------------------------------------------------------
 
+-- How many levels below the player's a quest goes grey: the client's own rule.
+local function GreyRange()
+	for _, name in ipairs({ "UnitQuestTrivialLevelRange", "GetQuestGreenRange" }) do
+		local rule = _G[name]
+		if type(rule) == "function" then
+			local ok, range = pcall(rule, "player")
+			if ok and type(range) == "number" then return range end
+		end
+	end
+	return GREY_RANGE
+end
+
+-- Grey for the player, as the quest log greys it: too far below their level to be worth taking.
+function QuestMap.IsGrey(quest)
+	local ok, level = pcall(UnitLevel, "player")
+	return type(quest.level) == "number" and ok and type(level) == "number" and level - quest.level > GreyRange()
+end
+
 --[[
 	A quest's mark now, or nil: { kind = "start" or "turnin", point = its place on the world
-	map (or nil), inside = its spot on the dungeon's map (or nil), locked = why it cannot be
-	taken yet (or nil) }.
+	map (or nil), inside = its spot on the dungeon's map (or nil) }. A start only for a quest the
+	player can take now and that is not grey for them.
 ]]
 function QuestMap:Mark(quest)
 	local panel = ns.QuestsPanel
 	local status = panel:Status(quest)
-	if status == "done" or status == "active" then return nil end
+	-- The map legend's switches: the game's own filters for quests in the log and on offer.
 	if status == "ready" then
+		if not ns.MapLegend.Shows("turnin") then return nil end
 		return { kind = "turnin", point = panel:EndPoint(quest), inside = quest.endInside }
 	end
-	local mark = { kind = "start", point = panel:StartPoint(quest), inside = quest.startInside }
-	if status == "locked" then mark.locked = panel:LockedReason(quest) end
-	return mark
+	if status ~= "available" or QuestMap.IsGrey(quest) or not ns.MapLegend.Shows("quest") then return nil end
+	return { kind = "start", point = panel:StartPoint(quest), inside = quest.startInside }
 end
 
 --[[
@@ -147,8 +167,21 @@ end
 
 function QuestMap:SetMarkTexture(texture, mark)
 	texture:SetAtlas(mark.kind == "turnin" and TURN_IN_ATLAS or START_ATLAS)
-	texture:SetDesaturated(mark.locked ~= nil)
-	texture:SetAlpha(mark.locked and LOCKED_ALPHA or 1)
+end
+
+--[[
+	The world map's legend lights up its Quest entry while one of the client's quest marks is
+	pointed at, and its Turn In entry too for a "?": the journal's marks do the same
+	(UI/MapLegend.lua), as its other pins do.
+]]
+function QuestMap:LegendEnter(mark)
+	ns.MapLegend:PinEnter("quest")
+	if mark.kind == "turnin" then ns.MapLegend:PinEnter("turnin") end
+end
+
+function QuestMap:LegendLeave()
+	ns.MapLegend:PinLeave("quest")
+	ns.MapLegend:PinLeave("turnin")
 end
 
 function QuestMap:ShowTooltip(owner, instance, quest, mark, clickLines)
@@ -161,8 +194,6 @@ function QuestMap:ShowTooltip(owner, instance, quest, mark, clickLines)
 	if mark.places then GameTooltip:AddLine(string.format(L.QUESTMAP_ONE_OF, mark.places), 0.8, 0.8, 0.8, true) end
 	if mark.kind == "turnin" then
 		GameTooltip:AddLine(L.QUEST_STATUS_READY, GREEN[1], GREEN[2], GREEN[3])
-	elseif mark.locked then
-		GameTooltip:AddLine(mark.locked, RED[1], RED[2], RED[3])
 	end
 	for _, line in ipairs(clickLines) do GameTooltip:AddLine(line, 0.1, 1, 0.1) end
 	GameTooltip:Show()
@@ -214,11 +245,13 @@ end
 function PinMethods:OnMouseEnter()
 	ns.DungeonMap:SetAreaLabel(self, self.quest.name, self.instance.name)
 	QuestMap:ShowTooltip(self, self.instance, self.quest, self.mark, { L.QUESTMAP_LEFT_CLICK, L.ENTRANCE_RIGHT_CLICK })
+	QuestMap:LegendEnter(self.mark)
 end
 
 function PinMethods:OnMouseLeave()
 	ns.DungeonMap:ClearAreaLabel(self)
 	GameTooltip:Hide()
+	QuestMap:LegendLeave()
 end
 
 function PinMethods:OnMouseClickAction(button)
@@ -277,6 +310,12 @@ local function Redraw()
 		provider:RefreshAllData()
 		ns.DungeonMap:Refresh()
 	end
+end
+
+-- Drawn again now (a legend switch).
+function QuestMap:Refresh()
+	queued = false
+	Redraw()
 end
 
 local events = CreateFrame("Frame")

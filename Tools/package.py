@@ -19,8 +19,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ADDON = "Aegis_Forever_Instance_Journal"
 TOC = os.path.join(ROOT, ADDON + ".toc")
 # Kept in the repository, not in the addon: the tools, the README's pictures and the Log
-# Reader page, and built releases.
-LEFT_OUT = {"Tools", "docs", "dist"}
+# Reader page, and built releases; and the developer's private tools (Dev/, its own repository,
+# which this one ignores).
+LEFT_OUT = {"Tools", "docs", "dist", "Dev"}
 
 
 def toc_version_and_files():

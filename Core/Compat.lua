@@ -152,6 +152,50 @@ end
 
 local COIN_ICON = "%d|TInterface\\MoneyFrame\\UI-%sIcon:0:0:2:0|t"
 
+--[[
+	The currencies a reward can cost besides coins, by the English name its captured cost gives
+	("180 Merchant's Favor"): the currency's id, and the icon for a client that cannot say. From the
+	client's own currency table (CurrencyTypes, Forever build 1.60.1.70450): Merchant's Favor is the
+	trade camps' currency, which the Azeroth Commerce Authority's and Durotar Supply and Logistics'
+	quartermasters take.
+]]
+local CURRENCIES = { ["Merchant's Favor"] = { id = 3402, icon = 135725 } }
+local CURRENCY_TEXT = "%s|T%s:0:0:2:0|t"
+
+-- The client's word for a currency: its name, in the client's language, and its icon.
+local function CurrencyIcon(currency)
+	if currency.clientName == nil then
+		local getInfo = C_CurrencyInfo and C_CurrencyInfo.GetCurrencyInfo
+		local ok, info = false, nil
+		if type(getInfo) == "function" then ok, info = pcall(getInfo, currency.id) end
+		info = ok and type(info) == "table" and info or {}
+		currency.clientName = info.name or false
+		currency.clientIcon = info.iconFileID
+	end
+	return currency.clientIcon or currency.icon
+end
+
+local function FindCurrency(name)
+	if CURRENCIES[name] then return CURRENCIES[name] end
+	for _, currency in pairs(CURRENCIES) do
+		CurrencyIcon(currency)
+		if currency.clientName == name then return currency end
+	end
+end
+
+-- A cost ("180 Merchant's Favor") as the merchant shows it: each amount with its currency's icon.
+-- Nil unless the journal knows every currency in it.
+function ns.CostIcons(cost)
+	local parts = {}
+	for part in tostring(cost or ""):gmatch("[^+]+") do
+		local amount, name = part:match("^%s*(%d+)%s+(.-)%s*$")
+		local currency = name and FindCurrency(name)
+		if not currency then return nil end
+		parts[#parts + 1] = CURRENCY_TEXT:format(amount, CurrencyIcon(currency))
+	end
+	return #parts > 0 and table.concat(parts, " ") or nil
+end
+
 -- Coins as icons. The Forever client keeps GetCoinTextureString under C_CurrencyInfo;
 -- GetMoneyString (SharedXML), the old global and our own icons are fallbacks.
 function ns.MoneyText(copper)

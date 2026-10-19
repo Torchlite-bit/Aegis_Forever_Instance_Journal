@@ -138,7 +138,8 @@ function GearFinder:Find()
 		for _, boss in ipairs(instance.bosses or {}) do
 			for _, row in ipairs(boss.loot or {}) do
 				local itemID = row.itemID
-				if type(itemID) == "number" and not seen[itemID] and not ns.Items:IsHidden(itemID) then
+				if type(itemID) == "number" and not seen[itemID] and not ns.Items:IsHidden(itemID)
+					and not ns.Items:Unremarkable(boss, row) then
 					seen[itemID] = true
 					local info = Info(itemID, row)
 					if not info then

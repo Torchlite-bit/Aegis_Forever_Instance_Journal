@@ -483,16 +483,21 @@ function ProviderMethods:RefreshAllData()
 	local mapID = map:GetMapID()
 	local info = mapID and ns.DungeonMap:MapInfo(mapID)
 	if not info or (info.mapType ~= MAP_TYPE_ZONE and info.mapType ~= MAP_TYPE_CONTINENT) then return end
-	if info.mapType == MAP_TYPE_ZONE and not ClientShows(mapID) then
+	if info.mapType == MAP_TYPE_ZONE and not ClientShows(mapID) and ns.MapLegend.Shows("flight") then
 		local playerFaction = UnitFactionGroup("player")
 		for _, node in ipairs(Nodes(mapID)) do
 			if ServesPlayer(node, playerFaction) then map:AcquirePin(FLIGHT_PIN_TEMPLATE, node) end
 		end
 	end
-	for _, spot in ipairs(ShownTransports()) do
+	for _, spot in ipairs(ns.MapLegend.Shows("transport") and ShownTransports() or {}) do
 		local x, y = ns.DungeonMap:PositionOn(spot, mapID)
 		if x then map:AcquirePin(TRANSPORT_PIN_TEMPLATE, spot, x, y) end
 	end
+end
+
+-- Drawn again (a legend switch).
+function TravelMap:Refresh()
+	if provider and WorldMapFrame:IsShown() then provider:RefreshAllData() end
 end
 
 function TravelMap:SetUp()

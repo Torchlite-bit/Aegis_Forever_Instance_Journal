@@ -211,7 +211,21 @@ function ProviderMethods:RefreshAllData()
 	if pieces and #pieces > 0 then self:GetMap():AcquirePin(FOG_PIN_TEMPLATE, mapID, pieces) end
 end
 
--- The choice, at the end of the map's filter menu (the client's tag for it).
+--[[
+	The journal's choices, at the end of the map's filter menu (the client's tag for it): the
+	unexplored areas, then the same switches as the map legend's entries (UI/MapLegend.lua), so
+	either place shows and hides the same markers. Quests in the log are the game's own Quest
+	Objectives, higher in the same menu.
+]]
+local MARKER_CHOICES = {
+	{ kind = "quest", text = "MAP_FILTER_QUESTS" },
+	{ kind = "dungeon", text = "MAP_FILTER_DUNGEONS" },
+	{ kind = "raid", text = "MAP_FILTER_RAIDS" },
+	{ kind = "flight", text = "MAP_FILTER_FLIGHT" },
+	{ kind = "cave", text = "MAP_FILTER_CAVES" },
+	{ kind = "transport", text = "MAP_FILTER_TRANSPORT" },
+}
+
 local function AddMenuChoice()
 	if not (Menu and Menu.ModifyMenu) then return false end
 	Menu.ModifyMenu("MENU_WORLD_MAP_TRACKING", function(_, root)
@@ -220,6 +234,11 @@ local function AddMenuChoice()
 		root:CreateCheckbox(L.MAP_SHOW_UNEXPLORED,
 			function() return ZoneMap:ShowsUnexplored() end,
 			function() ZoneMap:SetShowUnexplored(not ZoneMap:ShowsUnexplored()) end)
+		for _, choice in ipairs(MARKER_CHOICES) do
+			root:CreateCheckbox(L[choice.text],
+				function() return ns.MapLegend.Shows(choice.kind) end,
+				function() ns.MapLegend:Toggle(choice.kind) end)
+		end
 	end)
 	return true
 end

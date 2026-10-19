@@ -137,8 +137,9 @@ check(ns.GetInstance("TileMissing").map.floors == nil and not ns.DungeonMap:HasM
 local drowned = ns.GetInstance("TheDrownedCity")
 check(drowned and drowned.untested and drowned.levelMin == 35 and #drowned.bosses == 4 and not drowned.instanceID,
 	"The Drowned City waits as a placeholder with its announced bosses")
-check(ns.GetInstance("ShapersTerrace").untested and ns.GetInstance("CityOfDalaran").untested
-	and not ns.GetInstance("TheDeadmines").untested, "untested dungeons are marked, tested ones are not")
+check(ns.GetInstance("ShapersTerrace").untested and not ns.GetInstance("CityOfDalaran").untested
+	and not ns.GetInstance("TheDeadmines").untested,
+	"untested dungeons are marked; tested ones, City of Dalaran among them, are not")
 
 -- Open with the key binding's function, as a character who last had Record open when it was the
 -- fourth tab: it reopens on Record, now the fifth
@@ -173,7 +174,8 @@ local function sortedByLevel(list)
 end
 check(names[1] == "Ragefire Chasm" and sortedByLevel(names) and buttonNamed(dungeons, "Stratholme: Service Gate")
 	and buttonNamed(dungeons, "The Drowned City"), "dungeons sorted by level, then name, from Ragefire Chasm to the last")
-check(buttonNamed(dungeons, "City of Dalaran").Untested:IsShown() and buttonNamed(dungeons, "City of Dalaran").Untested:GetText() == "Not yet tested"
+check(buttonNamed(dungeons, "The Drowned City").Untested:IsShown() and buttonNamed(dungeons, "The Drowned City").Untested:GetText() == "Not yet tested"
+	and not buttonNamed(dungeons, "City of Dalaran").Untested:IsShown()
 	and not buttonNamed(dungeons, "The Deadmines").Untested:IsShown(), "untested dungeons say so on their button")
 -- Which dungeons WoW: Forever added is kept in the data, for a later way to show it
 local foreverDungeons = {}
@@ -278,7 +280,7 @@ local function visibleBosses()
 	return names
 end
 local bossNames = visibleBosses()
-check(#bossNames == 7, "seven bosses, trash left out, got " .. #bossNames)
+check(#bossNames == 8 and bossNames[8] == "Trash", "seven bosses, then the dungeon's trash as one more entry, got " .. #bossNames)
 check(bossNames[1] == "The Baron" and bossNames[7] == "Lordaeron Captain (Rare)", "boss order and rare label: " .. table.concat(bossNames, ", "))
 do
 	-- The portrait is a full circle starting the button, ringed in gold then a dark edge, and
@@ -496,8 +498,8 @@ check(deadmines.description:find("First War", 1, true), "hand-written descriptio
 choiceNamed(instanceChoices, "The Deadmines").func()
 check(page.instance == deadmines, "Deadmines opens from the dungeon list")
 bossNames = visibleBosses()
-check(#bossNames == 9 and bossNames[1] == "Rhahk'Zor" and bossNames[7] == "Cookie" and bossNames[9] == "Edwin VanCleef",
-	"Deadmines bosses in run order: " .. table.concat(bossNames, ", "))
+check(#bossNames == 10 and bossNames[1] == "Rhahk'Zor" and bossNames[7] == "Cookie" and bossNames[9] == "Edwin VanCleef"
+	and bossNames[10] == "Trash", "Deadmines bosses in run order, then the trash: " .. table.concat(bossNames, ", "))
 check(page.info.InstanceButton.Icon:GetTexture() == 522352 and page.info.InstanceButton.Icon._texCoord[1] == 0.156,
 	"Deadmines' round icon comes from its journal picture")
 check(page.InstanceOverview.Picture:GetTexture() == 526404 and not page.InstanceOverview.PictureBorder:IsShown()
@@ -522,6 +524,38 @@ local function lootRows()
 		if row:IsShown() then list[#list + 1] = row end
 	end
 	return list
+end
+
+-- The dungeon's trash: the last entry in the boss list, opening on its drops worth listing (rare and
+-- epic ones, recipes, quest items), with no abilities or model
+do
+	local ruins = ns.GetInstance("RuinsOfLordaeron")
+	local trash
+	for _, boss in ipairs(ruins.bosses) do if boss.trash then trash = boss end end
+	local count = #trash.loot
+	trash.loot[count + 1] = { itemID = "?Frayed Cloak", name = "Frayed Cloak", quality = 2, slot = "Back" }
+	trash.loot[count + 2] = { itemID = "?Pattern: Grave Cloak", name = "Pattern: Grave Cloak", quality = 2,
+		slot = "Recipe, Tailoring" }
+	ns.Journal:OpenInstance(ruins)
+	tabs[1]:Click()
+	local last
+	for _, button in ipairs(page.Bosses.Buttons) do if button:IsShown() then last = button end end
+	check(last.boss == trash and last.Name:GetText() == "Trash", "Trash closes the boss list")
+	last:Click()
+	local names = {}
+	for _, row in ipairs(lootRows()) do names[row.Name:GetText()] = true end
+	check(page.tab == ns.EncounterPage.TAB_LOOT and loot:IsShown() and not tabs[3]:IsEnabled() and not tabs[4]:IsEnabled(),
+		"it opens on its loot, with no abilities or model")
+	check(names["Pattern: Grave Cloak"] and not names["Frayed Cloak"],
+		"its recipe of any quality, not the green cloak any creature there might drop")
+	check(f.NavBar._nav[#f.NavBar._nav].name == "Trash", "the breadcrumb says Trash")
+	tabs[1]:Click()
+	check(page.BossOverview:IsShown() and page.BossOverview.Child.Description:GetText() == ns.L.TRASH_DESCRIPTION,
+		"its overview says what it lists")
+	check(ns.Items:Unremarkable(trash, trash.loot[count + 1]) and not ns.Items:Unremarkable(trash, trash.loot[1])
+		and not ns.Items:Unremarkable(ruins.bosses[1], { itemID = "?Grey", quality = 0 }),
+		"a green off trash is left out everywhere; a rare one, and any boss's drop, never")
+	trash.loot[count + 1], trash.loot[count + 2] = nil, nil
 end
 
 ns.Journal:OpenInstance(ns.GetInstance("HallOfThanes"))
@@ -665,13 +699,225 @@ local lyn
 for _, boss in ipairs(cityOfDalaran.bosses) do if boss.name == "Lyn the Ignored" then lyn = boss end end
 check(#lyn.abilities == 2 and lyn.abilities[2].spellID == 1304473 and lyn.abilities[2].flags[1] == "Curse"
 	and lyn.extraAbilities[1].title == "Skeletons" and lyn.fightNote:find("Tome of Dalaran", 1, true)
-	and lyn.notes[1]:find("Tome of Dalaran", 1, true), "Lyn the Ignored's abilities, and how to summon her")
+	and lyn.notes[1]:find("Tome of Dalaran", 1, true), "Lyn the Ignored's abilities, and how to summon him")
 local heartOfDisruption
 for _, quest in ipairs(cityOfDalaran.quests) do if quest.questID == 96984 then heartOfDisruption = quest end end
 check(#heartOfDisruption.prerequisites == 4 and heartOfDisruption.prerequisites[4].name == "Blood in the Streets",
 	"the Horde's Heart of Disruption follows the key chain from Tarren Mill")
-check(cityOfDalaran.description:find("Dalaran Sewer Key", 1, true) and cityOfDalaran.description:find("Emissary Jacques", 1, true)
-	and cityOfDalaran.description:find("Magus Wordeen Voidglare", 1, true), "the way in, for both sides")
+-- Before you go, on the overview: under its bar, the key for the player's own side and the hidden
+-- boss, each a note under the Abilities tab's paper headers; the key's quests beneath it, as the
+-- Quests tab lists them
+do
+	local lore = page.InstanceOverview.Lore
+	local function open()
+		-- (drawn as the dungeon opens)
+		ns.Journal:OpenInstance(ns.GetInstance("TheDeadmines"))
+		ns.Journal:OpenInstance(cityOfDalaran)
+		tabs[1]:Click()
+		return lore.beforeYouGo
+	end
+	local function shown(list)
+		local out = {}
+		for _, item in ipairs(list) do if item:IsShown() then out[#out + 1] = item end end
+		return out
+	end
+	local function title(header) return header.Button.Title:GetText() end
+	local state = open()
+	local headers, rows = shown(state.headers), shown(state.rows)
+	local key, lynNote = headers[1], headers[2]
+	check(state.bar:IsShown() and state.label:GetText() == "Before you go" and #headers == 2
+		and title(key) == "The Dalaran Sewer Key" and title(lynNote):find("Lyn the Ignored", 1, true),
+		"Before you go: a bar, then the Alliance's key and Lyn, each under a paper header")
+	check(key.Button.strip == key.Button.strips.expanded and key.Description:IsShown()
+		and key.Description:GetText():find("Emissary Jacques", 1, true)
+		and key.Description:GetText():find("You have done 0 of its 2 quests.", 1, true)
+		and not key.Description:GetText():find("Magus Wordeen Voidglare", 1, true),
+		"the key's note open on its text and how far along the player is")
+	check(key.Button.AbilityIcon._atlas == "QuestNormal" and key.Button.Note:GetText() == "0/2" and key.Button.Note:IsShown(),
+		"its header: the quest mark of the step the player is on, and how many of its quests are done")
+	check(#rows == 2 and rows[1].quest.questID == 92432 and rows[1].Text:GetText() == "An Alarming Request"
+		and rows[2].quest.questID == 92458 and rows[2].Text:GetText() == "[33] Heart of Disruption"
+		and rows[2].Status._atlas == "QuestNormal" and rows[2].Status._desaturated and not rows[1].Expand:IsShown()
+		and select(4, rows[1]:GetPoint(1)) == 12,
+		"its quests beneath, as the Quests tab lists them: a step, then the key's own, not yet open")
+	check(lynNote.Description:GetText():find("Tome of Dalaran", 1, true) and lynNote.Description:GetText():find("summon him", 1, true)
+		and lynNote.Button.AbilityIcon:GetTexture() == "Interface\\TargetingFrame\\UI-TargetingFrame-Skull"
+		and not lynNote.Button.Note:IsShown(), "the hidden boss's note: a skull, and how to summon him")
+	check(lore.Description:GetText() == cityOfDalaran.description
+		and select(5, lore.Description:GetPoint(1)) < select(5, rows[2]:GetPoint(1)),
+		"the description after the notes")
+	check(not cityOfDalaran.description:find("Getting in", 1, true), "the way in is no longer repeated in the description")
+	check(not lore.Text:GetText():find("Not yet tested", 1, true), "City of Dalaran no longer says it is untested")
+
+	-- The Quests tab: its dropdowns (headers) and the quests shown in them
+	local function dropdowns() return shown(page.QuestList.Headers) end
+	local function questTabShows(quest)
+		for _, row in ipairs(shown(page.QuestList.Rows)) do
+			if row.quest == quest then return row end
+		end
+	end
+
+	-- A click on a quest opens it on the Quests tab, inside its key, which is open
+	rows[1]:_RunScript("OnEnter")
+	check(GameTooltip._text == "An Alarming Request" and GameTooltip._lines[#GameTooltip._lines] == ns.L.PREPARE_QUEST_HINT,
+		"a quest's tooltip says where a click takes it")
+	rows[1]:_RunScript("OnLeave")
+	rows[1]:Click()
+	local chosen = ns.QuestsPanel.page.selectedQuest
+	check(page.tab == Page.TAB_QUESTS and chosen.questID == 92432 and questTabShows(chosen)
+		and questTabShows(chosen).Highlight:IsShown(), "a step opens on the Quests tab, shown and lit inside its key")
+	state = open()
+	rows = shown(state.rows)
+	rows[2]:Click()
+	check(page.tab == Page.TAB_QUESTS and ns.QuestsPanel.page.selectedQuest == rows[2].quest, "the key's own quest too")
+
+	-- The headers open and close like the Abilities tab's, keeping the scroll
+	state = open()
+	lore:SetVerticalScroll(20)
+	state.headers[1].Button:Click()
+	check(not state.headers[1].Description:IsShown() and #shown(state.rows) == 0 and lore:GetVerticalScroll() == 20,
+		"a click closes the key's note, the scroll kept")
+	state.headers[1].Button:Click()
+	check(state.headers[1].Description:IsShown() and #shown(state.rows) == 2, "another opens it again")
+
+	-- How far along the player is (at the key's own quest's level)
+	Mock.questsDone[92432], Mock.level = true, 30
+	state = open()
+	check(state.headers[1].Button.Note:GetText() == "1/2"
+		and state.headers[1].Description:GetText():find("You have done 1 of its 2 quests.", 1, true)
+		and shown(state.rows)[1].Status:GetTexture() == "Interface\\Buttons\\UI-CheckBox-Check"
+		and shown(state.rows)[2].Status._atlas == "QuestNormal" and not shown(state.rows)[2].Status._desaturated,
+		"a step done: checked, and the key's own quest can be taken")
+	Mock.questLog[92458] = 1
+	state = open()
+	check(state.headers[1].Button.Note:GetText():find("UI-CheckBox-Check", 1, true)
+		and state.headers[1].Button.AbilityIcon:GetTexture() == "Interface\\Buttons\\UI-CheckBox-Check"
+		and not state.headers[1].Description:IsShown() and state.headers[2].Description:IsShown(),
+		"the key's own quest taken: they have it, and its note starts closed")
+	state.headers[1].Button:Click()
+	check(state.headers[1].Description:GetText():find("You have it.", 1, true), "and says so")
+	Mock.questsDone[92432], Mock.questLog[92458], Mock.level = nil, nil, 20
+
+	-- Taking a quest updates the overview shown
+	state = open()
+	Mock.questsDone[92432] = true
+	Mock.Fire("QUEST_TURNED_IN", 92432)
+	Mock.RunTimers(1)
+	check(state.headers[1].Button.Note:GetText() == "1/2", "a quest handed in shows at once")
+	Mock.questLog[92458] = 1
+	Mock.Fire("QUEST_LOG_UPDATE")
+	Mock.RunTimers(1)
+	check(state.headers[1].Description:IsShown() and state.headers[1].Button.Note:GetText():find("UI-CheckBox-Check", 1, true),
+		"taking the key's last quest with the overview shown: checked, its note still open")
+	Mock.questsDone[92432], Mock.questLog[92458] = nil, nil
+
+	-- The Horde's own chain
+	Mock.faction = "Horde"
+	state = open()
+	headers, rows = shown(state.headers), shown(state.rows)
+	check(headers[1].Description:GetText():find("Magus Wordeen Voidglare", 1, true)
+		and not headers[1].Description:GetText():find("Emissary Jacques", 1, true) and headers[1].Button.Note:GetText() == "0/5"
+		and #rows == 5 and rows[1].Text:GetText() == "Prison Break In" and rows[4].Text:GetText() == "Blood in the Streets"
+		and rows[5].quest.questID == 96984 and headers[2].Description:GetText():find("Tome of Dalaran", 1, true),
+		"the Horde's own chain: its five quests")
+	rows[3]:Click()
+	check(ns.QuestsPanel.page.selectedQuest.questID == 545 and questTabShows(ns.QuestsPanel.page.selectedQuest),
+		"a Horde step opens inside the Horde's key on the Quests tab")
+
+	-- The Quests tab: two dropdowns, the key (its quests: Heart of Disruption among them, not again
+	-- on its own) and Dungeon Quests, the rest, as they always were listed
+	local function questsTab()
+		ns.Journal:OpenInstance(ns.GetInstance("TheDeadmines"))
+		ns.Journal:OpenInstance(cityOfDalaran)
+		tabs[5]:Click()
+		return dropdowns(), shown(page.QuestList.Rows)
+	end
+	local drops, list = questsTab()
+	check(#drops == 2 and title(drops[1]) == "The Dalaran Sewer Key" and drops[1].Button.Note:GetText() == "0/5"
+		and drops[1].Button.AbilityIcon._atlas == "QuestNormal" and drops[1].Button.ExpandedIcon:GetText() == "-"
+		and title(drops[2]) == "Dungeon Quests" and drops[2].Button.ExpandedIcon:GetText() == "-"
+		and list[1].quest.questID == 544 and list[5].quest.questID == 96984 and list[1].Text:GetText() == "Prison Break In"
+		and select(5, list[1]:GetPoint(1)) < select(5, drops[1]:GetPoint(1))
+		and select(5, drops[2]:GetPoint(1)) < select(5, list[5]:GetPoint(1))
+		and select(5, list[6]:GetPoint(1)) < select(5, drops[2]:GetPoint(1)),
+		"the Quests tab: the Horde's key, open, its five quests, then Dungeon Quests with the rest")
+	check(ns.QuestsPanel.page.selectedQuest.questID == 544 and questTabShows(ns.QuestsPanel.page.selectedQuest).Highlight:IsShown(),
+		"from its tab: on the key's first quest")
+	local hearts = 0
+	for _, row in ipairs(list) do if row.quest.questID == 96984 then hearts = hearts + 1 end end
+	check(hearts == 1, "Heart of Disruption listed once, in its key")
+	Mock.questsDone[544], Mock.questsDone[93680] = true, true
+	questsTab()
+	check(ns.QuestsPanel.page.selectedQuest.questID == 545 and dropdowns()[1].Button.Note:GetText() == "2/5",
+		"two steps done: it opens on the third, the one to do")
+	Mock.questsDone[544], Mock.questsDone[93680] = nil, nil
+
+	-- Taking the key's last quest with the tab open: the key stays open, its quest still chosen
+	drops, list = questsTab()
+	list[5]:Click()
+	Mock.questLog[96984] = 1
+	Mock.Fire("QUEST_ACCEPTED", 96984)
+	Mock.RunTimers(1)
+	check(dropdowns()[1].Button.ExpandedIcon:GetText() == "-" and questTabShows(ns.QuestsPanel.page.selectedQuest)
+		and ns.QuestsPanel.page.selectedQuest.questID == 96984 and dropdowns()[1].Button.Note:GetText():find("UI-CheckBox-Check", 1, true),
+		"taking the key's last quest with the tab open: the key stays open, its quest still chosen, the key checked")
+
+	-- Once the player has the key, it starts folded; a quest of it opened from Before you go shows inside it, opened
+	drops, list = questsTab()
+	check(drops[1].Button.ExpandedIcon:GetText() == "+" and list[1].quest.questID ~= 544 and drops[1].Button.strip == drops[1].Button.strips.collapsed
+		and ns.QuestsPanel.page.selectedQuest == list[1].quest, "once the player has the key, it starts folded, the tab on Dungeon Quests' first")
+	state = open()
+	state.headers[1].Button:Click()
+	shown(state.rows)[2]:Click()
+	check(ns.QuestsPanel.page.selectedQuest.questID == 93680 and dropdowns()[1].Button.ExpandedIcon:GetText() == "-"
+		and questTabShows(ns.QuestsPanel.page.selectedQuest)
+		and select(4, questTabShows(ns.QuestsPanel.page.selectedQuest):GetPoint(1)) == 8,
+		"a quest of a folded key, opened from Before you go, shows inside the key, opened")
+	Mock.questLog[96984] = nil
+
+	-- A click on a dropdown folds it, the quest chosen kept; opening one chooses its first quest still to do
+	rows = shown(open().rows)
+	rows[3]:Click()
+	dropdowns()[1].Button:Click()
+	check(dropdowns()[1].Button.ExpandedIcon:GetText() == "+" and shown(page.QuestList.Rows)[1].quest.questID ~= 544
+		and ns.QuestsPanel.page.selectedQuest.questID == 545 and page.QuestDetail.Child.Title:GetText() == "Dalaran Patrols",
+		"folded: the key's quests gone from the list, Dalaran Patrols still on the page")
+	dropdowns()[1].Button:Click()
+	check(ns.QuestsPanel.page.selectedQuest.questID == 545, "opened again with one of its quests chosen: the choice kept")
+	dropdowns()[1].Button:Click()
+	Mock.questsDone[544] = true
+	shown(page.QuestList.Rows)[1]:Click()
+	dropdowns()[1].Button:Click()
+	check(ns.QuestsPanel.page.selectedQuest.questID == 93680 and shown(page.QuestList.Rows)[2].quest.questID == 93680,
+		"opening the key chooses its first quest still to do")
+	Mock.questsDone[544] = nil
+	dropdowns()[2].Button:Click()
+	check(dropdowns()[2].Button.ExpandedIcon:GetText() == "+" and #shown(page.QuestList.Rows) == 5,
+		"Dungeon Quests folds too")
+	dropdowns()[2].Button:Click()
+	Mock.faction = "Alliance"
+
+	-- Steps of a chain that share a name are one row on the Quests tab, and one here
+	do
+		local alliance = cityOfDalaran.prepare[1]
+		local quest
+		for _, candidate in ipairs(cityOfDalaran.quests) do if candidate.questID == 92458 then quest = candidate end end
+		local prerequisites, quests = quest.prerequisites, alliance.quests
+		quest.prerequisites = { { questID = 92432, name = "An Alarming Request" }, { questID = 92433, name = "An Alarming Request" } }
+		alliance.quests = { 92432, 92433, 92458 }
+		state = open()
+		rows = shown(state.rows)
+		check(#rows == 2 and rows[1].quest.steps and #rows[1].quest.steps == 2
+			and ns.QuestsPanel:Find(cityOfDalaran, 92433) == rows[1].quest, "a chain's same-named steps: one row, found by either step")
+		quest.prerequisites, alliance.quests = prerequisites, quests
+	end
+
+	-- A dungeon with nothing to prepare has no bar
+	ns.Journal:OpenInstance(ns.GetInstance("TheDeadmines"))
+	tabs[1]:Click()
+	check(not lore.beforeYouGo.bar:IsShown() and #shown(lore.beforeYouGo.headers) == 0 and #shown(lore.beforeYouGo.rows) == 0,
+		"no Before you go where there is nothing to prepare")
+end
 tabs[1]:Click()
 
 ------------------------------------------------------------------------------------------
@@ -960,7 +1206,7 @@ do
 		"City of Dalaran on Santiago Reyes's map: the sewers, then the city")
 end
 ns.Journal:OpenInstance(deeps)
-check(page.InstanceOverview.Lore.Text:GetText():find("Once a temple to Elune", 1, true)
+check(page.InstanceOverview.Lore.Description:GetText():find("Once a temple to Elune", 1, true)
 	and not page.InstanceOverview.Lore.Text:GetText():find("Not yet tested", 1, true), "Blackfathom Deeps' own overview")
 check(#ns.Search:Find("Aku'mai") > 0 and #ns.Search:Find("Herod") > 0 and #ns.Search:Find("Whitemane") > 0,
 	"search knows the dungeons, the Armory and Cathedral included")
@@ -990,6 +1236,21 @@ check(page.QuestList:IsShown() and page.QuestDetail:IsShown() and not page.Bosse
 check(not page.info.EncounterTitle:IsShown(), "a quest page carries its own title")
 local qrows = questRows()
 check(#qrows == 5, "all five Hall of Thanes quests for an Alliance character, got " .. #qrows)
+do
+	-- A dungeon without a key: its quests in one dropdown, Dungeon Quests, open, under the Abilities
+	-- tab's paper header, clear of the dungeon's name above
+	local drops = {}
+	for _, header in ipairs(page.QuestList.Headers) do if header:IsShown() then drops[#drops + 1] = header end end
+	check(#drops == 1 and drops[1].Button.Title:GetText() == "Dungeon Quests" and drops[1].Button.ExpandedIcon:GetText() == "-"
+		and drops[1].Button.Note:GetText() == "0/5" and drops[1].Button.AbilityIcon._atlas == "QuestNormal"
+		and select(5, drops[1]:GetPoint(1)) == -6 and select(5, qrows[1]:GetPoint(1)) < select(5, drops[1]:GetPoint(1))
+		and select(4, qrows[1]:GetPoint(1)) == 8 and page.QuestList:GetHeight() == page.Bosses:GetHeight(),
+		"one dropdown, Dungeon Quests, open over the quests, the list as tall as the boss list")
+	drops[1].Button:Click()
+	check(#questRows() == 0 and detail.Title:GetText() == "An Ancient Grudge", "folded: no quests listed, the chosen one kept")
+	drops[1].Button:Click()
+	check(#questRows() == 5, "opened again")
+end
 check(qrows[1].Text:GetText() == "[15] An Ancient Grudge" and qrows[1].quest == page.selectedQuest, "first quest chosen to start")
 check(detail.Title:GetText() == "An Ancient Grudge" and not detail.Status:IsShown(), "its page: the title, no status line when available")
 check(qrows[1].Status._atlas == "QuestNormal" and not qrows[1].Status._desaturated, "a yellow ! for an available quest")
@@ -1042,6 +1303,15 @@ check(#questRows() == 6 and questRows()[5].quest.name == "Underground Map", "ope
 questRows()[5]:Click()
 check(page.selectedQuest.questID == 96391 and detail.Title:GetText() == "Underground Map", "a prerequisite can be chosen too")
 rowFor(96393):Click()
+do
+	-- Opened from elsewhere (search, the map, Before you go), a step shows inside its chain, opened
+	rowFor(96393).Expand:Click()
+	local hallOfThanes = ns.GetInstance("HallOfThanes")
+	ns.QuestsPanel:Open(hallOfThanes, (ns.QuestsPanel:Find(hallOfThanes, 96391)))
+	check(page.selectedQuest.questID == 96391 and rowFor(96391) and #questRows() == 6,
+		"opened from elsewhere, a step shows inside its chain, opened")
+	rowFor(96393):Click()
+end
 
 -- The quest log moves things along
 Mock.questsDone[96391] = true
@@ -1056,6 +1326,7 @@ check(not rowFor(96393).Status._desaturated and detail.Status:GetText():find("re
 Mock.questLog[96393], Mock.questsDone[96393] = nil, true
 Mock.Fire("QUEST_TURNED_IN", 96393, 1450, 800)
 check(rowFor(96393).Status._texture == "Interface\\Buttons\\UI-CheckBox-Check" and not detail.Status:IsShown(), "handed in: a gold check mark")
+check(page.QuestList.Headers[1].Button.Note:GetText() == "1/5", "and Dungeon Quests counts it done")
 rowFor(96395):Click()
 c = rowFor(96393).Text._textColor
 check(c[1] == 0.1 and c[2] == 1 and c[3] == 0.1, "and green text once done")
@@ -1066,10 +1337,11 @@ ns.Recorder:GetState().quests[96395] = { description = "The dead do not rest eas
 rowFor(96395):Click()
 check(detail.DescriptionHeader:IsShown() and detail.Description:GetText():find("do not rest easy", 1, true), "recorded quest text shown")
 check(detail.ShowEnd:IsEnabled() and not detail.ShowStart:IsEnabled(), "a recorded hand-in place enables Show End")
+Mock.userWaypoint = nil
 detail.ShowEnd:Click()
-local pinned = ns.MapPin:Target()
-check(WorldMapFrame:IsShown() and Mock.worldMapID == 1455 and pinned and pinned.x == 0.3 and pinned.y == 0.4, "Show End opens the map there")
-ns.MapPin:Clear()
+check(WorldMapFrame:IsShown() and Mock.worldMapID == 1455 and Mock.userWaypoint and Mock.userWaypoint.uiMapID == 1455
+	and Mock.userWaypoint.position.x == 0.3 and Mock.userWaypoint.position.y == 0.4 and ns.MapPin:Target() == nil
+	and chatContains("Waypoint set for"), "Show End opens the map there and sets the game's waypoint on the spot")
 ns.Recorder:GetState().quests[96395] = nil
 
 -- A Horde character sees only the quests open to them
@@ -1104,8 +1376,20 @@ detail.ShowStart:Click()
 check(#Mock.chat == chatBefore + 1 and Mock.chat[#Mock.chat]:find("combat", 1, true), "no map in combat")
 Mock.inCombat = false
 detail.ShowStart:Click()
-pinned = ns.MapPin:Target()
-check(Mock.worldMapID == 1436 and pinned.x == 0.5667 and pinned.title == "Red Silk Bandanas", "Show Start pins the quest giver")
+check(Mock.worldMapID == 1436 and Mock.userWaypoint.uiMapID == 1436 and Mock.userWaypoint.position.x == 0.5667
+	and chatContains("Waypoint set for Red Silk Bandanas."), "Show Start sets a waypoint on the quest giver")
+-- A map the game allows no waypoint on: the journal's own pin there instead
+do
+	local canWaypoint = C_Map.CanSetUserWaypointOnMap
+	C_Map.CanSetUserWaypointOnMap = function() return false end
+	Mock.userWaypoint = nil
+	detail.ShowStart:Click()
+	local pinned = ns.MapPin:Target()
+	check(Mock.worldMapID == 1436 and Mock.userWaypoint == nil and pinned and pinned.x == 0.5667
+		and pinned.title == "Red Silk Bandanas", "no waypoint allowed: the journal's own pin on the quest giver")
+	C_Map.CanSetUserWaypointOnMap = canWaypoint
+	ns.MapPin:Clear()
+end
 check(detail.Reputation:GetText() == "100 Stormwind Reputation" and detail.Receive:IsShown() == false, "reputation, and no money line without money")
 
 rowFor(214).Expand:Click()
@@ -1120,11 +1404,52 @@ check(detail.Objective:GetText():find("2 of 6", 1, true) and rowFor(65).Status._
 Mock.questsDone[65], Mock.questsDone[132] = nil, nil
 rowFor(214).Expand:Click()
 
-rowFor(92753).Expand:Click()
-local selfListed = 0
-for _, row in ipairs(questRows()) do if row.quest == rowFor(92753).quest then selfListed = selfListed + 1 end end
-check(selfListed == 1, "a chain that names its own quest does not list it twice")
-rowFor(92753).Expand:Click()
+do
+	-- A chain that names its own quest among its steps lists it once
+	local quest = rowFor(92753).quest
+	local prerequisites = quest.prerequisites
+	quest.prerequisites = { { questID = 90001, name = "A Step Before" }, { questID = 92753, name = quest.name } }
+	rowFor(92753).Expand:Click()
+	local selfListed = 0
+	for _, row in ipairs(questRows()) do if row.quest == quest then selfListed = selfListed + 1 end end
+	check(selfListed == 1 and rowFor(90001), "a chain that names its own quest lists it once")
+	rowFor(92753).Expand:Click()
+	quest.prerequisites = prerequisites
+end
+
+do
+	-- A quest the dungeon lists, opened from elsewhere (search, the map), is chosen where it is: the
+	-- chains of other quests that name it as a step stay folded, and it is listed and lit once,
+	-- scrolled into view
+	local depths = ns.GetInstance("BlackrockDepths")
+	local tale
+	for _, quest in ipairs(depths.quests) do if quest.questID == 4342 then tale = quest end end
+	ns.QuestsPanel:Open(depths, tale)
+	Mock.RunTimers(0)
+	local listed, lit, row = 0, 0, nil
+	for _, shownRow in ipairs(questRows()) do
+		if shownRow.quest == tale then listed, row = listed + 1, shownRow end
+		if shownRow.Highlight:IsShown() then lit = lit + 1 end
+	end
+	local list = page.QuestList
+	local top, rowY = list:GetVerticalScroll(), -select(5, row:GetPoint(1))
+	check(page.selectedQuest == tale and listed == 1 and lit == 1 and rowY >= top and rowY + 26 <= top + list:GetHeight(),
+		"a listed quest opened from elsewhere: shown and lit once, in view, the chains naming it folded")
+	-- Another dungeon starts afresh: at the list's top, on its own first quest, lit
+	local mainGate, serviceGate = ns.GetInstance("StratholmeMainGate"), ns.GetInstance("StratholmeServiceGate")
+	ns.Journal:OpenInstance(mainGate)
+	tabs[5]:Click()
+	rowFor(5848).Expand:Click()
+	rowFor(5846):Click()
+	list:SetVerticalScroll(40)
+	ns.Journal:OpenInstance(serviceGate)
+	local chosenShown = false
+	for _, shownRow in ipairs(questRows()) do
+		if shownRow.quest == page.selectedQuest and shownRow.Highlight:IsShown() then chosenShown = true end
+	end
+	check(page.QuestList:IsShown() and page.selectedQuest.questID ~= 5846 and chosenShown and list:GetVerticalScroll() == 0,
+		"another dungeon starts afresh: its first quest chosen and lit, the list at its top")
+end
 
 -- Quests added from the guides (Data/Authored/FromGuides.lua) list and open like the rest
 ns.Journal:OpenInstance(ns.GetInstance("Gnomeregan"))
@@ -1193,9 +1518,22 @@ tabs[1]:Click()
 local mapButton = page.InstanceOverview.MapButton
 check(mapButton:IsShown() and mapButton.Text:GetText() == "Show Map" and mapButton.Shadow._texCoord[1] == 0.00195313,
 	"retail's Show Map on the dungeon page")
+-- (the map's quest log toggle, in the map's corner, as the client adds it)
+WorldMapFrame.SidePanelToggle = CreateFrame("Frame", nil, WorldMapFrame)
+WorldMapFrame.SidePanelToggle:SetFrameLevel(3)
 mapButton:Click()
 local overlay = DungeonMap:Overlay()
 check(WorldMapFrame:IsShown() and overlay and overlay:IsShown() and overlay.instance.key == "HallOfThanes", "the Hall of Thanes over the world map")
+-- The map's own buttons stay above the dungeon map, so the quest log can still be opened and closed
+-- from its corner, and get their own level back when it goes
+do
+	local toggle = WorldMapFrame.SidePanelToggle
+	check(toggle:GetFrameLevel() > overlay:GetFrameLevel(), "the quest log's toggle lifted above the dungeon map")
+	overlay:Hide()
+	check(toggle:GetFrameLevel() == 3, "and put back as it was when the dungeon map goes")
+	mapButton:Click()
+	check(overlay:IsShown() and toggle:GetFrameLevel() > overlay:GetFrameLevel(), "lifted again when it comes back")
+end
 check(overlay.Art.Picture:GetTexture():find("Media\\Maps\\HallOfThanes", 1, true) and overlay.Art.Picture._texCoord[4] == 0.667,
 	"our picture of it, cut to the map")
 local artW, artH = overlay.Art._width, overlay.Art._height
@@ -1438,11 +1776,17 @@ do
 	check(Mock.userWaypoint and Mock.userWaypoint.uiMapID == 1455 and Mock.userWaypoint.position.x == 0.324
 		and chatContains("Waypoint set for Important Heirlooms."), "a right click sets a waypoint to it, and says so")
 
-	-- Not yet: a greyed mark, saying what comes first
+	-- Grey for the player's level: no mark, as the quest log greys it (the client's own rule where it
+	-- has one, else 5 levels)
+	Mock.level = 30
+	check(not marksOn(1455)[96403], "a quest grey for the player's level has no mark")
+	UnitQuestTrivialLevelRange = function() return 20 end
+	check(marksOn(1455)[96403], "grey by the client's own rule: still worth taking at 15 levels below with its range of 20")
+	UnitQuestTrivialLevelRange, Mock.level = nil, 20
+
+	-- Not yet: no mark until what comes first is done (the Quests tab still lists it)
 	Mock.questsDone[96391], Mock.questsDone[96393] = nil, nil
-	local farsen = marksOn(1426)[96393]
-	check(farsen and farsen.Texture._desaturated and farsen.mark.locked:find("Underground Map", 1, true),
-		"Earthseer Farsen's quest greyed in Dun Morogh until Underground Map is done")
+	check(not marksOn(1426)[96393], "Earthseer Farsen's quest has no mark in Dun Morogh until Underground Map is done")
 	-- Under way: no mark; ready: a "?" where it is handed in
 	Mock.questsDone[96391], Mock.questLog[96393], Mock.questsComplete[96393] = true, 4, nil
 	Mock.Fire("QUEST_ACCEPTED", 96393)
@@ -1465,10 +1809,15 @@ do
 	Mock.faction = "Alliance"
 	check(marksOn(1455)[96403], "and the Alliance see Important Heirlooms there")
 	-- A quest two wings list (the Cathedral's Herod quests, in the Armory too) has one mark
+	-- (marked once it can be taken: its level reached and the chain before it done)
 	local raleigh = 0
+	Mock.level = 40
+	Mock.questsDone[6141], Mock.questsDone[261], Mock.questsDone[1052] = true, true, true
 	for _, entry in ipairs(ns.QuestMap:MarksOn(1424)) do
 		if entry.quest.questID == 1053 then raleigh = raleigh + 1 end
 	end
+	Mock.questsDone[6141], Mock.questsDone[261], Mock.questsDone[1052] = nil, nil, nil
+	Mock.level = 20
 	check(raleigh == 1 and #ns.GetInstance("ScarletMonasteryArmory").quests == 3,
 		"the Armory lists the Cathedral's Herod quests too (and its Hearts of Zeal), and the map marks each once, got " .. raleigh)
 	WorldMapFrame:Hide()
@@ -1912,6 +2261,78 @@ caveDoor:_RunScript("OnEnter")
 check(caveEntry.highlightLocked == true, "the cave lights its entry too")
 caveDoor:_RunScript("OnLeave")
 check(caveEntry.highlightLocked == false, "and lets it go")
+-- The journal's quest marks: a "!" lights the legend's Quest entry, a "?" Turn In as well, as the
+-- client's own marks do; hovering Quest lights the journal's "!" marks up
+do
+	local questEntry, turnInEntry = legend:Entry("quest"), legend:Entry("turnin")
+	check(questEntry and questEntry.nameText == "Quest" and turnInEntry and turnInEntry.nameText == "Turn In",
+		"the legend's own Quest and Turn In entries found")
+	OpenWorldMap(1455)
+	local mark
+	for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalQuestPinTemplate")) do
+		if pin.mark.kind == "start" then mark = pin end
+	end
+	check(mark ~= nil, "a quest mark in Ironforge to point at")
+	mark:_RunScript("OnEnter")
+	check(questEntry.highlightLocked == true and not turnInEntry.highlightLocked, "a ! lights the Quest entry")
+	mark:_RunScript("OnLeave")
+	check(not questEntry.highlightLocked, "and lets it go")
+	ns.QuestMap:LegendEnter({ kind = "turnin" })
+	check(questEntry.highlightLocked and turnInEntry.highlightLocked, "a ? lights Quest and Turn In, as the client's own do")
+	ns.QuestMap:LegendLeave()
+	check(not questEntry.highlightLocked and not turnInEntry.highlightLocked, "and both let go")
+	questEntry:_RunScript("OnEnter")
+	check(mark.legendGlow and mark.legendGlow:IsShown(), "hovering Quest in the legend lights up the journal's ! marks")
+	questEntry:_RunScript("OnLeave")
+	check(not mark.legendGlow:IsShown(), "until the mouse leaves")
+	turnInEntry:_RunScript("OnEnter")
+	check(not mark.legendGlow:IsShown(), "Turn In does not light up a !")
+	turnInEntry:_RunScript("OnLeave")
+end
+-- Each legend entry is a switch: the journal's own markers hidden by the journal (for the account), the
+-- game's quest markers by the game's own map filters, which the journal's quest marks follow
+do
+	local dungeonEntry, transportEntry = legend:Entry("dungeon"), legend:Entry("transport")
+	local questEntry, turnInEntry, progressEntry = legend:Entry("quest"), legend:Entry("turnin"), legend:Entry("inprogress")
+	OpenWorldMap(1455)
+	local function count(template, kind)
+		local n = 0
+		for _, pin in ipairs(WorldMapFrame:ActivePins(template)) do
+			if not kind or pin.mark.kind == kind then n = n + 1 end
+		end
+		return n
+	end
+	local doors, trams = count("AegisJournalEntrancePinTemplate"), count("AegisJournalTransportPinTemplate")
+	check(doors > 0 and trams > 0 and progressEntry ~= nil, "Ironforge's doors and tram drawn; the legend's In Progress entry found")
+	dungeonEntry:Click()
+	check(count("AegisJournalEntrancePinTemplate") == 0 and ns.db.mapHidden.dungeon and dungeonEntry:GetAlpha() < 1,
+		"a click on Dungeon hides the dungeon doors and dims its entry")
+	dungeonEntry:Click()
+	check(count("AegisJournalEntrancePinTemplate") == doors and not ns.db.mapHidden.dungeon and dungeonEntry:GetAlpha() == 1,
+		"another shows them again")
+	transportEntry:Click()
+	check(count("AegisJournalTransportPinTemplate") == 0, "Transport hides the tram")
+	transportEntry:Click()
+	check(count("AegisJournalTransportPinTemplate") == trams, "and shows it again")
+	local offers = count("AegisJournalQuestPinTemplate", "start")
+	check(offers > 0, "the journal's quest marks in Ironforge")
+	questEntry:Click()
+	check(Mock.cvars.questPOILocalStory == "0" and count("AegisJournalQuestPinTemplate", "start") == 0 and questEntry:GetAlpha() < 1,
+		"Quest turns off the game's own filter for quests on offer, and the journal's ! marks with it")
+	questEntry:Click()
+	check(Mock.cvars.questPOILocalStory == "1" and count("AegisJournalQuestPinTemplate", "start") == offers, "and on again")
+	progressEntry:Click()
+	check(Mock.cvars.questPOI == "0" and turnInEntry:GetAlpha() < 1 and progressEntry:GetAlpha() < 1,
+		"In Progress and Turn In share the game's quest objectives filter: both dimmed")
+	progressEntry:Click()
+	check(Mock.cvars.questPOI == "1" and turnInEntry:GetAlpha() == 1, "and both back")
+	SetCVar("questPOI", "0")
+	check(turnInEntry:GetAlpha() < 1, "the game's own filter menu changing it dims the entries too")
+	SetCVar("questPOI", nil)
+	SetCVar("questPOILocalStory", nil)
+	check(questEntry:GetAlpha() == 1 and turnInEntry:GetAlpha() == 1, "the game's default shows them")
+	WorldMapFrame:Hide()
+end
 dungeonEntry:_RunScript("OnEnter")
 WorldMapFrame:SetMapID(1415)
 local glowing = 0
@@ -2288,8 +2709,9 @@ check(not page:IsShown() and reputation:IsShown(), "switching tabs closes an ope
 -- Reputation tab
 ------------------------------------------------------------------------------------------
 
--- Confirmed rewards come only from captured quartermasters: the Azeroth Commerce Authority's and
--- Durotar Supply and Logistics' so far (Data/Reputation/Captured.lua). Every other faction lists the
+-- Confirmed rewards come only from captured quartermasters: the Azeroth Commerce Authority's,
+-- Durotar Supply and Logistics', Ratchet's and Booty Bay's so far (Data/Reputation/Captured.lua).
+-- Every other faction lists the
 -- rewards the game's item data gives (Data/Reputation/Listed.lua), unconfirmed until its
 -- quartermaster is captured
 do
@@ -2297,10 +2719,13 @@ do
 	for _, faction in ipairs(ns.GetFactions()) do
 		if not ns.FactionCaptured(faction) then waiting = waiting + 1 end
 	end
-	check(waiting == 21, "no faction has confirmed rewards before its quartermaster is captured, got " .. (23 - waiting))
-	check(rawget(buttonNamed(reputation, "Booty Bay"), "Count") == nil
-		and ns.Reputation:RewardCount(ns.GetInstance("Faction21")) == 6 and not ns.FactionCaptured(ns.GetInstance("Faction21")),
-		"cards show no count; Booty Bay lists six unconfirmed rewards")
+	check(waiting == 19, "no faction has confirmed rewards before its quartermaster is captured, got " .. (23 - waiting))
+	check(rawget(buttonNamed(reputation, "Gadgetzan"), "Count") == nil
+		and ns.Reputation:RewardCount(ns.GetInstance("Faction369")) == 6 and not ns.FactionCaptured(ns.GetInstance("Faction369")),
+		"cards show no count; Gadgetzan lists six unconfirmed rewards")
+	check(ns.FactionCaptured(ns.GetInstance("Faction21")) and ns.FactionCaptured(ns.GetInstance("Faction470"))
+		and ns.Reputation:RewardCount(ns.GetInstance("Faction21")) == 6 and ns.Reputation:RewardCount(ns.GetInstance("Faction470")) == 6,
+		"Booty Bay's and Ratchet's quartermasters captured: their six rewards each confirmed")
 	check(buttonNamed(reputation, "Durotar Supply and Logistics").Forever:IsShown()
 		and buttonNamed(reputation, "Azeroth Commerce Authority").Forever:IsShown()
 		and not buttonNamed(reputation, "Booty Bay").Forever:IsShown(),
@@ -2413,6 +2838,9 @@ check(rows[22].Boss:GetText() == "Exalted" and rows[22].Boss._textColor[2] == ns
 check(rows[22].ArmorType:GetText() == "2 Arcane Crystal" and rows[1].ArmorType:GetText():find("60", 1, true),
 	"each reward says what its quartermaster asks: " .. tostring(rows[1].ArmorType:GetText()))
 check(not page.ComingSoon:IsShown(), "no placeholder on a captured faction")
+check(ns.CostIcons("1200 Merchant's Favor") == "1200|T135725:0:0:2:0|t" and ns.CostIcons("2 Arcane Crystal") == nil
+	and ns.CostIcons("180 Merchant's Favor + 2 Arcane Crystal") == nil,
+	"Merchant's Favor as the merchant shows it, its amount and icon; anything else left in words")
 check(#f.NavBar._nav == 2 and f.NavBar._nav[2].name == "Argent Dawn", "breadcrumb names the faction")
 check(#f.NavBar._nav[2].listFunc() == 23, "its arrow lists every faction")
 
@@ -2483,19 +2911,31 @@ Mock.Fire("UPDATE_FACTION")
 check(standingBox.Label:GetText() == "Your standing: Revered" and standingButtons[3].Reached:IsShown(), "standing moves on")
 check(lootRows()[12].Boss._textColor[2] == 0.42, "Revered rewards turn green")
 
+-- A trade camp's rewards: their Merchant's Favor as the merchant shows it, the amount and the icon
+do
+	ns.Journal:OpenInstance(ns.GetInstance("Faction2587"))
+	local favor, worded = 0, 0
+	for _, row in ipairs(lootRows()) do
+		local text = tostring(row.ArmorType:GetText() or "")
+		if text:match("^%d+|T135725:0:0:2:0|t$") then favor = favor + 1 end
+		if text:find("Merchant", 1, true) then worded = worded + 1 end
+	end
+	check(favor > 0 and worded == 0, "a trade camp's rewards cost Merchant's Favor's icon, not its name: " .. favor)
+end
+
 -- A faction with nothing captured: its page lists what the game's data gives, and asks for its quartermaster
 do
-	ns.Journal:OpenInstance(ns.GetInstance("Faction21"))
+	ns.Journal:OpenInstance(ns.GetInstance("Faction369"))
 	local soon = page.ComingSoon
 	check(soon:IsShown() and soon.Title:GetText() == "Not captured yet" and soon.Text:GetText() == ns.L.REP_LISTED_TEXT
 		and soon._points[1][3] == -(6 + 3 * 70 + 15 + 55 + 15) and #lootRows() == 6
 		and not tostring(lootRows()[1].ArmorType:GetText() or ""):find("%d"),
-		"Booty Bay: its six unconfirmed rewards, without prices, and how to confirm them, beneath the standing")
+		"Gadgetzan: its six unconfirmed rewards, without prices, and how to confirm them, beneath the standing")
 	-- One with nothing listed either
 	local kirinTor = ns.GetInstance("Faction2740")
 	local listed = kirinTor.bosses
 	kirinTor.bosses = {}
-	ns.Journal:OpenInstance(ns.GetInstance("Faction21"))
+	ns.Journal:OpenInstance(ns.GetInstance("Faction369"))
 	ns.Journal:OpenInstance(kirinTor)
 	check(soon:IsShown() and soon.Title:GetText() == "Coming soon" and soon.Text:GetText() == ns.L.REP_COMING_SOON_TEXT,
 		"a Forever faction with nothing listed: coming soon")
@@ -3151,9 +3591,27 @@ end
 	check(Mock.zoneLabel == "Stormwind City", "a city keeps its plain name")
 	Mock.cursorZone = nil
 
-	local choice = Mock.TaggedMenu("MENU_WORLD_MAP_TRACKING").checkboxes[1]
+	local filterMenu = Mock.TaggedMenu("MENU_WORLD_MAP_TRACKING")
+	local choice = filterMenu.checkboxes[1]
 	check(choice and choice.text == "Show unexplored areas" and not choice.isSelected(),
 		"the map's filter menu offers the unexplored areas, off at first")
+	-- The map legend's switches are in the menu too: either place shows and hides the same markers
+	do
+		local texts, transport = {}, nil
+		for index = 2, #filterMenu.checkboxes do
+			local box = filterMenu.checkboxes[index]
+			texts[#texts + 1] = box.text
+			if box.text == "Boats, zeppelins, trams and portals" then transport = box end
+		end
+		check(table.concat(texts, ", ") == "Quests on offer, Dungeon entrances, Raid entrances, Flight points, "
+			.. "Cave entrances, Boats, zeppelins, trams and portals", "the legend's switches in the filter menu: " .. table.concat(texts, ", "))
+		check(transport.isSelected(), "shown at first")
+		transport.setSelected()
+		check(not transport.isSelected() and not ns.MapLegend.Shows("transport")
+			and ns.MapLegend:Entry("transport"):GetAlpha() < 1, "unticked there: hidden, and dimmed in the legend too")
+		ns.MapLegend:Entry("transport"):Click()
+		check(transport.isSelected(), "shown again from the legend: ticked in the menu")
+	end
 	local pieces = ns.MAP_OVERLAYS[1436]
 	Mock.explored[1436] = { pieces[1][5] }
 	WorldMapFrame:Show()

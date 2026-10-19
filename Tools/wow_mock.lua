@@ -309,6 +309,8 @@ function CreateFrame(frameType, name, parent, template)
 		local function MetaDataMatches(metaData, pin)
 			if not metaData then return true end
 			if metaData.Style and rawget(pin, "GetStyle") ~= nil and pin:GetStyle() == metaData.Style then return true end
+			if metaData.questClassification and rawget(pin, "GetQuestClassification") ~= nil
+				and pin:GetQuestClassification() == metaData.questClassification then return true end
 			if metaData.isRaid ~= nil and pin.isRaid ~= nil and metaData.isRaid == pin.isRaid then return true end
 			return false
 		end
@@ -683,8 +685,23 @@ QuestMapFrame.MapLegend.ScrollFrame = CreateFrame("ScrollFrame", nil, QuestMapFr
 local legendChild = CreateFrame("Frame", nil, QuestMapFrame.MapLegend.ScrollFrame)
 QuestMapFrame.MapLegend.ScrollFrame.ScrollChild = legendChild
 function legendChild:Layout() self.laidOut = (self.laidOut or 0) + 1 end
+-- Forever's legend data (Blizzard_UIPanels_Game/Mainline/MapLegendFrameData.lua): its Quests are
+-- told apart by the pin's classification or style.
+Enum = Enum or {}
+Enum.QuestClassification = { Important = 0, Legendary = 1, Campaign = 2, Calling = 3, Meta = 4, Recurring = 5,
+	Questline = 6, Normal = 7, BonusObjective = 8, Threat = 9, WorldQuest = 10 }
+POIButtonUtil = { Style = { QuestInProgress = 1, QuestComplete = 2 } }
 local camelotLegend = {
-	{ { Atlas = "QuestNormal", Name = "Local Story", TemplateNames = { "QuestPinTemplate" } } },
+	{
+		{ Atlas = "UI-QuestPoiRecurring-QuestBang", Name = "Repeatable", TemplateNames = { "QuestPinTemplate", "QuestOfferPinTemplate" },
+			MetaData = { questClassification = Enum.QuestClassification.Recurring } },
+		{ Atlas = "QuestNormal", Name = "Quest", TemplateNames = { "QuestPinTemplate", "QuestOfferPinTemplate" },
+			MetaData = { questClassification = Enum.QuestClassification.Normal } },
+		{ Atlas = "Quest-In-Progress-Icon-yellow", Name = "In Progress", TemplateNames = { "QuestPinTemplate" },
+			MetaData = { Style = POIButtonUtil.Style.QuestInProgress } },
+		{ Atlas = "UI-QuestPoi-QuestBangTurnIn", Name = "Turn In", TemplateNames = { "QuestPinTemplate" },
+			MetaData = { Style = POIButtonUtil.Style.QuestComplete } },
+	},
 	{
 		{ Atlas = "Dungeon", Name = "Dungeon", TemplateNames = { "DungeonEntrancePinTemplate" }, MetaData = { isRaid = false } },
 		{ Atlas = "Raid", Name = "Raid", TemplateNames = { "DungeonEntrancePinTemplate" }, MetaData = { isRaid = true } },
@@ -837,6 +854,11 @@ UiMapPoint = { CreateFromCoordinates = function(mapID, x, y) return { uiMapID = 
 C_SuperTrack = { SetSuperTrackedUserWaypoint = function(on) Mock.superTracked = on end }
 Mock.cvars = { showDungeonEntrancesOnMap = "1" }
 function GetCVar(name) return Mock.cvars[name] end
+-- A changed setting is announced, as the client does.
+function SetCVar(name, value)
+	Mock.cvars[name] = value ~= nil and tostring(value) or nil
+	Mock.Fire("CVAR_UPDATE", name, value)
+end
 
 Mock.combatLogging = false
 function LoggingCombat(on)

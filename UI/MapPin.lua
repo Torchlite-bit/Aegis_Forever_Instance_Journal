@@ -2,11 +2,14 @@ local _, ns = ...
 local L = ns.L
 
 --[[
-	One pin on Blizzard's world map, for "Show Start" and "Show End".
+	"Show Start" and "Show End": the map opened on the right zone, and the client's own waypoint
+	set on the spot and tracked, so it shows on the map, the minimap and in the world as a waypoint
+	set by hand does (MapPin:Mark).
 
-	Opens the map on the right zone and marks the spot with the client's own waypoint pin,
-	with the place named in its tooltip. The pin sits on the map's canvas, so it moves and
-	zooms with the map, and it shows only while that zone is on screen.
+	Where the client allows no waypoint on that map, one pin of the journal's own on Blizzard's
+	world map instead (MapPin:Show), with the place named in its tooltip. That pin sits on the
+	map's canvas, so it moves and zooms with the map, and it shows only while that zone is on
+	screen.
 ]]
 
 local MapPin = {}
@@ -75,7 +78,21 @@ local function EnsurePin()
 	return pin
 end
 
--- Shows a point { mapID, x, y, label } on the world map, titled `title`.
+local function OpenMap(mapID)
+	local opened = false
+	if C_Map and C_Map.OpenWorldMap then opened = pcall(C_Map.OpenWorldMap, mapID) end
+	if not opened and type(OpenWorldMap) == "function" then opened = pcall(OpenWorldMap, mapID) end
+	return opened
+end
+
+-- Whether the client allows its own waypoint on a map.
+local function CanWaypoint(mapID)
+	if not (C_Map and C_Map.CanSetUserWaypointOnMap and C_Map.SetUserWaypoint and UiMapPoint) then return false end
+	local ok, allowed = pcall(C_Map.CanSetUserWaypointOnMap, mapID)
+	return ok and allowed == true
+end
+
+-- Shows a point { mapID, x, y, label } on the world map with the journal's own pin, titled `title`.
 function MapPin:Show(point, title)
 	if not point or not point.mapID then return false end
 	if InCombatLockdown() then
@@ -83,13 +100,24 @@ function MapPin:Show(point, title)
 		return false
 	end
 	target = { mapID = point.mapID, x = point.x or 0.5, y = point.y or 0.5, label = point.label, title = title }
-
-	local opened = false
-	if C_Map and C_Map.OpenWorldMap then opened = pcall(C_Map.OpenWorldMap, point.mapID) end
-	if not opened and type(OpenWorldMap) == "function" then opened = pcall(OpenWorldMap, point.mapID) end
-	if not opened then return false end
-
+	if not OpenMap(point.mapID) then return false end
 	if EnsurePin() then self:Update() end
+	return true
+end
+
+-- Opens the map on a point and sets the client's waypoint there, tracked, and says so; the
+-- journal's own pin where the map allows no waypoint.
+function MapPin:Mark(point, title)
+	if not point or not point.mapID then return false end
+	if InCombatLockdown() then
+		ns.Print(L.MAP_PIN_COMBAT)
+		return false
+	end
+	if not CanWaypoint(point.mapID) then return self:Show(point, title) end
+	self:Clear()
+	ns.DungeonMap:SetWaypointAt(point.mapID, point.x or 0.5, point.y or 0.5, title)
+	OpenMap(point.mapID)
+	ns.Print(string.format(L.QUESTMAP_WAYPOINT_SET, title))
 	return true
 end
 

@@ -516,6 +516,11 @@ function ns.JournalHasQuest(questID)
 	return false
 end
 
+-- A boss's name as the journal titles it: the dungeon's trash is "Trash".
+function ns.BossTitle(boss)
+	return boss.trash and ns.L.TRASH or boss.name
+end
+
 function ns.GetInstance(key)
 	return byKey[key]
 end
@@ -712,8 +717,12 @@ function ns.ApplyLocale()
 			end
 		end
 		-- Reputation wares carry a cost ("200 Merchant's Favor"); the item's own name is the client's.
+		-- The English is kept, for the currency's icon (ns.CostIcons).
 		for _, row in ipairs(boss.loot or {}) do
-			if row.cost then row.cost = Tr(row.cost) end
+			if row.cost then
+				row.enCost = row.enCost or row.cost
+				row.cost = Tr(row.cost)
+			end
 		end
 	end
 	local function TrQuest(quest)

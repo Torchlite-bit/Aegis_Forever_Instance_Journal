@@ -274,6 +274,30 @@ function Items:Superseded(boss, row)
 	return false
 end
 
+--[[
+	A dungeon's trash drops worth listing: rare and epic ones, recipes and quest items, of any
+	quality. The rest, the greens and whites any creature there may drop, are left out of its Trash
+	page, the dungeon's loot, search and the Gear Finder. A boss's own drops are always listed.
+]]
+local NOTABLE_QUALITY = 3
+local NOTABLE_KINDS = { RECIPE = true, QUEST = true }
+
+function Items:Unremarkable(boss, row)
+	if not boss.trash then return false end
+	if type(row.quality) == "number" and row.quality >= NOTABLE_QUALITY then return false end
+	local info = self:Get(row.itemID, row)
+	if type(info.quality) == "number" and info.quality >= NOTABLE_QUALITY then return false end
+	return not NOTABLE_KINDS[info.kind]
+end
+
+-- Whether a dungeon's trash has a drop worth listing that is not hidden: its Trash entry then shows.
+function Items:ListsTrash(boss)
+	for _, row in ipairs(boss.loot or {}) do
+		if not self:IsHidden(row.itemID) and not self:Unremarkable(boss, row) then return true end
+	end
+	return false
+end
+
 -- A creature the journal has nothing on but loot (no description, abilities, notes on the fight
 -- or recorded fight), all of it hidden: most likely not in the game yet either. A boss written up
 -- by hand is in the game even while Blizzard keeps all its drops hidden.

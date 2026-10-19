@@ -158,7 +158,9 @@ local function BuildRows(instance, boss)
 	-- Items the server knows nothing of stay hidden until confirmed, and a name-only item gives
 	-- way to its real one once that has come in (Core/Items.lua).
 	for _, entry in ipairs(all) do
-		if Items:IsHidden(entry.itemID) or Items:Superseded(entry.boss, entry.row) then seen[entry.itemID] = true end
+		if Items:IsHidden(entry.itemID) or Items:Superseded(entry.boss, entry.row) or Items:Unremarkable(entry.boss, entry.row) then
+			seen[entry.itemID] = true
+		end
 	end
 
 	-- Pinned items come from the whole dungeon, so they show on every boss's page.
@@ -342,7 +344,8 @@ end
 local function CostText(lootRow)
 	local parts = {}
 	if type(lootRow.price) == "number" and lootRow.price > 0 then parts[#parts + 1] = ns.MoneyText(lootRow.price) end
-	if lootRow.cost then parts[#parts + 1] = lootRow.cost end
+	-- A currency as the merchant shows it, its amount and its icon; anything else in words.
+	if lootRow.cost then parts[#parts + 1] = ns.CostIcons(lootRow.enCost or lootRow.cost) or lootRow.cost end
 	return #parts > 0 and table.concat(parts, " + ") or nil
 end
 
@@ -656,7 +659,8 @@ function LootPanel:Refresh(container)
 	container.presentProfessions = Wipe(container.presentProfessions or {})
 	local professions = {}
 	for _, entry in ipairs(all) do
-		if not Items:IsHidden(entry.itemID) and not Items:Superseded(entry.boss, entry.row) then
+		if not Items:IsHidden(entry.itemID) and not Items:Superseded(entry.boss, entry.row)
+			and not Items:Unremarkable(entry.boss, entry.row) then
 			local info = entry.info
 			if info.armor then container.presentArmor[info.armor] = true end
 			container.presentKinds[info.kind] = true

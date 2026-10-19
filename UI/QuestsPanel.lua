@@ -10,12 +10,19 @@ local L = ns.L
 	Status comes from the player's own quest log and history: done, in the log, ready to hand
 	in, available, or not yet available. A "+" opens a quest's chain beneath it. Quests
 	recorded on the Record tab add their full text, their exact rewards and where they end.
+
+	The list is in dropdowns, under the Abilities tab's paper headers: a dungeon's key first, as
+	Before you go has it (the Dalaran Sewer Key: the quests to it, for the player's side), then
+	Dungeon Quests, the rest. Each header shows the mark of its first quest still to do and how
+	many of its quests are done. A key is open until the player has it; Dungeon Quests, always.
 ]]
 
 local QuestsPanel = {}
 ns.QuestsPanel = QuestsPanel
 
 local ROW_HEIGHT, INDENT, LIST_WIDTH, DETAIL_WIDTH = 26, 18, 320, 315
+-- The dropdowns: room above the first, as the boss list has; their quests set in a little.
+local TOP_PADDING, HEADER_GAP, ROW_INDENT = 6, 6, 8
 local REWARD_BOX_WIDTH, REWARD_BOX_HEIGHT = 147, 41
 
 local STATUS_DONE, STATUS_READY, STATUS_ACTIVE, STATUS_AVAILABLE, STATUS_LOCKED =
@@ -156,7 +163,8 @@ local function UpdateRowHighlight(row)
 	row.Text:SetTextColor(color[1], color[2], color[3])
 end
 
-local function CreateRow(parent)
+-- onClick: what a click on the row does with it (else it is chosen on the Quests tab).
+local function CreateRow(parent, onClick)
 	local row = CreateFrame("Button", nil, parent)
 	row:SetHeight(ROW_HEIGHT)
 
@@ -196,7 +204,7 @@ local function CreateRow(parent)
 	end)
 	row:SetScript("OnClick", function(self)
 		ns.PlaySoundKit("IG_QUEST_LIST_SELECT")
-		QuestsPanel:Select(self.quest)
+		if onClick then onClick(self) else QuestsPanel:Select(self.quest) end
 	end)
 	return row
 end
@@ -221,6 +229,10 @@ local function SetRow(row, quest, depth, hasChain, expanded, selected)
 	row.selected = selected
 	UpdateRowHighlight(row)
 end
+
+-- The list's rows and marks, for other pages that list quests the same way (Before you go).
+QuestsPanel.CreateRow, QuestsPanel.SetRow, QuestsPanel.SetStatusIcon = CreateRow, SetRow, SetStatusIcon
+QuestsPanel.STATUS_DONE, QuestsPanel.STATUS_LOCKED = STATUS_DONE, STATUS_LOCKED
 
 ------------------------------------------------------------------------------------------
 -- Right page: the quest
@@ -330,6 +342,9 @@ end
 
 -- For the quest marks on the maps (UI/QuestMap.lua).
 function QuestsPanel:StartPoint(quest) return StartPoint(quest) end
+-- Whether the player has handed a quest in, or has it in their log.
+function QuestsPanel:IsDone(questID) return IsDone(questID) end
+function QuestsPanel:InLog(questID) return InLog(questID) end
 function QuestsPanel:EndPoint(quest) return EndPoint(quest) end
 
 local function SetMapButton(button, point, title, place)
@@ -344,7 +359,7 @@ local function CreateMapButton(parent, text)
 	button:SetMotionScriptsWhileDisabled(true)
 	button:SetScript("OnClick", function(self)
 		ns.PlaySoundKit("IG_MAINMENU_OPTION")
-		ns.MapPin:Show(self.point, self.title)
+		ns.MapPin:Mark(self.point, self.title)
 	end)
 	button:SetScript("OnEnter", function(self)
 		GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -535,11 +550,12 @@ end
 function QuestsPanel:Create(page, info)
 	-- Left page: the same place as the boss list.
 	local list = ns.CreateScrollFrame(info, 5, -5, 5)
-	list:SetSize(338, 382)
+	-- The boss list's height: the dungeon's name above stays clear.
+	list:SetSize(338, 364)
 	list:SetPoint("BOTTOMLEFT", 25, 1)
 	list:SetFrameLevel(info:GetFrameLevel() + 5)
 	list.Child:SetWidth(LIST_WIDTH)
-	list.Rows = {}
+	list.Rows, list.Headers = {}, {}
 	list:Hide()
 
 	-- Right page: the chosen quest.
@@ -609,13 +625,51 @@ function QuestsPanel:Select(quest)
 	self:Refresh(page)
 end
 
--- Opens the journal on a dungeon's Quests tab with the quest chosen (search, the map's quest marks).
+-- Opens the journal on a dungeon's Quests tab with the quest chosen (search, the map's quest
+-- marks, Before you go), the dropdown and the chain that hold it open.
 function QuestsPanel:Open(instance, quest)
 	local journal = ns.Journal
 	journal:Show()
 	journal:OpenInstance(instance)
 	ns.EncounterPage:SetTab(journal:Page(), ns.EncounterPage.TAB_QUESTS)
+	self.page.reveal = quest
 	self:Select(quest)
+end
+
+local function Holds(quests, quest)
+	for _, held in ipairs(quests or {}) do
+		if held == quest then return true end
+	end
+	return false
+end
+
+-- The first of these quests still to do (the first, once all are done).
+local function FirstToDo(quests)
+	for _, quest in ipairs(quests) do
+		if QuestsPanel:Status(quest) ~= STATUS_DONE then return quest end
+	end
+	return quests[1]
+end
+
+-- A dropdown's header: the mark of its first quest still to do, and how many of its quests are done.
+local function GroupSection(key, title, quests)
+	local done = 0
+	for _, quest in ipairs(quests) do
+		if QuestsPanel:Status(quest) == STATUS_DONE then done = done + 1 end
+	end
+	local first = FirstToDo(quests)
+	return { key = key, title = title, status = first and QuestsPanel:Status(first) or STATUS_DONE,
+		note = string.format("%d/%d", done, #quests), flags = {} }
+end
+
+-- A click on a dropdown's header opens or folds it; as it opens, its first quest still to do is
+-- chosen, unless one of its quests is chosen already.
+function QuestsPanel:Clicked(section)
+	local page = self.page
+	local opening = not section.expanded
+	page.expandedChains[section.key] = opening
+	if opening and not section.members[page.selectedQuest] then page.selectedQuest = FirstToDo(section.quests) end
+	self:Refresh(page)
 end
 
 function QuestsPanel:ToggleChain(quest)
@@ -667,46 +721,148 @@ local function ChainRows(instance, quest)
 	return rows
 end
 
-function QuestsPanel:Refresh(page)
-	local instance = page.instance
-	local quests = QuestsFor(instance)
-	local list, child = page.QuestList, page.QuestList.Child
-
-	local entries = {}
-	for _, quest in ipairs(quests) do
-		local chain = ChainRows(instance, quest)
-		local expanded = #chain > 0 and page.expandedChains[quest.questID] == true
-		entries[#entries + 1] = { quest = quest, depth = 0, hasChain = #chain > 0, expanded = expanded }
-		if expanded then
-			for _, step in ipairs(chain) do
-				entries[#entries + 1] = { quest = step, depth = 1 }
+-- A quest as the Quests tab lists it: the dungeon's own, else the step of a chain that holds it.
+-- Nil when the dungeon lists it nowhere.
+function QuestsPanel:Find(instance, questID)
+	local quest = QuestByID(instance, questID)
+	if quest then return quest end
+	for _, parent in ipairs(instance.quests or {}) do
+		for _, step in ipairs(ChainRows(instance, parent)) do
+			if step.questID == questID then return step end
+			for _, part in ipairs(step.steps or {}) do
+				if part.questID == questID then return step end
 			end
 		end
 	end
+	return nil
+end
 
-	-- Keep the choice while it is on the list; otherwise start on the first quest.
+function QuestsPanel:Refresh(page)
+	local instance = page.instance
+	local list, child = page.QuestList, page.QuestList.Child
+	local reveal = page.reveal
+	page.reveal = nil
+	-- What is open and chosen holds while the dungeon stays shown, as on the Abilities tab. A
+	-- dungeon shown anew starts afresh, at the list's top, nothing open or chosen yet (a step two
+	-- dungeons share would stay chosen, folded out of sight). A quest opened there from elsewhere is
+	-- chosen after this (QuestsPanel:Open shows the tab first).
+	if page.questsShown ~= instance then
+		page.questsShown, page.expandedChains, page.selectedQuest = instance, {}, nil
+		list:SetVerticalScroll(0)
+	end
+	local open = page.expandedChains
+
+	-- The dropdowns: the dungeon's keys (their quests, steps of no other), then Dungeon Quests.
+	-- Each starts as it should once the dungeon is shown, so a quest taken while the tab is open
+	-- doesn't fold one under the player.
+	local groups, inKey = {}, {}
+	for _, key in ipairs(ns.BeforeYouGo:Keys(instance)) do
+		for _, quest in ipairs(key.quests) do inKey[quest] = true end
+		if open[key.key] == nil then open[key.key] = not key.have end
+		local section = GroupSection(key.key, key.title, key.quests)
+		section.status, section.note = key.status, key.note
+		groups[#groups + 1] = { section = section, quests = key.quests }
+	end
+	local others = {}
+	for _, quest in ipairs(QuestsFor(instance)) do
+		if not inKey[quest] then others[#others + 1] = quest end
+	end
+	if #others > 0 then
+		if open.dungeon == nil then open.dungeon = true end
+		groups[#groups + 1] = { section = GroupSection("dungeon", L.QUESTS_DUNGEON, others), quests = others, chains = true }
+	end
+
+	-- What each holds, chains included. A quest opened from elsewhere opens its dropdown; a step
+	-- with no row of its own, its chain too (a quest that has one is chosen there, and the chains
+	-- that name it as a step stay as they are).
+	local listed, own = {}, {}
+	for _, group in ipairs(groups) do
+		for _, quest in ipairs(group.quests) do own[quest] = true end
+	end
+	for _, group in ipairs(groups) do
+		local section = group.section
+		section.quests, section.members, group.chainOf = group.quests, {}, {}
+		for _, quest in ipairs(group.quests) do
+			local chain = group.chains and ChainRows(instance, quest) or {}
+			group.chainOf[quest] = chain
+			section.members[quest], listed[quest] = true, true
+			for _, step in ipairs(chain) do section.members[step], listed[step] = true, true end
+			if reveal and (reveal == quest or (not own[reveal] and Holds(chain, reveal))) then
+				open[section.key] = true
+				if reveal ~= quest then open[quest.questID] = true end
+			end
+		end
+		section.expanded = open[section.key] == true
+	end
+
+	-- Keep the choice while the dungeon lists it, shown or folded away; otherwise start on the
+	-- first open dropdown's first quest still to do.
 	local selected = page.selectedQuest
-	local visible = false
-	for _, entry in ipairs(entries) do if entry.quest == selected then visible = true end end
-	if not visible then
-		selected = quests[1]
+	if not (selected and listed[selected]) then
+		selected = nil
+		for _, group in ipairs(groups) do
+			if group.section.expanded then
+				selected = FirstToDo(group.quests)
+				break
+			end
+		end
+		selected = selected or (groups[1] and FirstToDo(groups[1].quests))
 		page.selectedQuest = selected
 	end
 
-	local y = 2
-	for index, entry in ipairs(entries) do
-		local row = list.Rows[index]
+	local y, headers, rows, chosenY = TOP_PADDING, 0, 0, nil
+	local function Place(quest, depth, hasChain, expanded)
+		if quest == selected then chosenY = y end
+		rows = rows + 1
+		local row = list.Rows[rows]
 		if not row then
 			row = CreateRow(child)
-			list.Rows[index] = row
+			list.Rows[rows] = row
 		end
-		SetRow(row, entry.quest, entry.depth, entry.hasChain, entry.expanded, entry.quest == selected)
-		row:SetPoint("TOPLEFT", entry.depth * INDENT, -y)
+		SetRow(row, quest, depth, hasChain, expanded, quest == selected)
+		row:SetWidth(LIST_WIDTH - ROW_INDENT - depth * INDENT)
+		row:SetPoint("TOPLEFT", ROW_INDENT + depth * INDENT, -y)
 		row:Show()
 		y = y + ROW_HEIGHT
 	end
-	for index = #entries + 1, #list.Rows do list.Rows[index]:Hide() end
+	for _, group in ipairs(groups) do
+		headers = headers + 1
+		local header = list.Headers[headers]
+		if not header then
+			header = ns.PaperHeader.Create(child, function(section) QuestsPanel:Clicked(section) end)
+			list.Headers[headers] = header
+		end
+		header:ClearAllPoints()
+		header:SetPoint("TOPLEFT", 0, -y)
+		header:SetWidth(LIST_WIDTH)
+		y = y + ns.PaperHeader.Set(header, group.section, 0, group.section.expanded) + HEADER_GAP
+		header:Show()
+		if group.section.expanded then
+			for _, quest in ipairs(group.quests) do
+				local chain = group.chainOf[quest]
+				local chainOpen = #chain > 0 and open[quest.questID] == true
+				Place(quest, 0, #chain > 0, chainOpen)
+				if chainOpen then
+					for _, step in ipairs(chain) do Place(step, 1) end
+				end
+			end
+			y = y + HEADER_GAP
+		end
+	end
+	for index = headers + 1, #list.Headers do list.Headers[index]:Hide() end
+	for index = rows + 1, #list.Rows do list.Rows[index]:Hide() end
 	child:SetHeight(math.max(1, y + 4))
+
+	-- A quest opened from elsewhere is scrolled into view, once the client knows the list's
+	-- scroll range (as the loot list does).
+	if reveal and chosenY then
+		C_Timer.After(0, function()
+			local top, height = list:GetVerticalScroll() or 0, list:GetHeight() or 0
+			if chosenY < top or chosenY + ROW_HEIGHT > top + height then
+				list:SetVerticalScroll(math.max(0, math.min(list:GetVerticalScrollRange() or 0, chosenY - TOP_PADDING)))
+			end
+		end)
+	end
 
 	local detailChild = page.QuestDetail.Child
 	detailChild.Empty:SetShown(selected == nil)

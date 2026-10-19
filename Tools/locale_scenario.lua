@@ -201,6 +201,17 @@ end
 check(faction and InLanguage(faction.name, faction.enName) and ns.FactionListsItem(faction.enName, listed)
 	and ns.FactionListsItem(faction.name, listed), "a faction is found by its English and its " .. LANGUAGE .. " name")
 
+-- A trade camp's reward keeps its cost's English beneath the translation, for Merchant's Favor's icon
+do
+	local ware
+	for _, standing in ipairs(ns.GetInstance("Faction2587").bosses) do
+		for _, row in ipairs(standing.loot or {}) do if row.enCost then ware = row end end
+	end
+	check(ware and ware.enCost:find("Merchant's Favor", 1, true) and InLanguage(ware.cost, ware.enCost)
+		and ns.CostIcons(ware.enCost):find("|T135725:0:0:2:0|t", 1, true),
+		"Merchant's Favor in " .. LANGUAGE .. ", and its icon: " .. tostring(ware and ware.cost))
+end
+
 -- Every page in the language: each tab, and each dungeon, raid and faction with its bosses.
 ns.Journal:Show()
 local f = AegisJournalFrame

@@ -12,6 +12,49 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.34.0]
+
+### Added
+- **Trash** in every dungeon's boss list, after its bosses: what the dungeon's other creatures drop
+  that is worth knowing about, rare and epic gear, recipes and quest items. The greens and whites
+  any creature there may drop are left out of the dungeon's loot, search and the Gear Finder too.
+- **Before you go**, at the top of a dungeon's overview: its key and the quests to it, and any
+  hidden boss to prepare for, each a note under a header like the Abilities tab's, opened and
+  closed with a click. A key's header shows the "!" of the quest you're on and how many of its
+  quests are done; beneath its text, its quests are listed as on the Quests tab, and a click
+  opens one there. City of Dalaran first: the Dalaran Sewer Key for each side, and how to make
+  and use the Tome of Dalaran that summons Lyn the Ignored. More dungeons will follow, one at a
+  time.
+- **Dropdowns on the Quests tab**: a dungeon's key first, holding the quests to it (for City of
+  Dalaran, the Horde's five and the Alliance's two), open until you have it; then **Dungeon
+  Quests**, the rest, listed as before. Each header shows the mark of its first quest still to
+  do and how many of its quests are done, and a click folds or opens it.
+- **Switches in the world map's legend**: click an entry to hide that kind of marker, click again
+  to show it. The journal's own (dungeon and raid doors, flight points, caves, boats, zeppelins,
+  trams and portals) are kept for your account; the game's quest markers use the game's own map
+  filters, the same ones as the map's filter menu. The same switches are in the map's filter
+  menu too, under Instance Journal, beside Show unexplored areas.
+- **Ratchet and Booty Bay rewards confirmed**: their quartermasters, Winklespark and Gezzy
+  Gunkgear, captured by Genesys Firstborn, with prices and the standing each needs (six rewards
+  each). Thank you!
+
+### Changed
+- **City of Dalaran** is no longer marked "Not yet tested".
+- **Merchant's Favor costs** on the Azeroth Commerce Authority's and Durotar Supply and
+  Logistics' rewards now show as the merchant shows them: the amount and the currency's icon.
+- **Dungeon quest marks** on the maps now show only quests you can take now (the quests before
+  them done, your level reached) and that aren't grey for your level. The Quests tab still lists
+  them all.
+- **Pointing at a dungeon quest mark** lights the legend's Quest entry (and Turn In, for a "?"),
+  and pointing at those entries lights the marks up, as the game's own marks do.
+- **Show Start and Show End** on a quest now set the game's own waypoint there, on the map, the
+  minimap and in the world.
+
+### Fixed
+- **Lyn the Ignored** is a he: his notes and abilities said "she", in every language.
+- **On a dungeon's map**, the quest log's button in the map's corner could not be clicked once the
+  log was closed: the map's own buttons now stay above the dungeon map.
+
 ## [0.33.0]
 
 > ⚠️ **About the new languages.** The German, French and Chinese (Simplified and Traditional)
