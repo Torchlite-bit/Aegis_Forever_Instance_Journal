@@ -158,7 +158,9 @@ local function BuildRows(instance, boss)
 	-- Items the server knows nothing of stay hidden until confirmed, and a name-only item gives
 	-- way to its real one once that has come in (Core/Items.lua).
 	for _, entry in ipairs(all) do
-		if Items:IsHidden(entry.itemID) or Items:Superseded(entry.boss, entry.row) then seen[entry.itemID] = true end
+		if Items:IsHidden(entry.itemID) or Items:Superseded(entry.boss, entry.row) or Items:Unremarkable(entry.boss, entry.row) then
+			seen[entry.itemID] = true
+		end
 	end
 
 	-- Pinned items come from the whole dungeon, so they show on every boss's page.
@@ -656,7 +658,8 @@ function LootPanel:Refresh(container)
 	container.presentProfessions = Wipe(container.presentProfessions or {})
 	local professions = {}
 	for _, entry in ipairs(all) do
-		if not Items:IsHidden(entry.itemID) and not Items:Superseded(entry.boss, entry.row) then
+		if not Items:IsHidden(entry.itemID) and not Items:Superseded(entry.boss, entry.row)
+			and not Items:Unremarkable(entry.boss, entry.row) then
 			local info = entry.info
 			if info.armor then container.presentArmor[info.armor] = true end
 			container.presentKinds[info.kind] = true

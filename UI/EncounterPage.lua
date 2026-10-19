@@ -103,13 +103,21 @@ local function BreakUp(value)
 	return tostring(value)
 end
 
--- The bosses listed: not the trash, nor a creature listed only for loot that is hidden until
--- confirmed (Core/Items.lua).
+--[[
+	The bosses listed: not a creature listed only for loot that is hidden until confirmed
+	(Core/Items.lua); then the dungeon's trash, as one more entry at the end, when any of its drops
+	is worth listing (rare and epic ones, recipes, quest items: Items:Unremarkable).
+]]
 local function BossesOf(instance)
-	local list = {}
+	local list, trash = {}, {}
 	for _, boss in ipairs(instance.bosses) do
-		if not boss.trash and not ns.Items:HidesBoss(boss) then list[#list + 1] = boss end
+		if boss.trash then
+			if ns.Items:ListsTrash(boss) then trash[#trash + 1] = boss end
+		elseif not ns.Items:HidesBoss(boss) then
+			list[#list + 1] = boss
+		end
 	end
+	for _, boss in ipairs(trash) do list[#list + 1] = boss end
 	return list
 end
 
@@ -282,7 +290,7 @@ end
 
 local function SetBossButton(button, instance, boss)
 	button.instance, button.boss = instance, boss
-	button.Name:SetText(boss.rare and (boss.name .. L.RARE_SUFFIX) or boss.name)
+	button.Name:SetText(boss.rare and (boss.name .. L.RARE_SUFFIX) or ns.BossTitle(boss))
 	button.Name:ClearAllPoints()
 
 	local hasPortrait = false
@@ -814,8 +822,12 @@ local function BossBullets(boss)
 	if boss.adds and #boss.adds > 0 then
 		bullets[#bullets + 1] = string.format(L.BULLET_ADDS, NameList(boss.adds, 4))
 	end
-	if boss.loot and #boss.loot > 0 then
-		bullets[#bullets + 1] = string.format(L.BULLET_LOOT, #boss.loot, NameList(boss.loot, 4))
+	local loot = {}
+	for _, row in ipairs(boss.loot or {}) do
+		if not ns.Items:Unremarkable(boss, row) then loot[#loot + 1] = row end
+	end
+	if #loot > 0 then
+		bullets[#bullets + 1] = string.format(L.BULLET_LOOT, #loot, NameList(loot, 4))
 	end
 	if #bullets == 0 then bullets[1] = L.BULLET_NOTHING_YET end
 	return bullets
@@ -824,16 +836,17 @@ end
 local function FillBossOverview(page)
 	local child = page.BossOverview.Child
 	local boss = page.boss
-	child.Description:SetText(boss.description or "")
+	local description = boss.description or (boss.trash and L.TRASH_DESCRIPTION) or nil
+	child.Description:SetText(description or "")
 	child.Header:ClearAllPoints()
-	if boss.description and boss.description ~= "" then
+	if description and description ~= "" then
 		child.Header:SetPoint("TOPLEFT", child.Description, "BOTTOMLEFT", -6, -6)
 	else
 		child.Header:SetPoint("TOPLEFT", 0, -4)
 	end
 
 	local previous = child.Header
-	local height = (boss.description and child.Description:GetStringHeight() or 0) + 8 + 30 + 9
+	local height = (description and child.Description:GetStringHeight() or 0) + 8 + 30 + 9
 	for index, text in ipairs(BossBullets(boss)) do
 		local bullet = child.Bullets[index]
 		if not bullet then
@@ -872,8 +885,8 @@ local function UpdateTabStates(page)
 	local tabs = page.Tabs
 	SetTabEnabled(tabs[TAB_OVERVIEW], true)
 	SetTabEnabled(tabs[TAB_LOOT], true)
-	-- As on retail, abilities belong to a boss: the tab waits until one is chosen.
-	SetTabEnabled(tabs[TAB_ABILITIES], page.boss ~= nil)
+	-- As on retail, abilities belong to a boss: the tab waits until one is chosen. Trash has none.
+	SetTabEnabled(tabs[TAB_ABILITIES], page.boss ~= nil and not page.boss.trash)
 	-- The model, too, needs a boss, and one whose creature the client can draw.
 	SetTabEnabled(tabs[TAB_MODEL], #ns.ModelPanel:Creatures(page.boss) > 0)
 	SetTabEnabled(tabs[TAB_QUESTS], #page.instance.quests > 0)
@@ -916,7 +929,7 @@ function EncounterPage:SetTab(page, tabID)
 	info.RightShadow:SetShown(not instancePage and not questsPage and not modelPage)
 	-- On the loot page the header holds the filters instead, as on retail; a quest has its own title.
 	info.EncounterTitle:SetShown(not instancePage and not lootPage and not questsPage and not modelPage)
-	info.EncounterTitle:SetText(page.boss and page.boss.name or page.instance.name)
+	info.EncounterTitle:SetText(page.boss and ns.BossTitle(page.boss) or page.instance.name)
 end
 
 --[[
@@ -973,6 +986,8 @@ function EncounterPage:ShowBoss(page, instance, boss)
 		end
 	end
 	page.boss = boss
+	-- The trash is its drops: it opens on them.
+	if boss.trash then wantedTab = TAB_LOOT end
 	HighlightSelectedBoss(page)
 	FillBossOverview(page)
 	UpdateTabStates(page)

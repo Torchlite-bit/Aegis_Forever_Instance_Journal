@@ -516,6 +516,11 @@ function ns.JournalHasQuest(questID)
 	return false
 end
 
+-- A boss's name as the journal titles it: the dungeon's trash is "Trash".
+function ns.BossTitle(boss)
+	return boss.trash and ns.L.TRASH or boss.name
+end
+
 function ns.GetInstance(key)
 	return byKey[key]
 end

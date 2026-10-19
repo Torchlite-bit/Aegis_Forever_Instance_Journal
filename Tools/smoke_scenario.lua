@@ -278,7 +278,7 @@ local function visibleBosses()
 	return names
 end
 local bossNames = visibleBosses()
-check(#bossNames == 7, "seven bosses, trash left out, got " .. #bossNames)
+check(#bossNames == 8 and bossNames[8] == "Trash", "seven bosses, then the dungeon's trash as one more entry, got " .. #bossNames)
 check(bossNames[1] == "The Baron" and bossNames[7] == "Lordaeron Captain (Rare)", "boss order and rare label: " .. table.concat(bossNames, ", "))
 do
 	-- The portrait is a full circle starting the button, ringed in gold then a dark edge, and
@@ -496,8 +496,8 @@ check(deadmines.description:find("First War", 1, true), "hand-written descriptio
 choiceNamed(instanceChoices, "The Deadmines").func()
 check(page.instance == deadmines, "Deadmines opens from the dungeon list")
 bossNames = visibleBosses()
-check(#bossNames == 9 and bossNames[1] == "Rhahk'Zor" and bossNames[7] == "Cookie" and bossNames[9] == "Edwin VanCleef",
-	"Deadmines bosses in run order: " .. table.concat(bossNames, ", "))
+check(#bossNames == 10 and bossNames[1] == "Rhahk'Zor" and bossNames[7] == "Cookie" and bossNames[9] == "Edwin VanCleef"
+	and bossNames[10] == "Trash", "Deadmines bosses in run order, then the trash: " .. table.concat(bossNames, ", "))
 check(page.info.InstanceButton.Icon:GetTexture() == 522352 and page.info.InstanceButton.Icon._texCoord[1] == 0.156,
 	"Deadmines' round icon comes from its journal picture")
 check(page.InstanceOverview.Picture:GetTexture() == 526404 and not page.InstanceOverview.PictureBorder:IsShown()
@@ -522,6 +522,38 @@ local function lootRows()
 		if row:IsShown() then list[#list + 1] = row end
 	end
 	return list
+end
+
+-- The dungeon's trash: the last entry in the boss list, opening on its drops worth listing (rare and
+-- epic ones, recipes, quest items), with no abilities or model
+do
+	local ruins = ns.GetInstance("RuinsOfLordaeron")
+	local trash
+	for _, boss in ipairs(ruins.bosses) do if boss.trash then trash = boss end end
+	local count = #trash.loot
+	trash.loot[count + 1] = { itemID = "?Frayed Cloak", name = "Frayed Cloak", quality = 2, slot = "Back" }
+	trash.loot[count + 2] = { itemID = "?Pattern: Grave Cloak", name = "Pattern: Grave Cloak", quality = 2,
+		slot = "Recipe, Tailoring" }
+	ns.Journal:OpenInstance(ruins)
+	tabs[1]:Click()
+	local last
+	for _, button in ipairs(page.Bosses.Buttons) do if button:IsShown() then last = button end end
+	check(last.boss == trash and last.Name:GetText() == "Trash", "Trash closes the boss list")
+	last:Click()
+	local names = {}
+	for _, row in ipairs(lootRows()) do names[row.Name:GetText()] = true end
+	check(page.tab == ns.EncounterPage.TAB_LOOT and loot:IsShown() and not tabs[3]:IsEnabled() and not tabs[4]:IsEnabled(),
+		"it opens on its loot, with no abilities or model")
+	check(names["Pattern: Grave Cloak"] and not names["Frayed Cloak"],
+		"its recipe of any quality, not the green cloak any creature there might drop")
+	check(f.NavBar._nav[#f.NavBar._nav].name == "Trash", "the breadcrumb says Trash")
+	tabs[1]:Click()
+	check(page.BossOverview:IsShown() and page.BossOverview.Child.Description:GetText() == ns.L.TRASH_DESCRIPTION,
+		"its overview says what it lists")
+	check(ns.Items:Unremarkable(trash, trash.loot[count + 1]) and not ns.Items:Unremarkable(trash, trash.loot[1])
+		and not ns.Items:Unremarkable(ruins.bosses[1], { itemID = "?Grey", quality = 0 }),
+		"a green off trash is left out everywhere; a rare one, and any boss's drop, never")
+	trash.loot[count + 1], trash.loot[count + 2] = nil, nil
 end
 
 ns.Journal:OpenInstance(ns.GetInstance("HallOfThanes"))

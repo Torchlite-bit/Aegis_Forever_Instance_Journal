@@ -372,7 +372,7 @@ function Journal:OpenBoss(instance, boss, fromNavBar)
 		AddInstanceCrumb(f.NavBar, instance)
 		NavAdd(f.NavBar, {
 			id = "boss:" .. boss.name,
-			name = boss.name,
+			name = ns.BossTitle(boss),
 			OnClick = function() Journal:OpenBoss(instance, boss, true) end,
 			listFunc = BossList(instance),
 		})
