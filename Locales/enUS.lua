@@ -295,6 +295,10 @@ L.LOOT_UNFAVORITE = "Remove from favorites"
 L.LOOT_PINNED = "Pinned"
 L.LOOT_ALL = "Loot"
 L.LOOT_TRASH = "Dungeon trash"
+-- The world map legend's entries, each a switch (UI/MapLegend.lua).
+L.LEGEND_CLICK_HIDE = "Click to hide these on the map."
+L.LEGEND_CLICK_SHOW = "Hidden. Click to show these on the map again."
+L.LEGEND_GAME_FILTER = "The game's own map filter, as in the map's filter menu: quests in progress and ready to hand in share one."
 -- Before you go, on a dungeon's overview: its key and the quests to it, a hidden boss to prepare for.
 L.PREPARE_TITLE = "Before you go"
 L.PREPARE_PROGRESS = "You have done %d of its %d quests."

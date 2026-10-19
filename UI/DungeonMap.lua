@@ -1427,7 +1427,8 @@ function EntranceProviderMethods:RefreshAllData()
 	if not info or (info.mapType ~= MAP_TYPE_CONTINENT and info.mapType ~= MAP_TYPE_ZONE) then return end
 	for _, kind in ipairs({ "dungeon", "raid" }) do
 		local doors = {}
-		for _, instance in ipairs(ns.GetInstances(kind)) do
+		-- Hidden from the map legend: none of this kind.
+		for _, instance in ipairs(ns.MapLegend.Shows(kind) and ns.GetInstances(kind) or {}) do
 			local entrance = DungeonMap:Entrance(instance)
 			local x, y
 			if entrance then x, y = EntranceOn(entrance, mapID) end
@@ -1451,7 +1452,7 @@ function EntranceProviderMethods:RefreshAllData()
 		end
 	end
 	-- Caves show on their own zone's map only, as on retail.
-	for _, subMap in ipairs(ns.GetSubMaps()) do
+	for _, subMap in ipairs(ns.MapLegend.Shows("cave") and ns.GetSubMaps() or {}) do
 		local wayMapID, x, y = WayPoint(subMap)
 		if wayMapID == mapID and x then map:AcquirePin(CAVE_PIN_TEMPLATE, subMap, x, y) end
 	end
@@ -1477,6 +1478,11 @@ end
 
 function DungeonMap:Refresh()
 	if provider and WorldMapFrame:IsShown() then provider:RefreshAllData() end
+end
+
+-- The dungeon and raid doors and the caves drawn again (a legend switch).
+function DungeonMap:RefreshEntrances()
+	if entranceProvider and WorldMapFrame:IsShown() then entranceProvider:RefreshAllData() end
 end
 
 ------------------------------------------------------------------------------------------

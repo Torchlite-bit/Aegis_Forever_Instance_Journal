@@ -2020,6 +2020,50 @@ do
 	check(not mark.legendGlow:IsShown(), "Turn In does not light up a !")
 	turnInEntry:_RunScript("OnLeave")
 end
+-- Each legend entry is a switch: the journal's own markers hidden by the journal (for the account), the
+-- game's quest markers by the game's own map filters, which the journal's quest marks follow
+do
+	local dungeonEntry, transportEntry = legend:Entry("dungeon"), legend:Entry("transport")
+	local questEntry, turnInEntry, progressEntry = legend:Entry("quest"), legend:Entry("turnin"), legend:Entry("inprogress")
+	OpenWorldMap(1455)
+	local function count(template, kind)
+		local n = 0
+		for _, pin in ipairs(WorldMapFrame:ActivePins(template)) do
+			if not kind or pin.mark.kind == kind then n = n + 1 end
+		end
+		return n
+	end
+	local doors, trams = count("AegisJournalEntrancePinTemplate"), count("AegisJournalTransportPinTemplate")
+	check(doors > 0 and trams > 0 and progressEntry ~= nil, "Ironforge's doors and tram drawn; the legend's In Progress entry found")
+	dungeonEntry:Click()
+	check(count("AegisJournalEntrancePinTemplate") == 0 and ns.db.mapHidden.dungeon and dungeonEntry:GetAlpha() < 1,
+		"a click on Dungeon hides the dungeon doors and dims its entry")
+	dungeonEntry:Click()
+	check(count("AegisJournalEntrancePinTemplate") == doors and not ns.db.mapHidden.dungeon and dungeonEntry:GetAlpha() == 1,
+		"another shows them again")
+	transportEntry:Click()
+	check(count("AegisJournalTransportPinTemplate") == 0, "Transport hides the tram")
+	transportEntry:Click()
+	check(count("AegisJournalTransportPinTemplate") == trams, "and shows it again")
+	local offers = count("AegisJournalQuestPinTemplate", "start")
+	check(offers > 0, "the journal's quest marks in Ironforge")
+	questEntry:Click()
+	check(Mock.cvars.questPOILocalStory == "0" and count("AegisJournalQuestPinTemplate", "start") == 0 and questEntry:GetAlpha() < 1,
+		"Quest turns off the game's own filter for quests on offer, and the journal's ! marks with it")
+	questEntry:Click()
+	check(Mock.cvars.questPOILocalStory == "1" and count("AegisJournalQuestPinTemplate", "start") == offers, "and on again")
+	progressEntry:Click()
+	check(Mock.cvars.questPOI == "0" and turnInEntry:GetAlpha() < 1 and progressEntry:GetAlpha() < 1,
+		"In Progress and Turn In share the game's quest objectives filter: both dimmed")
+	progressEntry:Click()
+	check(Mock.cvars.questPOI == "1" and turnInEntry:GetAlpha() == 1, "and both back")
+	SetCVar("questPOI", "0")
+	check(turnInEntry:GetAlpha() < 1, "the game's own filter menu changing it dims the entries too")
+	SetCVar("questPOI", nil)
+	SetCVar("questPOILocalStory", nil)
+	check(questEntry:GetAlpha() == 1 and turnInEntry:GetAlpha() == 1, "the game's default shows them")
+	WorldMapFrame:Hide()
+end
 dungeonEntry:_RunScript("OnEnter")
 WorldMapFrame:SetMapID(1415)
 local glowing = 0

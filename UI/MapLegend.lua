@@ -17,6 +17,23 @@ local L = ns.L
 local MapLegend = {}
 ns.MapLegend = MapLegend
 
+--[[
+	Every entry of the legend is a switch, as the map's filter menu is: a click hides that kind of
+	marker on the world map, another shows it again, and a hidden kind's entry is dimmed.
+
+	The journal's own markers (dungeon and raid doors, flight points, caves, transports) are hidden
+	by the journal, for the account (ns.db.mapHidden). The game's quest markers are hidden by the
+	game's own map filters, the ones its filter menu sets, so the two always agree: quests on offer
+	("questPOILocalStory": the Quest entry), and quests in the log ("questPOI": In Progress and Turn
+	In together, as the game has one filter for both). The journal's "!" and "?" marks follow those
+	filters. Repeatable quests have no filter of their own, so their entry is no switch.
+]]
+local SWITCHES = {
+	dungeon = {}, raid = {}, flight = {}, cave = {}, transport = {},
+	quest = { cvar = "questPOILocalStory" }, turnin = { cvar = "questPOI" }, inprogress = { cvar = "questPOI" },
+}
+local DIMMED_ALPHA = 0.45
+
 local ENTRANCE_TEMPLATE = "AegisJournalEntrancePinTemplate"
 local CAVE_TEMPLATE = "AegisJournalCavePinTemplate"
 local FLIGHT_TEMPLATE = "AegisJournalFlightPinTemplate"
@@ -140,6 +157,7 @@ local function TeachLegend(legend)
 	local movement, last
 	local normal = Enum and Enum.QuestClassification and Enum.QuestClassification.Normal
 	local complete = POIButtonUtil and POIButtonUtil.Style and POIButtonUtil.Style.QuestComplete
+	local inProgress = POIButtonUtil and POIButtonUtil.Style and POIButtonUtil.Style.QuestInProgress
 	for _, category in ipairs({ scroll.ScrollChild:GetChildren() }) do
 		last = category
 		for _, entry in ipairs(Entries(category)) do
@@ -159,11 +177,14 @@ local function TeachLegend(legend)
 			elseif meta and complete ~= nil and meta.Style == complete then
 				entries.turnin = entry
 				HookEntry(entry, QUEST_TEMPLATE, QuestMark("turnin"))
+			elseif meta and inProgress ~= nil and meta.Style == inProgress then
+				entries.inprogress = entry
 			end
 		end
 	end
 	movement = movement or last
 	if movement then AddEntries(movement, legend) end
+	MapLegend:MakeSwitches()
 end
 
 function MapLegend:SetUp()
@@ -175,6 +196,80 @@ function MapLegend:SetUp()
 	ShowTabs()
 	TeachLegend(log.MapLegend)
 	return true
+end
+
+-- Whether the world map shows this kind of marker (a SWITCHES kind); any other kind, always.
+function MapLegend.Shows(kind)
+	local switch = SWITCHES[kind]
+	if not switch then return true end
+	if switch.cvar then
+		local value = GetCVar and GetCVar(switch.cvar)
+		return value == nil or value == "1"
+	end
+	return not (ns.db and ns.db.mapHidden and ns.db.mapHidden[kind])
+end
+
+-- A hidden kind's entry is dimmed.
+local function PaintSwitches()
+	for kind in pairs(SWITCHES) do
+		local entry = entries[kind]
+		if entry then
+			local shown = MapLegend.Shows(kind)
+			entry:SetAlpha(shown and 1 or DIMMED_ALPHA)
+			local icon = entry.Icon
+			if type(icon) == "table" and icon.SetDesaturated then icon:SetDesaturated(not shown) end
+		end
+	end
+end
+
+-- The journal's own markers drawn again; the game redraws its own when its filters change.
+local function RedrawJournalMarkers()
+	ns.DungeonMap:RefreshEntrances()
+	ns.TravelMap:Refresh()
+	ns.QuestMap:Refresh()
+end
+
+function MapLegend:Toggle(kind)
+	local switch = SWITCHES[kind]
+	if not switch then return end
+	local show = not MapLegend.Shows(kind)
+	if switch.cvar then
+		if type(SetCVar) == "function" then pcall(SetCVar, switch.cvar, show and "1" or "0") end
+	else
+		ns.db.mapHidden = ns.db.mapHidden or {}
+		ns.db.mapHidden[kind] = (not show) or nil
+	end
+	ns.PlaySoundKit(show and "IG_MAINMENU_OPTION_CHECKBOX_ON" or "IG_MAINMENU_OPTION_CHECKBOX_OFF")
+	PaintSwitches()
+	RedrawJournalMarkers()
+end
+
+-- Each switch's entry: a click toggles it, and its tooltip says so. Blizzard's entries are only
+-- hooked, once each (kept in the journal's own table, nothing written into them).
+local switched = setmetatable({}, { __mode = "k" })
+
+function MapLegend:MakeSwitches()
+	for kind, switch in pairs(SWITCHES) do
+		local entry = entries[kind]
+		if entry and not switched[entry] then
+			switched[entry] = true
+			entry:HookScript("OnClick", function() MapLegend:Toggle(kind) end)
+			entry:HookScript("OnEnter", function()
+				local tooltip = GameTooltip
+				if not (tooltip and tooltip:IsShown()) then return end
+				tooltip:AddLine(MapLegend.Shows(kind) and L.LEGEND_CLICK_HIDE or L.LEGEND_CLICK_SHOW, 0.1, 1, 0.1)
+				if switch.cvar then tooltip:AddLine(L.LEGEND_GAME_FILTER, 0.6, 0.6, 0.6, true) end
+				tooltip:Show()
+			end)
+		end
+	end
+	PaintSwitches()
+end
+
+-- The game's filters can change from its own filter menu too.
+function MapLegend:FiltersChanged()
+	PaintSwitches()
+	ns.QuestMap:Refresh()
 end
 
 -- A journal pin under the mouse lights up its legend entry, as the client's own pins do.
@@ -194,8 +289,12 @@ function MapLegend:Entry(kind)
 end
 
 local events = CreateFrame("Frame")
-ns.RegisterEvents(events, "PLAYER_LOGIN")
-events:SetScript("OnEvent", function(self)
+ns.RegisterEvents(events, "PLAYER_LOGIN", "CVAR_UPDATE")
+events:SetScript("OnEvent", function(self, event, name)
+	if event == "CVAR_UPDATE" then
+		if name == SWITCHES.quest.cvar or name == SWITCHES.turnin.cvar then MapLegend:FiltersChanged() end
+		return
+	end
 	MapLegend:SetUp()
 	ns.UnregisterEvents(self, "PLAYER_LOGIN")
 end)

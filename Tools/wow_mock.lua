@@ -854,6 +854,11 @@ UiMapPoint = { CreateFromCoordinates = function(mapID, x, y) return { uiMapID = 
 C_SuperTrack = { SetSuperTrackedUserWaypoint = function(on) Mock.superTracked = on end }
 Mock.cvars = { showDungeonEntrancesOnMap = "1" }
 function GetCVar(name) return Mock.cvars[name] end
+-- A changed setting is announced, as the client does.
+function SetCVar(name, value)
+	Mock.cvars[name] = value ~= nil and tostring(value) or nil
+	Mock.Fire("CVAR_UPDATE", name, value)
+end
 
 Mock.combatLogging = false
 function LoggingCombat(on)

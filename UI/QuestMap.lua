@@ -63,10 +63,12 @@ end
 function QuestMap:Mark(quest)
 	local panel = ns.QuestsPanel
 	local status = panel:Status(quest)
+	-- The map legend's switches: the game's own filters for quests in the log and on offer.
 	if status == "ready" then
+		if not ns.MapLegend.Shows("turnin") then return nil end
 		return { kind = "turnin", point = panel:EndPoint(quest), inside = quest.endInside }
 	end
-	if status ~= "available" or QuestMap.IsGrey(quest) then return nil end
+	if status ~= "available" or QuestMap.IsGrey(quest) or not ns.MapLegend.Shows("quest") then return nil end
 	return { kind = "start", point = panel:StartPoint(quest), inside = quest.startInside }
 end
 
@@ -308,6 +310,12 @@ local function Redraw()
 		provider:RefreshAllData()
 		ns.DungeonMap:Refresh()
 	end
+end
+
+-- Drawn again now (a legend switch).
+function QuestMap:Refresh()
+	queued = false
+	Redraw()
 end
 
 local events = CreateFrame("Frame")
