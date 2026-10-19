@@ -12,6 +12,30 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.34.0]
+
+### Added
+- **Trash** in every dungeon's boss list, after its bosses: what the dungeon's other creatures drop
+  that is worth knowing about, rare and epic gear, recipes and quest items. The greens and whites
+  any creature there may drop are left out of the dungeon's loot, search and the Gear Finder too.
+- **Before you go**, at the top of a dungeon's overview: its key and the quests to it, with how far
+  along you are, and any hidden boss to prepare for. City of Dalaran first: the Dalaran Sewer Key
+  for each side, and how to make and use the Tome of Dalaran that summons Lyn the Ignored. More
+  dungeons will follow, one at a time.
+- **Switches in the world map's legend**: click an entry to hide that kind of marker, click again
+  to show it. The journal's own (dungeon and raid doors, flight points, caves, boats, zeppelins,
+  trams and portals) are kept for your account; the game's quest markers use the game's own map
+  filters, the same ones as the map's filter menu.
+
+### Changed
+- **Dungeon quest marks** on the maps now show only quests you can take now (the quests before
+  them done, your level reached) and that aren't grey for your level. The Quests tab still lists
+  them all.
+- **Pointing at a dungeon quest mark** lights the legend's Quest entry (and Turn In, for a "?"),
+  and pointing at those entries lights the marks up, as the game's own marks do.
+- **Show Start and Show End** on a quest now set the game's own waypoint there, on the map, the
+  minimap and in the world.
+
 ## [0.33.0]
 
 > ⚠️ **About the new languages.** The German, French and Chinese (Simplified and Traditional)

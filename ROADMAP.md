@@ -15,6 +15,7 @@ Size is a rough guess at the work: **S** a day or less, **M** a few days, **L** 
 |---|---|
 | 0.32.0 | **The journal's stat weights in Pawn**: choose once whose weights Pawn and the Gear Finder both use; with the journal's, Pawn's tooltips and arrows agree with the Gear Finder. |
 | 0.33.0 | **German, French, Simplified and Traditional Chinese**, drafted and awaiting native speakers, and `/aegis lang` to preview a translation on any client. |
+| 0.34.0 | **Trash** in each dungeon's boss list; **Before you go** on a dungeon's overview (City of Dalaran first); **map legend switches** for every kind of marker *(player request)*; quest marks only for quests you can take now; Show Start and Show End set a waypoint. |
 
 ## Next
 
@@ -22,7 +23,8 @@ Size is a rough guess at the work: **S** a day or less, **M** a few days, **L** 
 |---|---|:---:|
 | **Spanish (Spain and Latin America), Brazilian Portuguese and Korean** | The four client languages Forever offers that the journal doesn't speak yet. Planned for next week. | L |
 | **Boss tracking on the dungeon map** | The boss you're fighting marked on its pin (the one moment the game says where you are), the next boss to kill highlighted, and a clearer "You are here". | M |
-| **Map icons on or off** *(player request)* | Each kind on its own, or all at once: dungeon quests, boats, zeppelins, trams and portals, dungeon and raid doors, flight masters. | S |
+| **Keys, attunements and hidden bosses for every dungeon** | Before you go, filled in one dungeon at a time: the classic keys (the Scarlet Key, the Workshop Key, the Crescent Key, the Key to the City...), attunements, and any hidden boss to prepare for. | M |
+| **Map icons on or off inside dungeons** | The world map legend's switches done; next, the same for the journal's own dungeon maps (boss pins, quest marks, doors to other floors). | S |
 | **Turn the Gear Finder off** *(player request)* | For players who don't want it: no tab, no character panel tab, no stat weight lines or arrows, no Pawn link. | S |
 | **The Record tab, hidden or in the settings** *(player request)* | Most players never record. Hide the tab, with its controls (start, stop, combat log) in the options instead. | S |
 | **A settings page inside the journal** *(player request)* | The options above in one place, reachable from the journal itself as well as the game's AddOns options. | M |
@@ -47,8 +49,7 @@ Not planned yet. Say which ones you'd use.
 | **Where it drops** | Every item's tooltip names the dungeon and boss that drop it, wherever you see the item. | S |
 | **Loot filters for you** | On a loot page: upgrades only (by the Gear Finder's weights), only what your class can use, only recipes for your professions. | S |
 | **A wishlist** | The ★ favourites gathered into one list across every dungeon, with a note when one drops or comes up for a roll. | M |
-| **Before you go** | For a dungeon: the quests to pick up first, and where their givers stand, so nobody arrives without them. | M |
-| **Keys and attunements** | A checklist of the classic keys and attunements (the Scarlet Key, the Workshop Key, Onyxia's) and how far you are with each. | M |
+| **Quests to pick up first** | For a dungeon: the quests worth having before going in, and where their givers stand, so nobody arrives without them. | M |
 | **What to run next** | One suggestion that weighs the quests you have, the upgrades waiting and your level together, not upgrades alone. | M |
 | **Tactics to party chat** | A button on a boss page that posts a one-line summary of the fight, for groups new to it. | S |
 | **Who is it an upgrade for?** | With others in the group who run the journal, see whose upgrade a drop would be before rolling. | L |
