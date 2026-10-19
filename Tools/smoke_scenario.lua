@@ -697,36 +697,136 @@ local lyn
 for _, boss in ipairs(cityOfDalaran.bosses) do if boss.name == "Lyn the Ignored" then lyn = boss end end
 check(#lyn.abilities == 2 and lyn.abilities[2].spellID == 1304473 and lyn.abilities[2].flags[1] == "Curse"
 	and lyn.extraAbilities[1].title == "Skeletons" and lyn.fightNote:find("Tome of Dalaran", 1, true)
-	and lyn.notes[1]:find("Tome of Dalaran", 1, true), "Lyn the Ignored's abilities, and how to summon her")
+	and lyn.notes[1]:find("Tome of Dalaran", 1, true), "Lyn the Ignored's abilities, and how to summon him")
 local heartOfDisruption
 for _, quest in ipairs(cityOfDalaran.quests) do if quest.questID == 96984 then heartOfDisruption = quest end end
 check(#heartOfDisruption.prerequisites == 4 and heartOfDisruption.prerequisites[4].name == "Blood in the Streets",
 	"the Horde's Heart of Disruption follows the key chain from Tarren Mill")
--- Before you go, on the overview: the key and its quests for the player's own side, and the hidden
--- boss's tome
+-- Before you go, on the overview: under its bar, the key for the player's own side and the hidden
+-- boss, each a note under the Abilities tab's paper headers; the key's quests beneath it, as the
+-- Quests tab lists them
 do
-	local function lore()
+	local lore = page.InstanceOverview.Lore
+	local function open()
 		-- (drawn as the dungeon opens)
 		ns.Journal:OpenInstance(ns.GetInstance("TheDeadmines"))
 		ns.Journal:OpenInstance(cityOfDalaran)
 		tabs[1]:Click()
-		return page.InstanceOverview.Lore.Text:GetText()
+		return lore.beforeYouGo
 	end
-	local text = lore()
-	check(text:find("Before you go", 1, true) and text:find("Emissary Jacques", 1, true)
-		and not text:find("Magus Wordeen Voidglare", 1, true) and text:find("Tome of Dalaran", 1, true)
-		and text:find("You have done 0 of its 2 quests.", 1, true), "Before you go: the Alliance's key, its quests, and Lyn's tome")
+	local function shown(list)
+		local out = {}
+		for _, item in ipairs(list) do if item:IsShown() then out[#out + 1] = item end end
+		return out
+	end
+	local state = open()
+	local headers, rows = shown(state.headers), shown(state.rows)
+	local key, lynNote = headers[1], headers[2]
+	check(state.bar:IsShown() and state.label:GetText() == "Before you go" and #headers == 2
+		and key.Button.Title:GetText() == "The Dalaran Sewer Key" and lynNote.Button.Title:GetText():find("Lyn the Ignored", 1, true),
+		"Before you go: a bar, then the Alliance's key and Lyn, each under a paper header")
+	check(key.Button.strip == key.Button.strips.expanded and key.Description:IsShown()
+		and key.Description:GetText():find("Emissary Jacques", 1, true)
+		and key.Description:GetText():find("You have done 0 of its 2 quests.", 1, true)
+		and not key.Description:GetText():find("Magus Wordeen Voidglare", 1, true),
+		"the key's note open on its text and how far along the player is")
+	check(key.Button.AbilityIcon._atlas == "QuestNormal" and key.Button.Note:GetText() == "0/2" and key.Button.Note:IsShown(),
+		"its header: the quest mark of the step the player is on, and how many of its quests are done")
+	check(#rows == 2 and rows[1].quest.questID == 92432 and rows[1].Text:GetText() == "An Alarming Request"
+		and rows[2].quest.questID == 92458 and rows[2].Text:GetText() == "[33] Heart of Disruption"
+		and rows[2].Status._atlas == "QuestNormal" and rows[2].Status._desaturated,
+		"its quests beneath, as the Quests tab lists them: a step, then the key's own, not yet open")
+	check(lynNote.Description:GetText():find("Tome of Dalaran", 1, true) and lynNote.Description:GetText():find("summon him", 1, true)
+		and lynNote.Button.AbilityIcon:GetTexture() == "Interface\\TargetingFrame\\UI-TargetingFrame-Skull"
+		and not lynNote.Button.Note:IsShown(), "the hidden boss's note: a skull, and how to summon him")
+	check(lore.Description:GetText() == cityOfDalaran.description
+		and select(5, lore.Description:GetPoint(1)) < select(5, rows[2]:GetPoint(1)),
+		"the description after the notes")
 	check(not cityOfDalaran.description:find("Getting in", 1, true), "the way in is no longer repeated in the description")
-	Mock.questsDone[92432] = true
-	check(lore():find("You have done 1 of its 2 quests.", 1, true), "how far along the key's quests the player is")
+
+	-- A click on a quest opens it on the Quests tab; a step, beneath its quest, its chain open
+	rows[1]:_RunScript("OnEnter")
+	check(GameTooltip._text == "An Alarming Request" and GameTooltip._lines[#GameTooltip._lines] == ns.L.PREPARE_QUEST_HINT,
+		"a quest's tooltip says where a click takes it")
+	rows[1]:_RunScript("OnLeave")
+	rows[1]:Click()
+	check(page.tab == Page.TAB_QUESTS and ns.QuestsPanel.page.selectedQuest.questID == 92432
+		and ns.QuestsPanel.page.expandedChains[92458], "a step opens on the Quests tab, under Heart of Disruption")
+	state = open()
+	rows = shown(state.rows)
+	rows[2]:Click()
+	check(page.tab == Page.TAB_QUESTS and ns.QuestsPanel.page.selectedQuest == rows[2].quest, "the key's own quest too")
+
+	-- The headers open and close like the Abilities tab's, keeping the scroll
+	state = open()
+	lore:SetVerticalScroll(20)
+	state.headers[1].Button:Click()
+	check(not state.headers[1].Description:IsShown() and #shown(state.rows) == 0 and lore:GetVerticalScroll() == 20,
+		"a click closes the key's note, the scroll kept")
+	state.headers[1].Button:Click()
+	check(state.headers[1].Description:IsShown() and #shown(state.rows) == 2, "another opens it again")
+
+	-- How far along the player is (at the key's own quest's level)
+	Mock.questsDone[92432], Mock.level = true, 30
+	state = open()
+	check(state.headers[1].Button.Note:GetText() == "1/2"
+		and state.headers[1].Description:GetText():find("You have done 1 of its 2 quests.", 1, true)
+		and shown(state.rows)[1].Status:GetTexture() == "Interface\\Buttons\\UI-CheckBox-Check"
+		and shown(state.rows)[2].Status._atlas == "QuestNormal" and not shown(state.rows)[2].Status._desaturated,
+		"a step done: checked, and the key's own quest can be taken")
 	Mock.questLog[92458] = 1
-	check(lore():find("You have it.", 1, true), "the key's own quest taken: they have it")
-	Mock.questsDone[92432], Mock.questLog[92458] = nil, nil
+	state = open()
+	check(state.headers[1].Button.Note:GetText():find("UI-CheckBox-Check", 1, true)
+		and state.headers[1].Button.AbilityIcon:GetTexture() == "Interface\\Buttons\\UI-CheckBox-Check"
+		and not state.headers[1].Description:IsShown() and state.headers[2].Description:IsShown(),
+		"the key's own quest taken: they have it, and its note starts closed")
+	state.headers[1].Button:Click()
+	check(state.headers[1].Description:GetText():find("You have it.", 1, true), "and says so")
+	Mock.questsDone[92432], Mock.questLog[92458], Mock.level = nil, nil, 20
+
+	-- Taking a quest updates the overview shown
+	state = open()
+	Mock.questsDone[92432] = true
+	Mock.Fire("QUEST_TURNED_IN", 92432)
+	Mock.RunTimers(1)
+	check(state.headers[1].Button.Note:GetText() == "1/2", "a quest handed in shows at once")
+	Mock.questsDone[92432] = nil
+
+	-- The Horde's own chain
 	Mock.faction = "Horde"
-	text = lore()
-	check(text:find("Magus Wordeen Voidglare", 1, true) and not text:find("Emissary Jacques", 1, true)
-		and text:find("of its 5 quests", 1, true) and text:find("Tome of Dalaran", 1, true), "the Horde's own chain")
+	state = open()
+	headers, rows = shown(state.headers), shown(state.rows)
+	check(headers[1].Description:GetText():find("Magus Wordeen Voidglare", 1, true)
+		and not headers[1].Description:GetText():find("Emissary Jacques", 1, true) and headers[1].Button.Note:GetText() == "0/5"
+		and #rows == 5 and rows[1].Text:GetText() == "Prison Break In" and rows[4].Text:GetText() == "Blood in the Streets"
+		and rows[5].quest.questID == 96984 and headers[2].Description:GetText():find("Tome of Dalaran", 1, true),
+		"the Horde's own chain: its five quests")
+	rows[3]:Click()
+	check(ns.QuestsPanel.page.selectedQuest.questID == 545 and ns.QuestsPanel.page.expandedChains[96984],
+		"a Horde step opens beneath the Horde's Heart of Disruption")
 	Mock.faction = "Alliance"
+
+	-- Steps of a chain that share a name are one row on the Quests tab, and one here
+	do
+		local alliance = cityOfDalaran.prepare[1]
+		local quest
+		for _, candidate in ipairs(cityOfDalaran.quests) do if candidate.questID == 92458 then quest = candidate end end
+		local prerequisites, quests = quest.prerequisites, alliance.quests
+		quest.prerequisites = { { questID = 92432, name = "An Alarming Request" }, { questID = 92433, name = "An Alarming Request" } }
+		alliance.quests = { 92432, 92433, 92458 }
+		state = open()
+		rows = shown(state.rows)
+		local found, parent = ns.QuestsPanel:Find(cityOfDalaran, 92433)
+		check(#rows == 2 and rows[1].quest.steps and #rows[1].quest.steps == 2 and found == rows[1].quest and parent == quest,
+			"a chain's same-named steps: one row, found by either step")
+		quest.prerequisites, alliance.quests = prerequisites, quests
+	end
+
+	-- A dungeon with nothing to prepare has no bar
+	ns.Journal:OpenInstance(ns.GetInstance("TheDeadmines"))
+	tabs[1]:Click()
+	check(not lore.beforeYouGo.bar:IsShown() and #shown(lore.beforeYouGo.headers) == 0 and #shown(lore.beforeYouGo.rows) == 0,
+		"no Before you go where there is nothing to prepare")
 end
 tabs[1]:Click()
 
@@ -1016,7 +1116,7 @@ do
 		"City of Dalaran on Santiago Reyes's map: the sewers, then the city")
 end
 ns.Journal:OpenInstance(deeps)
-check(page.InstanceOverview.Lore.Text:GetText():find("Once a temple to Elune", 1, true)
+check(page.InstanceOverview.Lore.Description:GetText():find("Once a temple to Elune", 1, true)
 	and not page.InstanceOverview.Lore.Text:GetText():find("Not yet tested", 1, true), "Blackfathom Deeps' own overview")
 check(#ns.Search:Find("Aku'mai") > 0 and #ns.Search:Find("Herod") > 0 and #ns.Search:Find("Whitemane") > 0,
 	"search knows the dungeons, the Armory and Cathedral included")
@@ -2582,6 +2682,9 @@ check(rows[22].Boss:GetText() == "Exalted" and rows[22].Boss._textColor[2] == ns
 check(rows[22].ArmorType:GetText() == "2 Arcane Crystal" and rows[1].ArmorType:GetText():find("60", 1, true),
 	"each reward says what its quartermaster asks: " .. tostring(rows[1].ArmorType:GetText()))
 check(not page.ComingSoon:IsShown(), "no placeholder on a captured faction")
+check(ns.CostIcons("1200 Merchant's Favor") == "1200|T135725:0:0:2:0|t" and ns.CostIcons("2 Arcane Crystal") == nil
+	and ns.CostIcons("180 Merchant's Favor + 2 Arcane Crystal") == nil,
+	"Merchant's Favor as the merchant shows it, its amount and icon; anything else left in words")
 check(#f.NavBar._nav == 2 and f.NavBar._nav[2].name == "Argent Dawn", "breadcrumb names the faction")
 check(#f.NavBar._nav[2].listFunc() == 23, "its arrow lists every faction")
 
@@ -2651,6 +2754,18 @@ Mock.reputation[529].reaction, Mock.reputation[529].value = 7, 21500
 Mock.Fire("UPDATE_FACTION")
 check(standingBox.Label:GetText() == "Your standing: Revered" and standingButtons[3].Reached:IsShown(), "standing moves on")
 check(lootRows()[12].Boss._textColor[2] == 0.42, "Revered rewards turn green")
+
+-- A trade camp's rewards: their Merchant's Favor as the merchant shows it, the amount and the icon
+do
+	ns.Journal:OpenInstance(ns.GetInstance("Faction2587"))
+	local favor, worded = 0, 0
+	for _, row in ipairs(lootRows()) do
+		local text = tostring(row.ArmorType:GetText() or "")
+		if text:match("^%d+|T135725:0:0:2:0|t$") then favor = favor + 1 end
+		if text:find("Merchant", 1, true) then worded = worded + 1 end
+	end
+	check(favor > 0 and worded == 0, "a trade camp's rewards cost Merchant's Favor's icon, not its name: " .. favor)
+end
 
 -- A faction with nothing captured: its page lists what the game's data gives, and asks for its quartermaster
 do

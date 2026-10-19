@@ -117,6 +117,7 @@ UI\LootPanel.lua
 UI\AbilitiesPanel.lua
 UI\ModelPanel.lua
 UI\QuestsPanel.lua
+UI\BeforeYouGo.lua
 UI\QuestMap.lua
 UI\EncounterPage.lua
 UI\RecordPanel.lua

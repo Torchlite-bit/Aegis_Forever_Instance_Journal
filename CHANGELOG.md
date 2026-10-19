@@ -18,10 +18,13 @@ and the version shown in the AddOns list. Quote it in bug reports.
 - **Trash** in every dungeon's boss list, after its bosses: what the dungeon's other creatures drop
   that is worth knowing about, rare and epic gear, recipes and quest items. The greens and whites
   any creature there may drop are left out of the dungeon's loot, search and the Gear Finder too.
-- **Before you go**, at the top of a dungeon's overview: its key and the quests to it, with how far
-  along you are, and any hidden boss to prepare for. City of Dalaran first: the Dalaran Sewer Key
-  for each side, and how to make and use the Tome of Dalaran that summons Lyn the Ignored. More
-  dungeons will follow, one at a time.
+- **Before you go**, at the top of a dungeon's overview: its key and the quests to it, and any
+  hidden boss to prepare for, each a note under a header like the Abilities tab's, opened and
+  closed with a click. A key's header shows the "!" of the quest you're on and how many of its
+  quests are done; beneath its text, its quests are listed as on the Quests tab, and a click
+  opens one there. City of Dalaran first: the Dalaran Sewer Key for each side, and how to make
+  and use the Tome of Dalaran that summons Lyn the Ignored. More dungeons will follow, one at a
+  time.
 - **Switches in the world map's legend**: click an entry to hide that kind of marker, click again
   to show it. The journal's own (dungeon and raid doors, flight points, caves, boats, zeppelins,
   trams and portals) are kept for your account; the game's quest markers use the game's own map
@@ -32,6 +35,8 @@ and the version shown in the AddOns list. Quote it in bug reports.
   each). Thank you!
 
 ### Changed
+- **Merchant's Favor costs** on the Azeroth Commerce Authority's and Durotar Supply and
+  Logistics' rewards now show as the merchant shows them: the amount and the currency's icon.
 - **Dungeon quest marks** on the maps now show only quests you can take now (the quests before
   them done, your level reached) and that aren't grey for your level. The Quests tab still lists
   them all.
@@ -41,6 +46,7 @@ and the version shown in the AddOns list. Quote it in bug reports.
   minimap and in the world.
 
 ### Fixed
+- **Lyn the Ignored** is a he: his notes and abilities said "she", in every language.
 - **On a dungeon's map**, the quest log's button in the map's corner could not be clicked once the
   log was closed: the map's own buttons now stay above the dungeon map.
 

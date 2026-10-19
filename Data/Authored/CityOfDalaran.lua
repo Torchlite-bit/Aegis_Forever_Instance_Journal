@@ -56,7 +56,7 @@ ns.AmendInstance("CityOfDalaran", {
 		},
 		{
 			title = "Lyn the Ignored, a hidden boss",
-			text = "Bring the Tome of Dalaran to summon her. Take the Black Tome from Archmage Arugal's table in "
+			text = "Bring the Tome of Dalaran to summon him. Take the Black Tome from Archmage Arugal's table in "
 				.. "Shadowfang Keep after his kill, and use it beside the Leyline Focus in Ambermill's keep, in "
 				.. "Silverpine Forest. In the sewers, past Atrexis, go straight on into the tunnel to the purple rune "
 				.. "and use the tome there. It is not used up: it can be used again after 3 minutes.",
@@ -137,7 +137,7 @@ ns.AmendInstance("CityOfDalaran", {
 			notes = {
 				"A hidden boss you summon. Take the Black Tome from Archmage Arugal's table in Shadowfang Keep after his kill, and turn it into the Tome of Dalaran at the Leyline Focus, a blue crystal in a back room at Ambermill in Silverpine Forest.",
 				"Past Atrexis, clear the north-east room with the market stalls and the small pink summoning circle. Whoever carries the tome clicks the circle, and Lyn comes out of the big round grate.",
-				"Shadow Bolt Volley and Curse of Thorns together hurt: remove the curse, melee above all. She raises skeletons as Atrexis does.",
+				"Shadow Bolt Volley and Curse of Thorns together hurt: remove the curse, melee above all. He raises skeletons as Atrexis does.",
 			},
 			mapPin = { x = 0.690, y = 0.166, floor = 1 },
 			-- Her abilities: Data/Authored/Abilities.lua.

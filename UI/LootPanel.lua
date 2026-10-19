@@ -344,7 +344,8 @@ end
 local function CostText(lootRow)
 	local parts = {}
 	if type(lootRow.price) == "number" and lootRow.price > 0 then parts[#parts + 1] = ns.MoneyText(lootRow.price) end
-	if lootRow.cost then parts[#parts + 1] = lootRow.cost end
+	-- A currency as the merchant shows it, its amount and its icon; anything else in words.
+	if lootRow.cost then parts[#parts + 1] = ns.CostIcons(lootRow.enCost or lootRow.cost) or lootRow.cost end
 	return #parts > 0 and table.concat(parts, " + ") or nil
 end
 

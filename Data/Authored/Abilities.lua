@@ -905,14 +905,14 @@ ns.AmendInstance("CityOfDalaran", { bosses = {
 	["Lyn the Ignored"] = {
 		abilities = {
 			{ spellID = 17228, name = "Shadow Bolt Volley", flags = { "Damage", "Healer" },
-				text = "Shadow bolts at everyone within 30 yards of her." },
+				text = "Shadow bolts at everyone within 30 yards of him." },
 			{ spellID = 1304473, name = "Curse of Thorns", flags = { "Curse" },
 				text = "A 1.5-second cast: a 3-minute curse that hurts the player now and then when they attack. Remove it." },
 		},
 		extraAbilities = {
 			{ title = "Skeletons", icon = ICONS .. "spell_shadow_raisedead", flags = { "Damage" },
-				description = "Skeletons rise and fight beside her. Kill them." },
+				description = "Skeletons rise and fight beside him. Kill them." },
 		},
-		fightNote = "She is not there at first. In the sewers, past Atrexis, clear the north-east room, the one with market stalls and a small pink Summoning Circle (not Atrexis's large one). A player carrying the Tome of Dalaran then clicks the circle, and Lyn comes out of the large round grated door. To get the tome, loot the Black Tome on the table in Archmage Arugal's room in Shadowfang Keep, after his kill, then use it at the Leyline Focus, a blue crystal in a back room at Ambermill, in Silverpine Forest.",
+		fightNote = "He is not there at first. In the sewers, past Atrexis, clear the north-east room, the one with market stalls and a small pink Summoning Circle (not Atrexis's large one). A player carrying the Tome of Dalaran then clicks the circle, and Lyn comes out of the large round grated door. To get the tome, loot the Black Tome on the table in Archmage Arugal's room in Shadowfang Keep, after his kill, then use it at the Leyline Focus, a blue crystal in a back room at Ambermill, in Silverpine Forest.",
 	},
 } })

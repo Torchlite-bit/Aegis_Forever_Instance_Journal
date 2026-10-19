@@ -303,6 +303,7 @@ L.LEGEND_GAME_FILTER = "The game's own map filter, as in the map's filter menu: 
 L.PREPARE_TITLE = "Before you go"
 L.PREPARE_PROGRESS = "You have done %d of its %d quests."
 L.PREPARE_HAVE = "You have it."
+L.PREPARE_QUEST_HINT = "Click to see it on the Quests tab."
 -- The trash's entry in a dungeon's boss list, and its page.
 L.TRASH = "Trash"
 L.TRASH_DESCRIPTION = "What the dungeon's other creatures drop that is worth knowing about: rare and epic gear, recipes and quest items."

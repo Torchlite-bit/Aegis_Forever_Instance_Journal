@@ -156,7 +156,8 @@ local function UpdateRowHighlight(row)
 	row.Text:SetTextColor(color[1], color[2], color[3])
 end
 
-local function CreateRow(parent)
+-- onClick: what a click on the row does with it (else it is chosen on the Quests tab).
+local function CreateRow(parent, onClick)
 	local row = CreateFrame("Button", nil, parent)
 	row:SetHeight(ROW_HEIGHT)
 
@@ -196,7 +197,7 @@ local function CreateRow(parent)
 	end)
 	row:SetScript("OnClick", function(self)
 		ns.PlaySoundKit("IG_QUEST_LIST_SELECT")
-		QuestsPanel:Select(self.quest)
+		if onClick then onClick(self) else QuestsPanel:Select(self.quest) end
 	end)
 	return row
 end
@@ -221,6 +222,10 @@ local function SetRow(row, quest, depth, hasChain, expanded, selected)
 	row.selected = selected
 	UpdateRowHighlight(row)
 end
+
+-- The list's rows and marks, for other pages that list quests the same way (Before you go).
+QuestsPanel.CreateRow, QuestsPanel.SetRow, QuestsPanel.SetStatusIcon = CreateRow, SetRow, SetStatusIcon
+QuestsPanel.STATUS_DONE, QuestsPanel.STATUS_LOCKED = STATUS_DONE, STATUS_LOCKED
 
 ------------------------------------------------------------------------------------------
 -- Right page: the quest
@@ -612,12 +617,15 @@ function QuestsPanel:Select(quest)
 	self:Refresh(page)
 end
 
--- Opens the journal on a dungeon's Quests tab with the quest chosen (search, the map's quest marks).
-function QuestsPanel:Open(instance, quest)
+-- Opens the journal on a dungeon's Quests tab with the quest chosen (search, the map's quest
+-- marks, Before you go). A step of a chain (parent: the quest whose chain it is) shows beneath
+-- that quest, its chain open.
+function QuestsPanel:Open(instance, quest, parent)
 	local journal = ns.Journal
 	journal:Show()
 	journal:OpenInstance(instance)
 	ns.EncounterPage:SetTab(journal:Page(), ns.EncounterPage.TAB_QUESTS)
+	if parent then self.page.expandedChains[parent.questID] = true end
 	self:Select(quest)
 end
 
@@ -668,6 +676,22 @@ local function ChainRows(instance, quest)
 		index = last + 1
 	end
 	return rows
+end
+
+-- A quest as the Quests tab lists it: the dungeon's own, else the step of a chain that holds it,
+-- with the quest whose chain it is. Nil when the dungeon lists it nowhere.
+function QuestsPanel:Find(instance, questID)
+	local quest = QuestByID(instance, questID)
+	if quest then return quest end
+	for _, parent in ipairs(instance.quests or {}) do
+		for _, step in ipairs(ChainRows(instance, parent)) do
+			if step.questID == questID then return step, parent end
+			for _, part in ipairs(step.steps or {}) do
+				if part.questID == questID then return step, parent end
+			end
+		end
+	end
+	return nil
 end
 
 function QuestsPanel:Refresh(page)

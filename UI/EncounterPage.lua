@@ -517,6 +517,8 @@ local function CreateInstanceOverview(page, info)
 	lore.Child:SetWidth(315)
 	lore.Text = ParchmentText(lore.Child, 310)
 	lore.Text:SetPoint("TOPLEFT", 2, -2)
+	-- The description, beneath Before you go (EncounterPage:LayoutLore).
+	lore.Description = ParchmentText(lore.Child, 310)
 	overview.Lore = lore
 
 	-- Retail's Show Map: the quest log's map icon on a dark strip, above the lore.
@@ -777,36 +779,21 @@ local function LayoutInstanceOverview(overview, retail)
 end
 
 --[[
-	Before you go: what a dungeon asks of the player before its door (a key and the quests to it)
-	and what is worth bringing (a hidden boss's summoning item), from its data's `prepare` list
-	({ title, text, faction, quests }), for the player's own side. A key's quests say how far along
-	the player is, and that they have it once its last quest is taken.
+	The overview's text: the dungeon's facts, then Before you go (UI/BeforeYouGo.lua), then its
+	description. Laid out again, keeping the scroll, when a note of Before you go opens or closes,
+	or a quest of a key changes.
 ]]
-local PREPARE_COLOR, HAVE_COLOR = "|cffffd100", "|cff1aff1a"
+local LORE_GAP = 12
 
-local function PrepareLines(instance)
-	local lines = {}
-	local faction = UnitFactionGroup and UnitFactionGroup("player")
-	for _, entry in ipairs(instance.prepare or {}) do
-		if not entry.faction or entry.faction == faction then
-			lines[#lines + 1] = PREPARE_COLOR .. entry.title .. ":|r " .. entry.text
-			local quests = entry.quests or {}
-			if #quests > 0 then
-				local done, last = 0, quests[#quests]
-				for _, questID in ipairs(quests) do
-					if ns.QuestsPanel:IsDone(questID) then done = done + 1 end
-				end
-				if ns.QuestsPanel:IsDone(last) or ns.QuestsPanel:InLog(last) then
-					lines[#lines + 1] = HAVE_COLOR .. L.PREPARE_HAVE .. "|r"
-				else
-					lines[#lines + 1] = string.format(L.PREPARE_PROGRESS, done, #quests)
-				end
-			end
-		end
-	end
-	return lines
+function EncounterPage:LayoutLore(lore)
+	local y = 2 + lore.Text:GetStringHeight()
+	y = ns.BeforeYouGo:Fill(lore, lore.instance, y + LORE_GAP) or y
+	local description = lore.Description
+	description:ClearAllPoints()
+	description:SetPoint("TOPLEFT", 2, -(y + LORE_GAP))
+	local height = (description:GetText() or "") ~= "" and description:GetStringHeight() or 0
+	lore.Child:SetHeight(y + LORE_GAP + height + 4)
 end
-EncounterPage.PrepareLines = PrepareLines
 
 local function FillInstanceOverview(page)
 	local instance, overview = page.instance, page.InstanceOverview
@@ -831,19 +818,11 @@ local function FillInstanceOverview(page)
 		lines[#lines + 1] = ""
 		lines[#lines + 1] = UNTESTED_COLOR .. L.UNTESTED_NOTE .. "|r"
 	end
-	local prepare = PrepareLines(instance)
-	if #prepare > 0 then
-		lines[#lines + 1] = ""
-		lines[#lines + 1] = PREPARE_COLOR .. L.PREPARE_TITLE .. "|r"
-		for _, line in ipairs(prepare) do lines[#lines + 1] = line end
-	end
-	if instance.description then
-		lines[#lines + 1] = ""
-		lines[#lines + 1] = instance.description
-	end
 	local lore = overview.Lore
+	lore.instance = instance
 	lore.Text:SetText(table.concat(lines, "\n"))
-	lore.Child:SetHeight(lore.Text:GetStringHeight() + 4)
+	lore.Description:SetText(instance.description or "")
+	EncounterPage:LayoutLore(lore)
 	lore:SetVerticalScroll(0)
 end
 

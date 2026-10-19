@@ -222,7 +222,8 @@ local function ShowStrip(strip, shown)
 	for _, texture in ipairs(strip) do texture:SetShown(shown) end
 end
 
-local function CreateHeader(parent)
+-- onToggle: what a click on the header does with its section (else the Abilities tab's own).
+local function CreateHeader(parent, onToggle)
 	local header = CreateFrame("Frame", nil, parent)
 	header:SetHeight(HEADER_HEIGHT)
 
@@ -250,6 +251,9 @@ local function CreateHeader(parent)
 	button.Title:SetHeight(10)
 	button.Title:SetJustifyH("LEFT")
 	button.Title:SetWordWrap(false)
+	-- A word on the right, where an ability's alerts go (Before you go: a key's progress).
+	button.Note = button:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	button.Note:SetPoint("RIGHT", -8, 0)
 
 	button.Flags = {}
 	for index = 1, MAX_FLAGS do
@@ -299,7 +303,7 @@ local function CreateHeader(parent)
 	end)
 	button:SetScript("OnClick", function()
 		ns.PlaySoundKit("IG_MAINMENU_OPTION_CHECKBOX_ON")
-		AbilitiesPanel:Toggle(header.section)
+		if onToggle then onToggle(header.section) else AbilitiesPanel:Toggle(header.section) end
 	end)
 	button:SetScript("OnEnter", function(self)
 		if self.Title.IsTruncated and self.Title:IsTruncated() then
@@ -320,8 +324,16 @@ local function SetHeader(header, section, depth, expanded)
 	button.Title:SetFontObject(depth == 0 and ns.Font("GameFontNormalMed3", "GameFontNormal") or "GameFontNormal")
 	button.Title:SetText(section.title or "")
 	button.Title:ClearAllPoints()
-	if section.icon then
+	if section.status then
+		-- A quest's mark, as the Quests tab shows its status.
+		ns.QuestsPanel.SetStatusIcon(button.AbilityIcon, section.status)
+		button.AbilityIcon:Show()
+		button.Title:SetPoint("LEFT", button.AbilityIcon, "RIGHT", 5, -1)
+	elseif section.icon then
 		button.AbilityIcon:SetTexture(section.icon)
+		button.AbilityIcon:SetTexCoord(0, 1, 0, 1)
+		button.AbilityIcon:SetDesaturated(false)
+		button.AbilityIcon:SetVertexColor(1, 1, 1)
 		button.AbilityIcon:Show()
 		button.Title:SetPoint("LEFT", button.AbilityIcon, "RIGHT", 5, -1)
 	else
@@ -340,11 +352,15 @@ local function SetHeader(header, section, depth, expanded)
 			lastFlag = flag
 		end
 	end
-	button.Title:SetPoint("RIGHT", lastFlag or button, lastFlag and "LEFT" or "RIGHT", -5, 0)
+	button.Note:SetText(section.note or "")
+	button.Note:SetShown(section.note ~= nil)
+	local rightOf = lastFlag or (section.note and button.Note)
+	button.Title:SetPoint("RIGHT", rightOf or button, rightOf and "LEFT" or "RIGHT", -5, 0)
 
 	local textColor = expanded and EXPANDED_COLOR or COLLAPSED_COLOR
 	button.Title:SetTextColor(textColor[1], textColor[2], textColor[3])
 	button.ExpandedIcon:SetTextColor(textColor[1], textColor[2], textColor[3])
+	button.Note:SetTextColor(textColor[1], textColor[2], textColor[3])
 	button.strip = expanded and button.strips.expanded or button.strips.collapsed
 	for _, state in pairs(button.strips) do
 		ShowStrip(state.up, false)
@@ -362,6 +378,10 @@ local function SetHeader(header, section, depth, expanded)
 	end
 	return hasText and (HEADER_HEIGHT + 9 + header.Description:GetStringHeight() + 20) or HEADER_HEIGHT
 end
+
+-- The same headers for other pages' notes (Before you go, on a dungeon's overview). A section
+-- there may carry a quest's status for its icon (status) and a word on its right (note).
+ns.PaperHeader = { Create = CreateHeader, Set = SetHeader }
 
 ------------------------------------------------------------------------------------------
 -- The page
