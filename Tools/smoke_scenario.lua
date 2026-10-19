@@ -3316,9 +3316,27 @@ end
 	check(Mock.zoneLabel == "Stormwind City", "a city keeps its plain name")
 	Mock.cursorZone = nil
 
-	local choice = Mock.TaggedMenu("MENU_WORLD_MAP_TRACKING").checkboxes[1]
+	local filterMenu = Mock.TaggedMenu("MENU_WORLD_MAP_TRACKING")
+	local choice = filterMenu.checkboxes[1]
 	check(choice and choice.text == "Show unexplored areas" and not choice.isSelected(),
 		"the map's filter menu offers the unexplored areas, off at first")
+	-- The map legend's switches are in the menu too: either place shows and hides the same markers
+	do
+		local texts, transport = {}, nil
+		for index = 2, #filterMenu.checkboxes do
+			local box = filterMenu.checkboxes[index]
+			texts[#texts + 1] = box.text
+			if box.text == "Boats, zeppelins, trams and portals" then transport = box end
+		end
+		check(table.concat(texts, ", ") == "Quests on offer, Dungeon entrances, Raid entrances, Flight points, "
+			.. "Cave entrances, Boats, zeppelins, trams and portals", "the legend's switches in the filter menu: " .. table.concat(texts, ", "))
+		check(transport.isSelected(), "shown at first")
+		transport.setSelected()
+		check(not transport.isSelected() and not ns.MapLegend.Shows("transport")
+			and ns.MapLegend:Entry("transport"):GetAlpha() < 1, "unticked there: hidden, and dimmed in the legend too")
+		ns.MapLegend:Entry("transport"):Click()
+		check(transport.isSelected(), "shown again from the legend: ticked in the menu")
+	end
 	local pieces = ns.MAP_OVERLAYS[1436]
 	Mock.explored[1436] = { pieces[1][5] }
 	WorldMapFrame:Show()

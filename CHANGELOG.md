@@ -25,7 +25,8 @@ and the version shown in the AddOns list. Quote it in bug reports.
 - **Switches in the world map's legend**: click an entry to hide that kind of marker, click again
   to show it. The journal's own (dungeon and raid doors, flight points, caves, boats, zeppelins,
   trams and portals) are kept for your account; the game's quest markers use the game's own map
-  filters, the same ones as the map's filter menu.
+  filters, the same ones as the map's filter menu. The same switches are in the map's filter
+  menu too, under Instance Journal, beside Show unexplored areas.
 
 ### Changed
 - **Dungeon quest marks** on the maps now show only quests you can take now (the quests before

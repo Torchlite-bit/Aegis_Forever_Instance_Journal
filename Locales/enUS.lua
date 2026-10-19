@@ -369,6 +369,13 @@ L.REP_LISTED_TEXT = "These rewards come from the game's item data, not yet from 
 L.REP_COMING_SOON_TEXT = "New in WoW: Forever, and not captured yet. Once it is in the game, find its quartermaster, open their shop and press Capture vendor on the Reputation tab, then post your recording on our Discord."
 L.MAP_SHOW = ENCOUNTER_JOURNAL_SHOW_MAP or "Show Map"
 L.MAP_SHOW_UNEXPLORED = "Show unexplored areas"
+-- The map legend's switches, in the map's filter menu too (UI/ZoneMap.lua).
+L.MAP_FILTER_QUESTS = "Quests on offer"
+L.MAP_FILTER_DUNGEONS = "Dungeon entrances"
+L.MAP_FILTER_RAIDS = "Raid entrances"
+L.MAP_FILTER_FLIGHT = "Flight points"
+L.MAP_FILTER_CAVES = "Cave entrances"
+L.MAP_FILTER_TRANSPORT = "Boats, zeppelins, trams and portals"
 L.MAP_PIN_OPEN = "Click to open in the journal."
 L.MAP_DEFEATED = DUNGEON_ENCOUNTER_DEFEATED or "Defeated"
 L.MAP_LEVEL = "Level %d"
