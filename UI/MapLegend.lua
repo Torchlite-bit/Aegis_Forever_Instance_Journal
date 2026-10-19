@@ -6,8 +6,9 @@ local L = ns.L
 	Legend tabs hidden by the Camelot rules (QuestMapFrameOverrides). This shows the two tabs
 	again, where retail has them, and teaches the legend the journal's own map icons:
 	hovering its Dungeon, Raid or Flightpoint entry lights up the journal's entrances and
-	flight points, as it does the client's own on retail, hovering one of those lights up its
-	entry, and Cave Entrance and Transport entries join Movement for the journal's own icons.
+	flight points, and its Quest and Turn In entries the journal's quest marks ("!" and "?"), as
+	it does the client's own on retail; hovering one of those lights up its entry; and Cave
+	Entrance and Transport entries join Movement for the journal's own icons.
 
 	Blizzard's frames are only shown, anchored and hooked after their own code; nothing of
 	theirs is replaced or written into.
@@ -22,6 +23,10 @@ local FLIGHT_TEMPLATE = "AegisJournalFlightPinTemplate"
 -- The client's own pins the legend's entries are made for.
 local CLIENT_ENTRANCE_TEMPLATE = "DungeonEntrancePinTemplate"
 local CLIENT_FLIGHT_TEMPLATE = "FlightPointPinTemplate"
+-- The journal's quest marks (UI/QuestMap.lua), and the client's quests on offer, whose entry
+-- (Quest) and whose handing in (Turn In) light them up.
+local QUEST_TEMPLATE = "AegisJournalQuestPinTemplate"
+local CLIENT_QUEST_OFFER_TEMPLATE = "QuestOfferPinTemplate"
 
 local TRANSPORT_TEMPLATE = "AegisJournalTransportPinTemplate"
 
@@ -86,20 +91,24 @@ local function Entries(category)
 	return list
 end
 
--- The journal's pins of one kind glow while their legend entry is hovered, as retail's do.
-local function GlowPins(template, isRaid, on)
+-- The journal's pins of one kind glow while their legend entry is hovered, as retail's do: those
+-- `matches` picks, or all of them.
+local function GlowPins(template, matches, on)
 	if not (WorldMapFrame and WorldMapFrame.EnumeratePinsByTemplate) then return end
 	for pin in WorldMapFrame:EnumeratePinsByTemplate(template) do
-		if isRaid == nil or pin.isRaid == isRaid then
+		if not matches or matches(pin) then
 			if on then pin:ShowMapLegendGlow() else pin:HideMapLegendGlow() end
 		end
 	end
 end
 
-local function HookEntry(entry, template, isRaid)
-	entry:HookScript("OnEnter", function() GlowPins(template, isRaid, true) end)
-	entry:HookScript("OnLeave", function() GlowPins(template, isRaid, false) end)
+local function HookEntry(entry, template, matches)
+	entry:HookScript("OnEnter", function() GlowPins(template, matches, true) end)
+	entry:HookScript("OnLeave", function() GlowPins(template, matches, false) end)
 end
+
+local function IsRaid(isRaid) return function(pin) return pin.isRaid == isRaid end end
+local function QuestMark(kind) return function(pin) return pin.mark ~= nil and pin.mark.kind == kind end end
 
 -- Adds the journal's own entries under Movement, laid out on the category's grid as Blizzard
 -- does.
@@ -129,17 +138,27 @@ local function TeachLegend(legend)
 	local scroll = legend and legend.ScrollFrame
 	if not (scroll and scroll.ScrollChild) then return end
 	local movement, last
+	local normal = Enum and Enum.QuestClassification and Enum.QuestClassification.Normal
+	local complete = POIButtonUtil and POIButtonUtil.Style and POIButtonUtil.Style.QuestComplete
 	for _, category in ipairs({ scroll.ScrollChild:GetChildren() }) do
 		last = category
 		for _, entry in ipairs(Entries(category)) do
-			if Contains(entry.templates, CLIENT_ENTRANCE_TEMPLATE) and entry.metaData then
-				local isRaid = entry.metaData.isRaid == true
+			local meta = entry.metaData
+			if Contains(entry.templates, CLIENT_ENTRANCE_TEMPLATE) and meta then
+				local isRaid = meta.isRaid == true
 				entries[isRaid and "raid" or "dungeon"] = entry
-				HookEntry(entry, ENTRANCE_TEMPLATE, isRaid)
+				HookEntry(entry, ENTRANCE_TEMPLATE, IsRaid(isRaid))
 			elseif Contains(entry.templates, CLIENT_FLIGHT_TEMPLATE) then
 				movement = category
 				entries.flight = entry
 				HookEntry(entry, FLIGHT_TEMPLATE, nil)
+			elseif meta and normal ~= nil and meta.questClassification == normal
+				and Contains(entry.templates, CLIENT_QUEST_OFFER_TEMPLATE) then
+				entries.quest = entry
+				HookEntry(entry, QUEST_TEMPLATE, QuestMark("start"))
+			elseif meta and complete ~= nil and meta.Style == complete then
+				entries.turnin = entry
+				HookEntry(entry, QUEST_TEMPLATE, QuestMark("turnin"))
 			end
 		end
 	end

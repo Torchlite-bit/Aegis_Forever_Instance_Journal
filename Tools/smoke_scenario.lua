@@ -1066,10 +1066,11 @@ ns.Recorder:GetState().quests[96395] = { description = "The dead do not rest eas
 rowFor(96395):Click()
 check(detail.DescriptionHeader:IsShown() and detail.Description:GetText():find("do not rest easy", 1, true), "recorded quest text shown")
 check(detail.ShowEnd:IsEnabled() and not detail.ShowStart:IsEnabled(), "a recorded hand-in place enables Show End")
+Mock.userWaypoint = nil
 detail.ShowEnd:Click()
-local pinned = ns.MapPin:Target()
-check(WorldMapFrame:IsShown() and Mock.worldMapID == 1455 and pinned and pinned.x == 0.3 and pinned.y == 0.4, "Show End opens the map there")
-ns.MapPin:Clear()
+check(WorldMapFrame:IsShown() and Mock.worldMapID == 1455 and Mock.userWaypoint and Mock.userWaypoint.uiMapID == 1455
+	and Mock.userWaypoint.position.x == 0.3 and Mock.userWaypoint.position.y == 0.4 and ns.MapPin:Target() == nil
+	and chatContains("Waypoint set for"), "Show End opens the map there and sets the game's waypoint on the spot")
 ns.Recorder:GetState().quests[96395] = nil
 
 -- A Horde character sees only the quests open to them
@@ -1104,8 +1105,20 @@ detail.ShowStart:Click()
 check(#Mock.chat == chatBefore + 1 and Mock.chat[#Mock.chat]:find("combat", 1, true), "no map in combat")
 Mock.inCombat = false
 detail.ShowStart:Click()
-pinned = ns.MapPin:Target()
-check(Mock.worldMapID == 1436 and pinned.x == 0.5667 and pinned.title == "Red Silk Bandanas", "Show Start pins the quest giver")
+check(Mock.worldMapID == 1436 and Mock.userWaypoint.uiMapID == 1436 and Mock.userWaypoint.position.x == 0.5667
+	and chatContains("Waypoint set for Red Silk Bandanas."), "Show Start sets a waypoint on the quest giver")
+-- A map the game allows no waypoint on: the journal's own pin there instead
+do
+	local canWaypoint = C_Map.CanSetUserWaypointOnMap
+	C_Map.CanSetUserWaypointOnMap = function() return false end
+	Mock.userWaypoint = nil
+	detail.ShowStart:Click()
+	local pinned = ns.MapPin:Target()
+	check(Mock.worldMapID == 1436 and Mock.userWaypoint == nil and pinned and pinned.x == 0.5667
+		and pinned.title == "Red Silk Bandanas", "no waypoint allowed: the journal's own pin on the quest giver")
+	C_Map.CanSetUserWaypointOnMap = canWaypoint
+	ns.MapPin:Clear()
+end
 check(detail.Reputation:GetText() == "100 Stormwind Reputation" and detail.Receive:IsShown() == false, "reputation, and no money line without money")
 
 rowFor(214).Expand:Click()
@@ -1438,11 +1451,17 @@ do
 	check(Mock.userWaypoint and Mock.userWaypoint.uiMapID == 1455 and Mock.userWaypoint.position.x == 0.324
 		and chatContains("Waypoint set for Important Heirlooms."), "a right click sets a waypoint to it, and says so")
 
-	-- Not yet: a greyed mark, saying what comes first
+	-- Grey for the player's level: no mark, as the quest log greys it (the client's own rule where it
+	-- has one, else 5 levels)
+	Mock.level = 30
+	check(not marksOn(1455)[96403], "a quest grey for the player's level has no mark")
+	UnitQuestTrivialLevelRange = function() return 20 end
+	check(marksOn(1455)[96403], "grey by the client's own rule: still worth taking at 15 levels below with its range of 20")
+	UnitQuestTrivialLevelRange, Mock.level = nil, 20
+
+	-- Not yet: no mark until what comes first is done (the Quests tab still lists it)
 	Mock.questsDone[96391], Mock.questsDone[96393] = nil, nil
-	local farsen = marksOn(1426)[96393]
-	check(farsen and farsen.Texture._desaturated and farsen.mark.locked:find("Underground Map", 1, true),
-		"Earthseer Farsen's quest greyed in Dun Morogh until Underground Map is done")
+	check(not marksOn(1426)[96393], "Earthseer Farsen's quest has no mark in Dun Morogh until Underground Map is done")
 	-- Under way: no mark; ready: a "?" where it is handed in
 	Mock.questsDone[96391], Mock.questLog[96393], Mock.questsComplete[96393] = true, 4, nil
 	Mock.Fire("QUEST_ACCEPTED", 96393)
@@ -1465,10 +1484,15 @@ do
 	Mock.faction = "Alliance"
 	check(marksOn(1455)[96403], "and the Alliance see Important Heirlooms there")
 	-- A quest two wings list (the Cathedral's Herod quests, in the Armory too) has one mark
+	-- (marked once it can be taken: its level reached and the chain before it done)
 	local raleigh = 0
+	Mock.level = 40
+	Mock.questsDone[6141], Mock.questsDone[261], Mock.questsDone[1052] = true, true, true
 	for _, entry in ipairs(ns.QuestMap:MarksOn(1424)) do
 		if entry.quest.questID == 1053 then raleigh = raleigh + 1 end
 	end
+	Mock.questsDone[6141], Mock.questsDone[261], Mock.questsDone[1052] = nil, nil, nil
+	Mock.level = 20
 	check(raleigh == 1 and #ns.GetInstance("ScarletMonasteryArmory").quests == 3,
 		"the Armory lists the Cathedral's Herod quests too (and its Hearts of Zeal), and the map marks each once, got " .. raleigh)
 	WorldMapFrame:Hide()
@@ -1912,6 +1936,34 @@ caveDoor:_RunScript("OnEnter")
 check(caveEntry.highlightLocked == true, "the cave lights its entry too")
 caveDoor:_RunScript("OnLeave")
 check(caveEntry.highlightLocked == false, "and lets it go")
+-- The journal's quest marks: a "!" lights the legend's Quest entry, a "?" Turn In as well, as the
+-- client's own marks do; hovering Quest lights the journal's "!" marks up
+do
+	local questEntry, turnInEntry = legend:Entry("quest"), legend:Entry("turnin")
+	check(questEntry and questEntry.nameText == "Quest" and turnInEntry and turnInEntry.nameText == "Turn In",
+		"the legend's own Quest and Turn In entries found")
+	OpenWorldMap(1455)
+	local mark
+	for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalQuestPinTemplate")) do
+		if pin.mark.kind == "start" then mark = pin end
+	end
+	check(mark ~= nil, "a quest mark in Ironforge to point at")
+	mark:_RunScript("OnEnter")
+	check(questEntry.highlightLocked == true and not turnInEntry.highlightLocked, "a ! lights the Quest entry")
+	mark:_RunScript("OnLeave")
+	check(not questEntry.highlightLocked, "and lets it go")
+	ns.QuestMap:LegendEnter({ kind = "turnin" })
+	check(questEntry.highlightLocked and turnInEntry.highlightLocked, "a ? lights Quest and Turn In, as the client's own do")
+	ns.QuestMap:LegendLeave()
+	check(not questEntry.highlightLocked and not turnInEntry.highlightLocked, "and both let go")
+	questEntry:_RunScript("OnEnter")
+	check(mark.legendGlow and mark.legendGlow:IsShown(), "hovering Quest in the legend lights up the journal's ! marks")
+	questEntry:_RunScript("OnLeave")
+	check(not mark.legendGlow:IsShown(), "until the mouse leaves")
+	turnInEntry:_RunScript("OnEnter")
+	check(not mark.legendGlow:IsShown(), "Turn In does not light up a !")
+	turnInEntry:_RunScript("OnLeave")
+end
 dungeonEntry:_RunScript("OnEnter")
 WorldMapFrame:SetMapID(1415)
 local glowing = 0
