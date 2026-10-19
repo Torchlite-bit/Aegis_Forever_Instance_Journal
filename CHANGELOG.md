@@ -25,8 +25,10 @@ and the version shown in the AddOns list. Quote it in bug reports.
   opens one there. City of Dalaran first: the Dalaran Sewer Key for each side, and how to make
   and use the Tome of Dalaran that summons Lyn the Ignored. More dungeons will follow, one at a
   time.
-- **The Quests tab's key**: a dungeon's key heads its quest list too, holding the quests to it
-  (for City of Dalaran, the Horde's five and the Alliance's two), open until you have it.
+- **Dropdowns on the Quests tab**: a dungeon's key first, holding the quests to it (for City of
+  Dalaran, the Horde's five and the Alliance's two), open until you have it; then **Dungeon
+  Quests**, the rest, listed as before. Each header shows the mark of its first quest still to
+  do and how many of its quests are done, and a click folds or opens it.
 - **Switches in the world map's legend**: click an entry to hide that kind of marker, click again
   to show it. The journal's own (dungeon and raid doors, flight points, caves, boats, zeppelins,
   trams and portals) are kept for your account; the game's quest markers use the game's own map
@@ -37,9 +39,6 @@ and the version shown in the AddOns list. Quote it in bug reports.
   each). Thank you!
 
 ### Changed
-- **The Quests tab's list** now uses the same headers as the Abilities tab: each quest's "!", "?"
-  or check, its level and name, and for a quest with a chain, a "+" and how many of the chain's
-  quests are done. A click chooses a quest and opens or folds its chain; the chosen one is lit.
 - **City of Dalaran** is no longer marked "Not yet tested".
 - **Merchant's Favor costs** on the Azeroth Commerce Authority's and Durotar Supply and
   Logistics' rewards now show as the merchant shows them: the amount and the currency's icon.

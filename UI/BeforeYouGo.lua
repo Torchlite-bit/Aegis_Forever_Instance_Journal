@@ -10,15 +10,15 @@ local L = ns.L
 	open until there is nothing left to do:
 	  a key's header carries the mark of the quest the player is on, as the Quests tab shows it,
 	  and how many of its quests are done (a check once they have the key). Beneath its text come
-	  the quests themselves, under the same headers as on the Quests tab; a click opens one there.
+	  the quests themselves, as the Quests tab lists them; a click opens one there.
 	  a hidden boss's header carries a skull, and opens on how to summon it.
-	The Quests tab heads its list with the same keys (BeforeYouGo:Keys).
+	The Quests tab heads its list with the same keys, as dropdowns (BeforeYouGo:Keys).
 ]]
 
 local BeforeYouGo = {}
 ns.BeforeYouGo = BeforeYouGo
 
-local WIDTH, INDENT, GAP, BAR_HEIGHT = 310, 15, 9, 30
+local WIDTH, INDENT, GAP, BAR_HEIGHT = 310, 12, 9, 30
 local HIDDEN_BOSS_ICON = "Interface\\TargetingFrame\\UI-TargetingFrame-Skull"
 local HAVE_MARK = "|TInterface\\Buttons\\UI-CheckBox-Check:16:16|t"
 -- The Quests tab's green, dark enough for the parchment.
@@ -112,24 +112,24 @@ local function IsExpanded(state, section)
 	return section.startsOpen
 end
 
--- A key's quest, under a header as on the Quests tab: a click opens it there.
-local function CreateQuestHeader(child, state)
-	local header = ns.PaperHeader.Create(child, function(section)
-		ns.QuestsPanel:Open(state.instance, section.quest)
-	end)
-	header.Button:HookScript("OnEnter", function(self)
-		local quest = header.section and header.section.quest
-		if not quest then return end
+-- A key's quest, as the Quests tab lists it: a click opens it there.
+local function OpenQuest(row)
+	ns.QuestsPanel:Open(row.instance, row.quest)
+end
+
+local function CreateQuestRow(child)
+	local row = ns.QuestsPanel.CreateRow(child, OpenQuest)
+	row:HookScript("OnEnter", function(self)
 		GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-		GameTooltip:SetText(quest.name or "", 1, 1, 1)
-		if ns.QuestsPanel:Status(quest) == ns.QuestsPanel.STATUS_LOCKED then
-			GameTooltip:AddLine(ns.QuestsPanel:LockedReason(quest), 1, 0.3, 0.3, true)
+		GameTooltip:SetText(self.quest.name or "", 1, 1, 1)
+		if ns.QuestsPanel:Status(self.quest) == ns.QuestsPanel.STATUS_LOCKED then
+			GameTooltip:AddLine(ns.QuestsPanel:LockedReason(self.quest), 1, 0.3, 0.3, true)
 		end
 		GameTooltip:AddLine(L.PREPARE_QUEST_HINT, 0.1, 1, 0.1, true)
 		GameTooltip:Show()
 	end)
-	header.Button:HookScript("OnLeave", function() GameTooltip:Hide() end)
-	return header
+	row:HookScript("OnLeave", function() GameTooltip:Hide() end)
+	return row
 end
 
 local function CreateState(lore)
@@ -192,15 +192,17 @@ function BeforeYouGo:Fill(lore, instance, y)
 				usedRows = usedRows + 1
 				local row = state.rows[usedRows]
 				if not row then
-					row = CreateQuestHeader(child, state)
+					row = CreateQuestRow(child)
 					state.rows[usedRows] = row
 				end
-				row:ClearAllPoints()
-				row:SetPoint("TOPLEFT", INDENT, -y)
+				ns.QuestsPanel.SetRow(row, quest, 0, false, false, false)
+				row.instance = instance
 				row:SetWidth(WIDTH - INDENT)
-				y = y + ns.PaperHeader.Set(row, ns.QuestsPanel:QuestSection(quest), 1, false) + GAP
+				row:SetPoint("TOPLEFT", INDENT, -y)
 				row:Show()
+				y = y + row:GetHeight()
 			end
+			if #quests > 0 then y = y + GAP end
 		end
 	end
 	for index = usedHeaders + 1, #state.headers do state.headers[index]:Hide() end

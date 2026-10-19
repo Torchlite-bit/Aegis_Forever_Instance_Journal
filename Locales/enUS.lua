@@ -304,6 +304,8 @@ L.PREPARE_TITLE = "Before you go"
 L.PREPARE_PROGRESS = "You have done %d of its %d quests."
 L.PREPARE_HAVE = "You have it."
 L.PREPARE_QUEST_HINT = "Click to see it on the Quests tab."
+-- The Quests tab's dropdown of the dungeon's own quests (after its key, if it has one).
+L.QUESTS_DUNGEON = "Dungeon Quests"
 -- The trash's entry in a dungeon's boss list, and its page.
 L.TRASH = "Trash"
 L.TRASH_DESCRIPTION = "What the dungeon's other creatures drop that is worth knowing about: rare and epic gear, recipes and quest items."
