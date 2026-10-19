@@ -776,6 +776,38 @@ local function LayoutInstanceOverview(overview, retail)
 	end
 end
 
+--[[
+	Before you go: what a dungeon asks of the player before its door (a key and the quests to it)
+	and what is worth bringing (a hidden boss's summoning item), from its data's `prepare` list
+	({ title, text, faction, quests }), for the player's own side. A key's quests say how far along
+	the player is, and that they have it once its last quest is taken.
+]]
+local PREPARE_COLOR, HAVE_COLOR = "|cffffd100", "|cff1aff1a"
+
+local function PrepareLines(instance)
+	local lines = {}
+	local faction = UnitFactionGroup and UnitFactionGroup("player")
+	for _, entry in ipairs(instance.prepare or {}) do
+		if not entry.faction or entry.faction == faction then
+			lines[#lines + 1] = PREPARE_COLOR .. entry.title .. ":|r " .. entry.text
+			local quests = entry.quests or {}
+			if #quests > 0 then
+				local done, last = 0, quests[#quests]
+				for _, questID in ipairs(quests) do
+					if ns.QuestsPanel:IsDone(questID) then done = done + 1 end
+				end
+				if ns.QuestsPanel:IsDone(last) or ns.QuestsPanel:InLog(last) then
+					lines[#lines + 1] = HAVE_COLOR .. L.PREPARE_HAVE .. "|r"
+				else
+					lines[#lines + 1] = string.format(L.PREPARE_PROGRESS, done, #quests)
+				end
+			end
+		end
+	end
+	return lines
+end
+EncounterPage.PrepareLines = PrepareLines
+
 local function FillInstanceOverview(page)
 	local instance, overview = page.instance, page.InstanceOverview
 	LayoutInstanceOverview(overview, instance.loreImage ~= nil)
@@ -798,6 +830,12 @@ local function FillInstanceOverview(page)
 	if instance.untested then
 		lines[#lines + 1] = ""
 		lines[#lines + 1] = UNTESTED_COLOR .. L.UNTESTED_NOTE .. "|r"
+	end
+	local prepare = PrepareLines(instance)
+	if #prepare > 0 then
+		lines[#lines + 1] = ""
+		lines[#lines + 1] = PREPARE_COLOR .. L.PREPARE_TITLE .. "|r"
+		for _, line in ipairs(prepare) do lines[#lines + 1] = line end
 	end
 	if instance.description then
 		lines[#lines + 1] = ""

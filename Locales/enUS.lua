@@ -295,6 +295,10 @@ L.LOOT_UNFAVORITE = "Remove from favorites"
 L.LOOT_PINNED = "Pinned"
 L.LOOT_ALL = "Loot"
 L.LOOT_TRASH = "Dungeon trash"
+-- Before you go, on a dungeon's overview: its key and the quests to it, a hidden boss to prepare for.
+L.PREPARE_TITLE = "Before you go"
+L.PREPARE_PROGRESS = "You have done %d of its %d quests."
+L.PREPARE_HAVE = "You have it."
 -- The trash's entry in a dungeon's boss list, and its page.
 L.TRASH = "Trash"
 L.TRASH_DESCRIPTION = "What the dungeon's other creatures drop that is worth knowing about: rare and epic gear, recipes and quest items."

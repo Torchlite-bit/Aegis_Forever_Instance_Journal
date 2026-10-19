@@ -330,6 +330,9 @@ end
 
 -- For the quest marks on the maps (UI/QuestMap.lua).
 function QuestsPanel:StartPoint(quest) return StartPoint(quest) end
+-- Whether the player has handed a quest in, or has it in their log.
+function QuestsPanel:IsDone(questID) return IsDone(questID) end
+function QuestsPanel:InLog(questID) return InLog(questID) end
 function QuestsPanel:EndPoint(quest) return EndPoint(quest) end
 
 local function SetMapButton(button, point, title, place)

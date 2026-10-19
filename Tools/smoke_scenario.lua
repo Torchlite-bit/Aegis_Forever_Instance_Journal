@@ -702,8 +702,32 @@ local heartOfDisruption
 for _, quest in ipairs(cityOfDalaran.quests) do if quest.questID == 96984 then heartOfDisruption = quest end end
 check(#heartOfDisruption.prerequisites == 4 and heartOfDisruption.prerequisites[4].name == "Blood in the Streets",
 	"the Horde's Heart of Disruption follows the key chain from Tarren Mill")
-check(cityOfDalaran.description:find("Dalaran Sewer Key", 1, true) and cityOfDalaran.description:find("Emissary Jacques", 1, true)
-	and cityOfDalaran.description:find("Magus Wordeen Voidglare", 1, true), "the way in, for both sides")
+-- Before you go, on the overview: the key and its quests for the player's own side, and the hidden
+-- boss's tome
+do
+	local function lore()
+		-- (drawn as the dungeon opens)
+		ns.Journal:OpenInstance(ns.GetInstance("TheDeadmines"))
+		ns.Journal:OpenInstance(cityOfDalaran)
+		tabs[1]:Click()
+		return page.InstanceOverview.Lore.Text:GetText()
+	end
+	local text = lore()
+	check(text:find("Before you go", 1, true) and text:find("Emissary Jacques", 1, true)
+		and not text:find("Magus Wordeen Voidglare", 1, true) and text:find("Tome of Dalaran", 1, true)
+		and text:find("You have done 0 of its 2 quests.", 1, true), "Before you go: the Alliance's key, its quests, and Lyn's tome")
+	check(not cityOfDalaran.description:find("Getting in", 1, true), "the way in is no longer repeated in the description")
+	Mock.questsDone[92432] = true
+	check(lore():find("You have done 1 of its 2 quests.", 1, true), "how far along the key's quests the player is")
+	Mock.questLog[92458] = 1
+	check(lore():find("You have it.", 1, true), "the key's own quest taken: they have it")
+	Mock.questsDone[92432], Mock.questLog[92458] = nil, nil
+	Mock.faction = "Horde"
+	text = lore()
+	check(text:find("Magus Wordeen Voidglare", 1, true) and not text:find("Emissary Jacques", 1, true)
+		and text:find("of its 5 quests", 1, true) and text:find("Tome of Dalaran", 1, true), "the Horde's own chain")
+	Mock.faction = "Alliance"
+end
 tabs[1]:Click()
 
 ------------------------------------------------------------------------------------------
