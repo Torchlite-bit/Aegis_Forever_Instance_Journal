@@ -27,6 +27,9 @@ and the version shown in the AddOns list. Quote it in bug reports.
   trams and portals) are kept for your account; the game's quest markers use the game's own map
   filters, the same ones as the map's filter menu. The same switches are in the map's filter
   menu too, under Instance Journal, beside Show unexplored areas.
+- **Ratchet and Booty Bay rewards confirmed**: their quartermasters, Winklespark and Gezzy
+  Gunkgear, captured by Genesys Firstborn, with prices and the standing each needs (six rewards
+  each). Thank you!
 
 ### Changed
 - **Dungeon quest marks** on the maps now show only quests you can take now (the quests before

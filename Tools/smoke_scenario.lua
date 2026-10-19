@@ -2453,8 +2453,9 @@ check(not page:IsShown() and reputation:IsShown(), "switching tabs closes an ope
 -- Reputation tab
 ------------------------------------------------------------------------------------------
 
--- Confirmed rewards come only from captured quartermasters: the Azeroth Commerce Authority's and
--- Durotar Supply and Logistics' so far (Data/Reputation/Captured.lua). Every other faction lists the
+-- Confirmed rewards come only from captured quartermasters: the Azeroth Commerce Authority's,
+-- Durotar Supply and Logistics', Ratchet's and Booty Bay's so far (Data/Reputation/Captured.lua).
+-- Every other faction lists the
 -- rewards the game's item data gives (Data/Reputation/Listed.lua), unconfirmed until its
 -- quartermaster is captured
 do
@@ -2462,10 +2463,13 @@ do
 	for _, faction in ipairs(ns.GetFactions()) do
 		if not ns.FactionCaptured(faction) then waiting = waiting + 1 end
 	end
-	check(waiting == 21, "no faction has confirmed rewards before its quartermaster is captured, got " .. (23 - waiting))
-	check(rawget(buttonNamed(reputation, "Booty Bay"), "Count") == nil
-		and ns.Reputation:RewardCount(ns.GetInstance("Faction21")) == 6 and not ns.FactionCaptured(ns.GetInstance("Faction21")),
-		"cards show no count; Booty Bay lists six unconfirmed rewards")
+	check(waiting == 19, "no faction has confirmed rewards before its quartermaster is captured, got " .. (23 - waiting))
+	check(rawget(buttonNamed(reputation, "Gadgetzan"), "Count") == nil
+		and ns.Reputation:RewardCount(ns.GetInstance("Faction369")) == 6 and not ns.FactionCaptured(ns.GetInstance("Faction369")),
+		"cards show no count; Gadgetzan lists six unconfirmed rewards")
+	check(ns.FactionCaptured(ns.GetInstance("Faction21")) and ns.FactionCaptured(ns.GetInstance("Faction470"))
+		and ns.Reputation:RewardCount(ns.GetInstance("Faction21")) == 6 and ns.Reputation:RewardCount(ns.GetInstance("Faction470")) == 6,
+		"Booty Bay's and Ratchet's quartermasters captured: their six rewards each confirmed")
 	check(buttonNamed(reputation, "Durotar Supply and Logistics").Forever:IsShown()
 		and buttonNamed(reputation, "Azeroth Commerce Authority").Forever:IsShown()
 		and not buttonNamed(reputation, "Booty Bay").Forever:IsShown(),
@@ -2650,17 +2654,17 @@ check(lootRows()[12].Boss._textColor[2] == 0.42, "Revered rewards turn green")
 
 -- A faction with nothing captured: its page lists what the game's data gives, and asks for its quartermaster
 do
-	ns.Journal:OpenInstance(ns.GetInstance("Faction21"))
+	ns.Journal:OpenInstance(ns.GetInstance("Faction369"))
 	local soon = page.ComingSoon
 	check(soon:IsShown() and soon.Title:GetText() == "Not captured yet" and soon.Text:GetText() == ns.L.REP_LISTED_TEXT
 		and soon._points[1][3] == -(6 + 3 * 70 + 15 + 55 + 15) and #lootRows() == 6
 		and not tostring(lootRows()[1].ArmorType:GetText() or ""):find("%d"),
-		"Booty Bay: its six unconfirmed rewards, without prices, and how to confirm them, beneath the standing")
+		"Gadgetzan: its six unconfirmed rewards, without prices, and how to confirm them, beneath the standing")
 	-- One with nothing listed either
 	local kirinTor = ns.GetInstance("Faction2740")
 	local listed = kirinTor.bosses
 	kirinTor.bosses = {}
-	ns.Journal:OpenInstance(ns.GetInstance("Faction21"))
+	ns.Journal:OpenInstance(ns.GetInstance("Faction369"))
 	ns.Journal:OpenInstance(kirinTor)
 	check(soon:IsShown() and soon.Title:GetText() == "Coming soon" and soon.Text:GetText() == ns.L.REP_COMING_SOON_TEXT,
 		"a Forever faction with nothing listed: coming soon")
