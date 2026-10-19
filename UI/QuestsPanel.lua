@@ -8,34 +8,26 @@ local L = ns.L
 	Show End, then Rewards.
 
 	Status comes from the player's own quest log and history: done, in the log, ready to hand
-	in, available, or not yet available. A "+" opens a quest's chain beneath it. Quests
-	recorded on the Record tab add their full text, their exact rewards and where they end.
+	in, available, or not yet available. The list is the Abilities tab's paper headers (see "Left
+	page" below). Quests recorded on the Record tab add their full text, their exact rewards and
+	where they end.
 ]]
 
 local QuestsPanel = {}
 ns.QuestsPanel = QuestsPanel
 
-local ROW_HEIGHT, INDENT, LIST_WIDTH, DETAIL_WIDTH = 26, 18, 320, 315
+local LIST_WIDTH, DETAIL_WIDTH, INDENT, HEADER_GAP = 320, 315, 15, 6
 local REWARD_BOX_WIDTH, REWARD_BOX_HEIGHT = 147, 41
 
 local STATUS_DONE, STATUS_READY, STATUS_ACTIVE, STATUS_AVAILABLE, STATUS_LOCKED =
 	"done", "ready", "active", "available", "locked"
 
--- The classic instance journals' colours: black headings, dark brown text on the parchment,
--- yellow quests in the list and green ones once done.
+-- The classic instance journals' colours: black headings, dark brown text on the parchment.
 local TITLE_COLOR = { 0, 0, 0 }
 local BODY_COLOR = { 0.13, 0.04, 0 }
 local REPUTATION_COLOR = { 0.1, 0.5, 0.1 }
 local GREEN = "|cff1e7d00"
-local ROW_COLOR = { 1, 1, 0 }
-local ROW_DONE_COLOR = { 0.1, 1, 0.1 }
-local ROW_CHOSEN_COLOR = { 1, 1, 1 }
 local DONE_ICON = "Interface\\Buttons\\UI-CheckBox-Check"
-
--- The classic quest log's row highlight: brightest in the middle, tinted like the row.
-local ROW_HIGHLIGHT = "Interface\\QuestFrame\\UI-QuestLogTitleHighlight"
-local ROW_HIGHLIGHT_FALLBACK = "Interface\\QuestFrame\\UI-QuestTitleHighlight"
-local HIGHLIGHT_ALPHA_CHOSEN, HIGHLIGHT_ALPHA_HOVER = 0.45, 0.25
 
 ------------------------------------------------------------------------------------------
 -- Status
@@ -138,93 +130,52 @@ end
 -- Left page: the list
 ------------------------------------------------------------------------------------------
 
-local highlightFile
+--[[
+	The list is the Abilities tab's paper headers (ns.PaperHeader): each quest's mark (its status),
+	its level and name, and, for a quest with a chain, a "+" and how many of the chain's quests
+	are done. A dungeon's key (Before you go: the Dalaran Sewer Key) heads the list, one header
+	holding its quests, open until the player has the key.
 
-local function HighlightFile()
-	if not highlightFile then
-		highlightFile = ns.FileExists(ROW_HIGHLIGHT) and ROW_HIGHLIGHT or ROW_HIGHLIGHT_FALLBACK
+	A click chooses a quest and opens or folds its chain; a click on a key opens or folds it, and
+	as it opens, chooses its first quest still to do, unless one of its quests is chosen already.
+	The tab opens on that quest too when a key heads the list open. The chosen quest's header is
+	the lit one, as is an open key's.
+]]
+
+local function QuestTitle(quest)
+	return (quest.level and ("[" .. quest.level .. "] ") or "") .. (quest.name or "")
+end
+
+-- How many of a chain's quests are done, of how many: its steps, then the quest itself.
+local function ChainProgress(quest)
+	local done, total, counted = 0, 0, {}
+	local function count(questID)
+		if questID and not counted[questID] then
+			counted[questID] = true
+			total = total + 1
+			if IsDone(questID) then done = done + 1 end
+		end
 	end
-	return highlightFile
+	for _, step in ipairs(quest.prerequisites or {}) do count(step.questID) end
+	count(quest.questID)
+	return done, total
 end
 
--- The chosen row and the one under the mouse light up, their text turning white.
-local function UpdateRowHighlight(row)
-	local lit = row.selected or row.hovered
-	row.Highlight:SetShown(lit)
-	if lit then row.Highlight:SetAlpha(row.selected and HIGHLIGHT_ALPHA_CHOSEN or HIGHLIGHT_ALPHA_HOVER) end
-	local color = lit and ROW_CHOSEN_COLOR or row.color or ROW_COLOR
-	row.Text:SetTextColor(color[1], color[2], color[3])
-end
-
--- onClick: what a click on the row does with it (else it is chosen on the Quests tab).
-local function CreateRow(parent, onClick)
-	local row = CreateFrame("Button", nil, parent)
-	row:SetHeight(ROW_HEIGHT)
-
-	row.Highlight = row:CreateTexture(nil, "BACKGROUND")
-	row.Highlight:SetTexture(HighlightFile())
-	row.Highlight:SetBlendMode("ADD")
-	row.Highlight:SetPoint("TOPLEFT", 0, -1)
-	row.Highlight:SetPoint("BOTTOMRIGHT", 0, 1)
-	row.Highlight:Hide()
-
-	row.Expand = CreateFrame("Button", nil, row)
-	row.Expand:SetSize(16, 16)
-	row.Expand:SetPoint("LEFT", 0, 0)
-	row.Expand:SetHighlightTexture("Interface\\Buttons\\UI-PlusButton-Hilight", "ADD")
-	row.Expand:SetScript("OnClick", function()
-		ns.PlaySoundKit("IG_MAINMENU_OPTION_CHECKBOX_ON")
-		QuestsPanel:ToggleChain(row.quest)
-	end)
-
-	row.Status = row:CreateTexture(nil, "OVERLAY")
-	row.Status:SetSize(16, 16)
-	row.Status:SetPoint("LEFT", row.Expand, "RIGHT", 4, 0)
-
-	row.Text = row:CreateFontString(nil, "OVERLAY", ns.Font("GameFontNormalMed3", "GameFontNormal"))
-	row.Text:SetPoint("LEFT", row.Status, "RIGHT", 4, 0)
-	row.Text:SetPoint("RIGHT", -4, 0)
-	row.Text:SetJustifyH("LEFT")
-	row.Text:SetWordWrap(false)
-
-	row:SetScript("OnEnter", function(self)
-		self.hovered = true
-		UpdateRowHighlight(self)
-	end)
-	row:SetScript("OnLeave", function(self)
-		self.hovered = false
-		UpdateRowHighlight(self)
-	end)
-	row:SetScript("OnClick", function(self)
-		ns.PlaySoundKit("IG_QUEST_LIST_SELECT")
-		if onClick then onClick(self) else QuestsPanel:Select(self.quest) end
-	end)
-	return row
-end
-
-local function SetRow(row, quest, depth, hasChain, expanded, selected)
-	row.quest = quest
-	row:ClearAllPoints()
-	row:SetWidth(LIST_WIDTH - depth * INDENT)
-
-	row.Expand:SetShown(hasChain)
-	if hasChain then
-		row.Expand:SetNormalTexture(expanded and "Interface\\Buttons\\UI-MinusButton-Up" or "Interface\\Buttons\\UI-PlusButton-Up")
+-- A quest as a header shows it; chain: the steps beneath it, if it has any (else no sign to open).
+function QuestsPanel:QuestSection(quest, chain)
+	local section = { key = "quest:" .. tostring(quest.questID), quest = quest, title = QuestTitle(quest),
+		status = self:Status(quest), flags = {} }
+	if chain and #chain > 0 then
+		section.chain = chain
+		section.note = string.format("%d/%d", ChainProgress(quest))
+	else
+		section.leaf = true
 	end
-
-	local status = QuestsPanel:Status(quest)
-	SetStatusIcon(row.Status, status)
-	local level = quest.level and ("[" .. quest.level .. "] ") or ""
-	row.Text:SetText(level .. (quest.name or ""))
-	row.color = status == STATUS_DONE and ROW_DONE_COLOR or ROW_COLOR
-	row.Highlight:SetVertexColor(row.color[1], row.color[2], row.color[3])
-
-	row.selected = selected
-	UpdateRowHighlight(row)
+	return section
 end
 
--- The list's rows and marks, for other pages that list quests the same way (Before you go).
-QuestsPanel.CreateRow, QuestsPanel.SetRow, QuestsPanel.SetStatusIcon = CreateRow, SetRow, SetStatusIcon
+-- The marks, and the statuses, for the other pages that show quests the same way (Before you go).
+QuestsPanel.SetStatusIcon = SetStatusIcon
 QuestsPanel.STATUS_DONE, QuestsPanel.STATUS_LOCKED = STATUS_DONE, STATUS_LOCKED
 
 ------------------------------------------------------------------------------------------
@@ -618,20 +569,42 @@ function QuestsPanel:Select(quest)
 end
 
 -- Opens the journal on a dungeon's Quests tab with the quest chosen (search, the map's quest
--- marks, Before you go). A step of a chain (parent: the quest whose chain it is) shows beneath
--- that quest, its chain open.
-function QuestsPanel:Open(instance, quest, parent)
+-- marks, Before you go), the key or chain that holds it open.
+function QuestsPanel:Open(instance, quest)
 	local journal = ns.Journal
 	journal:Show()
 	journal:OpenInstance(instance)
 	ns.EncounterPage:SetTab(journal:Page(), ns.EncounterPage.TAB_QUESTS)
-	if parent then self.page.expandedChains[parent.questID] = true end
+	self.page.reveal = quest
 	self:Select(quest)
 end
 
-function QuestsPanel:ToggleChain(quest)
+local function Holds(quests, quest)
+	for _, held in ipairs(quests or {}) do
+		if held == quest then return true end
+	end
+	return false
+end
+
+-- A key's first quest still to do: the step the player is on (the first, once all are done).
+local function FirstToDo(quests)
+	for _, quest in ipairs(quests) do
+		if QuestsPanel:Status(quest) ~= STATUS_DONE then return quest end
+	end
+	return quests[1]
+end
+
+-- A click on a header: a key opens or folds; a quest is chosen, its chain opening or folding.
+function QuestsPanel:Clicked(section)
 	local page = self.page
-	page.expandedChains[quest.questID] = not page.expandedChains[quest.questID]
+	if section.quests then
+		local opening = not section.expanded
+		page.expandedChains[section.key] = opening
+		if opening and not Holds(section.quests, page.selectedQuest) then page.selectedQuest = FirstToDo(section.quests) end
+	else
+		if section.chain then page.expandedChains[section.key] = not section.expanded end
+		page.selectedQuest = section.quest
+	end
 	self:Refresh(page)
 end
 
@@ -678,16 +651,16 @@ local function ChainRows(instance, quest)
 	return rows
 end
 
--- A quest as the Quests tab lists it: the dungeon's own, else the step of a chain that holds it,
--- with the quest whose chain it is. Nil when the dungeon lists it nowhere.
+-- A quest as the Quests tab lists it: the dungeon's own, else the step of a chain that holds it.
+-- Nil when the dungeon lists it nowhere.
 function QuestsPanel:Find(instance, questID)
 	local quest = QuestByID(instance, questID)
 	if quest then return quest end
 	for _, parent in ipairs(instance.quests or {}) do
 		for _, step in ipairs(ChainRows(instance, parent)) do
-			if step.questID == questID then return step, parent end
+			if step.questID == questID then return step end
 			for _, part in ipairs(step.steps or {}) do
-				if part.questID == questID then return step, parent end
+				if part.questID == questID then return step end
 			end
 		end
 	end
@@ -696,41 +669,84 @@ end
 
 function QuestsPanel:Refresh(page)
 	local instance = page.instance
-	local quests = QuestsFor(instance)
 	local list, child = page.QuestList, page.QuestList.Child
+	-- What is open holds while the dungeon stays shown, as on the Abilities tab.
+	if page.questsShown ~= instance then page.questsShown, page.expandedChains = instance, {} end
+	local open, reveal = page.expandedChains, page.reveal
+	page.reveal = nil
 
-	local entries = {}
-	for _, quest in ipairs(quests) do
-		local chain = ChainRows(instance, quest)
-		local expanded = #chain > 0 and page.expandedChains[quest.questID] == true
-		entries[#entries + 1] = { quest = quest, depth = 0, hasChain = #chain > 0, expanded = expanded }
-		if expanded then
+	-- Whether a key or a chain is open: the player's choice, else as it starts; and always when
+	-- a quest it holds is being opened from elsewhere (QuestsPanel:Open).
+	local function IsOpen(key, quests, startsOpen)
+		if reveal and Holds(quests, reveal) then open[key] = true end
+		local state = open[key]
+		if state == nil then return startsOpen end
+		return state
+	end
+
+	-- The keys first, each holding its quests; then the dungeon's other quests, each with its chain.
+	local entries, listed, inKey = {}, {}, {}
+	for _, key in ipairs(ns.BeforeYouGo:Keys(instance)) do
+		local section = { key = key.key, title = key.title, status = key.status, note = key.note,
+			quests = key.quests, flags = {} }
+		-- Open until the player has the key, as the dungeon is shown: taking its last quest while
+		-- the tab is open doesn't fold it under them.
+		if open[key.key] == nil then open[key.key] = not key.have end
+		section.expanded = IsOpen(key.key, key.quests)
+		entries[#entries + 1] = { section = section, depth = 0 }
+		for _, quest in ipairs(key.quests) do
+			inKey[quest], listed[quest] = true, true
+			if section.expanded then entries[#entries + 1] = { section = self:QuestSection(quest), depth = 1 } end
+		end
+	end
+	for _, quest in ipairs(QuestsFor(instance)) do
+		if not inKey[quest] then
+			local chain = ChainRows(instance, quest)
+			local section = self:QuestSection(quest, chain)
+			section.expanded = section.chain ~= nil and IsOpen(section.key, chain, false)
+			entries[#entries + 1] = { section = section, depth = 0 }
+			listed[quest] = true
 			for _, step in ipairs(chain) do
-				entries[#entries + 1] = { quest = step, depth = 1 }
+				listed[step] = true
+				if section.expanded then entries[#entries + 1] = { section = self:QuestSection(step), depth = 1 } end
 			end
 		end
 	end
 
-	-- Keep the choice while it is on the list; otherwise start on the first quest.
+	-- Keep the choice while the dungeon lists it, shown or folded away; otherwise start on the
+	-- first quest shown, or, when an open key heads the list, its first quest still to do.
 	local selected = page.selectedQuest
-	local visible = false
-	for _, entry in ipairs(entries) do if entry.quest == selected then visible = true end end
-	if not visible then
-		selected = quests[1]
+	if not (selected and listed[selected]) then
+		selected = nil
+		for _, entry in ipairs(entries) do
+			local section = entry.section
+			if section.quests and section.expanded then
+				selected = FirstToDo(section.quests)
+				break
+			elseif section.quest then
+				selected = section.quest
+				break
+			end
+		end
 		page.selectedQuest = selected
 	end
 
 	local y = 2
 	for index, entry in ipairs(entries) do
-		local row = list.Rows[index]
-		if not row then
-			row = CreateRow(child)
-			list.Rows[index] = row
+		local section = entry.section
+		section.lit = (section.quest ~= nil and section.quest == selected) or (section.quests ~= nil and section.expanded)
+		local header = list.Rows[index]
+		if not header then
+			header = ns.PaperHeader.Create(child, function(clicked) QuestsPanel:Clicked(clicked) end)
+			list.Rows[index] = header
 		end
-		SetRow(row, entry.quest, entry.depth, entry.hasChain, entry.expanded, entry.quest == selected)
-		row:SetPoint("TOPLEFT", entry.depth * INDENT, -y)
-		row:Show()
-		y = y + ROW_HEIGHT
+		-- The quest it shows (none for a key), for whoever reads the list.
+		header.quest = section.quest
+		header:ClearAllPoints()
+		header:SetPoint("TOPLEFT", entry.depth * INDENT, -y)
+		header:SetWidth(LIST_WIDTH - entry.depth * INDENT)
+		y = y + ns.PaperHeader.Set(header, section, entry.depth, section.expanded == true) + HEADER_GAP
+		header:Show()
 	end
 	for index = #entries + 1, #list.Rows do list.Rows[index]:Hide() end
 	child:SetHeight(math.max(1, y + 4))

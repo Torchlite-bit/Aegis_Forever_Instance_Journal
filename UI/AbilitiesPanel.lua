@@ -315,10 +315,18 @@ local function CreateHeader(parent, onToggle)
 	return header
 end
 
+--[[
+	Lays a header out for its section, and returns its height. Besides an ability's fields, a
+	section may carry a quest's status for its icon (status), a word on its right (note), no sign
+	when there is nothing to open (leaf), and whether its strip is the lit one (lit: when the
+	Quests tab has it chosen; else when it is open).
+]]
 local function SetHeader(header, section, depth, expanded)
 	header.section = section
 	local button = header.Button
-	button.ExpandedIcon:SetText(expanded and "-" or "+")
+	button.ExpandedIcon:SetText(section.leaf and "" or (expanded and "-" or "+"))
+	local lit = section.lit
+	if lit == nil then lit = expanded end
 
 	-- Top-level sections use the larger font, as on retail.
 	button.Title:SetFontObject(depth == 0 and ns.Font("GameFontNormalMed3", "GameFontNormal") or "GameFontNormal")
@@ -357,11 +365,11 @@ local function SetHeader(header, section, depth, expanded)
 	local rightOf = lastFlag or (section.note and button.Note)
 	button.Title:SetPoint("RIGHT", rightOf or button, rightOf and "LEFT" or "RIGHT", -5, 0)
 
-	local textColor = expanded and EXPANDED_COLOR or COLLAPSED_COLOR
+	local textColor = lit and EXPANDED_COLOR or COLLAPSED_COLOR
 	button.Title:SetTextColor(textColor[1], textColor[2], textColor[3])
 	button.ExpandedIcon:SetTextColor(textColor[1], textColor[2], textColor[3])
 	button.Note:SetTextColor(textColor[1], textColor[2], textColor[3])
-	button.strip = expanded and button.strips.expanded or button.strips.collapsed
+	button.strip = lit and button.strips.expanded or button.strips.collapsed
 	for _, state in pairs(button.strips) do
 		ShowStrip(state.up, false)
 		ShowStrip(state.down, false)
@@ -379,8 +387,7 @@ local function SetHeader(header, section, depth, expanded)
 	return hasText and (HEADER_HEIGHT + 9 + header.Description:GetStringHeight() + 20) or HEADER_HEIGHT
 end
 
--- The same headers for other pages' notes (Before you go, on a dungeon's overview). A section
--- there may carry a quest's status for its icon (status) and a word on its right (note).
+-- The same headers for other pages: Before you go, on a dungeon's overview, and the Quests tab.
 ns.PaperHeader = { Create = CreateHeader, Set = SetHeader }
 
 ------------------------------------------------------------------------------------------

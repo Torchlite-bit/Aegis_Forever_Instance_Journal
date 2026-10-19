@@ -13,12 +13,11 @@ local addonName, ns = ...
 	Alliance's key quest, what follows Heart of Disruption, and the boss spots on its two floors
 	(the sewers and the city, on Santiago Reyes's map, the frame our spots were already in).
 
-	Nobody has checked it in game with the journal yet, so it is marked untested until a run is
-	recorded.
+	Marked tested at the owner's request (2026-10-19), after trying it with the journal; no run of
+	it has been recorded yet.
 ]]
 
 ns.AmendInstance("CityOfDalaran", {
-	untested = true,
 	description = "Dalaran, the city of the Kirin Tor, stands rebuilt in the Alterac Mountains, its magic barrier "
 		.. "gone and its streets overrun. Go in through the sewers, to a portal at the end of a long pipe, then "
 		.. "fight up through the streets to the Shade of the Archmage.\n\n"

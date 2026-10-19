@@ -10,14 +10,15 @@ local L = ns.L
 	open until there is nothing left to do:
 	  a key's header carries the mark of the quest the player is on, as the Quests tab shows it,
 	  and how many of its quests are done (a check once they have the key). Beneath its text come
-	  the quests themselves, as the Quests tab lists them; a click opens one there.
+	  the quests themselves, under the same headers as on the Quests tab; a click opens one there.
 	  a hidden boss's header carries a skull, and opens on how to summon it.
+	The Quests tab heads its list with the same keys (BeforeYouGo:Keys).
 ]]
 
 local BeforeYouGo = {}
 ns.BeforeYouGo = BeforeYouGo
 
-local WIDTH, INDENT, GAP, BAR_HEIGHT = 310, 12, 9, 30
+local WIDTH, INDENT, GAP, BAR_HEIGHT = 310, 15, 9, 30
 local HIDDEN_BOSS_ICON = "Interface\\TargetingFrame\\UI-TargetingFrame-Skull"
 local HAVE_MARK = "|TInterface\\Buttons\\UI-CheckBox-Check:16:16|t"
 -- The Quests tab's green, dark enough for the parchment.
@@ -45,47 +46,62 @@ function BeforeYouGo:Progress(entry)
 	return done, #quests, have
 end
 
--- A key's quests as the Quests tab lists them ({ quest, parent }); steps it shows as one row
--- are listed once.
+-- A key's quests as the Quests tab lists them; steps it shows as one are listed once.
 local function KeyQuests(instance, entry)
-	local rows = {}
+	local quests = {}
 	for _, questID in ipairs(entry.quests or {}) do
-		local quest, parent = ns.QuestsPanel:Find(instance, questID)
-		if quest and not (rows[#rows] and rows[#rows].quest == quest) then
-			rows[#rows + 1] = { quest = quest, parent = parent }
-		end
+		local quest = ns.QuestsPanel:Find(instance, questID)
+		if quest and quests[#quests] ~= quest then quests[#quests + 1] = quest end
 	end
-	return rows
+	return quests
 end
 
 -- The mark of the first quest still to do; a check once the player has the key.
-local function KeyStatus(rows, have)
+local function KeyStatus(quests, have)
 	local done = ns.QuestsPanel.STATUS_DONE
 	if have then return done end
-	for _, row in ipairs(rows) do
-		local status = ns.QuestsPanel:Status(row.quest)
+	for _, quest in ipairs(quests) do
+		local status = ns.QuestsPanel:Status(quest)
 		if status ~= done then return status end
 	end
 	return done
 end
 
--- An entry as a paper header's section, with the quest rows beneath it.
-local function Section(instance, entry, index)
-	local section = { key = "prepare:" .. index, title = entry.title, flags = {}, startsOpen = true }
-	local rows = {}
-	if entry.quests and #entry.quests > 0 then
-		rows = KeyQuests(instance, entry)
-		local done, total, have = BeforeYouGo:Progress(entry)
-		section.status = KeyStatus(rows, have)
-		section.note = have and HAVE_MARK or string.format("%d/%d", done, total)
-		local progress = have and (HAVE_COLOR .. L.PREPARE_HAVE .. "|r") or string.format(L.PREPARE_PROGRESS, done, total)
-		section.description = entry.text .. "\n\n" .. progress
-		section.startsOpen = not have
-	else
-		section.icon = HIDDEN_BOSS_ICON
-		section.description = entry.text
+--[[
+	The keys of a dungeon for the player's side, as headers show them: { key, entry, title, status,
+	note, have, done, total, quests }. The overview and the Quests tab both list them.
+]]
+function BeforeYouGo:Keys(instance)
+	local keys = {}
+	for index, entry in ipairs(self:Entries(instance)) do
+		if entry.quests and #entry.quests > 0 then
+			local quests = KeyQuests(instance, entry)
+			local done, total, have = self:Progress(entry)
+			keys[#keys + 1] = {
+				key = "prepare:" .. index, entry = entry, title = entry.title,
+				status = KeyStatus(quests, have), note = have and HAVE_MARK or string.format("%d/%d", done, total),
+				have = have, done = done, total = total, quests = quests,
+			}
+		end
 	end
-	return section, rows
+	return keys
+end
+
+-- An entry as a paper header's section, with the quests beneath it.
+local function Section(entry, index, keys)
+	local section = { key = "prepare:" .. index, title = entry.title, flags = {}, startsOpen = true }
+	for _, key in ipairs(keys) do
+		if key.entry == entry then
+			section.status, section.note, section.startsOpen = key.status, key.note, not key.have
+			local progress = key.have and (HAVE_COLOR .. L.PREPARE_HAVE .. "|r")
+				or string.format(L.PREPARE_PROGRESS, key.done, key.total)
+			section.description = entry.text .. "\n\n" .. progress
+			return section, key.quests
+		end
+	end
+	section.icon = HIDDEN_BOSS_ICON
+	section.description = entry.text
+	return section, {}
 end
 
 -- Whether a note is open: as built (startsOpen) until the player clicks it, after which their
@@ -96,23 +112,24 @@ local function IsExpanded(state, section)
 	return section.startsOpen
 end
 
-local function OpenQuest(row)
-	ns.QuestsPanel:Open(row.instance, row.quest, row.parentQuest)
-end
-
-local function CreateQuestRow(child)
-	local row = ns.QuestsPanel.CreateRow(child, OpenQuest)
-	row:HookScript("OnEnter", function(self)
+-- A key's quest, under a header as on the Quests tab: a click opens it there.
+local function CreateQuestHeader(child, state)
+	local header = ns.PaperHeader.Create(child, function(section)
+		ns.QuestsPanel:Open(state.instance, section.quest)
+	end)
+	header.Button:HookScript("OnEnter", function(self)
+		local quest = header.section and header.section.quest
+		if not quest then return end
 		GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-		GameTooltip:SetText(self.quest.name or "", 1, 1, 1)
-		if ns.QuestsPanel:Status(self.quest) == ns.QuestsPanel.STATUS_LOCKED then
-			GameTooltip:AddLine(ns.QuestsPanel:LockedReason(self.quest), 1, 0.3, 0.3, true)
+		GameTooltip:SetText(quest.name or "", 1, 1, 1)
+		if ns.QuestsPanel:Status(quest) == ns.QuestsPanel.STATUS_LOCKED then
+			GameTooltip:AddLine(ns.QuestsPanel:LockedReason(quest), 1, 0.3, 0.3, true)
 		end
 		GameTooltip:AddLine(L.PREPARE_QUEST_HINT, 0.1, 1, 0.1, true)
 		GameTooltip:Show()
 	end)
-	row:HookScript("OnLeave", function() GameTooltip:Hide() end)
-	return row
+	header.Button:HookScript("OnLeave", function() GameTooltip:Hide() end)
+	return header
 end
 
 local function CreateState(lore)
@@ -143,6 +160,7 @@ function BeforeYouGo:Fill(lore, instance, y)
 	local state = lore.beforeYouGo or CreateState(lore)
 	if state.instance ~= instance then state.instance, state.expanded = instance, {} end
 	local entries = self:Entries(instance)
+	local keys = self:Keys(instance)
 	local child = lore.Child
 	local usedHeaders, usedRows = 0, 0
 
@@ -154,7 +172,7 @@ function BeforeYouGo:Fill(lore, instance, y)
 		y = y + BAR_HEIGHT + 4
 	end
 	for index, entry in ipairs(entries) do
-		local section, rows = Section(instance, entry, index)
+		local section, quests = Section(entry, index, keys)
 		usedHeaders = usedHeaders + 1
 		local header = state.headers[usedHeaders]
 		if not header then
@@ -164,25 +182,25 @@ function BeforeYouGo:Fill(lore, instance, y)
 		header:ClearAllPoints()
 		header:SetPoint("TOPLEFT", 0, -y)
 		header:SetWidth(WIDTH)
+		-- Settled as the dungeon is shown: taking the key's last quest doesn't fold its note.
+		if state.expanded[section.key] == nil then state.expanded[section.key] = section.startsOpen end
 		local expanded = IsExpanded(state, section)
 		y = y + ns.PaperHeader.Set(header, section, 0, expanded) + GAP
 		header:Show()
-		if expanded and #rows > 0 then
-			for _, entryRow in ipairs(rows) do
+		if expanded then
+			for _, quest in ipairs(quests) do
 				usedRows = usedRows + 1
 				local row = state.rows[usedRows]
 				if not row then
-					row = CreateQuestRow(child)
+					row = CreateQuestHeader(child, state)
 					state.rows[usedRows] = row
 				end
-				ns.QuestsPanel.SetRow(row, entryRow.quest, 0, false, false, false)
-				row.instance, row.parentQuest = instance, entryRow.parent
-				row:SetWidth(WIDTH - INDENT)
+				row:ClearAllPoints()
 				row:SetPoint("TOPLEFT", INDENT, -y)
+				row:SetWidth(WIDTH - INDENT)
+				y = y + ns.PaperHeader.Set(row, ns.QuestsPanel:QuestSection(quest), 1, false) + GAP
 				row:Show()
-				y = y + row:GetHeight()
 			end
-			y = y + GAP
 		end
 	end
 	for index = usedHeaders + 1, #state.headers do state.headers[index]:Hide() end
