@@ -36,6 +36,7 @@ Size is a rough guess at the work: **S** a day or less, **M** a few days, **L** 
 | What | Why | Size |
 |---|---|:---:|
 | **Controller support** *(player request)* | Moving through the journal with a gamepad. First find out how Forever's own gamepad mode moves through Blizzard's windows, and whether ConsolePort players need anything different. | L |
+| **Rare spawn markers** | Where rare creatures spawn, on the world map and inside dungeons, with what they drop, and their own switch in the map legend and filter menu. | L |
 | **The raids** | Filled in as each opens on Forever; they show *Coming soon* until then. | L |
 | **Native speakers' corrections** | Every drafted translation checked by someone who speaks it. | M |
 | **Boats and portals still missing** | The routes no one has captured yet (the Valanaar–Skywatcher airship, a few ferries). | S |
