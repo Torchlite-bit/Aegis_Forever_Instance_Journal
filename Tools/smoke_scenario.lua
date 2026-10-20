@@ -1487,6 +1487,8 @@ do
 	wells:Click()
 	check(detail.Objective:GetText():find("Well Water Sample Kit", 1, true) and detail.ShowStart:IsEnabled()
 		and detail.ShowStart.point.mapID == 1436 and detail.ShowEnd:IsEnabled(), "its page: the objective, and Alba Fairmoon in Westfall")
+	check(detail.RewardsHeader:IsShown() and detail.Experience:GetText() == "460 Experience"
+		and detail.Reputation:GetText() == "50 Stormwind Reputation", "and its rewards: " .. tostring(detail.Experience:GetText()))
 	check(not wells.Status._desaturated and gills.Status._desaturated and rowFor(92745).Status._desaturated
 		and not detail.Status:IsShown(), "the first step can be taken; the ones further on wait for those before them")
 	rowFor(92745):Click()

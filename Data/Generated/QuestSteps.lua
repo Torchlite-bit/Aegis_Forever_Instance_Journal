@@ -19,6 +19,12 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1436, x = 0.563, y = 0.475, label = "Gryan Stoutmantle" },
 		turnin = "Wiley the Black, Redridge Mountains",
 		endMap = { mapID = 1433, x = 0.214, y = 0.454, label = "Wiley the Black" },
+		rewards = {
+			xp = 1350,
+			reputation = {
+				{ faction = "Stormwind", amount = 100 },
+			},
+		},
 	},
 	[132] = {
 		name = "The Defias Brotherhood",
@@ -32,6 +38,12 @@ ns.AddQuestSteps({
 		endMap = { mapID = 1436, x = 0.563, y = 0.475, label = "Gryan Stoutmantle" },
 		prerequisites = {
 			{ questID = 65, name = "The Defias Brotherhood" },
+		},
+		rewards = {
+			xp = 675,
+			reputation = {
+				{ faction = "Stormwind", amount = 50 },
+			},
 		},
 	},
 	[135] = {
@@ -47,6 +59,12 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 65, name = "The Defias Brotherhood" },
 			{ questID = 132, name = "The Defias Brotherhood" },
+		},
+		rewards = {
+			xp = 675,
+			reputation = {
+				{ faction = "Stormwind", amount = 50 },
+			},
 		},
 	},
 	[141] = {
@@ -64,6 +82,12 @@ ns.AddQuestSteps({
 			{ questID = 132, name = "The Defias Brotherhood" },
 			{ questID = 135, name = "The Defias Brotherhood" },
 		},
+		rewards = {
+			xp = 340,
+			reputation = {
+				{ faction = "Stormwind", amount = 25 },
+			},
+		},
 	},
 	[142] = {
 		name = "The Defias Brotherhood",
@@ -80,6 +104,12 @@ ns.AddQuestSteps({
 			{ questID = 132, name = "The Defias Brotherhood" },
 			{ questID = 135, name = "The Defias Brotherhood" },
 			{ questID = 141, name = "The Defias Brotherhood" },
+		},
+		rewards = {
+			xp = 1350,
+			reputation = {
+				{ faction = "Stormwind", amount = 100 },
+			},
 		},
 	},
 	[155] = {
@@ -99,6 +129,12 @@ ns.AddQuestSteps({
 			{ questID = 141, name = "The Defias Brotherhood" },
 			{ questID = 142, name = "The Defias Brotherhood" },
 		},
+		rewards = {
+			xp = 1700,
+			reputation = {
+				{ faction = "Stormwind", amount = 150 },
+			},
+		},
 	},
 	[261] = {
 		name = "Down the Scarlet Path",
@@ -110,6 +146,7 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1443, x = 0.665, y = 0.079, label = "Brother Anton" },
 		turnin = "Brother Anton, Desolace",
 		endMap = { mapID = 1443, x = 0.665, y = 0.079, label = "Brother Anton" },
+		rewards = { xp = 3000, money = 4500 },
 	},
 	[275] = {
 		name = "Blisters on The Land",
@@ -125,6 +162,15 @@ ns.AddQuestSteps({
 			{ questID = 276, name = "Tramping Paws" },
 			{ questID = 277, name = "Fire Taboo" },
 		},
+		rewards = {
+			xp = 2650,
+			items = {
+				{ itemID = 3558, name = "Fen Keeper Robe", quality = 2 },
+				{ itemID = 1273, name = "Forest Chain", quality = 2 },
+				{ itemID = 2263, name = "Phytoblade", quality = 2 },
+			},
+			choice = true,
+		},
 	},
 	[276] = {
 		name = "Tramping Paws",
@@ -136,6 +182,7 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1437, x = 0.564, y = 0.404, label = "Rethiel the Greenwarden" },
 		turnin = "Rethiel the Greenwarden, Wetlands",
 		endMap = { mapID = 1437, x = 0.564, y = 0.404, label = "Rethiel the Greenwarden" },
+		rewards = { xp = 1250 },
 	},
 	[277] = {
 		name = "Fire Taboo",
@@ -150,6 +197,12 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 276, name = "Tramping Paws" },
 		},
+		rewards = {
+			xp = 1850,
+			items = {
+				{ itemID = 4606, name = "Spongy Morel", quality = 1 },
+			},
+		},
 	},
 	[303] = {
 		name = "The Dark Iron War",
@@ -161,6 +214,13 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1437, x = 0.497, y = 0.182, label = "Motley Garmason" },
 		turnin = "Motley Garmason, Wetlands",
 		endMap = { mapID = 1437, x = 0.497, y = 0.182, label = "Motley Garmason" },
+		rewards = {
+			xp = 2450,
+			money = 2500,
+			reputation = {
+				{ faction = "Ironforge", amount = 100 },
+			},
+		},
 	},
 	[389] = {
 		name = "Bazil Thredd",
@@ -175,6 +235,7 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 373, name = "The Unsent Letter" },
 		},
+		rewards = { xp = 440 },
 	},
 	[484] = {
 		name = "Young Crocolisk Skins",
@@ -186,6 +247,13 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1437, x = 0.086, y = 0.557, label = "James Halloran" },
 		turnin = "James Halloran, Wetlands",
 		endMap = { mapID = 1437, x = 0.086, y = 0.557, label = "James Halloran" },
+		rewards = {
+			xp = 1750,
+			money = 1400,
+			reputation = {
+				{ faction = "Stormwind", amount = 100 },
+			},
+		},
 	},
 	[544] = {
 		name = "Prison Break In",
@@ -197,6 +265,13 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1424, x = 0.616, y = 0.209, label = "Magus Wordeen Voidglare" },
 		turnin = "Magus Wordeen Voidglare, Hillsbrad Foothills",
 		endMap = { mapID = 1424, x = 0.616, y = 0.209, label = "Magus Wordeen Voidglare" },
+		rewards = {
+			xp = 3350,
+			money = 7000,
+			reputation = {
+				{ faction = "Undercity", amount = 150 },
+			},
+		},
 	},
 	[545] = {
 		name = "Dalaran Patrols",
@@ -211,6 +286,13 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 544, name = "Prison Break In" },
 		},
+		rewards = {
+			xp = 2050,
+			money = 2500,
+			reputation = {
+				{ faction = "Undercity", amount = 75 },
+			},
+		},
 	},
 	[720] = {
 		name = "A Sign of Hope",
@@ -223,6 +305,12 @@ ns.AddQuestSteps({
 		startObject = { name = "Crumpled Map" },
 		turnin = "Prospector Ryedol, Badlands",
 		endMap = { mapID = 1418, x = 0.534, y = 0.434, label = "Prospector Ryedol" },
+		rewards = {
+			xp = 1350,
+			reputation = {
+				{ faction = "Ironforge", amount = 50 },
+			},
+		},
 	},
 	[723] = {
 		name = "Prospect of Faith",
@@ -238,6 +326,12 @@ ns.AddQuestSteps({
 			{ questID = 720, name = "A Sign of Hope" },
 			{ questID = 721, name = "A Sign of Hope" },
 			{ questID = 722, name = "Amulet of Secrets" },
+		},
+		rewards = {
+			xp = 2350,
+			reputation = {
+				{ faction = "Ironforge", amount = 75 },
+			},
 		},
 	},
 	[724] = {
@@ -256,6 +350,12 @@ ns.AddQuestSteps({
 			{ questID = 722, name = "Amulet of Secrets" },
 			{ questID = 723, name = "Prospect of Faith" },
 		},
+		rewards = {
+			xp = 3150,
+			reputation = {
+				{ faction = "Ironforge", amount = 100 },
+			},
+		},
 	},
 	[725] = {
 		name = "Passing Word of a Threat",
@@ -273,6 +373,12 @@ ns.AddQuestSteps({
 			{ questID = 722, name = "Amulet of Secrets" },
 			{ questID = 723, name = "Prospect of Faith" },
 			{ questID = 724, name = "Prospect of Faith" },
+		},
+		rewards = {
+			xp = 1550,
+			reputation = {
+				{ faction = "Ironforge", amount = 50 },
+			},
 		},
 	},
 	[726] = {
@@ -293,6 +399,12 @@ ns.AddQuestSteps({
 			{ questID = 724, name = "Prospect of Faith" },
 			{ questID = 725, name = "Passing Word of a Threat" },
 		},
+		rewards = {
+			xp = 2350,
+			reputation = {
+				{ faction = "Ironforge", amount = 75 },
+			},
+		},
 	},
 	[738] = {
 		name = "Find Agmond",
@@ -304,6 +416,18 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1432, x = 0.659, y = 0.656, label = "Prospector Ironband" },
 		turnin = "Battered Dwarven Skeleton, Badlands",
 		endMap = { mapID = 1418, x = 0.509, y = 0.624, label = "Battered Dwarven Skeleton" },
+		rewards = {
+			xp = 1450,
+			money = 400,
+			reputation = {
+				{ faction = "Ironforge", amount = 50 },
+			},
+			items = {
+				{ itemID = 4982, name = "Ripped Prospector Belt", quality = 0 },
+				{ itemID = 1529, name = "Jade", quality = 2 },
+				{ itemID = 2776, name = "Gold Ore", quality = 2 },
+			},
+		},
 	},
 	[739] = {
 		name = "Murdaloc",
@@ -318,6 +442,15 @@ ns.AddQuestSteps({
 		endMap = { mapID = 1432, x = 0.659, y = 0.656, label = "Prospector Ironband" },
 		prerequisites = {
 			{ questID = 738, name = "Find Agmond" },
+		},
+		rewards = {
+			xp = 3450,
+			reputation = {
+				{ faction = "Ironforge", amount = 100 },
+			},
+			items = {
+				{ itemID = 4983, name = "Rock Pulverizer", quality = 2 },
+			},
 		},
 	},
 	[762] = {
@@ -339,6 +472,16 @@ ns.AddQuestSteps({
 			{ questID = 725, name = "Passing Word of a Threat" },
 			{ questID = 726, name = "Passing Word of a Threat" },
 		},
+		rewards = {
+			xp = 4650,
+			money = 12500,
+			reputation = {
+				{ faction = "Ironforge", amount = 150 },
+			},
+			items = {
+				{ itemID = 4987, name = "Dwarf Captain's Sword", quality = 2 },
+			},
+		},
 	},
 	[865] = {
 		name = "Raptor Horns",
@@ -350,6 +493,16 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1413, x = 0.624, y = 0.376, label = "Mebok Mizzyrix" },
 		turnin = "Mebok Mizzyrix, The Barrens",
 		endMap = { mapID = 1413, x = 0.624, y = 0.376, label = "Mebok Mizzyrix" },
+		rewards = {
+			xp = 1350,
+			reputation = {
+				{ faction = "Ratchet", amount = 100 },
+			},
+			items = {
+				{ itemID = 5342, name = "Raptor Punch", quality = 1 },
+				{ itemID = 5343, name = "Barkeeper's Cloak", quality = 2 },
+			},
+		},
 	},
 	[870] = {
 		name = "The Forgotten Pools",
@@ -361,6 +514,12 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1413, x = 0.523, y = 0.319, label = "Tonga Runetotem" },
 		turnin = "Tonga Runetotem, The Barrens",
 		endMap = { mapID = 1413, x = 0.523, y = 0.319, label = "Tonga Runetotem" },
+		rewards = {
+			xp = 675,
+			reputation = {
+				{ faction = "Thunder Bluff", amount = 75 },
+			},
+		},
 	},
 	[877] = {
 		name = "The Stagnant Oasis",
@@ -374,6 +533,12 @@ ns.AddQuestSteps({
 		endMap = { mapID = 1413, x = 0.523, y = 0.319, label = "Tonga Runetotem" },
 		prerequisites = {
 			{ questID = 870, name = "The Forgotten Pools" },
+		},
+		rewards = {
+			xp = 1150,
+			reputation = {
+				{ faction = "Thunder Bluff", amount = 100 },
+			},
 		},
 	},
 	[880] = {
@@ -390,6 +555,13 @@ ns.AddQuestSteps({
 			{ questID = 870, name = "The Forgotten Pools" },
 			{ questID = 877, name = "The Stagnant Oasis" },
 		},
+		rewards = {
+			xp = 1150,
+			money = 800,
+			reputation = {
+				{ faction = "Thunder Bluff", amount = 100 },
+			},
+		},
 	},
 	[1052] = {
 		name = "Down the Scarlet Path",
@@ -404,6 +576,12 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 261, name = "Down the Scarlet Path" },
 		},
+		rewards = {
+			xp = 1550,
+			reputation = {
+				{ faction = "Stormwind", amount = 50 },
+			},
+		},
 	},
 	[1100] = {
 		name = "Lonebrow's Journal",
@@ -414,6 +592,7 @@ ns.AddQuestSteps({
 		startItem = { itemID = 5791, name = "Henrig Lonebrow's Journal" },
 		turnin = "Falfindel Waywarder, Feralas",
 		endMap = { mapID = 1444, x = 0.896, y = 0.466, label = "Falfindel Waywarder" },
+		rewards = { xp = 1350 },
 	},
 	[1149] = {
 		name = "Test of Faith",
@@ -425,6 +604,12 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1441, x = 0.539, y = 0.415, label = "Dorn Plainstalker" },
 		turnin = "Dorn Plainstalker, Thousand Needles",
 		endMap = { mapID = 1441, x = 0.539, y = 0.415, label = "Dorn Plainstalker" },
+		rewards = {
+			xp = 1050,
+			reputation = {
+				{ faction = "Thunder Bluff", amount = 50 },
+			},
+		},
 	},
 	[1150] = {
 		name = "Test of Endurance",
@@ -438,6 +623,12 @@ ns.AddQuestSteps({
 		endMap = { mapID = 1441, x = 0.539, y = 0.415, label = "Dorn Plainstalker" },
 		prerequisites = {
 			{ questID = 1149, name = "Test of Faith" },
+		},
+		rewards = {
+			xp = 2450,
+			reputation = {
+				{ faction = "Thunder Bluff", amount = 100 },
+			},
 		},
 	},
 	[1151] = {
@@ -453,6 +644,12 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 1149, name = "Test of Faith" },
 			{ questID = 1150, name = "Test of Endurance" },
+		},
+		rewards = {
+			xp = 3050,
+			reputation = {
+				{ faction = "Thunder Bluff", amount = 150 },
+			},
 		},
 	},
 	[1152] = {
@@ -470,6 +667,12 @@ ns.AddQuestSteps({
 			{ questID = 1150, name = "Test of Endurance" },
 			{ questID = 1151, name = "Test of Strength" },
 		},
+		rewards = {
+			xp = 1200,
+			reputation = {
+				{ faction = "Thunder Bluff", amount = 50 },
+			},
+		},
 	},
 	[1154] = {
 		name = "Test of Lore",
@@ -486,6 +689,12 @@ ns.AddQuestSteps({
 			{ questID = 1150, name = "Test of Endurance" },
 			{ questID = 1151, name = "Test of Strength" },
 			{ questID = 1152, name = "Test of Lore" },
+		},
+		rewards = {
+			xp = 1850,
+			reputation = {
+				{ faction = "Thunder Bluff", amount = 75 },
+			},
 		},
 	},
 	[1159] = {
@@ -506,6 +715,12 @@ ns.AddQuestSteps({
 			{ questID = 1154, name = "Test of Lore" },
 			{ questID = 6627, name = "Test of Lore" },
 		},
+		rewards = {
+			xp = 1200,
+			reputation = {
+				{ faction = "Undercity", amount = 50 },
+			},
+		},
 	},
 	[1424] = {
 		name = "Pool of Tears",
@@ -517,6 +732,13 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1435, x = 0.479, y = 0.548, label = "Fel'zerul" },
 		turnin = "Fel'zerul, Swamp of Sorrows",
 		endMap = { mapID = 1435, x = 0.479, y = 0.548, label = "Fel'zerul" },
+		rewards = {
+			xp = 4450,
+			money = 12000,
+			reputation = {
+				{ faction = "Orgrimmar", amount = 150 },
+			},
+		},
 	},
 	[1429] = {
 		name = "The Atal'ai Exile",
@@ -531,6 +753,7 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 1424, name = "Pool of Tears" },
 		},
+		rewards = { xp = 3750 },
 	},
 	[1444] = {
 		name = "Return to Fel'Zerul",
@@ -546,6 +769,12 @@ ns.AddQuestSteps({
 			{ questID = 1424, name = "Pool of Tears" },
 			{ questID = 1429, name = "The Atal'ai Exile" },
 		},
+		rewards = {
+			xp = 3750,
+			reputation = {
+				{ faction = "Orgrimmar", amount = 150 },
+			},
+		},
 	},
 	[1448] = {
 		name = "In Search of The Temple",
@@ -557,6 +786,12 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1453, x = 0.695, y = 0.404, label = "Brohann Caskbelly" },
 		turnin = "Brohann Caskbelly, Stormwind City",
 		endMap = { mapID = 1453, x = 0.695, y = 0.404, label = "Brohann Caskbelly" },
+		rewards = {
+			xp = 3600,
+			reputation = {
+				{ faction = "Ironforge", amount = 100 },
+			},
+		},
 	},
 	[1449] = {
 		name = "To The Hinterlands",
@@ -571,6 +806,7 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 1448, name = "In Search of The Temple" },
 		},
+		rewards = { xp = 1800 },
 	},
 	[1450] = {
 		name = "Gryphon Master Talonaxe",
@@ -586,6 +822,7 @@ ns.AddQuestSteps({
 			{ questID = 1448, name = "In Search of The Temple" },
 			{ questID = 1449, name = "To The Hinterlands" },
 		},
+		rewards = { xp = 900 },
 	},
 	[1451] = {
 		name = "Rhapsody Shindigger",
@@ -602,6 +839,7 @@ ns.AddQuestSteps({
 			{ questID = 1449, name = "To The Hinterlands" },
 			{ questID = 1450, name = "Gryphon Master Talonaxe" },
 		},
+		rewards = { xp = 1800 },
 	},
 	[1452] = {
 		name = "Rhapsody's Kalimdor Kocktail",
@@ -618,6 +856,12 @@ ns.AddQuestSteps({
 			{ questID = 1449, name = "To The Hinterlands" },
 			{ questID = 1450, name = "Gryphon Master Talonaxe" },
 			{ questID = 1451, name = "Rhapsody Shindigger" },
+		},
+		rewards = {
+			xp = 3600,
+			reputation = {
+				{ faction = "Wildhammer Clan", amount = 100 },
+			},
 		},
 	},
 	[1469] = {
@@ -637,6 +881,12 @@ ns.AddQuestSteps({
 			{ questID = 1451, name = "Rhapsody Shindigger" },
 			{ questID = 1452, name = "Rhapsody's Kalimdor Kocktail" },
 		},
+		rewards = {
+			xp = 2700,
+			reputation = {
+				{ faction = "Ironforge", amount = 75 },
+			},
+		},
 	},
 	[1649] = {
 		name = "The Tome of Valor",
@@ -648,6 +898,7 @@ ns.AddQuestSteps({
 		startItem = { itemID = 6776, name = "Tome of Valor" },
 		turnin = "Duthorian Rall, Stormwind City",
 		endMap = { mapID = 1453, x = 0.505, y = 0.475, label = "Duthorian Rall" },
+		rewards = { xp = 390 },
 	},
 	[1650] = {
 		name = "The Tome of Valor",
@@ -663,6 +914,7 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 1649, name = "The Tome of Valor" },
 		},
+		rewards = { xp = 1850 },
 	},
 	[1651] = {
 		name = "The Tome of Valor",
@@ -679,6 +931,7 @@ ns.AddQuestSteps({
 			{ questID = 1649, name = "The Tome of Valor" },
 			{ questID = 1650, name = "The Tome of Valor" },
 		},
+		rewards = { xp = 1000 },
 	},
 	[1652] = {
 		name = "The Tome of Valor",
@@ -695,6 +948,12 @@ ns.AddQuestSteps({
 			{ questID = 1649, name = "The Tome of Valor" },
 			{ questID = 1650, name = "The Tome of Valor" },
 			{ questID = 1651, name = "The Tome of Valor" },
+		},
+		rewards = {
+			xp = 2550,
+			items = {
+				{ itemID = 9607, name = "Bastion of Stormwind", quality = 2 },
+			},
 		},
 	},
 	[1653] = {
@@ -714,6 +973,7 @@ ns.AddQuestSteps({
 			{ questID = 1651, name = "The Tome of Valor" },
 			{ questID = 1652, name = "The Tome of Valor" },
 		},
+		rewards = { xp = 825 },
 	},
 	[1654] = {
 		name = "The Test of Righteousness",
@@ -733,6 +993,7 @@ ns.AddQuestSteps({
 			{ questID = 1652, name = "The Tome of Valor" },
 			{ questID = 1653, name = "The Test of Righteousness" },
 		},
+		rewards = { xp = 875 },
 	},
 	[1699] = {
 		name = "The Rethban Gauntlet",
@@ -745,6 +1006,7 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1433, x = 0.215, y = 0.447, label = "Yorus Barleybrew" },
 		turnin = "Yorus Barleybrew, Redridge Mountains",
 		endMap = { mapID = 1433, x = 0.215, y = 0.447, label = "Yorus Barleybrew" },
+		rewards = { xp = 1300 },
 	},
 	[1702] = {
 		name = "The Shieldsmith",
@@ -760,6 +1022,12 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 1699, name = "The Rethban Gauntlet" },
 		},
+		rewards = {
+			xp = 440,
+			items = {
+				{ itemID = 6970, name = "Furen's Favor", quality = 2 },
+			},
+		},
 	},
 	[1824] = {
 		name = "Trial at the Field of Giants",
@@ -772,6 +1040,12 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1413, x = 0.447, y = 0.594, label = "Ruga Ragetotem" },
 		turnin = "Ruga Ragetotem, The Barrens",
 		endMap = { mapID = 1413, x = 0.447, y = 0.594, label = "Ruga Ragetotem" },
+		rewards = {
+			xp = 1550,
+			items = {
+				{ itemID = 7120, name = "Ruga's Bulwark", quality = 2 },
+			},
+		},
 	},
 	[1947] = {
 		name = "Journey to the Marsh",
@@ -784,6 +1058,8 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1455, x = 0.273, y = 0.083, label = "Bink" },
 		turnin = "Tabetha, Dustwallow Marsh",
 		endMap = { mapID = 1445, x = 0.461, y = 0.571, label = "Tabetha" },
+		note = "Also given by Jennea Cannon (Stormwind City).",
+		rewards = { xp = 290 },
 	},
 	[1949] = {
 		name = "Hidden Secrets",
@@ -799,6 +1075,7 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 1947, name = "Journey to the Marsh" },
 		},
+		rewards = { xp = 1450 },
 	},
 	[1950] = {
 		name = "Get the Scoop",
@@ -815,6 +1092,7 @@ ns.AddQuestSteps({
 			{ questID = 1947, name = "Journey to the Marsh" },
 			{ questID = 1949, name = "Hidden Secrets" },
 		},
+		rewards = { xp = 1850 },
 	},
 	[1954] = {
 		name = "The Infernal Orb",
@@ -827,6 +1105,7 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1445, x = 0.461, y = 0.571, label = "Tabetha" },
 		turnin = "Tabetha, Dustwallow Marsh",
 		endMap = { mapID = 1445, x = 0.461, y = 0.571, label = "Tabetha" },
+		rewards = { xp = 2350 },
 	},
 	[1955] = {
 		name = "The Exorcism",
@@ -842,6 +1121,7 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 1954, name = "The Infernal Orb" },
 		},
+		rewards = { xp = 2350 },
 	},
 	[2258] = {
 		name = "Badlands Reagent Run",
@@ -853,6 +1133,13 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1418, x = 0.024, y = 0.461, label = "Jarkal Mossmeld" },
 		turnin = "Jarkal Mossmeld, Badlands",
 		endMap = { mapID = 1418, x = 0.024, y = 0.461, label = "Jarkal Mossmeld" },
+		rewards = {
+			xp = 3000,
+			money = 4500,
+			reputation = {
+				{ faction = "Darkspear Trolls", amount = 100 },
+			},
+		},
 	},
 	[2500] = {
 		name = "Badlands Reagent Run",
@@ -864,6 +1151,13 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1432, x = 0.371, y = 0.494, label = "Ghak Healtouch" },
 		turnin = "Ghak Healtouch, Loch Modan",
 		endMap = { mapID = 1432, x = 0.371, y = 0.494, label = "Ghak Healtouch" },
+		rewards = {
+			xp = 3000,
+			money = 4500,
+			reputation = {
+				{ faction = "Ironforge", amount = 100 },
+			},
+		},
 	},
 	[2933] = {
 		name = "Venom Bottles",
@@ -876,6 +1170,12 @@ ns.AddQuestSteps({
 		startObject = { name = "Venom Bottle" },
 		turnin = "Apothecary Lydon, Hillsbrad Foothills",
 		endMap = { mapID = 1424, x = 0.614, y = 0.191, label = "Apothecary Lydon" },
+		rewards = {
+			xp = 3600,
+			reputation = {
+				{ faction = "Undercity", amount = 100 },
+			},
+		},
 	},
 	[2934] = {
 		name = "Undamaged Venom Sac",
@@ -889,6 +1189,12 @@ ns.AddQuestSteps({
 		endMap = { mapID = 1424, x = 0.614, y = 0.191, label = "Apothecary Lydon" },
 		prerequisites = {
 			{ questID = 2933, name = "Venom Bottles" },
+		},
+		rewards = {
+			xp = 3900,
+			reputation = {
+				{ faction = "Undercity", amount = 100 },
+			},
 		},
 	},
 	[2935] = {
@@ -905,6 +1211,12 @@ ns.AddQuestSteps({
 			{ questID = 2933, name = "Venom Bottles" },
 			{ questID = 2934, name = "Undamaged Venom Sac" },
 		},
+		rewards = {
+			xp = 2900,
+			reputation = {
+				{ faction = "Darkspear Trolls", amount = 75 },
+			},
+		},
 	},
 	[2988] = {
 		name = "Witherbark Cages",
@@ -916,6 +1228,12 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1425, x = 0.098, y = 0.445, label = "Gryphon Master Talonaxe" },
 		turnin = "Gryphon Master Talonaxe, The Hinterlands",
 		endMap = { mapID = 1425, x = 0.098, y = 0.445, label = "Gryphon Master Talonaxe" },
+		rewards = {
+			xp = 3900,
+			reputation = {
+				{ faction = "Wildhammer Clan", amount = 100 },
+			},
+		},
 	},
 	[2989] = {
 		name = "The Altar of Zul",
@@ -929,6 +1247,12 @@ ns.AddQuestSteps({
 		endMap = { mapID = 1425, x = 0.098, y = 0.445, label = "Gryphon Master Talonaxe" },
 		prerequisites = {
 			{ questID = 2988, name = "Witherbark Cages" },
+		},
+		rewards = {
+			xp = 4400,
+			reputation = {
+				{ faction = "Wildhammer Clan", amount = 100 },
+			},
 		},
 	},
 	[2990] = {
@@ -945,6 +1269,13 @@ ns.AddQuestSteps({
 			{ questID = 2988, name = "Witherbark Cages" },
 			{ questID = 2989, name = "The Altar of Zul" },
 		},
+		rewards = {
+			xp = 2100,
+			reputation = {
+				{ faction = "Wildhammer Clan", amount = 50 },
+				{ faction = "Ironforge", amount = 50 },
+			},
+		},
 	},
 	[3444] = {
 		name = "The Stone Circle",
@@ -956,6 +1287,7 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1446, x = 0.527, y = 0.459, label = "Marvon Rivetseeker" },
 		turnin = "Marvon Rivetseeker, Tanaris",
 		endMap = { mapID = 1446, x = 0.527, y = 0.459, label = "Marvon Rivetseeker" },
+		rewards = { xp = 4900 },
 	},
 	[3520] = {
 		name = "Screecher Spirits",
@@ -967,6 +1299,7 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1446, x = 0.67, y = 0.224, label = "Yeh'kinya" },
 		turnin = "Yeh'kinya, Tanaris",
 		endMap = { mapID = 1446, x = 0.67, y = 0.224, label = "Yeh'kinya" },
+		rewards = { xp = 3750 },
 	},
 	[3701] = {
 		name = "The Smoldering Ruins of Thaurissan",
@@ -981,6 +1314,16 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 3702, name = "The Smoldering Ruins of Thaurissan" },
 		},
+		rewards = {
+			xp = 5450,
+			money = 16500,
+			reputation = {
+				{ faction = "Ironforge", amount = 100 },
+			},
+			items = {
+				{ itemID = 12102, name = "Ring of the Aristocrat", quality = 2 },
+			},
+		},
 	},
 	[3702] = {
 		name = "The Smoldering Ruins of Thaurissan",
@@ -992,6 +1335,12 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1455, x = 0.384, y = 0.553, label = "Royal Historian Archesonus" },
 		turnin = "Royal Historian Archesonus, Ironforge",
 		endMap = { mapID = 1455, x = 0.384, y = 0.553, label = "Royal Historian Archesonus" },
+		rewards = {
+			xp = 550,
+			reputation = {
+				{ faction = "Ironforge", amount = 10 },
+			},
+		},
 	},
 	[3906] = {
 		name = "Disharmony of Flame",
@@ -1003,6 +1352,13 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1418, x = 0.033, y = 0.483, label = "Thunderheart" },
 		turnin = "Thunderheart, Badlands",
 		endMap = { mapID = 1418, x = 0.033, y = 0.483, label = "Thunderheart" },
+		rewards = {
+			xp = 5100,
+			money = 15500,
+			reputation = {
+				{ faction = "Thunder Bluff", amount = 100 },
+			},
+		},
 	},
 	[4023] = {
 		name = "A Taste of Flame",
@@ -1014,6 +1370,7 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1428, x = 0.951, y = 0.316, label = "Cyrus Therepentous" },
 		turnin = "Cyrus Therepentous, Burning Steppes",
 		endMap = { mapID = 1428, x = 0.951, y = 0.316, label = "Cyrus Therepentous" },
+		rewards = { xp = 5450 },
 	},
 	[4061] = {
 		name = "The Rise of the Machines",
@@ -1025,6 +1382,13 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1418, x = 0.03, y = 0.478, label = "Hierophant Theodora Mulvadania" },
 		turnin = "Hierophant Theodora Mulvadania, Badlands",
 		endMap = { mapID = 1418, x = 0.03, y = 0.478, label = "Hierophant Theodora Mulvadania" },
+		rewards = {
+			xp = 5450,
+			money = 16500,
+			reputation = {
+				{ faction = "Undercity", amount = 100 },
+			},
+		},
 	},
 	[4062] = {
 		name = "The Rise of the Machines",
@@ -1039,6 +1403,7 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 4061, name = "The Rise of the Machines" },
 		},
+		rewards = { xp = 1350 },
 	},
 	[4141] = {
 		name = "Muigin and Larion",
@@ -1050,6 +1415,7 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1449, x = 0.429, y = 0.096, label = "Muigin" },
 		turnin = "Muigin, Un'Goro Crater",
 		endMap = { mapID = 1449, x = 0.429, y = 0.096, label = "Muigin" },
+		rewards = { xp = 5100 },
 	},
 	[4142] = {
 		name = "A Visit to Gregan",
@@ -1064,6 +1430,7 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 4141, name = "Muigin and Larion" },
 		},
+		rewards = { xp = 3800 },
 	},
 	[4145] = {
 		name = "Larion and Muigin",
@@ -1075,6 +1442,7 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1449, x = 0.455, y = 0.087, label = "Larion" },
 		turnin = "Larion, Un'Goro Crater",
 		endMap = { mapID = 1449, x = 0.455, y = 0.087, label = "Larion" },
+		rewards = { xp = 5100, money = 7500 },
 	},
 	[4147] = {
 		name = "Marvon's Workshop",
@@ -1089,6 +1457,7 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 4145, name = "Larion and Muigin" },
 		},
+		rewards = { xp = 2550 },
 	},
 	[4182] = {
 		name = "Dragonkin Menace",
@@ -1100,6 +1469,13 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1428, x = 0.858, y = 0.69, label = "Helendis Riverhorn" },
 		turnin = "Helendis Riverhorn, Burning Steppes",
 		endMap = { mapID = 1428, x = 0.858, y = 0.69, label = "Helendis Riverhorn" },
+		rewards = {
+			xp = 5450,
+			money = 16500,
+			reputation = {
+				{ faction = "Darnassus", amount = 100 },
+			},
+		},
 	},
 	[4183] = {
 		name = "The True Masters",
@@ -1113,6 +1489,12 @@ ns.AddQuestSteps({
 		endMap = { mapID = 1433, x = 0.249, y = 0.445, label = "Magistrate Solomon" },
 		prerequisites = {
 			{ questID = 4182, name = "Dragonkin Menace" },
+		},
+		rewards = {
+			xp = 4100,
+			reputation = {
+				{ faction = "Darnassus", amount = 75 },
+			},
 		},
 	},
 	[4184] = {
@@ -1128,6 +1510,12 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 4182, name = "Dragonkin Menace" },
 			{ questID = 4183, name = "The True Masters" },
+		},
+		rewards = {
+			xp = 4100,
+			reputation = {
+				{ faction = "Stormwind", amount = 75 },
+			},
 		},
 	},
 	[4185] = {
@@ -1145,6 +1533,7 @@ ns.AddQuestSteps({
 			{ questID = 4183, name = "The True Masters" },
 			{ questID = 4184, name = "The True Masters" },
 		},
+		rewards = { xp = 550 },
 	},
 	[4186] = {
 		name = "The True Masters",
@@ -1161,6 +1550,12 @@ ns.AddQuestSteps({
 			{ questID = 4183, name = "The True Masters" },
 			{ questID = 4184, name = "The True Masters" },
 			{ questID = 4185, name = "The True Masters" },
+		},
+		rewards = {
+			xp = 5450,
+			reputation = {
+				{ faction = "Stormwind", amount = 100 },
+			},
 		},
 	},
 	[4223] = {
@@ -1180,6 +1575,7 @@ ns.AddQuestSteps({
 			{ questID = 4185, name = "The True Masters" },
 			{ questID = 4186, name = "The True Masters" },
 		},
+		rewards = { xp = 550 },
 	},
 	[4224] = {
 		name = "The True Masters",
@@ -1199,6 +1595,7 @@ ns.AddQuestSteps({
 			{ questID = 4186, name = "The True Masters" },
 			{ questID = 4223, name = "The True Masters" },
 		},
+		rewards = { xp = 550 },
 	},
 	[4262] = {
 		name = "Overmaster Pyron",
@@ -1210,6 +1607,13 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1428, x = 0.854, y = 0.701, label = "Jalinda Sprig" },
 		turnin = "Jalinda Sprig, Burning Steppes",
 		endMap = { mapID = 1428, x = 0.854, y = 0.701, label = "Jalinda Sprig" },
+		rewards = {
+			xp = 5100,
+			money = 15500,
+			reputation = {
+				{ faction = "Gnomeregan Exiles", amount = 100 },
+			},
+		},
 	},
 	[4726] = {
 		name = "Broodling Essence",
@@ -1221,6 +1625,13 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1428, x = 0.652, y = 0.24, label = "Tinkee Steamboil" },
 		turnin = "Tinkee Steamboil, Burning Steppes",
 		endMap = { mapID = 1428, x = 0.652, y = 0.24, label = "Tinkee Steamboil" },
+		rewards = {
+			xp = 5100,
+			money = 7500,
+			reputation = {
+				{ faction = "Steamwheedle Cartel", amount = 100 },
+			},
+		},
 	},
 	[4787] = {
 		name = "The Ancient Egg",
@@ -1236,6 +1647,7 @@ ns.AddQuestSteps({
 			{ questID = 3520, name = "Screecher Spirits" },
 			{ questID = 3527, name = "The Prophecy of Mosh'aru" },
 		},
+		rewards = { xp = 5900 },
 	},
 	[4808] = {
 		name = "Felnok Steelspring",
@@ -1249,6 +1661,12 @@ ns.AddQuestSteps({
 		endMap = { mapID = 1452, x = 0.616, y = 0.386, label = "Felnok Steelspring" },
 		prerequisites = {
 			{ questID = 4726, name = "Broodling Essence" },
+		},
+		rewards = {
+			xp = 2700,
+			reputation = {
+				{ faction = "Everlook", amount = 50 },
+			},
 		},
 	},
 	[4809] = {
@@ -1264,6 +1682,12 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 4726, name = "Broodling Essence" },
 			{ questID = 4808, name = "Felnok Steelspring" },
+		},
+		rewards = {
+			xp = 5450,
+			reputation = {
+				{ faction = "Everlook", amount = 100 },
+			},
 		},
 	},
 	[4810] = {
@@ -1281,6 +1705,17 @@ ns.AddQuestSteps({
 			{ questID = 4808, name = "Felnok Steelspring" },
 			{ questID = 4809, name = "Chillwind Horns" },
 		},
+		rewards = {
+			xp = 2700,
+			reputation = {
+				{ faction = "Steamwheedle Cartel", amount = 50 },
+			},
+			items = {
+				{ itemID = 15862, name = "Blitzcleaver", quality = 2 },
+				{ itemID = 15863, name = "Grave Scepter", quality = 2 },
+			},
+			choice = true,
+		},
 	},
 	[4941] = {
 		name = "Eitrigg's Wisdom",
@@ -1294,6 +1729,12 @@ ns.AddQuestSteps({
 		endMap = { mapID = 1454, x = 0.317, y = 0.378, label = "Thrall" },
 		prerequisites = {
 			{ questID = 4903, name = "Warlord's Command" },
+		},
+		rewards = {
+			xp = 6600,
+			reputation = {
+				{ faction = "Orgrimmar", amount = 100 },
+			},
 		},
 	},
 	[5065] = {
@@ -1312,6 +1753,7 @@ ns.AddQuestSteps({
 			{ questID = 4787, name = "The Ancient Egg" },
 			{ questID = 3528, name = "The God Hakkar" },
 		},
+		rewards = { xp = 7750 },
 	},
 	[5126] = {
 		name = "Lorax's Tale",
@@ -1323,6 +1765,7 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1452, x = 0.638, y = 0.738, label = "Lorax" },
 		turnin = "Lorax, Winterspring",
 		endMap = { mapID = 1452, x = 0.638, y = 0.738, label = "Lorax" },
+		rewards = { xp = 650 },
 	},
 	[5264] = {
 		name = "Lord Maxwell Tyrosus",
@@ -1339,6 +1782,12 @@ ns.AddQuestSteps({
 			{ questID = 5262, name = "The Truth Comes Crashing Down" },
 			{ questID = 5263, name = "Above and Beyond" },
 		},
+		rewards = {
+			xp = 6600,
+			reputation = {
+				{ faction = "Argent Dawn", amount = 100 },
+			},
+		},
 	},
 	[5281] = {
 		name = "The Restless Souls",
@@ -1350,6 +1799,7 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1423, x = 0.699, y = 0.537, label = "Caretaker Alen" },
 		turnin = "Egan, Eastern Plaguelands",
 		endMap = { mapID = 1423, x = 0.114, y = 0.266, label = "Egan" },
+		rewards = { xp = 6600 },
 	},
 	[5461] = {
 		name = "The Human, Ras Frostwhisper",
@@ -1366,6 +1816,7 @@ ns.AddQuestSteps({
 			{ questID = 5515, name = "Krastinov's Bag of Horrors" },
 			{ questID = 5384, name = "Kirtonos the Herald" },
 		},
+		rewards = { xp = 6600 },
 	},
 	[5462] = {
 		name = "The Dying, Ras Frostwhisper",
@@ -1383,6 +1834,7 @@ ns.AddQuestSteps({
 			{ questID = 5384, name = "Kirtonos the Herald" },
 			{ questID = 5461, name = "The Human, Ras Frostwhisper" },
 		},
+		rewards = { xp = 4950 },
 	},
 	[5465] = {
 		name = "Soulbound Keepsake",
@@ -1403,6 +1855,7 @@ ns.AddQuestSteps({
 			{ questID = 5463, name = "Menethil's Gift" },
 			{ questID = 5464, name = "Menethil's Gift" },
 		},
+		rewards = { xp = 4950 },
 	},
 	[5522] = {
 		name = "Leonid Barthalomew",
@@ -1422,6 +1875,12 @@ ns.AddQuestSteps({
 			{ questID = 4734, name = "Egg Freezing" },
 			{ questID = 4735, name = "Egg Collection" },
 		},
+		rewards = {
+			xp = 4950,
+			reputation = {
+				{ faction = "Argent Dawn", amount = 75 },
+			},
+		},
 	},
 	[5527] = {
 		name = "A Reliquary of Purity",
@@ -1433,6 +1892,12 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1450, x = 0.517, y = 0.451, label = "Rabine Saturna" },
 		turnin = "Rabine Saturna, Moonglade",
 		endMap = { mapID = 1450, x = 0.517, y = 0.451, label = "Rabine Saturna" },
+		rewards = {
+			xp = 6600,
+			reputation = {
+				{ faction = "Cenarion Circle", amount = 100 },
+			},
+		},
 	},
 	[5542] = {
 		name = "Demon Dogs",
@@ -1444,6 +1909,7 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1423, x = 0.052, y = 0.356, label = "Tirion Fordring" },
 		turnin = "Tirion Fordring, Eastern Plaguelands",
 		endMap = { mapID = 1423, x = 0.052, y = 0.356, label = "Tirion Fordring" },
+		rewards = { xp = 5800 },
 	},
 	[5543] = {
 		name = "Blood Tinged Skies",
@@ -1455,6 +1921,7 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1423, x = 0.052, y = 0.356, label = "Tirion Fordring" },
 		turnin = "Tirion Fordring, Eastern Plaguelands",
 		endMap = { mapID = 1423, x = 0.052, y = 0.356, label = "Tirion Fordring" },
+		rewards = { xp = 5800 },
 	},
 	[5544] = {
 		name = "Carrion Grubbage",
@@ -1466,6 +1933,7 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1423, x = 0.052, y = 0.356, label = "Tirion Fordring" },
 		turnin = "Tirion Fordring, Eastern Plaguelands",
 		endMap = { mapID = 1423, x = 0.052, y = 0.356, label = "Tirion Fordring" },
+		rewards = { xp = 5800 },
 	},
 	[5726] = {
 		name = "Hidden Enemies",
@@ -1477,6 +1945,13 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1454, x = 0.317, y = 0.378, label = "Thrall" },
 		turnin = "Thrall, Orgrimmar",
 		endMap = { mapID = 1454, x = 0.317, y = 0.378, label = "Thrall" },
+		rewards = {
+			xp = 900,
+			money = 250,
+			reputation = {
+				{ faction = "Orgrimmar", amount = 100 },
+			},
+		},
 	},
 	[5727] = {
 		name = "Hidden Enemies",
@@ -1490,6 +1965,12 @@ ns.AddQuestSteps({
 		endMap = { mapID = 1454, x = 0.317, y = 0.378, label = "Thrall" },
 		prerequisites = {
 			{ questID = 5726, name = "Hidden Enemies" },
+		},
+		rewards = {
+			xp = 460,
+			reputation = {
+				{ faction = "Orgrimmar", amount = 50 },
+			},
 		},
 	},
 	[5729] = {
@@ -1507,6 +1988,7 @@ ns.AddQuestSteps({
 			{ questID = 5727, name = "Hidden Enemies" },
 			{ questID = 5728, name = "Hidden Enemies" },
 		},
+		rewards = { xp = 110 },
 	},
 	[5742] = {
 		name = "Redemption",
@@ -1523,6 +2005,7 @@ ns.AddQuestSteps({
 			{ questID = 5543, name = "Blood Tinged Skies" },
 			{ questID = 5544, name = "Carrion Grubbage" },
 		},
+		rewards = { xp = 575 },
 	},
 	[5781] = {
 		name = "Of Forgotten Memories",
@@ -1540,6 +2023,7 @@ ns.AddQuestSteps({
 			{ questID = 5544, name = "Carrion Grubbage" },
 			{ questID = 5742, name = "Redemption" },
 		},
+		rewards = { xp = 6000 },
 	},
 	[5845] = {
 		name = "Of Lost Honor",
@@ -1558,6 +2042,7 @@ ns.AddQuestSteps({
 			{ questID = 5742, name = "Redemption" },
 			{ questID = 5781, name = "Of Forgotten Memories" },
 		},
+		rewards = { xp = 6200 },
 	},
 	[5846] = {
 		name = "Of Love and Family",
@@ -1577,6 +2062,7 @@ ns.AddQuestSteps({
 			{ questID = 5781, name = "Of Forgotten Memories" },
 			{ questID = 5845, name = "Of Lost Honor" },
 		},
+		rewards = { xp = 6200 },
 	},
 	[6022] = {
 		name = "To Kill With Purpose",
@@ -1588,6 +2074,13 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1423, x = 0.222, y = 0.635, label = "Nathanos Blightcaller" },
 		turnin = "Nathanos Blightcaller, Eastern Plaguelands",
 		endMap = { mapID = 1423, x = 0.222, y = 0.635, label = "Nathanos Blightcaller" },
+		rewards = {
+			xp = 6200,
+			money = 9000,
+			reputation = {
+				{ faction = "Undercity", amount = 100 },
+			},
+		},
 	},
 	[6042] = {
 		name = "Un-Life's Little Annoyances",
@@ -1599,6 +2092,13 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1423, x = 0.222, y = 0.635, label = "Nathanos Blightcaller" },
 		turnin = "Nathanos Blightcaller, Eastern Plaguelands",
 		endMap = { mapID = 1423, x = 0.222, y = 0.635, label = "Nathanos Blightcaller" },
+		rewards = {
+			xp = 6200,
+			money = 9000,
+			reputation = {
+				{ faction = "Undercity", amount = 100 },
+			},
+		},
 	},
 	[6133] = {
 		name = "The Ranger Lord's Behest",
@@ -1610,6 +2110,13 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1423, x = 0.222, y = 0.635, label = "Nathanos Blightcaller" },
 		turnin = "Nathanos Blightcaller, Eastern Plaguelands",
 		endMap = { mapID = 1423, x = 0.222, y = 0.635, label = "Nathanos Blightcaller" },
+		rewards = {
+			xp = 6600,
+			money = 9000,
+			reputation = {
+				{ faction = "Undercity", amount = 100 },
+			},
+		},
 	},
 	[6135] = {
 		name = "Duskwing, Oh How I Hate Thee...",
@@ -1626,6 +2133,18 @@ ns.AddQuestSteps({
 			{ questID = 6042, name = "Un-Life's Little Annoyances" },
 			{ questID = 6133, name = "The Ranger Lord's Behest" },
 		},
+		rewards = {
+			xp = 6600,
+			money = 9000,
+			reputation = {
+				{ faction = "Undercity", amount = 100 },
+			},
+			items = {
+				{ itemID = 16994, name = "Duskwing Gloves", quality = 2 },
+				{ itemID = 16995, name = "Duskwing Mantle", quality = 2 },
+			},
+			choice = true,
+		},
 	},
 	[6136] = {
 		name = "The Corpulent One",
@@ -1641,6 +2160,19 @@ ns.AddQuestSteps({
 			{ questID = 6022, name = "To Kill With Purpose" },
 			{ questID = 6042, name = "Un-Life's Little Annoyances" },
 			{ questID = 6133, name = "The Ranger Lord's Behest" },
+		},
+		rewards = {
+			xp = 6600,
+			money = 9000,
+			reputation = {
+				{ faction = "Undercity", amount = 100 },
+			},
+			items = {
+				{ itemID = 17002, name = "Ichor Spitter", quality = 2 },
+				{ itemID = 17003, name = "Skullstone Hammer", quality = 2 },
+				{ itemID = 17004, name = "Sarah's Guide", quality = 2 },
+			},
+			choice = true,
 		},
 	},
 	[6402] = {
@@ -1667,6 +2199,7 @@ ns.AddQuestSteps({
 			{ questID = 4282, name = "A Shred of Hope" },
 			{ questID = 4322, name = "Jail Break!" },
 		},
+		rewards = { xp = 650 },
 	},
 	[6403] = {
 		name = "The Great Masquerade",
@@ -1692,6 +2225,12 @@ ns.AddQuestSteps({
 			{ questID = 4282, name = "A Shred of Hope" },
 			{ questID = 4322, name = "Jail Break!" },
 			{ questID = 6402, name = "Stormwind Rendezvous" },
+		},
+		rewards = {
+			xp = 9950,
+			reputation = {
+				{ faction = "Stormwind", amount = 200 },
+			},
 		},
 	},
 	[6501] = {
@@ -1720,6 +2259,7 @@ ns.AddQuestSteps({
 			{ questID = 6402, name = "Stormwind Rendezvous" },
 			{ questID = 6403, name = "The Great Masquerade" },
 		},
+		rewards = { xp = 6600 },
 	},
 	[6566] = {
 		name = "What the Wind Carries",
@@ -1736,6 +2276,7 @@ ns.AddQuestSteps({
 			{ questID = 4941, name = "Eitrigg's Wisdom" },
 			{ questID = 4974, name = "For The Horde!" },
 		},
+		rewards = { xp = 650 },
 	},
 	[6567] = {
 		name = "The Champion of the Horde",
@@ -1753,6 +2294,7 @@ ns.AddQuestSteps({
 			{ questID = 4974, name = "For The Horde!" },
 			{ questID = 6566, name = "What the Wind Carries" },
 		},
+		rewards = { xp = 3300 },
 	},
 	[6568] = {
 		name = "The Testament of Rexxar",
@@ -1771,6 +2313,7 @@ ns.AddQuestSteps({
 			{ questID = 6566, name = "What the Wind Carries" },
 			{ questID = 6567, name = "The Champion of the Horde" },
 		},
+		rewards = { xp = 4950 },
 	},
 	[6570] = {
 		name = "Emberstrife",
@@ -1791,6 +2334,7 @@ ns.AddQuestSteps({
 			{ questID = 6568, name = "The Testament of Rexxar" },
 			{ questID = 6569, name = "Oculus Illusions" },
 		},
+		rewards = { xp = 4950 },
 	},
 	[6582] = {
 		name = "The Test of Skulls, Scryer",
@@ -1812,6 +2356,7 @@ ns.AddQuestSteps({
 			{ questID = 6569, name = "Oculus Illusions" },
 			{ questID = 6570, name = "Emberstrife" },
 		},
+		rewards = { xp = 6600 },
 	},
 	[6583] = {
 		name = "The Test of Skulls, Somnus",
@@ -1833,6 +2378,7 @@ ns.AddQuestSteps({
 			{ questID = 6569, name = "Oculus Illusions" },
 			{ questID = 6570, name = "Emberstrife" },
 		},
+		rewards = { xp = 6600 },
 	},
 	[6584] = {
 		name = "The Test of Skulls, Chronalis",
@@ -1854,6 +2400,7 @@ ns.AddQuestSteps({
 			{ questID = 6569, name = "Oculus Illusions" },
 			{ questID = 6570, name = "Emberstrife" },
 		},
+		rewards = { xp = 6600 },
 	},
 	[6585] = {
 		name = "The Test of Skulls, Axtroz",
@@ -1878,6 +2425,7 @@ ns.AddQuestSteps({
 			{ questID = 6583, name = "The Test of Skulls, Somnus" },
 			{ questID = 6584, name = "The Test of Skulls, Chronalis" },
 		},
+		rewards = { xp = 6600 },
 	},
 	[6601] = {
 		name = "Ascension...",
@@ -1903,6 +2451,7 @@ ns.AddQuestSteps({
 			{ questID = 6584, name = "The Test of Skulls, Chronalis" },
 			{ questID = 6585, name = "The Test of Skulls, Axtroz" },
 		},
+		rewards = { xp = 4950 },
 	},
 	[6627] = {
 		name = "Test of Lore",
@@ -1921,6 +2470,7 @@ ns.AddQuestSteps({
 			{ questID = 1152, name = "Test of Lore" },
 			{ questID = 1154, name = "Test of Lore" },
 		},
+		rewards = { xp = 250 },
 	},
 	[6628] = {
 		name = "Test of Lore",
@@ -1942,6 +2492,7 @@ ns.AddQuestSteps({
 			{ questID = 1159, name = "Test of Lore" },
 			{ questID = 1160, name = "Test of Lore" },
 		},
+		rewards = { xp = 250 },
 	},
 	[6804] = {
 		name = "Poisoned Water",
@@ -1953,6 +2504,12 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1447, x = 0.793, y = 0.737, label = "Duke Hydraxis" },
 		turnin = "Duke Hydraxis, Azshara",
 		endMap = { mapID = 1447, x = 0.793, y = 0.737, label = "Duke Hydraxis" },
+		rewards = {
+			xp = 4350,
+			reputation = {
+				{ faction = "Horde", amount = 100 },
+			},
+		},
 	},
 	[6805] = {
 		name = "Stormers and Rumblers",
@@ -1964,6 +2521,7 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1447, x = 0.793, y = 0.737, label = "Duke Hydraxis" },
 		turnin = "Duke Hydraxis, Azshara",
 		endMap = { mapID = 1447, x = 0.793, y = 0.737, label = "Duke Hydraxis" },
+		rewards = { xp = 6000 },
 	},
 	[7563] = {
 		name = "Rage of Blood",
@@ -1976,6 +2534,7 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1428, x = 0.127, y = 0.316, label = "Mor'zul Bloodbringer" },
 		turnin = "Mor'zul Bloodbringer, Burning Steppes",
 		endMap = { mapID = 1428, x = 0.127, y = 0.316, label = "Mor'zul Bloodbringer" },
+		rewards = { xp = 7750 },
 	},
 	[7564] = {
 		name = "Wildeyes",
@@ -1991,6 +2550,7 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 7563, name = "Rage of Blood" },
 		},
+		rewards = { xp = 3100 },
 	},
 	[7623] = {
 		name = "Lord Banehollow",
@@ -2003,6 +2563,7 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1428, x = 0.124, y = 0.316, label = "Gorzeeki Wildeyes" },
 		turnin = "Lord Banehollow, Felwood",
 		endMap = { mapID = 1448, x = 0.359, y = 0.444, label = "Lord Banehollow" },
+		rewards = { xp = 6200 },
 	},
 	[7624] = {
 		name = "Ulathek the Traitor",
@@ -2018,6 +2579,7 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 7623, name = "Lord Banehollow" },
 		},
+		rewards = { xp = 6200 },
 	},
 	[7625] = {
 		name = "Xorothian Stardust",
@@ -2034,6 +2596,7 @@ ns.AddQuestSteps({
 			{ questID = 7623, name = "Lord Banehollow" },
 			{ questID = 7624, name = "Ulathek the Traitor" },
 		},
+		rewards = { xp = 6600 },
 	},
 	[7626] = {
 		name = "Bell of Dethmoora",
@@ -2050,6 +2613,7 @@ ns.AddQuestSteps({
 			{ questID = 7563, name = "Rage of Blood" },
 			{ questID = 7564, name = "Wildeyes" },
 		},
+		rewards = { xp = 6600 },
 	},
 	[7627] = {
 		name = "Wheel of the Black March",
@@ -2066,6 +2630,7 @@ ns.AddQuestSteps({
 			{ questID = 7563, name = "Rage of Blood" },
 			{ questID = 7564, name = "Wildeyes" },
 		},
+		rewards = { xp = 6600 },
 	},
 	[7628] = {
 		name = "Doomsday Candle",
@@ -2082,6 +2647,7 @@ ns.AddQuestSteps({
 			{ questID = 7563, name = "Rage of Blood" },
 			{ questID = 7564, name = "Wildeyes" },
 		},
+		rewards = { xp = 6600 },
 	},
 	[7630] = {
 		name = "Arcanite",
@@ -2101,6 +2667,7 @@ ns.AddQuestSteps({
 			{ questID = 7627, name = "Wheel of the Black March" },
 			{ questID = 7628, name = "Doomsday Candle" },
 		},
+		rewards = { xp = 6600 },
 	},
 	[7637] = {
 		name = "Emphasis on Sacrifice",
@@ -2116,6 +2683,12 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 7638, name = "Lord Grayson Shadowbreaker" },
 		},
+		rewards = {
+			xp = 650,
+			reputation = {
+				{ faction = "Ironforge", amount = 150 },
+			},
+		},
 	},
 	[7638] = {
 		name = "Lord Grayson Shadowbreaker",
@@ -2128,6 +2701,12 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1453, x = 0.505, y = 0.475, label = "Duthorian Rall" },
 		turnin = "Lord Grayson Shadowbreaker, Stormwind City",
 		endMap = { mapID = 1453, x = 0.484, y = 0.502, label = "Lord Grayson Shadowbreaker" },
+		rewards = {
+			xp = 650,
+			reputation = {
+				{ faction = "Stormwind", amount = 10 },
+			},
+		},
 	},
 	[7639] = {
 		name = "To Show Due Judgment",
@@ -2143,6 +2722,12 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 7638, name = "Lord Grayson Shadowbreaker" },
 			{ questID = 7637, name = "Emphasis on Sacrifice" },
+		},
+		rewards = {
+			xp = 650,
+			reputation = {
+				{ faction = "Stormwind", amount = 50 },
+			},
 		},
 	},
 	[7640] = {
@@ -2160,6 +2745,12 @@ ns.AddQuestSteps({
 			{ questID = 7638, name = "Lord Grayson Shadowbreaker" },
 			{ questID = 7637, name = "Emphasis on Sacrifice" },
 			{ questID = 7639, name = "To Show Due Judgment" },
+		},
+		rewards = {
+			xp = 6600,
+			reputation = {
+				{ faction = "Stormwind", amount = 100 },
+			},
 		},
 	},
 	[7641] = {
@@ -2179,6 +2770,7 @@ ns.AddQuestSteps({
 			{ questID = 7639, name = "To Show Due Judgment" },
 			{ questID = 7640, name = "Exorcising Terrordale" },
 		},
+		rewards = { xp = 650 },
 	},
 	[7642] = {
 		name = "Collection of Goods",
@@ -2197,6 +2789,12 @@ ns.AddQuestSteps({
 			{ questID = 7639, name = "To Show Due Judgment" },
 			{ questID = 7640, name = "Exorcising Terrordale" },
 			{ questID = 7641, name = "The Work of Grimand Elmore" },
+		},
+		rewards = {
+			xp = 1650,
+			reputation = {
+				{ faction = "Ironforge", amount = 100 },
+			},
 		},
 	},
 	[7646] = {
@@ -2220,6 +2818,12 @@ ns.AddQuestSteps({
 			{ questID = 7643, name = "Ancient Equine Spirit" },
 			{ questID = 7644, name = "Blessed Arcanite Barding" },
 		},
+		rewards = {
+			xp = 3300,
+			reputation = {
+				{ faction = "Stormwind", amount = 50 },
+			},
+		},
 	},
 	[7667] = {
 		name = "Material Assistance",
@@ -2232,6 +2836,12 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1454, x = 0.387, y = 0.359, label = "Sagorne Creststrider" },
 		turnin = "Sagorne Creststrider, Orgrimmar",
 		endMap = { mapID = 1454, x = 0.387, y = 0.359, label = "Sagorne Creststrider" },
+		rewards = {
+			xp = 4950,
+			reputation = {
+				{ faction = "Horde", amount = 150 },
+			},
+		},
 	},
 	[8151] = {
 		name = "The Hunter's Charm",
@@ -2244,6 +2854,8 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1457, x = 0.422, y = 0.073, label = "Dorion" },
 		turnin = "Ogtinc, Azshara",
 		endMap = { mapID = 1447, x = 0.424, y = 0.426, label = "Ogtinc" },
+		note = "Also given by Olmin Burningbeard (Ironforge) and Ulfir Ironbeard (Stormwind City).",
+		rewards = { xp = 500 },
 	},
 	[8153] = {
 		name = "Courser Antlers",
@@ -2259,6 +2871,7 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 8151, name = "The Hunter's Charm" },
 		},
+		rewards = { xp = 5100 },
 	},
 	[8231] = {
 		name = "Wavethrashing",
@@ -2275,6 +2888,7 @@ ns.AddQuestSteps({
 			{ questID = 8151, name = "The Hunter's Charm" },
 			{ questID = 8153, name = "Courser Antlers" },
 		},
+		rewards = { xp = 5100 },
 	},
 	[8234] = {
 		name = "Sealed Azure Bag",
@@ -2287,6 +2901,13 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1416, x = 0.86, y = 0.789, label = "Lord Jorach Ravenholdt" },
 		turnin = "Archmage Xylem, Azshara",
 		endMap = { mapID = 1447, x = 0.292, y = 0.402, label = "Archmage Xylem" },
+		rewards = {
+			xp = 5100,
+			money = 6000,
+			reputation = {
+				{ faction = "Ravenholdt", amount = 100 },
+			},
+		},
 	},
 	[8235] = {
 		name = "Encoded Fragments",
@@ -2302,6 +2923,13 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 8234, name = "Sealed Azure Bag" },
 		},
+		rewards = {
+			xp = 5100,
+			money = 7500,
+			reputation = {
+				{ faction = "Ravenholdt", amount = 100 },
+			},
+		},
 	},
 	[8251] = {
 		name = "Magic Dust",
@@ -2314,6 +2942,7 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1447, x = 0.292, y = 0.402, label = "Archmage Xylem" },
 		turnin = "Archmage Xylem, Azshara",
 		endMap = { mapID = 1447, x = 0.292, y = 0.402, label = "Archmage Xylem" },
+		rewards = { xp = 5100 },
 	},
 	[8252] = {
 		name = "The Siren's Coral",
@@ -2329,6 +2958,7 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 8251, name = "Magic Dust" },
 		},
+		rewards = { xp = 5100, money = 7500 },
 	},
 	[8254] = {
 		name = "Cenarion Aid",
@@ -2341,6 +2971,8 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1453, x = 0.495, y = 0.452, label = "Brother Joshua" },
 		turnin = "Ogtinc, Azshara",
 		endMap = { mapID = 1447, x = 0.424, y = 0.426, label = "Ogtinc" },
+		note = "Also given by High Priest Rohan (Ironforge).",
+		rewards = { xp = 500 },
 	},
 	[8255] = {
 		name = "Of Coursers We Know",
@@ -2356,6 +2988,7 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 8254, name = "Cenarion Aid" },
 		},
+		rewards = { xp = 5100 },
 	},
 	[8256] = {
 		name = "The Ichor of Undeath",
@@ -2372,6 +3005,7 @@ ns.AddQuestSteps({
 			{ questID = 8254, name = "Cenarion Aid" },
 			{ questID = 8255, name = "Of Coursers We Know" },
 		},
+		rewards = { xp = 5100 },
 	},
 	[8286] = {
 		name = "What Tomorrow Brings",
@@ -2383,6 +3017,12 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1451, x = 0.495, y = 0.365, label = "Baristolth of the Shifting Sands" },
 		turnin = "Baristolth of the Shifting Sands, Silithus",
 		endMap = { mapID = 1451, x = 0.495, y = 0.365, label = "Baristolth of the Shifting Sands" },
+		rewards = {
+			xp = 6600,
+			reputation = {
+				{ faction = "Brood of Nozdormu", amount = 100 },
+			},
+		},
 	},
 	[8288] = {
 		name = "Only One May Rise",
@@ -2396,6 +3036,12 @@ ns.AddQuestSteps({
 		endMap = { mapID = 1451, x = 0.495, y = 0.365, label = "Baristolth of the Shifting Sands" },
 		prerequisites = {
 			{ questID = 8286, name = "What Tomorrow Brings" },
+		},
+		rewards = {
+			xp = 6600,
+			reputation = {
+				{ faction = "Brood of Nozdormu", amount = 200 },
+			},
 		},
 	},
 	[8301] = {
@@ -2411,6 +3057,15 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 8286, name = "What Tomorrow Brings" },
 			{ questID = 8288, name = "Only One May Rise" },
+		},
+		rewards = {
+			xp = 6600,
+			reputation = {
+				{ faction = "Brood of Nozdormu", amount = 200 },
+			},
+			items = {
+				{ itemID = 20403, name = "Proxy of Nozdormu", quality = 2 },
+			},
 		},
 	},
 	[8303] = {
@@ -2445,6 +3100,12 @@ ns.AddQuestSteps({
 			{ questID = 8301, name = "The Path of the Righteous" },
 			{ questID = 8303, name = "Anachronos" },
 		},
+		rewards = {
+			xp = 6600,
+			reputation = {
+				{ faction = "Brood of Nozdormu", amount = 50 },
+			},
+		},
 	},
 	[8412] = {
 		name = "Spirit Totem",
@@ -2457,6 +3118,7 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1416, x = 0.805, y = 0.669, label = "Bath'rah the Windwatcher" },
 		turnin = "Bath'rah the Windwatcher, Alterac Mountains",
 		endMap = { mapID = 1416, x = 0.805, y = 0.669, label = "Bath'rah the Windwatcher" },
+		rewards = { xp = 5100 },
 	},
 	[8414] = {
 		name = "Dispelling Evil",
@@ -2469,6 +3131,12 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1422, x = 0.427, y = 0.84, label = "Commander Ashlam Valorfist" },
 		turnin = "High Priest Thel'danis, Western Plaguelands",
 		endMap = { mapID = 1422, x = 0.52, y = 0.833, label = "High Priest Thel'danis" },
+		rewards = {
+			xp = 5100,
+			reputation = {
+				{ faction = "Argent Dawn", amount = 100 },
+			},
+		},
 	},
 	[8416] = {
 		name = "Inert Scourgestones",
@@ -2484,6 +3152,12 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 8414, name = "Dispelling Evil" },
 		},
+		rewards = {
+			xp = 2550,
+			reputation = {
+				{ faction = "Argent Dawn", amount = 50 },
+			},
+		},
 	},
 	[8421] = {
 		name = "The Wrong Stuff",
@@ -2496,6 +3170,7 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1448, x = 0.414, y = 0.45, label = "Impsy" },
 		turnin = "Impsy, Felwood",
 		endMap = { mapID = 1448, x = 0.414, y = 0.45, label = "Impsy" },
+		rewards = { xp = 5100 },
 	},
 	[8423] = {
 		name = "Warrior Kinship",
@@ -2508,6 +3183,7 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1435, x = 0.343, y = 0.661, label = "Fallen Hero of the Horde" },
 		turnin = "Fallen Hero of the Horde, Swamp of Sorrows",
 		endMap = { mapID = 1435, x = 0.343, y = 0.661, label = "Fallen Hero of the Horde" },
+		rewards = { xp = 5100 },
 	},
 	[8424] = {
 		name = "War on the Shadowsworn",
@@ -2523,6 +3199,7 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 8423, name = "Warrior Kinship" },
 		},
+		rewards = { xp = 5100 },
 	},
 	[8519] = {
 		name = "A Pawn on the Eternal Board",
@@ -2542,6 +3219,12 @@ ns.AddQuestSteps({
 			{ questID = 8303, name = "Anachronos" },
 			{ questID = 8305, name = "Long Forgotten Memories" },
 		},
+		rewards = {
+			xp = 6600,
+			reputation = {
+				{ faction = "Brood of Nozdormu", amount = 100 },
+			},
+		},
 	},
 	[8555] = {
 		name = "The Charge of the Dragonflights",
@@ -2560,6 +3243,12 @@ ns.AddQuestSteps({
 			{ questID = 8305, name = "Long Forgotten Memories" },
 			{ questID = 8519, name = "A Pawn on the Eternal Board" },
 		},
+		rewards = {
+			xp = 650,
+			reputation = {
+				{ faction = "Brood of Nozdormu", amount = 10 },
+			},
+		},
 	},
 	[8921] = {
 		name = "The Ectoplasmic Distiller",
@@ -2571,6 +3260,12 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1446, x = 0.525, y = 0.272, label = "Mux Manascrambler" },
 		turnin = "Mux Manascrambler, Tanaris",
 		endMap = { mapID = 1446, x = 0.525, y = 0.272, label = "Mux Manascrambler" },
+		rewards = {
+			xp = 6600,
+			items = {
+				{ itemID = 22320, name = "Mux's Quality Goods", quality = 1 },
+			},
+		},
 	},
 	[8924] = {
 		name = "Hunting for Ectoplasm",
@@ -2585,6 +3280,7 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 8921, name = "The Ectoplasmic Distiller" },
 		},
+		rewards = { xp = 6600, money = 9000 },
 	},
 	[8925] = {
 		name = "A Portable Power Source",
@@ -2600,6 +3296,7 @@ ns.AddQuestSteps({
 			{ questID = 8921, name = "The Ectoplasmic Distiller" },
 			{ questID = 8924, name = "Hunting for Ectoplasm" },
 		},
+		rewards = { xp = 6600, money = 9000 },
 	},
 	[8928] = {
 		name = "A Shifty Merchant",
@@ -2616,6 +3313,7 @@ ns.AddQuestSteps({
 			{ questID = 8924, name = "Hunting for Ectoplasm" },
 			{ questID = 8925, name = "A Portable Power Source" },
 		},
+		rewards = { xp = 3300 },
 	},
 	[8947] = {
 		name = "Anthion's Strange Request",
@@ -2631,6 +3329,7 @@ ns.AddQuestSteps({
 			{ questID = 8945, name = "Dead Man's Plea" },
 			{ questID = 8946, name = "Proof of Life" },
 		},
+		rewards = { xp = 6600 },
 	},
 	[8962] = {
 		name = "Components of Importance",
@@ -2645,6 +3344,7 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 8961, name = "Three Kings of Flame" },
 		},
+		rewards = { xp = 6600 },
 	},
 	[8964] = {
 		name = "Components of Importance",
@@ -2659,6 +3359,7 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 8961, name = "Three Kings of Flame" },
 		},
+		rewards = { xp = 6600 },
 	},
 	[8965] = {
 		name = "Components of Importance",
@@ -2673,6 +3374,7 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 8961, name = "Three Kings of Flame" },
 		},
+		rewards = { xp = 6600 },
 	},
 	[8970] = {
 		name = "I See Alcaz Island In Your Future...",
@@ -2684,6 +3386,7 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1415, x = 0.489, y = 0.639, label = "Bodley" },
 		turnin = "Bodley, Blackrock Mountain",
 		endMap = { mapID = 1415, x = 0.489, y = 0.639, label = "Bodley" },
+		rewards = { xp = 6600 },
 	},
 	[8988] = {
 		name = "More Components of Importance",
@@ -2697,6 +3400,14 @@ ns.AddQuestSteps({
 		endMap = { mapID = 1415, x = 0.489, y = 0.639, label = "Bodley" },
 		prerequisites = {
 			{ questID = 8970, name = "I See Alcaz Island In Your Future..." },
+		},
+		rewards = {
+			xp = 6600,
+			items = {
+				{ itemID = 22192, name = "Bloodkelp Elixir of Dodging", quality = 1 },
+				{ itemID = 22193, name = "Bloodkelp Elixir of Resistance", quality = 1 },
+			},
+			choice = true,
 		},
 	},
 	[9051] = {
@@ -2713,6 +3424,7 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 9052, name = "Bloodpetal Poison" },
 		},
+		rewards = { xp = 5100 },
 	},
 	[9052] = {
 		name = "Bloodpetal Poison",
@@ -2725,6 +3437,12 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1449, x = 0.716, y = 0.76, label = "Torwa Pathfinder" },
 		turnin = "Torwa Pathfinder, Un'Goro Crater",
 		endMap = { mapID = 1449, x = 0.716, y = 0.76, label = "Torwa Pathfinder" },
+		rewards = {
+			xp = 5100,
+			items = {
+				{ itemID = 13446, name = "Major Healing Potion", quality = 1 },
+			},
+		},
 	},
 	[92432] = {
 		name = "An Alarming Request",
@@ -2763,6 +3481,13 @@ ns.AddQuestSteps({
 		startMap = { mapID = 1436, x = 0.525, y = 0.53, label = "Alba Fairmoon" },
 		turnin = "Alba Fairmoon, Westfall",
 		endMap = { mapID = 1436, x = 0.525, y = 0.53, label = "Alba Fairmoon" },
+		rewards = {
+			xp = 460,
+			money = 250,
+			reputation = {
+				{ faction = "Stormwind", amount = 50 },
+			},
+		},
 	},
 	[92744] = {
 		name = "Murloc Gills",
@@ -2776,6 +3501,13 @@ ns.AddQuestSteps({
 		endMap = { mapID = 1436, x = 0.525, y = 0.53, label = "Alba Fairmoon" },
 		prerequisites = {
 			{ questID = 92742, name = "Testing the Wells" },
+		},
+		rewards = {
+			xp = 460,
+			money = 250,
+			reputation = {
+				{ faction = "Stormwind", amount = 50 },
+			},
 		},
 	},
 	[92745] = {
@@ -2791,6 +3523,13 @@ ns.AddQuestSteps({
 		prerequisites = {
 			{ questID = 92742, name = "Testing the Wells" },
 			{ questID = 92744, name = "Murloc Gills" },
+		},
+		rewards = {
+			xp = 490,
+			money = 300,
+			reputation = {
+				{ faction = "Stormwind", amount = 50 },
+			},
 		},
 	},
 	[92747] = {
@@ -2825,6 +3564,13 @@ ns.AddQuestSteps({
 			{ questID = 92745, name = "The State of the Mines" },
 			{ questID = 92747, name = "Moonbrook Espionage" },
 		},
+		rewards = {
+			xp = 575,
+			money = 400,
+			reputation = {
+				{ faction = "Stormwind", amount = 50 },
+			},
+		},
 	},
 	[92749] = {
 		name = "A Dynamite Plan",
@@ -2842,6 +3588,13 @@ ns.AddQuestSteps({
 			{ questID = 92745, name = "The State of the Mines" },
 			{ questID = 92747, name = "Moonbrook Espionage" },
 			{ questID = 92748, name = "Explosive Consultation" },
+		},
+		rewards = {
+			xp = 575,
+			money = 400,
+			reputation = {
+				{ faction = "Stormwind", amount = 50 },
+			},
 		},
 	},
 	[92750] = {
@@ -2861,6 +3614,13 @@ ns.AddQuestSteps({
 			{ questID = 92747, name = "Moonbrook Espionage" },
 			{ questID = 92748, name = "Explosive Consultation" },
 			{ questID = 92749, name = "A Dynamite Plan" },
+		},
+		rewards = {
+			xp = 575,
+			money = 400,
+			reputation = {
+				{ faction = "Stormwind", amount = 50 },
+			},
 		},
 	},
 	[92751] = {
@@ -2882,6 +3642,13 @@ ns.AddQuestSteps({
 			{ questID = 92749, name = "A Dynamite Plan" },
 			{ questID = 92750, name = "Detonation at a Distance" },
 		},
+		rewards = {
+			xp = 575,
+			money = 400,
+			reputation = {
+				{ faction = "Stormwind", amount = 50 },
+			},
+		},
 	},
 	[92752] = {
 		name = "Explosive Consultation",
@@ -2902,6 +3669,13 @@ ns.AddQuestSteps({
 			{ questID = 92749, name = "A Dynamite Plan" },
 			{ questID = 92750, name = "Detonation at a Distance" },
 			{ questID = 92751, name = "Detonation at a Distance" },
+		},
+		rewards = {
+			xp = 575,
+			money = 400,
+			reputation = {
+				{ faction = "Stormwind", amount = 50 },
+			},
 		},
 	},
 	[93680] = {
@@ -2927,5 +3701,13 @@ ns.AddQuestSteps({
 		startItem = { itemID = 274268, name = "Dark Iron Map" },
 		turnin = "Earthseer Farsen, Dun Morogh",
 		endMap = { mapID = 1426, x = 0.649, y = 0.585, label = "Earthseer Farsen" },
+		rewards = {
+			xp = 1050,
+			money = 700,
+			reputation = {
+				{ faction = "Ironforge", amount = 100 },
+				{ faction = "Gnomeregan Exiles", amount = 100 },
+			},
+		},
 	},
 })

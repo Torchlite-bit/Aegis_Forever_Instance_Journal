@@ -23,7 +23,8 @@ and the version shown in the AddOns list. Quote it in bug reports.
 - **Chain steps get a quest's page**: the quests a dungeon quest needs first (Tramping Paws, Fire
   Taboo...) show their level, and a click opens the page a dungeon quest has: the objective, who
   gives and takes it and where (Show Start and Show End), what starts it, and what it needs first,
-  greyed until then and checked off once done. 197 steps, from QuestieDB's Forever data.
+  greyed until then and checked off once done, and its rewards. 197 steps, from QuestieDB's Forever
+  data, with rewards from foreverchanges.pro.
 - **Boxes on the Quests tab**: an open dropdown's quests sit in a parchment box under it, as an
   ability's text does, and the box grows as you open a chain. On a dungeon's overview, a key's
   quests sit in its note's box too.
