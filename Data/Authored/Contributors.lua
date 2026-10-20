@@ -10,4 +10,5 @@ ns.CONTRIBUTORS = {
 	"Staree4ok", -- the Russian translation, 2026-10-16 (pull request #25)
 	"Subtilizer", -- Blackfathom Deeps, 2026-10-11: the first recorded run and Log Reader paste
 	"Genesys Firstborn", -- Durotar Supply and Logistics, 2026-10-15: the Crossroads quartermasters
+	"Skep", -- City of Dalaran and Excavation Site: Wetlands, 2026-10-19: two recorded runs with combat logs
 }

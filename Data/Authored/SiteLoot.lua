@@ -50,7 +50,9 @@ local LOOT = {
 		["Mana Devourer"] = { 273040, 273042, 273041 },
 		["Fel Ancient"] = { 273039, 273038, 273037 },
 		["Shade of the Archmage"] = { 273052, 273051, 273049, 273103 },
-		Trash = { 276160, 276158 },
+		-- The site's two, and the Violet Sorcerer's Sandals: seen dropping from the trash before Lyn
+		-- (creature 255066) in both of Skep's recorded runs (2026-10-19).
+		Trash = { 276160, 276158, 286987 },
 	},
 	HallOfThanes = {
 		["Faldrim Anvilmar"] = { 270227, 271096, 271097 },

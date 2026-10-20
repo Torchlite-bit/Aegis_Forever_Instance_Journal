@@ -14,11 +14,8 @@ local _, ns = ...
 ]]
 
 ns.AddTransports({
-	-- The Skyborne's portal between Stormwind's mage tower and Dalaran.
-	{
-		kind = "portal", mapID = 1453, x = 0.4997, y = 0.8686, area = "Wizard's Sanctum", faction = "Alliance",
-		to = { "Dalaran" }, notes = { ["Dalaran"] = "Skyborne only" },
-	},
+	-- The Skyborne's portal from Dalaran to Stormwind. Its way there, the direct, unlimited portal
+	-- from Stormwind's mage tower (Wizard's Sanctum), was taken out of Forever (2026-10).
 	{
 		kind = "portal", mapID = 1416, x = 0.1204, y = 0.563, area = "The Sky Enclave", faction = "Alliance",
 		to = { "Stormwind" }, notes = { ["Stormwind"] = "Skyborne only" },

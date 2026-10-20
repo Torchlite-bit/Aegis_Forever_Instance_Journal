@@ -87,7 +87,6 @@ ns.AmendInstance("CityOfDalaran", {
 				"Focal Blast: after a 3-second cast, a beam sweeps around the room, turning counterclockwise, for 6 seconds. Get out of its path as the cast starts: it kills.",
 				"Stay on the platform: small adds wait at the room's edge.",
 			},
-			spellFlags = { [1241514] = { "Deadly" } }, -- Focal Blast
 			mapPin = { x = 0.520, y = 0.834, floor = 2 },
 		},
 		["Arcanic Enigma"] = {
@@ -128,7 +127,6 @@ ns.AmendInstance("CityOfDalaran", {
 			},
 			spellFlags = {
 				[1240688] = { "Important", "Magic" }, -- Entangle
-				[1240694] = { "Important" },          -- Fel Timbers
 			},
 			mapPin = { x = 0.535, y = 0.550, floor = 2 },
 		},
@@ -147,7 +145,6 @@ ns.AmendInstance("CityOfDalaran", {
 				"Bounding Mana flies to a player and back, silencing anyone it passes through: don't stand between him and its target. Casters stay 20 yards away from his Arcane Explosion.",
 				"When his mana runs dry he turns the whole group into animals for 8 seconds, then channels Evocation to refill it. Casters can hide behind the wall from the polymorph, but if anyone leaves the room he resets to full health.",
 			},
-			spellFlags = { [1241515] = { "Important" } }, -- Bounding Mana
 			mapPin = { x = 0.567, y = 0.258, floor = 2 },
 		},
 	},

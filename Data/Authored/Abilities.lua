@@ -745,8 +745,9 @@ ns.AmendInstance("RuinsOfLordaeron", { bosses = {
 } })
 
 -- Saltspine's, Shadetooth's and the Relic Guardian's spells are from a recorded kill of each
--- (2026-10-16). The Highland Spiders that cast in the first two fights were fighting the dig's
--- Dwarf Excavators nearby, not the group. From the same run's log: what the creatures on the way
+-- (2026-10-16), and Skep's two runs (2026-10-19), in which an Elder Crocolisk joined Saltspine. The
+-- Highland Spiders that cast in the first two fights were fighting the dig's Dwarf Excavators
+-- nearby, not the group. From the same run's log: what the creatures on the way
 -- to each boss put on players that the group took off, by what (Purify, Cure Poison, Cure
 -- Disease, Remove Curse), and the Highland Horror's roots, which Blessing of Freedom broke.
 ns.AmendInstance("ExcavationSiteWetlands", { bosses = {
@@ -827,10 +828,8 @@ ns.AmendInstance("CityOfDalaran", { bosses = {
 				text = "Now and then he swings twice more at once, and Strike adds damage to his next hit: the tank takes heavy blows." },
 			{ spellID = 1303266, name = "Raise Dead", flags = { "Damage" },
 				text = "Skeletons keep rising around the circle during the fight. They are weak: kill them as they come." },
-		},
-		extraAbilities = {
-			{ title = "Disarm", icon = ICONS .. "ability_warrior_disarm", flags = { "Tank" },
-				description = "He takes the tank's weapon away for about 6 seconds." },
+			{ spellID = 6713, name = "Disarm", flags = { "Tank" },
+				text = "He takes the tank's weapon away for about 6 seconds." },
 		},
 		fightNote = "He stands at a ritual circle in the sewers, with Kirin Tor Necromancers around him.",
 	},
@@ -838,20 +837,20 @@ ns.AmendInstance("CityOfDalaran", { bosses = {
 		abilities = {
 			{ spellID = 1241501, name = "Focal Blast", flags = { "Deadly", "Important" },
 				text = "After a 3-second cast, a beam comes out in front of it for 6 seconds and hits four times a second. Get out of its path as soon as the cast starts." },
-			{ spellID = 1241506, name = "Arcane Bolt", flags = { "Tank" },
+			{ spellID = 1240682, name = "Arcane Bolt", flags = { "Tank" },
 				text = "Its attack on the tank between the beams, a 1.5-second cast." },
 		},
+		-- The beam itself, which Focal Blast's text covers.
+		notAbilities = { [1241514] = true },
 	},
 	["Arcanic Enigma"] = {
 		abilities = {
 			{ spellID = 1240869, name = "Manamorph", flags = { "Magic", "Important" },
 				text = "Turns a player into an animal for 8 seconds. It is magic: dispel it." },
-			{ spellID = 1224125, name = "Silence", flags = { "Healer" },
+			{ spellID = 8988, name = "Silence", flags = { "Healer" },
 				text = "Silences for 10 seconds. Healers, keep your distance from it." },
-		},
-		extraAbilities = {
-			{ title = "Arcane Manalings", icon = ICONS .. "spell_arcane_arcane01", flags = { "Damage" },
-				description = "It keeps calling small Arcane Manalings. Kill them with area damage." },
+			{ spellID = 1304455, name = "Summon Manaling", flags = { "Damage" },
+				text = "It keeps calling small Arcane Manalings. Kill them with area damage." },
 		},
 	},
 	["Unstable Sentinel"] = {
@@ -859,6 +858,8 @@ ns.AmendInstance("CityOfDalaran", { bosses = {
 			{ spellID = 1241329, name = "Malfunction", flags = { "Deadly" },
 				text = "A 2-second cast, then for 6 seconds arcane energy hits everyone within 25 yards every 2 seconds, for about 140 damage each time. Ranged players, stay beyond 25 yards; melee, step out during the cast." },
 		},
+		-- Malfunction's pulses, which its text covers.
+		notAbilities = { [1241325] = true },
 		extraAbilities = {
 			{ title = "Angry Tomes", icon = ICONS .. "inv_misc_book_06", flags = { "Damage" },
 				description = "Angry Tomes come at you on the way to it. Kill them before you pull." },
@@ -885,6 +886,8 @@ ns.AmendInstance("CityOfDalaran", { bosses = {
 			{ spellID = 1240688, name = "Entangle", flags = { "Magic" },
 				text = "Roots up to two players near him for a few seconds and hurts them over time. It is magic: dispel it." },
 		},
+		-- Fel Timbers' fumes, which its text covers.
+		notAbilities = { [1240694] = true },
 		fightNote = "He waits behind a magic barrier in the middle of the city, with Suffused Treants in front of it. Kill the treants, then talk to Magus Fansy Goodbringer, just south of the barrier: he brings it down.",
 	},
 	["Shade of the Archmage"] = {
@@ -896,6 +899,8 @@ ns.AmendInstance("CityOfDalaran", { bosses = {
 			{ spellID = 1303350, name = "Slow", flags = { "Important" },
 				text = "Slows everyone near him for 3 seconds: attacks and casts 30% slower, movement 70% slower." },
 		},
+		-- Bounding Mana's cast: the orb's own entry above is the one to read.
+		notAbilities = { [1241515] = true },
 		extraAbilities = {
 			{ title = "Stay in the room", icon = ICONS .. "spell_arcane_blink", flags = { "Deadly" },
 				description = "If someone leaves the room during the fight, he resets to full health." },
@@ -908,10 +913,8 @@ ns.AmendInstance("CityOfDalaran", { bosses = {
 				text = "Shadow bolts at everyone within 30 yards of him." },
 			{ spellID = 1304473, name = "Curse of Thorns", flags = { "Curse" },
 				text = "A 1.5-second cast: a 3-minute curse that hurts the player now and then when they attack. Remove it." },
-		},
-		extraAbilities = {
-			{ title = "Skeletons", icon = ICONS .. "spell_shadow_raisedead", flags = { "Damage" },
-				description = "Skeletons rise and fight beside him. Kill them." },
+			{ spellID = 1303266, name = "Raise Dead", flags = { "Damage" },
+				text = "Skeletons rise and fight beside him. Kill them." },
 		},
 		fightNote = "He is not there at first. In the sewers, past Atrexis, clear the north-east room, the one with market stalls and a small pink Summoning Circle (not Atrexis's large one). A player carrying the Tome of Dalaran then clicks the circle, and Lyn comes out of the large round grated door. To get the tome, loot the Black Tome on the table in Archmage Arugal's room in Shadowfang Keep, after his kill, then use it at the Leyline Focus, a blue crystal in a back room at Ambermill, in Silverpine Forest.",
 	},

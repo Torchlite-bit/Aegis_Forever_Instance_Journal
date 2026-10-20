@@ -697,8 +697,9 @@ check(#rows == 3 and namedGraveweave == 1 and not nameOnlyLeft, "once its real o
 -- What the guide added: Lyn's abilities and how to summon him, notes, alerts, the Horde's key quests
 local lyn
 for _, boss in ipairs(cityOfDalaran.bosses) do if boss.name == "Lyn the Ignored" then lyn = boss end end
-check(#lyn.abilities == 2 and lyn.abilities[2].spellID == 1304473 and lyn.abilities[2].flags[1] == "Curse"
-	and lyn.extraAbilities[1].title == "Skeletons" and lyn.fightNote:find("Tome of Dalaran", 1, true)
+check(#lyn.abilities == 3 and lyn.abilities[2].spellID == 1304473 and lyn.abilities[2].flags[1] == "Curse"
+	and lyn.abilities[3].spellID == 1303266 and lyn.abilities[3].every and not lyn.extraAbilities
+	and lyn.fightNote:find("Tome of Dalaran", 1, true)
 	and lyn.notes[1]:find("Tome of Dalaran", 1, true), "Lyn the Ignored's abilities, and how to summon him")
 local heartOfDisruption
 for _, quest in ipairs(cityOfDalaran.quests) do if quest.questID == 96984 then heartOfDisruption = quest end end
@@ -1114,10 +1115,12 @@ do
 	end
 	local guardian = bosses["Relic Guardian"]
 	check(bosses["Saltspine"].encounterID == 3480 and guardian.encounterID == 3482 and Spell(guardian, 10101)
-		and Spell(guardian, 8374) and Spell(guardian, 8374).every[1] == 9 and Spell(guardian, 8374).text,
-		"Excavation Site's encounter ids, and the Relic Guardian's spells with their written text and recorded numbers")
-	check(AddIDs(bosses["Saltspine"]) == "" and AddIDs(bosses["Shadetooth"]) == "",
-		"the creatures that cast in the fights are the thicket's and the dig's, not listed as adds: " .. AddIDs(bosses["Shadetooth"]))
+		and Spell(guardian, 8374) and Spell(guardian, 8374).every[1] == 6 and Spell(guardian, 8374).every[2] == 17
+		and Spell(guardian, 8374).text,
+		"Excavation Site's encounter ids, and the Relic Guardian's spells with their written text and recorded numbers (every run's range)")
+	check(AddIDs(bosses["Saltspine"]) == "260797" and AddIDs(bosses["Shadetooth"]) == "",
+		"an Elder Crocolisk that joined Saltspine is his add (Skep's run); the thicket's raptors and the dig's spiders are not: "
+			.. AddIDs(bosses["Saltspine"]) .. " / " .. AddIDs(bosses["Shadetooth"]))
 	-- What the creatures on the way put on players, and who can take it off, on the boss they lead to
 	local function Extra(boss, title)
 		for _, entry in ipairs(boss.extraAbilities or {}) do
@@ -2467,21 +2470,20 @@ local function transportPins()
 end
 OpenWorldMap(1453)
 local harborPin = transportPins()["Stormwind Harbor"]
-check(#WorldMapFrame:ActivePins("AegisJournalTransportPinTemplate") == 3 and harborPin.spot == harbor
+check(#WorldMapFrame:ActivePins("AegisJournalTransportPinTemplate") == 2 and harborPin.spot == harbor
 	and harborPin._position[1] == 0.22 and harborPin.Texture._atlas == "TaxiNode_Continent_Alliance",
-	"the dock on its city's map, with retail's teleport icon in Alliance blue, beside the journal's own portal and tram")
-local sanctum = transportPins()["Wizard's Sanctum"]
-check(sanctum and sanctum._position[1] == 0.4997 and sanctum._position[2] == 0.8686, "the journal's Skyborne portal in the mage tower")
-sanctum:_RunScript("OnEnter")
-check(GameTooltip._text == "Portal to Dalaran" and GameTooltip:HasLine("Wizard's Sanctum") and GameTooltip:HasLine("  Skyborne only")
-	and GameTooltip:HasLine("Alliance"), "its tooltip is named for where it goes, then where it is, and that only the Skyborne may take it")
-check(Mock.areaLabel.name == "Portal to Dalaran" and Mock.areaLabel.description == "Wizard's Sanctum",
-	"and so is the map's label")
-sanctum:_RunScript("OnLeave")
+	"the dock on its city's map, with retail's teleport icon in Alliance blue, beside the tram")
+check(transportPins()["Wizard's Sanctum"] == nil, "no Skyborne portal in the mage tower: Forever took it out")
 WorldMapFrame:SetMapID(1416)
 local enclave = transportPins()["The Sky Enclave"]
 check(enclave and enclave._position[1] == 0.1204 and enclave.spot.to[1] == "Stormwind" and enclave.spot.notes.Stormwind == "Skyborne only",
-	"and its way back from Dalaran")
+	"the Skyborne's portal from Dalaran to Stormwind")
+enclave:_RunScript("OnEnter")
+check(GameTooltip._text == "Portal to Stormwind" and GameTooltip:HasLine("The Sky Enclave") and GameTooltip:HasLine("  Skyborne only")
+	and GameTooltip:HasLine("Alliance"), "its tooltip is named for where it goes, then where it is, and that only the Skyborne may take it")
+check(Mock.areaLabel.name == "Portal to Stormwind" and Mock.areaLabel.description == "The Sky Enclave",
+	"and so is the map's label")
+enclave:_RunScript("OnLeave")
 local dalaranDock = transportPins()["Dalaran"]
 check(dalaranDock and dalaranDock.spot.kind == "airship" and dalaranDock._position[2] == 0.5202
 	and dalaranDock.Texture._atlas == "TaxiNode_Continent_Alliance", "the Skyborne airship's dock in Dalaran, beside the portal")
@@ -2512,46 +2514,46 @@ transportEntry:_RunScript("OnLeave")
 WorldMapFrame:Hide()
 
 -- Routes only some may take: a note in brackets, shown under the route
-Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1453, 0.49, 0.87, "The Mage Quarter"
-SlashCmdList.AEGISJOURNAL("travel portal Dalaran (Skyborne only)")
+Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1416, 0.12, 0.563, "The Sky Enclave"
+SlashCmdList.AEGISJOURNAL("travel portal Stormwind (Skyborne only)")
 local skyPortal = ns.db.travel[#ns.db.travel]
-check(skyPortal.kind == "portal" and skyPortal.to[1] == "Dalaran" and skyPortal.notes.Dalaran == "Skyborne only"
-	and chatContains("Saved Portal to Dalaran (Skyborne only) at The Mage Quarter."), "a portal saved with who may take it")
+check(skyPortal.kind == "portal" and skyPortal.to[1] == "Stormwind" and skyPortal.notes.Stormwind == "Skyborne only"
+	and chatContains("Saved Portal to Stormwind (Skyborne only) at The Sky Enclave."), "a portal saved with who may take it")
 Mock.playerX = 0.30
-SlashCmdList.AEGISJOURNAL("travel portal Stormwind City (Skyborne only) neutral")
+SlashCmdList.AEGISJOURNAL("travel portal Ironforge (Skyborne only) neutral")
 local otherWay = ns.db.travel[#ns.db.travel]
-check(otherWay ~= skyPortal and otherWay.to[1] == "Stormwind City" and otherWay.notes["Stormwind City"] == "Skyborne only"
+check(otherWay ~= skyPortal and otherWay.to[1] == "Ironforge" and otherWay.notes["Ironforge"] == "Skyborne only"
 	and otherWay.faction == "Neutral", "the note and the faction word in either order")
 SlashCmdList.AEGISJOURNAL("travel undo")
-Mock.playerX = 0.49
+Mock.playerX = 0.12
 SlashCmdList.AEGISJOURNAL("travel portal Darnassus neutral (Skyborne only)")
 check(skyPortal.to[2] == "Darnassus" and skyPortal.notes.Darnassus == "Skyborne only" and skyPortal.faction == "Neutral",
 	"the other order works too")
 -- Saved on the journal's own portal: one icon, with the saved route joining it
-OpenWorldMap(1453)
+OpenWorldMap(1416)
 local portals = {}
 for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalTransportPinTemplate")) do
 	if pin.spot.kind == "portal" then portals[#portals + 1] = pin end
 end
-check(#portals == 1 and table.concat(portals[1].spot.to, ", ") == "Dalaran, Darnassus" and portals[1].spot.area == "Wizard's Sanctum",
+check(#portals == 1 and table.concat(portals[1].spot.to, ", ") == "Stormwind, Darnassus" and portals[1].spot.area == "The Sky Enclave",
 	"a portal saved on the journal's own joins it, its routes listed once")
 check(#ns.GetTransports()[1].to == 1, "without changing the journal's own")
 portals[1]:_RunScript("OnEnter")
-check(GameTooltip._text == "Portal to Dalaran and Darnassus" and GameTooltip:HasLine("  Dalaran: Skyborne only")
+check(GameTooltip._text == "Portal to Stormwind and Darnassus" and GameTooltip:HasLine("  Stormwind: Skyborne only")
 	and GameTooltip:HasLine("  Darnassus: Skyborne only"), "with several routes, each note names its route")
 portals[1]:_RunScript("OnLeave")
 WorldMapFrame:Hide()
 SlashCmdList.AEGISJOURNAL("travel undo")
 check(#skyPortal.to == 1 and skyPortal.notes.Darnassus == nil, "undo takes the note back with its route")
-OpenWorldMap(1453)
-local skyPin = transportPins()["Wizard's Sanctum"]
-check(table.concat(skyPin.spot.to, ", ") == "Dalaran", "and the map shows it gone")
+OpenWorldMap(1416)
+local skyPin = transportPins()["The Sky Enclave"]
+check(table.concat(skyPin.spot.to, ", ") == "Stormwind", "and the map shows it gone")
 skyPin:_RunScript("OnEnter")
-check(GameTooltip._text == "Portal to Dalaran" and GameTooltip:HasLine("  Skyborne only"), "the tooltip says who may take it")
+check(GameTooltip._text == "Portal to Stormwind" and GameTooltip:HasLine("  Skyborne only"), "the tooltip says who may take it")
 skyPin:_RunScript("OnLeave")
 WorldMapFrame:Hide()
 SlashCmdList.AEGISJOURNAL("travel list")
-check(chatContains("Portal to Dalaran (Skyborne only) at The Mage Quarter"), "and so does the list")
+check(chatContains("Portal to Stormwind (Skyborne only) at The Sky Enclave"), "and so does the list")
 Mock.playerX, Mock.playerY = 0.70, 0.20
 SlashCmdList.AEGISJOURNAL("travel airship Zephras Isle (Skyborne only) alliance")
 local airship = ns.db.travel[#ns.db.travel]
