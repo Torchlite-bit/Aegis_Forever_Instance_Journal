@@ -4118,8 +4118,8 @@ end)()
 	IS:Forget()
 	check(not IS:CanDualWield(), "and not when none says so")
 
-	-- Every item's tooltip: a line per spec with the item's worth to it, and the green
-	-- arrow with what it adds to the gear where it beats what is worn
+	-- Every item's tooltip: a line per spec it is an upgrade for, the green arrow and what it adds
+	-- to the gear, and nothing more
 	do
 		local function TipLines(link)
 			GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
@@ -4131,7 +4131,7 @@ end)()
 				if type(line) == "string" and line:find(text, 1, true) then return line end
 			end
 		end
-		-- A spec's line: "Arms<tab>65", or "<arrow> Arms<tab>+4.2%  65" for an upgrade; and where it is.
+		-- A spec's line: "<arrow> Arms<tab>+4.2%"; and where it is.
 		local function Row(lines, label)
 			for index, line in ipairs(lines) do
 				local left = type(line) == "string" and line:match("^(.-)\t")
@@ -4152,24 +4152,22 @@ end)()
 		for _, spec in ipairs(IS:Specs()) do
 			local compare = IS:Compare(Mock.ItemLink(CAPE), IS:Weights(spec.key))
 			local row, at = Row(lines, spec.label)
-			if compare.score > 0 then
+			if compare.score > 0 and compare.delta > 0 then
 				rows = rows + 1
-				local value = ns.GearPanel.Points(compare.score)
-				local upgrade = compare.delta > 0
-				if not row or row:sub(-#value) ~= value or (at or 0) < last
-					or (upgrade ~= (row:find(ns.GearPanel.GainText(compare), 1, true) ~= nil))
-					or (upgrade ~= (row:find("greenarrow", 1, true) ~= nil or row:find("MicroStream", 1, true) ~= nil)) then
+				local gain = ns.GearPanel.GainText(compare)
+				if not row or row:sub(-#gain - 1) ~= "\t" .. gain or (at or 0) < last
+					or not (row:find("greenarrow", 1, true) or row:find("MicroStream", 1, true)) then
 					wrong[#wrong + 1] = spec.label .. ": " .. tostring(row)
 				end
 				last = at or last
 			elseif row then
-				wrong[#wrong + 1] = spec.label .. " (worth nothing): " .. row
+				wrong[#wrong + 1] = spec.label .. " (no upgrade): " .. row
 			end
 		end
-		check(#wrong == 0 and rows == #IS:Specs() and Row(lines, label) and Upgraded(lines),
-			"an item's tooltip: each spec in order, its worth, and the upgrade it makes: " .. table.concat(wrong, "; "))
+		check(#wrong == 0 and rows > 0 and Row(lines, label) and Upgraded(lines),
+			"an item's tooltip: each spec it is an upgrade for, in order, with the gain alone: " .. table.concat(wrong, "; "))
 		lines = TipLines(Mock.ItemLink(WORN_CAPE))
-		check(Row(lines, label) and not Upgraded(lines), "what is worn: its worth, no upgrade")
+		check(not Row(lines, label) and not Upgraded(lines), "what is worn: no line")
 		check(not Row(TipLines(Mock.ItemLink(ROBE)), label), "nothing for an item the class cannot use")
 		lines = TipLines(Mock.ItemLink(CUFFS))
 		local anyRow = false
@@ -4181,12 +4179,12 @@ end)()
 		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
 		GameTooltip:SetInventoryItem("player", 12)
 		lines = GameTooltip._lines
-		check(IS:Compare(Mock.ItemLink(RING_X)).delta > 0 and Row(lines, label) and not Upgraded(lines),
+		check(IS:Compare(Mock.ItemLink(RING_X)).delta > 0 and not Row(lines, label) and not Upgraded(lines),
 			"a worn ring better than the other is not called an upgrade, on the character sheet")
 		Mock.noItemGUIDs = true
 		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
 		GameTooltip:SetInventoryItem("player", 12)
-		check(Row(GameTooltip._lines, label) and not Upgraded(GameTooltip._lines),
+		check(not Row(GameTooltip._lines, label) and not Upgraded(GameTooltip._lines),
 			"nor by a client that names no copies: the sheet's own slot says it")
 		Mock.noItemGUIDs = nil
 		-- A link of the same ring, or the same ring dropping, is the item, as the Gear Finder weighs it
@@ -4260,22 +4258,22 @@ end)()
 		Mock.itemLines[RING_X], Mock.bagItems["0:1"] = nil, nil
 		Mock.worn[11], Mock.worn[12] = nil, nil
 		IS:Forget()
-		-- An item for later: an upgrade within the Gear Finder's few levels ahead, saying when; not past them
+		-- An item for later: an upgrade within the Gear Finder's few levels ahead, its gain alone; not past them
 		local bow = IS:Compare(Mock.ItemLink(CROSSBOW))
 		local bowRow = Row(TipLines(Mock.ItemLink(CROSSBOW)), label)
-		check(bow.later and bow.delta > 0 and bowRow and bowRow:find(ns.GearPanel.GainText(bow), 1, true)
-			and bowRow:find("(17)", 1, true), "an upgrade two levels ahead says the level it is worn at: " .. tostring(bowRow))
+		check(bow.later and bow.delta > 0 and bowRow and bowRow:sub(-#ns.GearPanel.GainText(bow) - 1) == "\t" .. ns.GearPanel.GainText(bow),
+			"an upgrade two levels ahead shows its gain alone, not the level: " .. tostring(bowRow))
 		lines = TipLines(Mock.ItemLink(SCEPTER))
-		check(IS:Compare(Mock.ItemLink(SCEPTER)).delta > 0 and Row(lines, label) and not Upgraded(lines),
-			"one ten levels ahead is given its worth, not called an upgrade")
-		-- The Gear Finder's cell for a slot with no upgrade: what is worn, with its worth
+		check(IS:Compare(Mock.ItemLink(SCEPTER)).delta > 0 and not Row(lines, label) and not Upgraded(lines),
+			"one ten levels ahead is not called an upgrade")
+		-- The Gear Finder's cell for a slot with no upgrade: what is worn, and no line
 		back:_RunScript("OnEnter")
 		Mock.worn[15] = CAPE
 		Mock.Fire("PLAYER_EQUIPMENT_CHANGED")
 		Mock.RunTimers(1)
 		back:_RunScript("OnEnter")
-		check(not back.entry and Row(GameTooltip._lines, label),
-			"a Gear Finder cell that showed an upgrade, and now what is worn, gives its worth too")
+		check(not back.entry and not Row(GameTooltip._lines, label),
+			"a Gear Finder cell that showed an upgrade, and now what is worn, has no line")
 		Mock.worn[15] = WORN_CAPE
 		Mock.Fire("PLAYER_EQUIPMENT_CHANGED")
 		Mock.RunTimers(1)
@@ -4297,8 +4295,7 @@ end)()
 		GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
 		GameTooltip:SetHyperlink(Mock.ItemLink(CAPE))
 		local givenRow = Row(GameTooltip._lines, label)
-		check(givenRow and givenRow:find("+77%", 1, true) and givenRow:sub(-4) == "  50",
-			"the Gear Finder's own gain for its spec: " .. tostring(givenRow))
+		check(givenRow and givenRow:sub(-5) == "\t+77%", "the Gear Finder's own gain for its spec: " .. tostring(givenRow))
 		check(not Row(TipLines(Mock.ItemLink(CAPE)), label):find("+77%", 1, true), "and only on its own tooltip")
 		ns.ItemTooltip:UseCompare(owner, nil)
 		local found = back.entry.compare

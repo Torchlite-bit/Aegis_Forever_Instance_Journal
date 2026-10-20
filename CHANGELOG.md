@@ -28,6 +28,9 @@ and the version shown in the AddOns list. Quote it in bug reports.
   trash. Skep joins the contributors list. Thank you!
 
 ### Changed
+- **Item tooltips show only the upgrade**: a line for each spec the item is an upgrade for, with
+  the green arrow and what it adds ("+7.4%"). The item's worth to each spec and the level an
+  upgrade waits for are gone, and so are the lines for specs it doesn't improve.
 - **City of Dalaran's abilities** use the spells its bosses really cast, from Skep's combat logs,
   and no longer show some of them twice.
 
