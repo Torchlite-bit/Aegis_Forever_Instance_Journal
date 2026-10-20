@@ -65,17 +65,15 @@ ns.AmendInstance("ExcavationSiteWetlands", {
 	areas = { "Lost Marsh", "Stalker's Thicket", "Lost Dig Site", "Site of the Guardian" },
 
 	-- Where each quest is given and handed in, and which quests it needs, as the site's quest pages
-	-- give them (2026-10-16). Seeking Caitlin, Young Crocolisk Skins and Rethiel's Wetlands quests
-	-- lead to these but are not needed for them. The labels where each starts are the ones
-	-- Locales/ruRU_content.lua translates already.
+	-- give them (2026-10-16). Seeking Caitlin leads to these but is not needed for them. The labels
+	-- where each starts are the ones Locales/ruRU_content.lua translates already. The quest audit
+	-- (Data/Authored/QuestAudit.lua, 2026-10-20) corrected the rest from QuestieDB's Forever data:
+	-- Horrors in the Highland needs Rethiel's three quests, Highland Hides needs Young Crocolisk
+	-- Skins, and Dorin Songblade stands where Forever's redrawn Redridge has him.
 	questPatches = {
 		[95647] = {
 			prerequisites = {},
 			startMap = { mapID = 1437, x = 0.118, y = 0.586, label = "Caitlin Grassman, Menethil Harbor" },
-		},
-		[95795] = {
-			prerequisites = { { questID = 95772, name = "Songblade Search" } },
-			endMap = { mapID = 1433, x = 0.308, y = 0.466, label = "Dorin Songblade, Lakeshire" },
 		},
 		[98824] = {
 			prerequisites = { { questID = 95810, name = "Lost Relic Carry" } },
@@ -94,14 +92,13 @@ ns.AmendInstance("ExcavationSiteWetlands", {
 		},
 		[95697] = { endMap = { mapID = 1454, x = 0.574, y = 0.534, label = "Borstan, The Drag, Orgrimmar" } },
 		[98815] = {
-			prerequisites = {},
 			startMap = { mapID = 1437, x = 0.086, y = 0.556, label = "James Halloran — Menethil Harbor" },
 			endMap = { mapID = 1437, x = 0.086, y = 0.556, label = "James Halloran, Menethil Harbor" },
 		},
-		[95772] = { startMap = { mapID = 1433, x = 0.308, y = 0.466, label = "Dorin Songblade — Redridge Mountains" } },
 		[95646] = {
-			prerequisites = {},
 			endMap = { mapID = 1437, x = 0.562, y = 0.404, label = "Rethiel the Greenwarden" },
+			note = "Most players come to Rethiel by The Greenwarden, from First Mate Fitzsimmons in Menethil "
+				.. "Harbor: it leads to Tramping Paws but is not needed for it.",
 		},
 		[95809] = { endMap = { mapID = 1437, x = 0.118, y = 0.586, label = "Caitlin Grassman, Menethil Harbor" } },
 		[95810] = { endMap = { mapID = 1437, x = 0.388, y = 0.522, label = "Prospector Whelgar, Whelgar's Excavation Site" } },

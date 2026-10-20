@@ -19,6 +19,9 @@ local BeforeYouGo = {}
 ns.BeforeYouGo = BeforeYouGo
 
 local WIDTH, INDENT, GAP, BAR_HEIGHT = 310, 12, 9, 30
+-- A note's box (its text's): how far below the text it ends (SetHeader's header height counts 20),
+-- the room above and below the quests in it, and how far in its right side is from the header's.
+local BOX_TEXT_BOTTOM, ROW_PADDING, BOX_SIDE = 20, 4, 4
 local HIDDEN_BOSS_ICON = "Interface\\TargetingFrame\\UI-TargetingFrame-Skull"
 local HAVE_MARK = "|TInterface\\Buttons\\UI-CheckBox-Check:16:16|t"
 -- The Quests tab's green, dark enough for the parchment.
@@ -95,13 +98,26 @@ local function Section(entry, index, keys)
 			section.status, section.note, section.startsOpen = key.status, key.note, not key.have
 			local progress = key.have and (HAVE_COLOR .. L.PREPARE_HAVE .. "|r")
 				or string.format(L.PREPARE_PROGRESS, key.done, key.total)
-			section.description = entry.text .. "\n\n" .. progress
+			section.description = ns.Items:LinkText(entry.text) .. "\n\n" .. progress
 			return section, key.quests
 		end
 	end
 	section.icon = HIDDEN_BOSS_ICON
-	section.description = entry.text
+	section.description = ns.Items:LinkText(entry.text)
 	return section, {}
+end
+
+-- The note on a hidden boss (an entry naming it: boss = "<its English name>"), as a section for
+-- its own page's Overview; nil when no note names it.
+function BeforeYouGo:BossNote(instance, boss)
+	for index, entry in ipairs(self:Entries(instance)) do
+		if entry.boss and (entry.boss == boss.enName or entry.boss == boss.name) then
+			local section = Section(entry, index, {})
+			section.key = "boss:" .. entry.boss
+			return section
+		end
+	end
+	return nil
 end
 
 -- Whether a note is open: as built (startsOpen) until the player clicks it, after which their
@@ -185,9 +201,14 @@ function BeforeYouGo:Fill(lore, instance, y)
 		-- Settled as the dungeon is shown: taking the key's last quest doesn't fold its note.
 		if state.expanded[section.key] == nil then state.expanded[section.key] = section.startsOpen end
 		local expanded = IsExpanded(state, section)
-		y = y + ns.PaperHeader.Set(header, section, 0, expanded) + GAP
+		local top = y
+		local height = ns.PaperHeader.Set(header, section, 0, expanded)
 		header:Show()
-		if expanded then
+		-- A key's quests go in its text's box, under the text: the box grows to hold them.
+		local below = 11
+		y = top + height + GAP
+		if expanded and #quests > 0 then
+			y = top + height - BOX_TEXT_BOTTOM + ROW_PADDING
 			for _, quest in ipairs(quests) do
 				usedRows = usedRows + 1
 				local row = state.rows[usedRows]
@@ -197,13 +218,17 @@ function BeforeYouGo:Fill(lore, instance, y)
 				end
 				ns.QuestsPanel.SetRow(row, quest, 0, false, false, false)
 				row.instance = instance
-				row:SetWidth(WIDTH - INDENT)
+				row:SetWidth(WIDTH - INDENT - BOX_SIDE)
 				row:SetPoint("TOPLEFT", INDENT, -y)
 				row:Show()
 				y = y + row:GetHeight()
 			end
-			if #quests > 0 then y = y + GAP end
+			below = y - (top + height - BOX_TEXT_BOTTOM) + ROW_PADDING
+			y = y + ROW_PADDING + GAP + (BOX_TEXT_BOTTOM - 11)
 		end
+		header.DescriptionBG:ClearAllPoints()
+		header.DescriptionBG:SetPoint("TOPLEFT", header.Description, "TOPLEFT", -9, 12)
+		header.DescriptionBG:SetPoint("BOTTOMRIGHT", header.Description, "BOTTOMRIGHT", 9, -below)
 	end
 	for index = usedHeaders + 1, #state.headers do state.headers[index]:Hide() end
 	for index = usedRows + 1, #state.rows do state.rows[index]:Hide() end

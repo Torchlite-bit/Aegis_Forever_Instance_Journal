@@ -75,8 +75,6 @@ ns.AmendInstance("RuinsOfLordaeron", {
 			endMap = { mapID = 1458, x = 0.734, y = 0.324 },
 			note = CREST_NOTE,
 		},
-		[95195] = { endMap = { mapID = 1453, x = 0.638, y = 0.754 } },
-		[92415] = { endMap = { mapID = 1453, x = 0.472, y = 0.384 } },
 		[97288] = {
 			endMap = { mapID = 1458, x = 0.484, y = 0.694 },
 			note = "Master Apothecary Faranell takes the head, and a second Unending Torment follows: four more steps inside the Undercity, the last back to him.",

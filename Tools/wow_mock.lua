@@ -7,7 +7,7 @@
 	Which templates exist follows what Aegis Probe found on the Forever client.
 ]]
 
-local Mock = { chat = {}, frames = {}, bindings = {}, created = 0, xmlTemplates = {} }
+local Mock = { chat = {}, frames = {}, bindings = {}, created = 0, xmlTemplates = {}, forbidden = {} }
 WOWMOCK = Mock
 
 -- The client's language: English, unless the runner asks for another (WOWMOCK_LOCALE).
@@ -148,8 +148,17 @@ function Region:_RunScript(name, ...)
 end
 function Region:Click(button) return self:_RunScript("OnClick", button or "LeftButton", false) end
 
-function Region:RegisterEvent(event) self._events[event] = true end
-function Region:UnregisterEvent(event) self._events[event] = nil end
+-- Events Forever keeps from addons: registering or unregistering one is a forbidden action (pcall does
+-- not catch it), noted in Mock.forbidden.
+local FORBIDDEN_EVENTS = { COMBAT_LOG_EVENT_UNFILTERED = true }
+function Region:RegisterEvent(event)
+	if FORBIDDEN_EVENTS[event] then Mock.forbidden[#Mock.forbidden + 1] = event return end
+	self._events[event] = true
+end
+function Region:UnregisterEvent(event)
+	if FORBIDDEN_EVENTS[event] then Mock.forbidden[#Mock.forbidden + 1] = event return end
+	self._events[event] = nil
+end
 function Region:IsEventRegistered(event) return self._events[event] == true end
 
 function Region:CreateTexture(name, layer, template, subLevel)
@@ -294,6 +303,22 @@ function Region:SetPortraitToAsset(texture) self._portrait = texture end
 -- Globals
 ------------------------------------------------------------------------------------------
 
+-- The client's EventRegistry (CallbackRegistryMixin): callbacks by event, each called with its
+-- owner first. The client keeps them by owner, in no set order: Mock.callbacksReversed calls them
+-- the other way round.
+EventRegistry = { _callbacks = {} }
+function EventRegistry:RegisterCallback(event, func, owner)
+	local list = self._callbacks[event] or {}
+	self._callbacks[event] = list
+	list[#list + 1] = { func = func, owner = owner }
+end
+function EventRegistry:TriggerEvent(event, ...)
+	local list = self._callbacks[event] or {}
+	local first, last, step = 1, #list, 1
+	if Mock.callbacksReversed then first, last, step = #list, 1, -1 end
+	for index = first, last, step do list[index].func(list[index].owner, ...) end
+end
+
 function CreateFrame(frameType, name, parent, template)
 	CheckTemplates(template)
 	local frame = NewRegion(frameType, name, parent)
@@ -305,7 +330,8 @@ function CreateFrame(frameType, name, parent, template)
 	if template == "MapLegendButtonTemplate" then
 		-- Retail's map legend entry (Blizzard_UIPanels_Game/Mainline/MapLegendFrame.lua): hovering
 		-- it makes the pins of its templates glow, those its meta data matches (MetaDataMatches:
-		-- the pin's GetStyle, or its isRaid).
+		-- the pin's GetStyle, or its isRaid); a pin pointed at (MapLegendPinOnEnter) lights every
+		-- entry it matches (HighlightSelfForPin), and leaving puts them all out.
 		local function MetaDataMatches(metaData, pin)
 			if not metaData then return true end
 			if metaData.Style and rawget(pin, "GetStyle") ~= nil and pin:GetStyle() == metaData.Style then return true end
@@ -317,6 +343,14 @@ function CreateFrame(frameType, name, parent, template)
 		rawset(frame, "InitializeButton", function(self, info, index)
 			self.nameText, self.tooltipText, self.layoutIndex = info.Name, info.Tooltip, index
 			self.templates, self.metaData, self.atlas = info.TemplateNames, info.MetaData, info.Atlas
+			EventRegistry:RegisterCallback("MapLegendPinOnEnter", function(owner, pin)
+				for _, pinTemplate in ipairs(owner.templates) do
+					if pin.pinTemplate == pinTemplate and MetaDataMatches(owner.metaData, pin) then
+						owner:SetHighlightLocked(true)
+					end
+				end
+			end, self)
+			EventRegistry:RegisterCallback("MapLegendPinOnLeave", function(owner) owner:SetHighlightLocked(false) end, self)
 		end)
 		rawset(frame, "SetHighlightLocked", function(self, locked) self.highlightLocked = locked end)
 		frame:SetScript("OnEnter", function(self)
@@ -843,6 +877,8 @@ Mock.maps = {
 	[1420] = { name = "Tirisfal Glades", mapType = 3, parent = 1415, continent = 0, left = 300, top = 400, width = 90, height = 70 },
 	[1427] = { name = "Searing Gorge", mapType = 3, parent = 1415, continent = 0, left = 500, top = 900, width = 50, height = 50 },
 	[1414] = { name = "Kalimdor", mapType = 2, parent = 947, continent = 1, left = 0, top = 0, width = 1000, height = 1500 },
+	[1412] = { name = "Mulgore", mapType = 3, parent = 1414, continent = 1, left = 300, top = 900, width = 120, height = 150 },
+	[2521] = { name = "Zephras Isle", mapType = 3, parent = 947, continent = 2, left = 0, top = 0, width = 200, height = 200 },
 	-- Its world rectangle lies the other way round from a door's (x, y) as the game's data gives
 	-- them, so a door lands on it only with its axes swapped.
 	[1443] = { name = "Desolace", mapType = 3, parent = 1414, continent = 1, left = 2800, top = -1600, width = 300, height = 400 },
@@ -1247,6 +1283,7 @@ C_TooltipInfo = {
 
 Mock.units = {}
 function UnitName(unit) return Mock.units[unit] and Mock.units[unit].name end
+function UnitIsDead(unit) return Mock.units[unit] ~= nil and Mock.units[unit].dead == true end
 -- The loot chat's lines, and the loot history: drops by "encounterID:lootListID", encounters by id.
 LOOT_ITEM, LOOT_ITEM_MULTIPLE = "%s receives loot: %s.", "%s receives loot: %sx%d."
 LOOT_ITEM_SELF, LOOT_ITEM_SELF_MULTIPLE = "You receive loot: %s.", "You receive loot: %sx%d."

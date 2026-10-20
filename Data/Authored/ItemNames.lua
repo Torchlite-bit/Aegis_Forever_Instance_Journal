@@ -168,6 +168,8 @@ local ITEMS = {
 	[276158] = { "Crystallized Shard", "Junk", 0 },
 	[276160] = { "Mana Fragment", "Junk", 0 },
 	[280438] = { "Abominable Head", "Quest", 1 },
+	-- Seen in a recorded run (Skep, 2026-10-19); slot and armour from the client's item table.
+	[286987] = { "Violet Sorcerer's Sandals", "Feet, Cloth", 3 },
 }
 
 local function Fill(row)

@@ -40,22 +40,26 @@ ns.AmendInstance("CityOfDalaran", {
 			faction = "Alliance",
 			title = "The Dalaran Sewer Key",
 			text = "Emissary Jacques in Southshore starts An Alarming Request, which leads to the Image of Archmage "
-				.. "Modera by Lordamere Lake, outside the city. Her Heart of Disruption gives the key; one key in the "
-				.. "group lets everyone in.",
+				.. "Modera by Lordamere Lake, outside the city. Her Heart of Disruption gives the "
+				.. "{item:277507:Dalaran Sewer Key:2}; one key in the group lets everyone in.",
 			quests = { 92432, 92458 },
 		},
 		{
 			faction = "Horde",
 			title = "The Dalaran Sewer Key",
-			text = "Magus Wordeen Voidglare in Tarren Mill gives Prison Break In and Key to the City (the Grimy Key, "
-				.. "from the Warden's Footlocker at the Lordamere Internment Camp), then Dalaran Patrols and Blood in "
-				.. "the Streets, which leads to the Image of Archmage Modera by Lordamere Lake. Her Heart of Disruption "
-				.. "gives the key; one key in the group lets everyone in.",
+			text = "Magus Wordeen Voidglare in Tarren Mill gives Prison Break In and Key to the City (the "
+				.. "{item:279469:Grimy Key:1}, from the Warden's Footlocker at the Lordamere Internment Camp), then "
+				.. "Dalaran Patrols and Blood in the Streets, which leads to the Image of Archmage Modera by Lordamere "
+				.. "Lake. Her Heart of Disruption gives the {item:277507:Dalaran Sewer Key:2}; one key in the group "
+				.. "lets everyone in.",
 			quests = { 544, 93680, 545, 92434, 96984 },
 		},
 		{
 			title = "Lyn the Ignored, a hidden boss",
-			text = "Bring the Tome of Dalaran to summon him. Take the Black Tome from Archmage Arugal's table in "
+			-- Shown on his own page's Overview too.
+			boss = "Lyn the Ignored",
+			text = "Bring the {item:275989:Tome of Dalaran:2} to summon him. Take the {item:276561:Black Tome:1} "
+				.. "from Archmage Arugal's table in "
 				.. "Shadowfang Keep after his kill, and use it beside the Leyline Focus in Ambermill's keep, in "
 				.. "Silverpine Forest. In the sewers, past Atrexis, go straight on into the tunnel to the purple rune "
 				.. "and use the tome there. It is not used up: it can be used again after 3 minutes.",
@@ -87,7 +91,6 @@ ns.AmendInstance("CityOfDalaran", {
 				"Focal Blast: after a 3-second cast, a beam sweeps around the room, turning counterclockwise, for 6 seconds. Get out of its path as the cast starts: it kills.",
 				"Stay on the platform: small adds wait at the room's edge.",
 			},
-			spellFlags = { [1241514] = { "Deadly" } }, -- Focal Blast
 			mapPin = { x = 0.520, y = 0.834, floor = 2 },
 		},
 		["Arcanic Enigma"] = {
@@ -128,18 +131,16 @@ ns.AmendInstance("CityOfDalaran", {
 			},
 			spellFlags = {
 				[1240688] = { "Important", "Magic" }, -- Entangle
-				[1240694] = { "Important" },          -- Fel Timbers
 			},
 			mapPin = { x = 0.535, y = 0.550, floor = 2 },
 		},
 		["Lyn the Ignored"] = {
 			notes = {
-				"A hidden boss you summon. Take the Black Tome from Archmage Arugal's table in Shadowfang Keep after his kill, and turn it into the Tome of Dalaran at the Leyline Focus, a blue crystal in a back room at Ambermill in Silverpine Forest.",
 				"Past Atrexis, clear the north-east room with the market stalls and the small pink summoning circle. Whoever carries the tome clicks the circle, and Lyn comes out of the big round grate.",
 				"Shadow Bolt Volley and Curse of Thorns together hurt: remove the curse, melee above all. He raises skeletons as Atrexis does.",
 			},
 			mapPin = { x = 0.690, y = 0.166, floor = 1 },
-			-- Her abilities: Data/Authored/Abilities.lua.
+			-- His abilities: Data/Authored/Abilities.lua.
 		},
 		["Shade of the Archmage"] = {
 			notes = {
@@ -147,7 +148,6 @@ ns.AmendInstance("CityOfDalaran", {
 				"Bounding Mana flies to a player and back, silencing anyone it passes through: don't stand between him and its target. Casters stay 20 yards away from his Arcane Explosion.",
 				"When his mana runs dry he turns the whole group into animals for 8 seconds, then channels Evocation to refill it. Casters can hide behind the wall from the polymorph, but if anyone leaves the room he resets to full health.",
 			},
-			spellFlags = { [1241515] = { "Important" } }, -- Bounding Mana
 			mapPin = { x = 0.567, y = 0.258, floor = 2 },
 		},
 	},

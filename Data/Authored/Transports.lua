@@ -13,17 +13,14 @@ local _, ns = ...
 	to        where it goes; notes, by destination, who may take it
 ]]
 
-ns.AddTransports({
-	-- The Skyborne's portal between Stormwind's mage tower and Dalaran.
-	{
-		kind = "portal", mapID = 1453, x = 0.4997, y = 0.8686, area = "Wizard's Sanctum", faction = "Alliance",
-		to = { "Dalaran" }, notes = { ["Dalaran"] = "Skyborne only" },
-	},
-	{
-		kind = "portal", mapID = 1416, x = 0.1204, y = 0.563, area = "The Sky Enclave", faction = "Alliance",
-		to = { "Stormwind" }, notes = { ["Stormwind"] = "Skyborne only" },
-	},
+-- Routes Forever took out (2026-10): the Skyborne's portals between Stormwind's mage tower
+-- (Wizard's Sanctum) and Dalaran (The Sky Enclave), both ways. Hidden where players saved them too.
+ns.RemoveTransports({
+	{ kind = "portal", mapID = 1453, x = 0.4997, y = 0.8686, to = { "Dalaran" } },
+	{ kind = "portal", mapID = 1416, x = 0.1204, y = 0.563, to = { "Stormwind" } },
+})
 
+ns.AddTransports({
 	-- The Alliance Skyborne's airship between Dalaran and Zephras Isle (map 2521, Forever's own).
 	{
 		kind = "airship", mapID = 1416, x = 0.1268, y = 0.5202, area = "Dalaran", faction = "Alliance",

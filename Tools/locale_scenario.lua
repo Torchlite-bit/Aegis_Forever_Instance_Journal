@@ -185,7 +185,7 @@ for _, spot in ipairs(ns.GetTransports()) do
 		end
 	end
 end
-check(noted >= 3, "the Skyborne routes keep their notes: " .. noted)
+check(noted >= 2, "the Skyborne airship's two routes keep their notes: " .. noted)
 
 -- A faction is found by the client's English name as by its translated one
 local faction, listed
@@ -249,6 +249,23 @@ for _, quest in ipairs(ns.GetInstance("ExcavationSiteWetlands").quests) do
 	end
 end
 check(#untold == 0, "the Excavation Site's quest notes and starting places in " .. LANGUAGE .. ": " .. table.concat(untold, "; "))
+
+-- A chain's steps, kept as quests of their own for their page (Data/Generated/QuestSteps.lua), are
+-- named as the chains name them, in the language too
+local renamed, stepsSeen = {}, 0
+for _, instance in ipairs(ns.GetInstances("dungeon")) do
+	for _, quest in ipairs(instance.quests or {}) do
+		for _, step in ipairs(quest.prerequisites or {}) do
+			local own = ns.GetQuestStep(step.questID)
+			if own then
+				stepsSeen = stepsSeen + 1
+				if own.name ~= step.name then renamed[#renamed + 1] = step.questID .. ": " .. tostring(own.name) end
+			end
+		end
+	end
+end
+check(stepsSeen > 100 and #renamed == 0, "each step's page named as its chain names it, in " .. LANGUAGE .. ": "
+	.. table.concat(renamed, "; "))
 f:Hide()
 
 return string.format("All %d %s checks passed (%d strings; %d of %d boss names in %s).",

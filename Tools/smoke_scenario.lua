@@ -697,9 +697,10 @@ check(#rows == 3 and namedGraveweave == 1 and not nameOnlyLeft, "once its real o
 -- What the guide added: Lyn's abilities and how to summon him, notes, alerts, the Horde's key quests
 local lyn
 for _, boss in ipairs(cityOfDalaran.bosses) do if boss.name == "Lyn the Ignored" then lyn = boss end end
-check(#lyn.abilities == 2 and lyn.abilities[2].spellID == 1304473 and lyn.abilities[2].flags[1] == "Curse"
-	and lyn.extraAbilities[1].title == "Skeletons" and lyn.fightNote:find("Tome of Dalaran", 1, true)
-	and lyn.notes[1]:find("Tome of Dalaran", 1, true), "Lyn the Ignored's abilities, and how to summon him")
+check(#lyn.abilities == 3 and lyn.abilities[2].spellID == 1304473 and lyn.abilities[2].flags[1] == "Curse"
+	and lyn.abilities[3].spellID == 1303266 and lyn.abilities[3].every and not lyn.extraAbilities
+	and lyn.fightNote:find("Tome of Dalaran", 1, true)
+	and lyn.notes[1]:find("summoning circle", 1, true), "Lyn the Ignored's abilities, and where to summon him")
 local heartOfDisruption
 for _, quest in ipairs(cityOfDalaran.quests) do if quest.questID == 96984 then heartOfDisruption = quest end end
 check(#heartOfDisruption.prerequisites == 4 and heartOfDisruption.prerequisites[4].name == "Blood in the Streets",
@@ -735,7 +736,7 @@ do
 		"the key's note open on its text and how far along the player is")
 	check(key.Button.AbilityIcon._atlas == "QuestNormal" and key.Button.Note:GetText() == "0/2" and key.Button.Note:IsShown(),
 		"its header: the quest mark of the step the player is on, and how many of its quests are done")
-	check(#rows == 2 and rows[1].quest.questID == 92432 and rows[1].Text:GetText() == "An Alarming Request"
+	check(#rows == 2 and rows[1].quest.questID == 92432 and rows[1].Text:GetText() == "[33] An Alarming Request"
 		and rows[2].quest.questID == 92458 and rows[2].Text:GetText() == "[33] Heart of Disruption"
 		and rows[2].Status._atlas == "QuestNormal" and rows[2].Status._desaturated and not rows[1].Expand:IsShown()
 		and select(4, rows[1]:GetPoint(1)) == 12,
@@ -743,6 +744,19 @@ do
 	check(lynNote.Description:GetText():find("Tome of Dalaran", 1, true) and lynNote.Description:GetText():find("summon him", 1, true)
 		and lynNote.Button.AbilityIcon:GetTexture() == "Interface\\TargetingFrame\\UI-TargetingFrame-Skull"
 		and not lynNote.Button.Note:IsShown(), "the hidden boss's note: a skull, and how to summon him")
+	-- The items the notes name are links: the item's quality colour (the page's ink for a common
+	-- one, which white would not read on), its tooltip when pointed at
+	check(lynNote.Description:GetText():find("|cff0070dd|Hitem:275989|h[Tome of Dalaran]|h|r", 1, true)
+		and lynNote.Description:GetText():find("|cff3d2408|Hitem:276561|h[Black Tome]|h|r", 1, true)
+		and key.Description:GetText():find("|Hitem:277507|h[Dalaran Sewer Key]|h", 1, true)
+		and not lynNote.Description:GetText():find("{item:", 1, true), "the notes' items are links, in their quality's colour")
+	lynNote:_RunScript("OnHyperlinkEnter", "item:275989")
+	check(GameTooltip:IsShown() and GameTooltip._link == "item:275989", "pointing at one shows the item")
+	lynNote:_RunScript("OnHyperlinkLeave")
+	check(not GameTooltip:IsShown(), "and leaving hides it")
+	-- A key's quests sit in its text's box: the box reaches below them
+	local _, _, _, boxRight, boxBottom = key.DescriptionBG:GetPoint(2)
+	check(boxRight == 9 and boxBottom == -(4 + 2 * 26 + 4), "the key's quests sit in its text's box, which grows to hold them")
 	check(lore.Description:GetText() == cityOfDalaran.description
 		and select(5, lore.Description:GetPoint(1)) < select(5, rows[2]:GetPoint(1)),
 		"the description after the notes")
@@ -817,7 +831,7 @@ do
 	headers, rows = shown(state.headers), shown(state.rows)
 	check(headers[1].Description:GetText():find("Magus Wordeen Voidglare", 1, true)
 		and not headers[1].Description:GetText():find("Emissary Jacques", 1, true) and headers[1].Button.Note:GetText() == "0/5"
-		and #rows == 5 and rows[1].Text:GetText() == "Prison Break In" and rows[4].Text:GetText() == "Blood in the Streets"
+		and #rows == 5 and rows[1].Text:GetText() == "[34] Prison Break In" and rows[4].Text:GetText() == "[34] Blood in the Streets"
 		and rows[5].quest.questID == 96984 and headers[2].Description:GetText():find("Tome of Dalaran", 1, true),
 		"the Horde's own chain: its five quests")
 	rows[3]:Click()
@@ -836,7 +850,7 @@ do
 	check(#drops == 2 and title(drops[1]) == "The Dalaran Sewer Key" and drops[1].Button.Note:GetText() == "0/5"
 		and drops[1].Button.AbilityIcon._atlas == "QuestNormal" and drops[1].Button.ExpandedIcon:GetText() == "-"
 		and title(drops[2]) == "Dungeon Quests" and drops[2].Button.ExpandedIcon:GetText() == "-"
-		and list[1].quest.questID == 544 and list[5].quest.questID == 96984 and list[1].Text:GetText() == "Prison Break In"
+		and list[1].quest.questID == 544 and list[5].quest.questID == 96984 and list[1].Text:GetText() == "[34] Prison Break In"
 		and select(5, list[1]:GetPoint(1)) < select(5, drops[1]:GetPoint(1))
 		and select(5, drops[2]:GetPoint(1)) < select(5, list[5]:GetPoint(1))
 		and select(5, list[6]:GetPoint(1)) < select(5, drops[2]:GetPoint(1)),
@@ -910,6 +924,33 @@ do
 		check(#rows == 2 and rows[1].quest.steps and #rows[1].quest.steps == 2
 			and ns.QuestsPanel:Find(cityOfDalaran, 92433) == rows[1].quest, "a chain's same-named steps: one row, found by either step")
 		quest.prerequisites, alliance.quests = prerequisites, quests
+	end
+
+	-- A hidden boss's page opens on the same note, above the Overview, and says he is summoned
+	do
+		local lynBoss
+		for _, boss in ipairs(cityOfDalaran.bosses) do if boss.name == "Lyn the Ignored" then lynBoss = boss end end
+		ns.Journal:OpenBoss(cityOfDalaran, lynBoss)
+		tabs[1]:Click()
+		local overview = page.BossOverview.Child
+		local note = overview.bossNote
+		local bullets = {}
+		for _, bullet in ipairs(overview.Bullets) do if bullet:IsShown() then bullets[#bullets + 1] = bullet.Text:GetText() end end
+		local joined = table.concat(bullets, "\n")
+		check(note and note:IsShown() and note.Button.Title:GetText() == "Lyn the Ignored, a hidden boss" and note.Description:IsShown()
+			and note.Description:GetText():find("|Hitem:275989|h[Tome of Dalaran]|h", 1, true)
+			and select(5, overview.Header:GetPoint(1)) < select(5, note:GetPoint(1)),
+			"his page: the note on how to summon him, open, above the Overview")
+		check(joined:find(ns.L.BULLET_SUMMONED, 1, true) and not joined:find(ns.L.BULLET_RARE, 1, true)
+			and not joined:find("A hidden boss you summon. Take the Black Tome", 1, true),
+			"his bullets: summoned, not a chance rare, and the note's words not said twice")
+		local before = select(5, overview.Header:GetPoint(1))
+		note.Button:Click()
+		check(not note.Description:IsShown() and select(5, overview.Header:GetPoint(1)) > before, "a click folds it, the Overview moving up")
+		note.Button:Click()
+		-- Another boss has no note
+		ns.Journal:OpenBoss(cityOfDalaran, cityOfDalaran.bosses[1])
+		check(not overview.bossNote:IsShown() and cityOfDalaran.bosses[1].name ~= "Lyn the Ignored", "another boss has none")
 	end
 
 	-- A dungeon with nothing to prepare has no bar
@@ -1086,14 +1127,31 @@ do
 	check(Quest("WailingCaverns", 1500) and Quest("WailingCaverns", 914).requiredLevel == 10
 		and Quest("DireMaulEast", 7483) and Quest("DireMaulNorth", 7483) and Quest("DireMaulWest", 7483)
 		and Quest("DireMaulEast", 5526) and Quest("TempleOfAtalHakkar", 8232).classOnly == "HUNTER"
-		and Quest("HallOfThanes", 96403).faction == "Alliance" and Quest("BlackrockDepths", 4341).prerequisites[1].questID == 3701,
+		and Quest("HallOfThanes", 96403).faction == "Alliance" and Quest("BlackrockDepths", 4341).prerequisites[1].questID == 3702
+		and Quest("BlackrockDepths", 4341).prerequisites[2].questID == 3701,
 		"the quests the site lists for each dungeon, Forever's changes to them, and the class quests done inside")
 	check(#Quest("RuinsOfLordaeron", 97292).prerequisites == 4 and #Quest("DireMaulNorth", 5525).prerequisites == 0
 		and #Quest("DireMaulNorth", 5518).prerequisites == 0 and Quest("DireMaulNorth", 5519).prerequisites[1].questID == 5518
-		and not Quest("DireMaulNorth", 7703) and Quest("LowerBlackrockSpire", 4981)
+		and Quest("DireMaulNorth", 7703) and not Quest("DireMaulNorth", 1318) and Quest("LowerBlackrockSpire", 4981)
 		and Quest("LowerBlackrockSpire", 4981).turnin:find("Lower", 1, true) and Quest("Gnomeregan", 2923).endMap.mapID == 1455
-		and not Quest("ZulFarrak", 2861).startMap and Quest("Uldaman", 721).endMap.mapID == 1432,
-		"chains in order and no loops, Bijou where she is, Ironforge's givers on its own map, no capital's mark for every side")
+		and not Quest("ZulFarrak", 2861).startMap and Quest("Uldaman", 721).endMap.mapID == 1418,
+		"chains in order and no loops, Unfinished Gordok Business once and by the game's own id, Bijou where she is, "
+			.. "Ironforge's givers on its own map, Hammertoe Grez in the Badlands, no capital's mark for every side")
+	-- The quest audit (Data/Authored/QuestAudit.lua): a Forever quest's required chain without its
+	-- optional lead, quests that are another wing's moved out, duplicates the game never offers gone,
+	-- and a wrong start spot cleared
+	local horrors = Quest("ExcavationSiteWetlands", 95646)
+	local chain = {}
+	for _, step in ipairs(horrors.prerequisites) do chain[#chain + 1] = step.questID end
+	check(table.concat(chain, ",") == "276,277,275", "Horrors in the Highland needs Rethiel's three quests first: "
+		.. table.concat(chain, ","))
+	check(not Quest("LowerBlackrockSpire", 4734) and Quest("UpperBlackrockSpire", 4734)
+		and not Quest("DireMaulWest", 8967) and Quest("DireMaulEast", 8967) and not Quest("BlackrockDepths", 3911),
+		"another wing's quests and the game's unused duplicates are left out")
+	check(Quest("WailingCaverns", 6981).startMap == nil and Quest("WailingCaverns", 6981).endMap.mapID == 1413,
+		"a start spot that was wrong is cleared")
+	local ok, problem = pcall(ns.AmendInstance, "WailingCaverns", { removeQuests = { 999999 } })
+	check(not ok and tostring(problem):find("has no quest 999999", 1, true), "removing a quest the dungeon lacks is an error")
 end
 -- A recorded run of Excavation Site: each boss's encounter id and spells, the Relic Guardian's though
 -- the game calls him neutral, and the spiders that were fighting the dig nearby left out of the adds
@@ -1114,10 +1172,12 @@ do
 	end
 	local guardian = bosses["Relic Guardian"]
 	check(bosses["Saltspine"].encounterID == 3480 and guardian.encounterID == 3482 and Spell(guardian, 10101)
-		and Spell(guardian, 8374) and Spell(guardian, 8374).every[1] == 9 and Spell(guardian, 8374).text,
-		"Excavation Site's encounter ids, and the Relic Guardian's spells with their written text and recorded numbers")
-	check(AddIDs(bosses["Saltspine"]) == "" and AddIDs(bosses["Shadetooth"]) == "",
-		"the creatures that cast in the fights are the thicket's and the dig's, not listed as adds: " .. AddIDs(bosses["Shadetooth"]))
+		and Spell(guardian, 8374) and Spell(guardian, 8374).every[1] == 6 and Spell(guardian, 8374).every[2] == 17
+		and Spell(guardian, 8374).text,
+		"Excavation Site's encounter ids, and the Relic Guardian's spells with their written text and recorded numbers (every run's range)")
+	check(AddIDs(bosses["Saltspine"]) == "260797" and AddIDs(bosses["Shadetooth"]) == "",
+		"an Elder Crocolisk that joined Saltspine is his add (Skep's run); the thicket's raptors and the dig's spiders are not: "
+			.. AddIDs(bosses["Saltspine"]) .. " / " .. AddIDs(bosses["Shadetooth"]))
 	-- What the creatures on the way put on players, and who can take it off, on the boss they lead to
 	local function Extra(boss, title)
 		for _, entry in ipairs(boss.extraAbilities or {}) do
@@ -1246,10 +1306,23 @@ do
 		and select(5, drops[1]:GetPoint(1)) == -6 and select(5, qrows[1]:GetPoint(1)) < select(5, drops[1]:GetPoint(1))
 		and select(4, qrows[1]:GetPoint(1)) == 8 and page.QuestList:GetHeight() == page.Bosses:GetHeight(),
 		"one dropdown, Dungeon Quests, open over the quests, the list as tall as the boss list")
+	local box = page.QuestList.Boxes[1]
+	local boxTop = select(5, box:GetPoint(1))
+	local boxBottom = select(5, box:GetPoint(2))
+	local lastRow = qrows[#qrows]
+	check(box:IsShown() and box.Bottom:IsShown() and boxTop > select(5, qrows[1]:GetPoint(1))
+		and boxBottom < select(5, lastRow:GetPoint(1)) - 26, "its quests sit in a box under it, as an ability's text does")
 	drops[1].Button:Click()
-	check(#questRows() == 0 and detail.Title:GetText() == "An Ancient Grudge", "folded: no quests listed, the chosen one kept")
+	check(#questRows() == 0 and detail.Title:GetText() == "An Ancient Grudge" and not box:IsShown() and not box.Bottom:IsShown(),
+		"folded: no quests listed, no box, the chosen one kept")
 	drops[1].Button:Click()
-	check(#questRows() == 5, "opened again")
+	check(#questRows() == 5 and box:IsShown(), "opened again")
+	-- A chain opened with its "+" grows the box
+	local incursionRow
+	for _, row in ipairs(questRows()) do if row.quest.questID == 96393 then incursionRow = row end end
+	incursionRow.Expand:Click()
+	check(#questRows() == 6 and select(5, box:GetPoint(2)) == boxBottom - 26, "a chain opened grows the box by its rows")
+	incursionRow.Expand:Click()
 end
 check(qrows[1].Text:GetText() == "[15] An Ancient Grudge" and qrows[1].quest == page.selectedQuest, "first quest chosen to start")
 check(detail.Title:GetText() == "An Ancient Grudge" and not detail.Status:IsShown(), "its page: the title, no status line when available")
@@ -1394,7 +1467,8 @@ check(detail.Reputation:GetText() == "100 Stormwind Reputation" and detail.Recei
 
 rowFor(214).Expand:Click()
 local parts = questRows()[2]
-check(parts.quest.steps and parts.Text:GetText() == "The Defias Brotherhood (6 parts)", "six same-named steps make one row: " .. parts.Text:GetText())
+check(parts.quest.steps and parts.Text:GetText() == "[18] The Defias Brotherhood (6 parts)",
+	"six same-named steps make one row, at the first part's level: " .. parts.Text:GetText())
 parts:Click()
 check(detail.Title:GetText() == "The Defias Brotherhood (6 parts)" and detail.Objective:GetText():find("0 of 6", 1, true)
 	and not detail.ShowStart:IsShown(), "the chain's page counts its parts")
@@ -1403,6 +1477,30 @@ Mock.Fire("QUEST_LOG_UPDATE")
 check(detail.Objective:GetText():find("2 of 6", 1, true) and rowFor(65).Status._atlas == "QuestTurnin", "parts done so far, and the chain is under way")
 Mock.questsDone[65], Mock.questsDone[132] = nil, nil
 rowFor(214).Expand:Click()
+
+do
+	-- A step the dungeon does not list itself gets a dungeon quest's page (Data/Generated/QuestSteps.lua):
+	-- its level on its row, its objective, who gives and takes it and where, and what it needs first
+	rowFor(92819).Expand:Click()
+	local wells, gills = rowFor(92742), rowFor(92744)
+	check(wells and wells.Text:GetText() == "[12] Testing the Wells", "a step's row shows its level: " .. tostring(wells and wells.Text:GetText()))
+	wells:Click()
+	check(detail.Objective:GetText():find("Well Water Sample Kit", 1, true) and detail.ShowStart:IsEnabled()
+		and detail.ShowStart.point.mapID == 1436 and detail.ShowEnd:IsEnabled(), "its page: the objective, and Alba Fairmoon in Westfall")
+	check(detail.RewardsHeader:IsShown() and detail.Experience:GetText() == "460 Experience"
+		and detail.Reputation:GetText() == "50 Stormwind Reputation", "and its rewards: " .. tostring(detail.Experience:GetText()))
+	check(not wells.Status._desaturated and gills.Status._desaturated and rowFor(92745).Status._desaturated
+		and not detail.Status:IsShown(), "the first step can be taken; the ones further on wait for those before them")
+	rowFor(92745):Click()
+	check(detail.Status:IsShown() and detail.Status:GetText():find("Testing the Wells", 1, true), "and its page says which: "
+		.. tostring(detail.Status:GetText()))
+	Mock.questsDone[92742], Mock.questsDone[92744] = true, true
+	Mock.Fire("QUEST_LOG_UPDATE")
+	check(not rowFor(92745).Status._desaturated and rowFor(92742).Status._texture == "Interface\\Buttons\\UI-CheckBox-Check",
+		"done steps are checked off, and the next one opens")
+	Mock.questsDone[92742], Mock.questsDone[92744] = nil, nil
+	rowFor(92819).Expand:Click()
+end
 
 do
 	-- A chain that names its own quest among its steps lists it once
@@ -1638,6 +1736,61 @@ check(overlay:IsShown(), "M brings it back next time")
 WorldMapFrame:SetMapID(1415)
 check(not overlay:IsShown(), "browsing to another map puts it away")
 WorldMapFrame:Hide()
+
+-- A boss the game holds no encounter for (the Excavation Site's Highland Horror) is marked once the
+-- player sees him lying dead: as the target, the mouseover, after combat, or by his loot. Forever
+-- keeps the combat log from addons, and nothing touches its event
+do
+	local dig = ns.GetInstance("ExcavationSiteWetlands")
+	local horror
+	for _, boss in ipairs(dig.bosses) do if boss.name == "Highland Horror" then horror = boss end end
+	local here = Mock.instance
+	local HORROR_GUID, SKULKER_GUID = "Creature-0-1-2998-1-260999-0000F00002", "Creature-0-1-2998-1-260807-0000F00001"
+	-- In from outside: a fresh run.
+	local function Enter()
+		Mock.instance = nil
+		Mock.Fire("PLAYER_ENTERING_WORLD", false, false)
+		Mock.instance = { name = "Excavation Site: Wetlands", id = dig.instanceID }
+		Mock.Fire("PLAYER_ENTERING_WORLD", false, false)
+	end
+	Enter()
+	Mock.units.target = { name = "Marsh Skulker", guid = SKULKER_GUID, dead = true }
+	Mock.Fire("PLAYER_TARGET_CHANGED")
+	check(not horror.encounterID and not DungeonMap:IsDefeated(dig, horror), "another creature's death marks nothing")
+	Mock.units.target = { name = "Highland Horror", guid = HORROR_GUID }
+	Mock.Fire("UNIT_HEALTH", "target")
+	check(not DungeonMap:IsDefeated(dig, horror), "nor does he, alive")
+	Mock.units.target.dead = true
+	Mock.Fire("UNIT_HEALTH", "target")
+	check(DungeonMap:IsDefeated(dig, horror), "the Highland Horror, who ends no encounter, is marked once he lies dead as the target")
+	Mock.units.target = nil
+
+	Enter()
+	check(not DungeonMap:IsDefeated(dig, horror), "a fresh run starts with him standing")
+	Mock.units.mouseover = { name = "Highland Horror", guid = HORROR_GUID, dead = true }
+	Mock.Fire("UPDATE_MOUSEOVER_UNIT")
+	check(DungeonMap:IsDefeated(dig, horror), "or as his corpse is pointed at")
+	Enter()
+	Mock.Fire("PLAYER_REGEN_ENABLED")
+	check(DungeonMap:IsDefeated(dig, horror), "or once combat ends, should the client have kept it back during the fight")
+	Mock.units.mouseover = nil
+
+	-- By his loot, where the journal knows his creature id (slots without a link: no loot recorded).
+	horror.npcID = 260999
+	Enter()
+	Mock.lootSlots = { { name = "Coins", guid = SKULKER_GUID } }
+	Mock.Fire("LOOT_OPENED")
+	check(not DungeonMap:IsDefeated(dig, horror), "another corpse's loot marks nothing")
+	Mock.lootSlots = { { name = "Coins", guid = HORROR_GUID } }
+	Mock.Fire("LOOT_OPENED")
+	check(DungeonMap:IsDefeated(dig, horror), "or as his corpse is looted")
+	Mock.lootSlots, horror.npcID = {}, nil
+
+	check(#Mock.forbidden == 0, "no event Forever keeps from addons is registered or unregistered: "
+		.. table.concat(Mock.forbidden, ", "))
+	Mock.instance = here
+	Mock.Fire("PLAYER_ENTERING_WORLD", false, false)
+end
 
 -- Kills last the run: a corpse run keeps them, coming in fresh clears them
 Mock.instance = nil
@@ -2058,6 +2211,9 @@ moonbrookCave:_RunScript("OnEnter")
 check(GameTooltip._text == "Defias Hideout" and GameTooltip:HasLine("The way to The Deadmines"), "its tooltip")
 moonbrookCave:_RunScript("OnLeave")
 local westfallDoor = WorldMapFrame:ActivePins("AegisJournalEntrancePinTemplate")[1]
+check(westfallDoor:GetWidth() == 22 and westfallDoor:GetHeight() == 22 and westfallDoor.Texture:GetWidth() == 32
+	and moonbrookCave:GetWidth() == 22 and moonbrookCave.Texture:GetWidth() == 32,
+	"a door or a cave answers the mouse over its icon only: the pin is the icon's size, the art keeps its own")
 westfallDoor:_RunScript("OnEnter")
 check(GameTooltip:HasLine("Its portal is below, in Defias Hideout: go down at the cave entrance."), "the Deadmines door points to it")
 westfallDoor:_RunScript("OnLeave")
@@ -2278,9 +2434,40 @@ do
 	mark:_RunScript("OnLeave")
 	check(not questEntry.highlightLocked, "and lets it go")
 	ns.QuestMap:LegendEnter({ kind = "turnin" })
-	check(questEntry.highlightLocked and turnInEntry.highlightLocked, "a ? lights Quest and Turn In, as the client's own do")
+	check(turnInEntry.highlightLocked and not questEntry.highlightLocked, "a ? lights Turn In only")
 	ns.QuestMap:LegendLeave()
-	check(not questEntry.highlightLocked and not turnInEntry.highlightLocked, "and both let go")
+	check(not questEntry.highlightLocked and not turnInEntry.highlightLocked, "and lets it go")
+
+	-- The client's own marks: one of a quest in the log lights its In Progress or Turn In entry only,
+	-- not Quest or Repeatable as well (the client matches those by the quest's kind); a quest on offer
+	-- still lights Quest. Its callbacks come in no set order: both orders are tried.
+	local progressEntry = legend:Entry("inprogress")
+	local repeatable
+	for _, child in ipairs({ questEntry:GetParent():GetChildren() }) do
+		if child.nameText == "Repeatable" then repeatable = child end
+	end
+	local style, kind = POIButtonUtil.Style, Enum.QuestClassification
+	local function ClientPin(template, pinStyle, classification)
+		return { pinTemplate = template, GetStyle = function() return pinStyle end,
+			GetQuestClassification = function() return classification end }
+	end
+	for _, reversed in ipairs({ false, true }) do
+		Mock.callbacksReversed = reversed
+		local order = reversed and " (callbacks the other way round)" or ""
+		EventRegistry:TriggerEvent("MapLegendPinOnEnter", ClientPin("QuestPinTemplate", style.QuestInProgress, kind.Normal))
+		check(progressEntry.highlightLocked and not questEntry.highlightLocked,
+			"a quest in progress lights In Progress, not Quest" .. order)
+		EventRegistry:TriggerEvent("MapLegendPinOnLeave")
+		EventRegistry:TriggerEvent("MapLegendPinOnEnter", ClientPin("QuestPinTemplate", style.QuestComplete, kind.Recurring))
+		check(turnInEntry.highlightLocked and not repeatable.highlightLocked and not questEntry.highlightLocked,
+			"a repeatable quest to hand in lights Turn In, not Repeatable" .. order)
+		EventRegistry:TriggerEvent("MapLegendPinOnLeave")
+		EventRegistry:TriggerEvent("MapLegendPinOnEnter", ClientPin("QuestOfferPinTemplate", nil, kind.Normal))
+		check(questEntry.highlightLocked and not progressEntry.highlightLocked, "a quest on offer still lights Quest" .. order)
+		EventRegistry:TriggerEvent("MapLegendPinOnLeave")
+		check(not questEntry.highlightLocked, "and lets it go" .. order)
+	end
+	Mock.callbacksReversed = nil
 	questEntry:_RunScript("OnEnter")
 	check(mark.legendGlow and mark.legendGlow:IsShown(), "hovering Quest in the legend lights up the journal's ! marks")
 	questEntry:_RunScript("OnLeave")
@@ -2467,26 +2654,19 @@ local function transportPins()
 end
 OpenWorldMap(1453)
 local harborPin = transportPins()["Stormwind Harbor"]
-check(#WorldMapFrame:ActivePins("AegisJournalTransportPinTemplate") == 3 and harborPin.spot == harbor
+check(#WorldMapFrame:ActivePins("AegisJournalTransportPinTemplate") == 2 and harborPin.spot == harbor
 	and harborPin._position[1] == 0.22 and harborPin.Texture._atlas == "TaxiNode_Continent_Alliance",
-	"the dock on its city's map, with retail's teleport icon in Alliance blue, beside the journal's own portal and tram")
-local sanctum = transportPins()["Wizard's Sanctum"]
-check(sanctum and sanctum._position[1] == 0.4997 and sanctum._position[2] == 0.8686, "the journal's Skyborne portal in the mage tower")
-sanctum:_RunScript("OnEnter")
-check(GameTooltip._text == "Portal to Dalaran" and GameTooltip:HasLine("Wizard's Sanctum") and GameTooltip:HasLine("  Skyborne only")
-	and GameTooltip:HasLine("Alliance"), "its tooltip is named for where it goes, then where it is, and that only the Skyborne may take it")
-check(Mock.areaLabel.name == "Portal to Dalaran" and Mock.areaLabel.description == "Wizard's Sanctum",
-	"and so is the map's label")
-sanctum:_RunScript("OnLeave")
+	"the dock on its city's map, with retail's teleport icon in Alliance blue, beside the tram")
+check(transportPins()["Wizard's Sanctum"] == nil, "no Skyborne portal in the mage tower: Forever took it out")
 WorldMapFrame:SetMapID(1416)
-local enclave = transportPins()["The Sky Enclave"]
-check(enclave and enclave._position[1] == 0.1204 and enclave.spot.to[1] == "Stormwind" and enclave.spot.notes.Stormwind == "Skyborne only",
-	"and its way back from Dalaran")
+check(transportPins()["The Sky Enclave"] == nil, "nor its way back from Dalaran")
 local dalaranDock = transportPins()["Dalaran"]
 check(dalaranDock and dalaranDock.spot.kind == "airship" and dalaranDock._position[2] == 0.5202
-	and dalaranDock.Texture._atlas == "TaxiNode_Continent_Alliance", "the Skyborne airship's dock in Dalaran, beside the portal")
+	and dalaranDock.Texture._atlas == "TaxiNode_Continent_Alliance", "the Skyborne airship's dock in Dalaran")
 dalaranDock:_RunScript("OnEnter")
-check(GameTooltip._text == "Airship to Zephras Isle" and GameTooltip:HasLine("  Skyborne only"), "its tooltip")
+check(GameTooltip._text == "Airship to Zephras Isle" and GameTooltip:HasLine("Dalaran") and GameTooltip:HasLine("  Skyborne only")
+	and GameTooltip:HasLine("Alliance"), "its tooltip is named for where it goes, then where it is, and that only the Skyborne may take it")
+check(Mock.areaLabel.name == "Airship to Zephras Isle" and Mock.areaLabel.description == "Dalaran", "and so is the map's label")
 dalaranDock:_RunScript("OnLeave")
 WorldMapFrame:SetMapID(1453)
 harborPin:_RunScript("OnEnter")
@@ -2512,54 +2692,83 @@ transportEntry:_RunScript("OnLeave")
 WorldMapFrame:Hide()
 
 -- Routes only some may take: a note in brackets, shown under the route
-Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1453, 0.49, 0.87, "The Mage Quarter"
-SlashCmdList.AEGISJOURNAL("travel portal Dalaran (Skyborne only)")
-local skyPortal = ns.db.travel[#ns.db.travel]
-check(skyPortal.kind == "portal" and skyPortal.to[1] == "Dalaran" and skyPortal.notes.Dalaran == "Skyborne only"
-	and chatContains("Saved Portal to Dalaran (Skyborne only) at The Mage Quarter."), "a portal saved with who may take it")
+Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1416, 0.127, 0.52, "Dalaran"
+SlashCmdList.AEGISJOURNAL("travel airship Zephras Isle (Skyborne only)")
+local skyDock = ns.db.travel[#ns.db.travel]
+check(skyDock.kind == "airship" and skyDock.to[1] == "Zephras Isle" and skyDock.notes["Zephras Isle"] == "Skyborne only"
+	and chatContains("Saved Airship to Zephras Isle (Skyborne only) at Dalaran."), "a route saved with who may take it")
 Mock.playerX = 0.30
-SlashCmdList.AEGISJOURNAL("travel portal Stormwind City (Skyborne only) neutral")
+SlashCmdList.AEGISJOURNAL("travel airship Ironforge (Skyborne only) neutral")
 local otherWay = ns.db.travel[#ns.db.travel]
-check(otherWay ~= skyPortal and otherWay.to[1] == "Stormwind City" and otherWay.notes["Stormwind City"] == "Skyborne only"
+check(otherWay ~= skyDock and otherWay.to[1] == "Ironforge" and otherWay.notes["Ironforge"] == "Skyborne only"
 	and otherWay.faction == "Neutral", "the note and the faction word in either order")
 SlashCmdList.AEGISJOURNAL("travel undo")
-Mock.playerX = 0.49
-SlashCmdList.AEGISJOURNAL("travel portal Darnassus neutral (Skyborne only)")
-check(skyPortal.to[2] == "Darnassus" and skyPortal.notes.Darnassus == "Skyborne only" and skyPortal.faction == "Neutral",
+Mock.playerX = 0.127
+SlashCmdList.AEGISJOURNAL("travel airship Darnassus neutral (Skyborne only)")
+check(skyDock.to[2] == "Darnassus" and skyDock.notes.Darnassus == "Skyborne only" and skyDock.faction == "Neutral",
 	"the other order works too")
--- Saved on the journal's own portal: one icon, with the saved route joining it
-OpenWorldMap(1453)
-local portals = {}
+-- Saved on the journal's own dock: one icon, with the saved route joining it
+OpenWorldMap(1416)
+local docks = {}
 for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalTransportPinTemplate")) do
-	if pin.spot.kind == "portal" then portals[#portals + 1] = pin end
+	if pin.spot.kind == "airship" then docks[#docks + 1] = pin end
 end
-check(#portals == 1 and table.concat(portals[1].spot.to, ", ") == "Dalaran, Darnassus" and portals[1].spot.area == "Wizard's Sanctum",
-	"a portal saved on the journal's own joins it, its routes listed once")
+check(#docks == 1 and table.concat(docks[1].spot.to, ", ") == "Zephras Isle, Darnassus" and docks[1].spot.area == "Dalaran",
+	"a route saved on the journal's own dock joins it, its routes listed once")
 check(#ns.GetTransports()[1].to == 1, "without changing the journal's own")
-portals[1]:_RunScript("OnEnter")
-check(GameTooltip._text == "Portal to Dalaran and Darnassus" and GameTooltip:HasLine("  Dalaran: Skyborne only")
+docks[1]:_RunScript("OnEnter")
+check(GameTooltip._text == "Airship to Zephras Isle and Darnassus" and GameTooltip:HasLine("  Zephras Isle: Skyborne only")
 	and GameTooltip:HasLine("  Darnassus: Skyborne only"), "with several routes, each note names its route")
-portals[1]:_RunScript("OnLeave")
+docks[1]:_RunScript("OnLeave")
 WorldMapFrame:Hide()
 SlashCmdList.AEGISJOURNAL("travel undo")
-check(#skyPortal.to == 1 and skyPortal.notes.Darnassus == nil, "undo takes the note back with its route")
-OpenWorldMap(1453)
-local skyPin = transportPins()["Wizard's Sanctum"]
-check(table.concat(skyPin.spot.to, ", ") == "Dalaran", "and the map shows it gone")
+check(#skyDock.to == 1 and skyDock.notes.Darnassus == nil, "undo takes the note back with its route")
+OpenWorldMap(1416)
+local skyPin = transportPins()["Dalaran"]
+check(table.concat(skyPin.spot.to, ", ") == "Zephras Isle", "and the map shows it gone")
 skyPin:_RunScript("OnEnter")
-check(GameTooltip._text == "Portal to Dalaran" and GameTooltip:HasLine("  Skyborne only"), "the tooltip says who may take it")
+check(GameTooltip._text == "Airship to Zephras Isle" and GameTooltip:HasLine("  Skyborne only"), "the tooltip says who may take it")
 skyPin:_RunScript("OnLeave")
 WorldMapFrame:Hide()
 SlashCmdList.AEGISJOURNAL("travel list")
-check(chatContains("Portal to Dalaran (Skyborne only) at The Mage Quarter"), "and so does the list")
+check(chatContains("Airship to Zephras Isle (Skyborne only) at Dalaran"), "and so does the list")
 Mock.playerX, Mock.playerY = 0.70, 0.20
 SlashCmdList.AEGISJOURNAL("travel airship Zephras Isle (Skyborne only) alliance")
 local airship = ns.db.travel[#ns.db.travel]
 check(airship.kind == "airship" and airship.to[1] == "Zephras Isle" and airship.faction == "Alliance"
 	and airship.notes["Zephras Isle"] == "Skyborne only" and chatContains("Saved Airship to Zephras Isle (Skyborne only)"),
 	"airships are a kind of their own")
+-- A route Forever took out stays hidden where a player saved it themselves (the Skyborne's portal in
+-- Stormwind's mage tower); another route saved at the same spot still shows
+Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1453, 0.4997, 0.8686, "Wizard's Sanctum"
+SlashCmdList.AEGISJOURNAL("travel portal Dalaran (Skyborne only)")
+OpenWorldMap(1453)
+check(ns.db.travel[#ns.db.travel].to[1] == "Dalaran" and transportPins()["Wizard's Sanctum"] == nil,
+	"a saved route Forever took out is not shown")
+WorldMapFrame:Hide()
+SlashCmdList.AEGISJOURNAL("travel portal Darnassus")
+OpenWorldMap(1453)
+local sanctum = transportPins()["Wizard's Sanctum"]
+check(sanctum and #sanctum.spot.to == 1 and sanctum.spot.to[1] == "Darnassus" and #ns.db.travel[#ns.db.travel].to == 2,
+	"another route saved at the same spot still is, and the saved spot keeps both")
+WorldMapFrame:Hide()
 Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = nil, nil, nil, ""
 ns.db.travel = nil
+
+-- The Horde Skyborne's ship between Zephras Isle and Mulgore, by Camp Gev'rek: known spots nobody has
+-- stood on yet, beside the Alliance's
+OpenWorldMap(1412)
+local skycutter = transportPins()["Skywatcher Plateau"]
+check(skycutter and skycutter.spot.faction == "Horde" and skycutter.spot.to[1] == "Zephras Isle"
+	and skycutter.Texture._atlas == "TaxiNode_Continent_Horde", "the Horde Skyborne's ship in Mulgore, in Horde red")
+WorldMapFrame:SetMapID(2521)
+local hordeDock, allianceDock
+for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalTransportPinTemplate")) do
+	if pin.spot.faction == "Horde" then hordeDock = pin else allianceDock = pin end
+end
+check(hordeDock and hordeDock.spot.to[1] == "Mulgore" and hordeDock.Texture._atlas == "TaxiNode_Continent_Horde"
+	and allianceDock and allianceDock.spot.to[1] == "Dalaran", "and on Zephras Isle, the Horde's dock beside the Alliance's")
+WorldMapFrame:Hide()
 
 -- The Deeprun Tram's Ironforge end, unchanged from Classic, is the journal's own
 OpenWorldMap(1455)
@@ -3980,8 +4189,8 @@ end)()
 	IS:Forget()
 	check(not IS:CanDualWield(), "and not when none says so")
 
-	-- Every item's tooltip: a line per spec with the item's worth to it, and the green
-	-- arrow with what it adds to the gear where it beats what is worn
+	-- Every item's tooltip: a line per spec it is an upgrade for, the green arrow and what it adds
+	-- to the gear, and nothing more
 	do
 		local function TipLines(link)
 			GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
@@ -3993,7 +4202,7 @@ end)()
 				if type(line) == "string" and line:find(text, 1, true) then return line end
 			end
 		end
-		-- A spec's line: "Arms<tab>65", or "<arrow> Arms<tab>+4.2%  65" for an upgrade; and where it is.
+		-- A spec's line: "<arrow> Arms<tab>+4.2%"; and where it is.
 		local function Row(lines, label)
 			for index, line in ipairs(lines) do
 				local left = type(line) == "string" and line:match("^(.-)\t")
@@ -4014,24 +4223,22 @@ end)()
 		for _, spec in ipairs(IS:Specs()) do
 			local compare = IS:Compare(Mock.ItemLink(CAPE), IS:Weights(spec.key))
 			local row, at = Row(lines, spec.label)
-			if compare.score > 0 then
+			if compare.score > 0 and compare.delta > 0 then
 				rows = rows + 1
-				local value = ns.GearPanel.Points(compare.score)
-				local upgrade = compare.delta > 0
-				if not row or row:sub(-#value) ~= value or (at or 0) < last
-					or (upgrade ~= (row:find(ns.GearPanel.GainText(compare), 1, true) ~= nil))
-					or (upgrade ~= (row:find("greenarrow", 1, true) ~= nil or row:find("MicroStream", 1, true) ~= nil)) then
+				local gain = ns.GearPanel.GainText(compare)
+				if not row or row:sub(-#gain - 1) ~= "\t" .. gain or (at or 0) < last
+					or not (row:find("greenarrow", 1, true) or row:find("MicroStream", 1, true)) then
 					wrong[#wrong + 1] = spec.label .. ": " .. tostring(row)
 				end
 				last = at or last
 			elseif row then
-				wrong[#wrong + 1] = spec.label .. " (worth nothing): " .. row
+				wrong[#wrong + 1] = spec.label .. " (no upgrade): " .. row
 			end
 		end
-		check(#wrong == 0 and rows == #IS:Specs() and Row(lines, label) and Upgraded(lines),
-			"an item's tooltip: each spec in order, its worth, and the upgrade it makes: " .. table.concat(wrong, "; "))
+		check(#wrong == 0 and rows > 0 and Row(lines, label) and Upgraded(lines),
+			"an item's tooltip: each spec it is an upgrade for, in order, with the gain alone: " .. table.concat(wrong, "; "))
 		lines = TipLines(Mock.ItemLink(WORN_CAPE))
-		check(Row(lines, label) and not Upgraded(lines), "what is worn: its worth, no upgrade")
+		check(not Row(lines, label) and not Upgraded(lines), "what is worn: no line")
 		check(not Row(TipLines(Mock.ItemLink(ROBE)), label), "nothing for an item the class cannot use")
 		lines = TipLines(Mock.ItemLink(CUFFS))
 		local anyRow = false
@@ -4043,12 +4250,12 @@ end)()
 		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
 		GameTooltip:SetInventoryItem("player", 12)
 		lines = GameTooltip._lines
-		check(IS:Compare(Mock.ItemLink(RING_X)).delta > 0 and Row(lines, label) and not Upgraded(lines),
+		check(IS:Compare(Mock.ItemLink(RING_X)).delta > 0 and not Row(lines, label) and not Upgraded(lines),
 			"a worn ring better than the other is not called an upgrade, on the character sheet")
 		Mock.noItemGUIDs = true
 		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
 		GameTooltip:SetInventoryItem("player", 12)
-		check(Row(GameTooltip._lines, label) and not Upgraded(GameTooltip._lines),
+		check(not Row(GameTooltip._lines, label) and not Upgraded(GameTooltip._lines),
 			"nor by a client that names no copies: the sheet's own slot says it")
 		Mock.noItemGUIDs = nil
 		-- A link of the same ring, or the same ring dropping, is the item, as the Gear Finder weighs it
@@ -4122,22 +4329,22 @@ end)()
 		Mock.itemLines[RING_X], Mock.bagItems["0:1"] = nil, nil
 		Mock.worn[11], Mock.worn[12] = nil, nil
 		IS:Forget()
-		-- An item for later: an upgrade within the Gear Finder's few levels ahead, saying when; not past them
+		-- An item for later: an upgrade within the Gear Finder's few levels ahead, its gain alone; not past them
 		local bow = IS:Compare(Mock.ItemLink(CROSSBOW))
 		local bowRow = Row(TipLines(Mock.ItemLink(CROSSBOW)), label)
-		check(bow.later and bow.delta > 0 and bowRow and bowRow:find(ns.GearPanel.GainText(bow), 1, true)
-			and bowRow:find("(17)", 1, true), "an upgrade two levels ahead says the level it is worn at: " .. tostring(bowRow))
+		check(bow.later and bow.delta > 0 and bowRow and bowRow:sub(-#ns.GearPanel.GainText(bow) - 1) == "\t" .. ns.GearPanel.GainText(bow),
+			"an upgrade two levels ahead shows its gain alone, not the level: " .. tostring(bowRow))
 		lines = TipLines(Mock.ItemLink(SCEPTER))
-		check(IS:Compare(Mock.ItemLink(SCEPTER)).delta > 0 and Row(lines, label) and not Upgraded(lines),
-			"one ten levels ahead is given its worth, not called an upgrade")
-		-- The Gear Finder's cell for a slot with no upgrade: what is worn, with its worth
+		check(IS:Compare(Mock.ItemLink(SCEPTER)).delta > 0 and not Row(lines, label) and not Upgraded(lines),
+			"one ten levels ahead is not called an upgrade")
+		-- The Gear Finder's cell for a slot with no upgrade: what is worn, and no line
 		back:_RunScript("OnEnter")
 		Mock.worn[15] = CAPE
 		Mock.Fire("PLAYER_EQUIPMENT_CHANGED")
 		Mock.RunTimers(1)
 		back:_RunScript("OnEnter")
-		check(not back.entry and Row(GameTooltip._lines, label),
-			"a Gear Finder cell that showed an upgrade, and now what is worn, gives its worth too")
+		check(not back.entry and not Row(GameTooltip._lines, label),
+			"a Gear Finder cell that showed an upgrade, and now what is worn, has no line")
 		Mock.worn[15] = WORN_CAPE
 		Mock.Fire("PLAYER_EQUIPMENT_CHANGED")
 		Mock.RunTimers(1)
@@ -4159,8 +4366,7 @@ end)()
 		GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
 		GameTooltip:SetHyperlink(Mock.ItemLink(CAPE))
 		local givenRow = Row(GameTooltip._lines, label)
-		check(givenRow and givenRow:find("+77%", 1, true) and givenRow:sub(-4) == "  50",
-			"the Gear Finder's own gain for its spec: " .. tostring(givenRow))
+		check(givenRow and givenRow:sub(-5) == "\t+77%", "the Gear Finder's own gain for its spec: " .. tostring(givenRow))
 		check(not Row(TipLines(Mock.ItemLink(CAPE)), label):find("+77%", 1, true), "and only on its own tooltip")
 		ns.ItemTooltip:UseCompare(owner, nil)
 		local found = back.entry.compare

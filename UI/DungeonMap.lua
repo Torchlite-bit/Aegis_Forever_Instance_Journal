@@ -41,6 +41,10 @@ local TILE_MAP_WIDTH, TILE_MAP_HEIGHT = 1002, 668
 -- Above other addons' dungeon overlays on the same canvas (MapUtils draws at 3000).
 local OVERLAY_LEVEL = 5000
 local DUNGEON_ATLAS, RAID_ATLAS = "Dungeon", "Raid"
+-- What answers the mouse on a door or cave pin: the icon itself. The client's atlases draw it with
+-- room around it, and a pin the atlas's size caught the cursor well off the swirl (a player's
+-- report, 2026-10-20): the pin is this size, its art keeps its own, centred over it.
+local PIN_HIT_SIZE = 22
 -- The player's arrow on a sub-map's picture, and how often it follows the player.
 local PLAYER_ARROW_ATLAS, PLAYER_ARROW_FILE = "WorldMapArrow", "Interface\\WorldMap\\WorldMapArrow"
 local PLAYER_ARROW_SIZE, PLAYER_ARROW_SECONDS = 24, 0.1
@@ -159,6 +163,78 @@ function DungeonMap:MarkDefeated(instance, boss)
 	defeated[instance.key][boss.name] = true
 	self:Refresh()
 end
+
+--[[
+	A boss the game holds no encounter for (the Excavation Site's Highland Horror, a rare) ends no
+	fight, so ENCOUNTER_END never names it. Forever keeps the combat log from addons: registering
+	COMBAT_LOG_EVENT_UNFILTERED, or even unregistering it, is a forbidden action, which pcall does
+	not catch. So the boss is marked when the player sees him lying dead: as their target, focus or
+	mouseover (as its health or flags change, as the target or mouseover changes, and once combat
+	ends, should the client have kept it back during the fight), or as his corpse is looted. Known
+	by his creature id where the journal knows it, else by his name. Watched only inside a dungeon
+	that has such a boss.
+]]
+local deaths = CreateFrame("Frame")
+local DEATH_EVENTS = { "UNIT_HEALTH", "UNIT_FLAGS", "PLAYER_TARGET_CHANGED", "UPDATE_MOUSEOVER_UNIT",
+	"PLAYER_REGEN_ENABLED", "LOOT_OPENED" }
+local LOOKED_AT = { "target", "focus", "mouseover" }
+local watched, watchedInstance
+
+local function CreatureID(guid)
+	local kind, _, _, _, _, id = strsplit("-", guid or "")
+	if kind == "Creature" or kind == "Vehicle" then return tonumber(id) end
+	return nil
+end
+
+local function WatchDeaths(instance)
+	watched, watchedInstance = nil, instance
+	for _, boss in ipairs(instance and instance.bosses or {}) do
+		if not boss.encounterID and not boss.trash then
+			watched = watched or {}
+			if boss.npcID then watched[boss.npcID] = boss end
+			watched[boss.name] = boss
+			if boss.enName then watched[boss.enName] = boss end
+		end
+	end
+	if watched then
+		ns.RegisterEvents(deaths, unpack(DEATH_EVENTS))
+	else
+		ns.UnregisterEvents(deaths, unpack(DEATH_EVENTS))
+	end
+end
+
+local function Fallen(boss)
+	if boss and not DungeonMap:IsDefeated(watchedInstance, boss) then DungeonMap:MarkDefeated(watchedInstance, boss) end
+end
+
+-- A unit the player has at hand, if it is a watched boss lying dead. What the client keeps back
+-- counts as not known.
+local function LooksDead(unit)
+	local ok, dead = pcall(UnitIsDead, unit)
+	if not ok or ns.Readable(dead) ~= true then return end
+	Fallen(watched[CreatureID(ns.Readable(UnitGUID(unit))) or 0] or watched[ns.Readable(UnitName(unit)) or ""])
+end
+
+deaths:SetScript("OnEvent", function(_, event, unit)
+	if not (watched and watchedInstance) then return end
+	if event == "LOOT_OPENED" then
+		-- Each slot names the corpses it comes from: guid, count, guid, count, ...
+		for slot = 1, GetNumLootItems() do
+			local sources = { pcall(GetLootSourceInfo, slot) }
+			for index = 2, sources[1] and #sources or 0, 2 do
+				Fallen(watched[CreatureID(ns.Readable(sources[index])) or 0])
+			end
+		end
+	elseif event == "PLAYER_REGEN_ENABLED" then
+		for _, looked in ipairs(LOOKED_AT) do LooksDead(looked) end
+	elseif event == "PLAYER_TARGET_CHANGED" then
+		LooksDead("target")
+	elseif event == "UPDATE_MOUSEOVER_UNIT" then
+		LooksDead("mouseover")
+	elseif type(unit) == "string" then
+		LooksDead(unit)
+	end
+end)
 
 ------------------------------------------------------------------------------------------
 -- Boss pins
@@ -1297,6 +1373,14 @@ function DungeonMap:ShowSubMap(subMap)
 	return true
 end
 
+-- The art at the atlas's size (32 when the client gives none), the pin no bigger than the icon in it.
+local function SizeToIcon(pin)
+	local width, height = pin.Texture:GetSize()
+	if not width or width <= 0 then width, height = 32, 32 end
+	pin.Texture:SetSize(width, height)
+	pin:SetSize(math.min(width, PIN_HIT_SIZE), math.min(height, PIN_HIT_SIZE))
+end
+
 AegisJournalEntrancePinMixin = {}
 local EntrancePinMethods = { CheckMouseButtonPassthrough = DungeonMap.CheckMouseButtonPassthrough }
 
@@ -1341,12 +1425,7 @@ function EntrancePinMethods:OnAcquired(instance, x, y, together)
 	local atlas = self.isRaid and RAID_ATLAS or DUNGEON_ATLAS
 	self.Texture:SetAtlas(atlas, true)
 	self.HighlightTexture:SetAtlas(atlas, true)
-	local width, height = self.Texture:GetSize()
-	if not width or width <= 0 then
-		width, height = 32, 32
-		self.Texture:SetSize(width, height)
-	end
-	self:SetSize(width, height)
+	SizeToIcon(self)
 	self:SetPosition(x, y)
 end
 
@@ -1401,12 +1480,7 @@ function CavePinMethods:OnAcquired(subMap, x, y)
 			break
 		end
 	end
-	local width, height = self.Texture:GetSize()
-	if not width or width <= 0 then
-		width, height = 32, 32
-		self.Texture:SetSize(width, height)
-	end
-	self:SetSize(width, height)
+	SizeToIcon(self)
 	self:SetPosition(x, y)
 end
 
@@ -1595,6 +1669,7 @@ events:SetScript("OnEvent", function(_, event, ...)
 		local ghost = UnitIsDeadOrGhost and UnitIsDeadOrGhost("player")
 		if instance and not wasInside and not ghost then defeated[instance.key] = nil end
 		wasInside = instance ~= nil
+		WatchDeaths(instance)
 		DungeonMap:Refresh()
 	elseif event == "ENCOUNTER_END" then
 		local encounterID, name, _, _, success = ...

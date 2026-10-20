@@ -23,6 +23,9 @@ ns.QuestsPanel = QuestsPanel
 local ROW_HEIGHT, INDENT, LIST_WIDTH, DETAIL_WIDTH = 26, 18, 320, 315
 -- The dropdowns: room above the first, as the boss list has; their quests set in a little.
 local TOP_PADDING, HEADER_GAP, ROW_INDENT = 6, 6, 8
+-- An open dropdown's quests sit in a box, as an ability's text sits under its header: the room
+-- above and below them in it, and how far its top tucks under the header.
+local BOX_PADDING, BOX_TUCK, BOX_SIDE = 6, 3, 1
 local REWARD_BOX_WIDTH, REWARD_BOX_HEIGHT = 147, 41
 
 local STATUS_DONE, STATUS_READY, STATUS_ACTIVE, STATUS_AVAILABLE, STATUS_LOCKED =
@@ -555,7 +558,7 @@ function QuestsPanel:Create(page, info)
 	list:SetPoint("BOTTOMLEFT", 25, 1)
 	list:SetFrameLevel(info:GetFrameLevel() + 5)
 	list.Child:SetWidth(LIST_WIDTH)
-	list.Rows, list.Headers = {}, {}
+	list.Rows, list.Headers, list.Boxes = {}, {}, {}
 	list:Hide()
 
 	-- Right page: the chosen quest.
@@ -644,6 +647,18 @@ local function Holds(quests, quest)
 end
 
 -- The first of these quests still to do (the first, once all are done).
+-- The parchment box an open dropdown's quests sit in, as an ability's text does on the Abilities tab.
+local function CreateBox(child)
+	local box = child:CreateTexture(nil, "BACKGROUND")
+	ns.Art(box, "AbilityTextBG")
+	box.Bottom = child:CreateTexture(nil, "BACKGROUND")
+	ns.Art(box.Bottom, "AbilityTextBottomBorder")
+	box.Bottom:ClearAllPoints()
+	box.Bottom:SetPoint("LEFT", box, "BOTTOMLEFT")
+	box.Bottom:SetPoint("RIGHT", box, "BOTTOMRIGHT")
+	return box
+end
+
 local function FirstToDo(quests)
 	for _, quest in ipairs(quests) do
 		if QuestsPanel:Status(quest) ~= STATUS_DONE then return quest end
@@ -685,8 +700,10 @@ local function QuestByID(instance, questID)
 	return nil
 end
 
--- A chain's steps as rows. Steps this dungeon does not list itself are kept as one object
--- each, so they can stay chosen; consecutive steps sharing a name become one row.
+-- A chain's steps as rows. A step this dungeon does not list itself is the quest the journal
+-- keeps for it (Data/Generated/QuestSteps.lua: its level, giver, objective, rewards, the page a
+-- dungeon quest has), else its name alone; one object each, so they can stay chosen. Consecutive
+-- steps sharing a name become one row, at the first part's level.
 local stepQuests = {}
 local function ChainRows(instance, quest)
 	-- Some chains list the quest itself among its steps; it already has its own row.
@@ -705,11 +722,13 @@ local function ChainRows(instance, quest)
 			if not stepQuests[key] then
 				local steps = {}
 				for position = index, last do steps[#steps + 1] = prerequisites[position] end
-				stepQuests[key] = { questID = step.questID, name = string.format(L.QUEST_PARTS, step.name or "", #steps), steps = steps }
+				local first = QuestByID(instance, step.questID) or ns.GetQuestStep(step.questID)
+				stepQuests[key] = { questID = step.questID, name = string.format(L.QUEST_PARTS, step.name or "", #steps),
+					steps = steps, level = first and first.level }
 			end
 			row = stepQuests[key]
 		else
-			row = QuestByID(instance, step.questID)
+			row = QuestByID(instance, step.questID) or ns.GetQuestStep(step.questID)
 			if not row then
 				stepQuests[step.questID] = stepQuests[step.questID] or { questID = step.questID, name = step.name }
 				row = stepQuests[step.questID]
@@ -810,7 +829,7 @@ function QuestsPanel:Refresh(page)
 		page.selectedQuest = selected
 	end
 
-	local y, headers, rows, chosenY = TOP_PADDING, 0, 0, nil
+	local y, headers, rows, boxes, chosenY = TOP_PADDING, 0, 0, 0, nil
 	local function Place(quest, depth, hasChain, expanded)
 		if quest == selected then chosenY = y end
 		rows = rows + 1
@@ -820,7 +839,7 @@ function QuestsPanel:Refresh(page)
 			list.Rows[rows] = row
 		end
 		SetRow(row, quest, depth, hasChain, expanded, quest == selected)
-		row:SetWidth(LIST_WIDTH - ROW_INDENT - depth * INDENT)
+		row:SetWidth(LIST_WIDTH - ROW_INDENT - depth * INDENT - ROW_INDENT)
 		row:SetPoint("TOPLEFT", ROW_INDENT + depth * INDENT, -y)
 		row:Show()
 		y = y + ROW_HEIGHT
@@ -835,9 +854,11 @@ function QuestsPanel:Refresh(page)
 		header:ClearAllPoints()
 		header:SetPoint("TOPLEFT", 0, -y)
 		header:SetWidth(LIST_WIDTH)
-		y = y + ns.PaperHeader.Set(header, group.section, 0, group.section.expanded) + HEADER_GAP
+		y = y + ns.PaperHeader.Set(header, group.section, 0, group.section.expanded)
 		header:Show()
-		if group.section.expanded then
+		if group.section.expanded and #group.quests > 0 then
+			local boxTop = y - BOX_TUCK
+			y = y + BOX_PADDING
 			for _, quest in ipairs(group.quests) do
 				local chain = group.chainOf[quest]
 				local chainOpen = #chain > 0 and open[quest.questID] == true
@@ -846,10 +867,26 @@ function QuestsPanel:Refresh(page)
 					for _, step in ipairs(chain) do Place(step, 1) end
 				end
 			end
-			y = y + HEADER_GAP
+			y = y + BOX_PADDING
+			boxes = boxes + 1
+			local box = list.Boxes[boxes]
+			if not box then
+				box = CreateBox(child)
+				list.Boxes[boxes] = box
+			end
+			box:ClearAllPoints()
+			box:SetPoint("TOPLEFT", child, "TOPLEFT", BOX_SIDE, -boxTop)
+			box:SetPoint("BOTTOMRIGHT", child, "TOPLEFT", LIST_WIDTH - BOX_SIDE, -y)
+			box:Show()
+			box.Bottom:Show()
 		end
+		y = y + HEADER_GAP * 2
 	end
 	for index = headers + 1, #list.Headers do list.Headers[index]:Hide() end
+	for index = boxes + 1, #list.Boxes do
+		list.Boxes[index]:Hide()
+		list.Boxes[index].Bottom:Hide()
+	end
 	for index = rows + 1, #list.Rows do list.Rows[index]:Hide() end
 	child:SetHeight(math.max(1, y + 4))
 

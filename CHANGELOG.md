@@ -12,6 +12,60 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.35.0] (restart)
+
+### Added
+- **Item links in Before you go**: the items its notes name (the Tome of Dalaran, the Black Tome,
+  the Grimy Key, the Dalaran Sewer Key) are item links, in their quality's colour. Point at one
+  for its tooltip, shift-click to put it in chat.
+- **Lyn the Ignored's page** opens on the Before you go note on how to summon him, above the
+  Overview, and no longer calls him a chance rare.
+- **Chain steps get a quest's page**: the quests a dungeon quest needs first (Tramping Paws, Fire
+  Taboo...) show their level, and a click opens the page a dungeon quest has: the objective, who
+  gives and takes it and where (Show Start and Show End), what starts it, and what it needs first,
+  greyed until then and checked off once done, and its rewards. 197 steps, from QuestieDB's Forever
+  data, with rewards from foreverchanges.pro.
+- **Boxes on the Quests tab**: an open dropdown's quests sit in a parchment box under it, as an
+  ability's text does, and the box grows as you open a chain. On a dungeon's overview, a key's
+  quests sit in its note's box too.
+- **The Horde Skyborne's ship** on the world map, in Horde red: its dock on Zephras Isle, west of
+  the Alliance's in Valanaar, and its landing on Skywatcher Plateau in Mulgore, by Camp Gev'rek
+  (Skyborne only).
+- **Skep's runs**: City of Dalaran's first recorded abilities, for all eight bosses and their
+  adds, more Excavation Site timings, and the Violet Sorcerer's Sandals from City of Dalaran's
+  trash. Skep joins the contributors list. Thank you!
+
+### Changed
+- **Item tooltips show only the upgrade**: a line for each spec the item is an upgrade for, with
+  the green arrow and what it adds ("+7.4%"). The item's worth to each spec and the level an
+  upgrade waits for are gone, and so are the lines for specs it doesn't improve.
+- **City of Dalaran's abilities** use the spells its bosses really cast, from Skep's combat logs,
+  and no longer show some of them twice.
+
+### Removed
+- **The Skyborne's portals** between Stormwind's mage tower and Dalaran: Forever took both out.
+  They are hidden where you saved them yourself with /aegis travel too. The Skyborne airship
+  between Dalaran and Zephras Isle stays.
+
+### Fixed
+- **Every dungeon quest checked** against QuestieDB's Forever data (a snapshot of the live game),
+  the Forever Dungeon Journal, foreverchanges.pro and Alex Atlas Loot, and corrected: 251 quests
+  in all. Each quest now lists every quest you must do first, in order, and leaves out the
+  optional ones that only point the way: Horrors in the Highland needs Rethiel's Tramping Paws,
+  Fire Taboo and Blisters on the Land again. Givers and takers named, quests that start from an
+  item or an object say which, class quests marked for their class, and quest givers placed
+  where Forever's redrawn Stormwind and Redridge have them. 33 quests the journal lacked are in,
+  and 15 are gone: duplicates the game never offers (Unfinished Gordok Business is listed once,
+  as the quest the game gives) and another wing's quests.
+- **Dungeon and cave entrances on the world map** answer the mouse over their icon only: the
+  tooltip and a click could catch the cursor well off the swirl.
+- **The Highland Horror** (Excavation Site) is crossed out on the dungeon map when killed. Bosses
+  the game holds no encounter for, like him and the rares, are now marked once you see them dead:
+  as your target, focus or mouseover, or as you loot them. (Forever keeps the combat log from
+  addons, so it can't be used for this.)
+- **The world map's legend**: pointing at a quest in your log lights its In Progress or Turn In
+  entry only, no longer Quest as well; the journal's own "?" marks light Turn In only.
+
 ## [0.34.0]
 
 ### Added

@@ -170,13 +170,11 @@ function QuestMap:SetMarkTexture(texture, mark)
 end
 
 --[[
-	The world map's legend lights up its Quest entry while one of the client's quest marks is
-	pointed at, and its Turn In entry too for a "?": the journal's marks do the same
-	(UI/MapLegend.lua), as its other pins do.
+	The world map's legend lights up the entry of a quest mark pointed at: Quest for a "!", Turn In
+	for a "?" (UI/MapLegend.lua), as the journal's other pins do.
 ]]
 function QuestMap:LegendEnter(mark)
-	ns.MapLegend:PinEnter("quest")
-	if mark.kind == "turnin" then ns.MapLegend:PinEnter("turnin") end
+	ns.MapLegend:PinEnter(mark.kind == "turnin" and "turnin" or "quest")
 end
 
 function QuestMap:LegendLeave()

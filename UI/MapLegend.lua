@@ -8,7 +8,8 @@ local L = ns.L
 	hovering its Dungeon, Raid or Flightpoint entry lights up the journal's entrances and
 	flight points, and its Quest and Turn In entries the journal's quest marks ("!" and "?"), as
 	it does the client's own on retail; hovering one of those lights up its entry; and Cave
-	Entrance and Transport entries join Movement for the journal's own icons.
+	Entrance and Transport entries join Movement for the journal's own icons. A quest in the log
+	pointed at on the map lights its In Progress or Turn In entry only (see KeepDarkForLog).
 
 	Blizzard's frames are only shown, anchored and hooked after their own code; nothing of
 	theirs is replaced or written into.
@@ -44,6 +45,8 @@ local CLIENT_FLIGHT_TEMPLATE = "FlightPointPinTemplate"
 -- (Quest) and whose handing in (Turn In) light them up.
 local QUEST_TEMPLATE = "AegisJournalQuestPinTemplate"
 local CLIENT_QUEST_OFFER_TEMPLATE = "QuestOfferPinTemplate"
+-- The client's marks of the quests in the log (In Progress, Turn In).
+local CLIENT_QUEST_LOG_TEMPLATE = "QuestPinTemplate"
 
 local TRANSPORT_TEMPLATE = "AegisJournalTransportPinTemplate"
 
@@ -124,6 +127,38 @@ local function HookEntry(entry, template, matches)
 	entry:HookScript("OnLeave", function() GlowPins(template, matches, false) end)
 end
 
+--[[
+	The client lights every entry a pointed-at pin matches, by its look (In Progress, Turn In) or by
+	its quest's kind (Quest, Repeatable), and a quest in the log is of a kind too: its mark lit Quest
+	beside In Progress. The kinds stand for quests on offer, so while one of the client's marks of a
+	quest in the log is pointed at, their entries are put out again. Their highlight is hooked, after
+	the client's code, and the pin pointed at is heard from the client's own callback; the two come in
+	no set order, so each puts them out.
+]]
+local kindEntries = {}
+local pointedAt
+
+local function InLog(pin)
+	return type(pin) == "table" and pin.pinTemplate == CLIENT_QUEST_LOG_TEMPLATE
+end
+
+local function KeepDarkForLog(entry)
+	kindEntries[#kindEntries + 1] = entry
+	hooksecurefunc(entry, "SetHighlightLocked", function(self, locked)
+		if locked and InLog(pointedAt) then self:SetHighlightLocked(false) end
+	end)
+end
+
+local function HearPointedAt()
+	if not (EventRegistry and EventRegistry.RegisterCallback) then return end
+	EventRegistry:RegisterCallback("MapLegendPinOnEnter", function(_, pin)
+		pointedAt = pin
+		if not InLog(pin) then return end
+		for _, entry in ipairs(kindEntries) do entry:SetHighlightLocked(false) end
+	end, MapLegend)
+	EventRegistry:RegisterCallback("MapLegendPinOnLeave", function() pointedAt = nil end, MapLegend)
+end
+
 local function IsRaid(isRaid) return function(pin) return pin.isRaid == isRaid end end
 local function QuestMark(kind) return function(pin) return pin.mark ~= nil and pin.mark.kind == kind end end
 
@@ -162,6 +197,9 @@ local function TeachLegend(legend)
 		last = category
 		for _, entry in ipairs(Entries(category)) do
 			local meta = entry.metaData
+			if meta and meta.questClassification ~= nil and Contains(entry.templates, CLIENT_QUEST_LOG_TEMPLATE) then
+				KeepDarkForLog(entry)
+			end
 			if Contains(entry.templates, CLIENT_ENTRANCE_TEMPLATE) and meta then
 				local isRaid = meta.isRaid == true
 				entries[isRaid and "raid" or "dungeon"] = entry
@@ -195,6 +233,7 @@ function MapLegend:SetUp()
 	hooksecurefunc(log, "ValidateTabs", ShowTabs)
 	ShowTabs()
 	TeachLegend(log.MapLegend)
+	HearPointedAt()
 	return true
 end
 

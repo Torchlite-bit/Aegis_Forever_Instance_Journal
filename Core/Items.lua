@@ -368,6 +368,35 @@ function Items:QualityColor(quality)
 	return 1, 1, 1
 end
 
+--[[
+	A note's items as links in its text: "{item:275989:Tome of Dalaran:2}" (the id, the name to show
+	until the client gives its own, in its language, and the quality) becomes the item's name in its
+	quality's colour, in brackets: a link the note's frame shows the item's tooltip for. On the
+	parchment a common item's white would not read, so it takes the page's dark ink instead.
+]]
+local PARCHMENT_INK = "|cff3d2408"
+
+function Items:LinkText(text)
+	return (tostring(text or ""):gsub("{item:(%d+):([^:}]*):?(%d*)}", function(id, written, quality)
+		local itemID = tonumber(id)
+		local info = self:Get(itemID, { name = written, quality = tonumber(quality) })
+		local color = PARCHMENT_INK
+		if type(info.quality) == "number" and info.quality >= 2 then
+			local _, _, _, hex = self:QualityColor(info.quality)
+			if type(hex) == "string" then color = hex:sub(1, 2) == "|c" and hex or ("|c" .. hex) end
+		end
+		return color .. "|Hitem:" .. itemID .. "|h[" .. (info.name or written) .. "]|h|r"
+	end))
+end
+
+-- The client's own link for an item (for the chat), or nil while it has none.
+function Items:Link(itemID)
+	local getInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
+	if type(getInfo) ~= "function" then return nil end
+	local ok, _, link = pcall(getInfo, itemID)
+	return ok and link or nil
+end
+
 -- The classes this client has, in its own order: { classFile, name, classID }.
 -- The classes the client has, in its own order. Their ids have gaps (no Death Knight or Monk here,
 -- and the Druid is 11), and GetNumClasses counts the classes, not the ids: every id is tried, up
