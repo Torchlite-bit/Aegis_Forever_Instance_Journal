@@ -14,12 +14,8 @@ local _, ns = ...
 ]]
 
 ns.AddTransports({
-	-- The Skyborne's portal from Dalaran to Stormwind. Its way there, the direct, unlimited portal
-	-- from Stormwind's mage tower (Wizard's Sanctum), was taken out of Forever (2026-10).
-	{
-		kind = "portal", mapID = 1416, x = 0.1204, y = 0.563, area = "The Sky Enclave", faction = "Alliance",
-		to = { "Stormwind" }, notes = { ["Stormwind"] = "Skyborne only" },
-	},
+	-- The Skyborne's portals between Stormwind's mage tower (Wizard's Sanctum) and Dalaran (The Sky
+	-- Enclave) were taken out of Forever (2026-10), both ways.
 
 	-- The Alliance Skyborne's airship between Dalaran and Zephras Isle (map 2521, Forever's own).
 	{

@@ -2475,20 +2475,14 @@ check(#WorldMapFrame:ActivePins("AegisJournalTransportPinTemplate") == 2 and har
 	"the dock on its city's map, with retail's teleport icon in Alliance blue, beside the tram")
 check(transportPins()["Wizard's Sanctum"] == nil, "no Skyborne portal in the mage tower: Forever took it out")
 WorldMapFrame:SetMapID(1416)
-local enclave = transportPins()["The Sky Enclave"]
-check(enclave and enclave._position[1] == 0.1204 and enclave.spot.to[1] == "Stormwind" and enclave.spot.notes.Stormwind == "Skyborne only",
-	"the Skyborne's portal from Dalaran to Stormwind")
-enclave:_RunScript("OnEnter")
-check(GameTooltip._text == "Portal to Stormwind" and GameTooltip:HasLine("The Sky Enclave") and GameTooltip:HasLine("  Skyborne only")
-	and GameTooltip:HasLine("Alliance"), "its tooltip is named for where it goes, then where it is, and that only the Skyborne may take it")
-check(Mock.areaLabel.name == "Portal to Stormwind" and Mock.areaLabel.description == "The Sky Enclave",
-	"and so is the map's label")
-enclave:_RunScript("OnLeave")
+check(transportPins()["The Sky Enclave"] == nil, "nor its way back from Dalaran")
 local dalaranDock = transportPins()["Dalaran"]
 check(dalaranDock and dalaranDock.spot.kind == "airship" and dalaranDock._position[2] == 0.5202
-	and dalaranDock.Texture._atlas == "TaxiNode_Continent_Alliance", "the Skyborne airship's dock in Dalaran, beside the portal")
+	and dalaranDock.Texture._atlas == "TaxiNode_Continent_Alliance", "the Skyborne airship's dock in Dalaran")
 dalaranDock:_RunScript("OnEnter")
-check(GameTooltip._text == "Airship to Zephras Isle" and GameTooltip:HasLine("  Skyborne only"), "its tooltip")
+check(GameTooltip._text == "Airship to Zephras Isle" and GameTooltip:HasLine("Dalaran") and GameTooltip:HasLine("  Skyborne only")
+	and GameTooltip:HasLine("Alliance"), "its tooltip is named for where it goes, then where it is, and that only the Skyborne may take it")
+check(Mock.areaLabel.name == "Airship to Zephras Isle" and Mock.areaLabel.description == "Dalaran", "and so is the map's label")
 dalaranDock:_RunScript("OnLeave")
 WorldMapFrame:SetMapID(1453)
 harborPin:_RunScript("OnEnter")
@@ -2514,46 +2508,46 @@ transportEntry:_RunScript("OnLeave")
 WorldMapFrame:Hide()
 
 -- Routes only some may take: a note in brackets, shown under the route
-Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1416, 0.12, 0.563, "The Sky Enclave"
-SlashCmdList.AEGISJOURNAL("travel portal Stormwind (Skyborne only)")
-local skyPortal = ns.db.travel[#ns.db.travel]
-check(skyPortal.kind == "portal" and skyPortal.to[1] == "Stormwind" and skyPortal.notes.Stormwind == "Skyborne only"
-	and chatContains("Saved Portal to Stormwind (Skyborne only) at The Sky Enclave."), "a portal saved with who may take it")
+Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1416, 0.127, 0.52, "Dalaran"
+SlashCmdList.AEGISJOURNAL("travel airship Zephras Isle (Skyborne only)")
+local skyDock = ns.db.travel[#ns.db.travel]
+check(skyDock.kind == "airship" and skyDock.to[1] == "Zephras Isle" and skyDock.notes["Zephras Isle"] == "Skyborne only"
+	and chatContains("Saved Airship to Zephras Isle (Skyborne only) at Dalaran."), "a route saved with who may take it")
 Mock.playerX = 0.30
-SlashCmdList.AEGISJOURNAL("travel portal Ironforge (Skyborne only) neutral")
+SlashCmdList.AEGISJOURNAL("travel airship Ironforge (Skyborne only) neutral")
 local otherWay = ns.db.travel[#ns.db.travel]
-check(otherWay ~= skyPortal and otherWay.to[1] == "Ironforge" and otherWay.notes["Ironforge"] == "Skyborne only"
+check(otherWay ~= skyDock and otherWay.to[1] == "Ironforge" and otherWay.notes["Ironforge"] == "Skyborne only"
 	and otherWay.faction == "Neutral", "the note and the faction word in either order")
 SlashCmdList.AEGISJOURNAL("travel undo")
-Mock.playerX = 0.12
-SlashCmdList.AEGISJOURNAL("travel portal Darnassus neutral (Skyborne only)")
-check(skyPortal.to[2] == "Darnassus" and skyPortal.notes.Darnassus == "Skyborne only" and skyPortal.faction == "Neutral",
+Mock.playerX = 0.127
+SlashCmdList.AEGISJOURNAL("travel airship Darnassus neutral (Skyborne only)")
+check(skyDock.to[2] == "Darnassus" and skyDock.notes.Darnassus == "Skyborne only" and skyDock.faction == "Neutral",
 	"the other order works too")
--- Saved on the journal's own portal: one icon, with the saved route joining it
+-- Saved on the journal's own dock: one icon, with the saved route joining it
 OpenWorldMap(1416)
-local portals = {}
+local docks = {}
 for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalTransportPinTemplate")) do
-	if pin.spot.kind == "portal" then portals[#portals + 1] = pin end
+	if pin.spot.kind == "airship" then docks[#docks + 1] = pin end
 end
-check(#portals == 1 and table.concat(portals[1].spot.to, ", ") == "Stormwind, Darnassus" and portals[1].spot.area == "The Sky Enclave",
-	"a portal saved on the journal's own joins it, its routes listed once")
+check(#docks == 1 and table.concat(docks[1].spot.to, ", ") == "Zephras Isle, Darnassus" and docks[1].spot.area == "Dalaran",
+	"a route saved on the journal's own dock joins it, its routes listed once")
 check(#ns.GetTransports()[1].to == 1, "without changing the journal's own")
-portals[1]:_RunScript("OnEnter")
-check(GameTooltip._text == "Portal to Stormwind and Darnassus" and GameTooltip:HasLine("  Stormwind: Skyborne only")
+docks[1]:_RunScript("OnEnter")
+check(GameTooltip._text == "Airship to Zephras Isle and Darnassus" and GameTooltip:HasLine("  Zephras Isle: Skyborne only")
 	and GameTooltip:HasLine("  Darnassus: Skyborne only"), "with several routes, each note names its route")
-portals[1]:_RunScript("OnLeave")
+docks[1]:_RunScript("OnLeave")
 WorldMapFrame:Hide()
 SlashCmdList.AEGISJOURNAL("travel undo")
-check(#skyPortal.to == 1 and skyPortal.notes.Darnassus == nil, "undo takes the note back with its route")
+check(#skyDock.to == 1 and skyDock.notes.Darnassus == nil, "undo takes the note back with its route")
 OpenWorldMap(1416)
-local skyPin = transportPins()["The Sky Enclave"]
-check(table.concat(skyPin.spot.to, ", ") == "Stormwind", "and the map shows it gone")
+local skyPin = transportPins()["Dalaran"]
+check(table.concat(skyPin.spot.to, ", ") == "Zephras Isle", "and the map shows it gone")
 skyPin:_RunScript("OnEnter")
-check(GameTooltip._text == "Portal to Stormwind" and GameTooltip:HasLine("  Skyborne only"), "the tooltip says who may take it")
+check(GameTooltip._text == "Airship to Zephras Isle" and GameTooltip:HasLine("  Skyborne only"), "the tooltip says who may take it")
 skyPin:_RunScript("OnLeave")
 WorldMapFrame:Hide()
 SlashCmdList.AEGISJOURNAL("travel list")
-check(chatContains("Portal to Stormwind (Skyborne only) at The Sky Enclave"), "and so does the list")
+check(chatContains("Airship to Zephras Isle (Skyborne only) at Dalaran"), "and so does the list")
 Mock.playerX, Mock.playerY = 0.70, 0.20
 SlashCmdList.AEGISJOURNAL("travel airship Zephras Isle (Skyborne only) alliance")
 local airship = ns.db.travel[#ns.db.travel]

@@ -185,7 +185,7 @@ for _, spot in ipairs(ns.GetTransports()) do
 		end
 	end
 end
-check(noted >= 3, "the Skyborne routes keep their notes: " .. noted)
+check(noted >= 2, "the Skyborne airship's two routes keep their notes: " .. noted)
 
 -- A faction is found by the client's English name as by its translated one
 local faction, listed
