@@ -1368,8 +1368,13 @@ check(boxes == 3 and detail.Choose:GetText():find("choose", 1, true), "three rew
 check(detail.RewardBoxes[1].NameFrame._texture == "Interface\\QuestFrame\\UI-QuestItemNameFrame", "classic quest item boxes")
 check(detail.ShowStart:IsEnabled() and detail.ShowStart.point.mapID == 1426 and detail.ShowEnd.point.mapID == 1455
 	and detail.ShowEnd.point.x == 0.394, "where it starts in Dun Morogh, and Magni's hall where it ends")
+check(detail.Giver:IsShown() and detail.Giver:GetText() == "Quest offered by Earthseer Farsen, Dun Morogh (after Underground Map)"
+	.. "\nHand in to King Magni Bronzebeard, Ironforge",
+	"who gives it and who takes it, written beneath the buttons (a player's request): " .. tostring(detail.Giver:GetText()))
 rowFor(96395):Click()
 check(not detail.ShowStart:IsEnabled() and not detail.ShowEnd:IsEnabled(), "a quest begun inside: no place on the world map, the buttons greyed")
+check(detail.Giver:GetText() == "Quest offered by Ghostly Attendant, inside Hall of Thanes, after the first room"
+	.. "\nHand in to Ghostly Attendant, inside the dungeon", "and its giver written out all the same")
 rowFor(96393):Click()
 rowFor(96393).Expand:Click()
 check(#questRows() == 6 and questRows()[5].quest.name == "Underground Map", "opening the chain lists the prerequisite beneath")
@@ -1443,6 +1448,8 @@ Mock.Fire("QUEST_LOG_UPDATE")
 
 rowFor(214):Click()
 check(detail.ShowStart:IsEnabled() and detail.ShowEnd:IsEnabled(), "Scout Riell gives and takes the bandanas: both places known")
+check(detail.Giver:GetText() == "Quest offered by Scout Riell, Sentinel Hill tower, Westfall",
+	"one line when the giver takes it back: " .. tostring(detail.Giver:GetText()))
 Mock.inCombat = true
 local chatBefore = #Mock.chat
 detail.ShowStart:Click()
@@ -1471,7 +1478,7 @@ check(parts.quest.steps and parts.Text:GetText() == "[18] The Defias Brotherhood
 	"six same-named steps make one row, at the first part's level: " .. parts.Text:GetText())
 parts:Click()
 check(detail.Title:GetText() == "The Defias Brotherhood (6 parts)" and detail.Objective:GetText():find("0 of 6", 1, true)
-	and not detail.ShowStart:IsShown(), "the chain's page counts its parts")
+	and not detail.ShowStart:IsShown() and not detail.Giver:IsShown(), "the chain's page counts its parts")
 Mock.questsDone[65], Mock.questsDone[132] = true, true
 Mock.Fire("QUEST_LOG_UPDATE")
 check(detail.Objective:GetText():find("2 of 6", 1, true) and rowFor(65).Status._atlas == "QuestTurnin", "parts done so far, and the chain is under way")
@@ -1500,6 +1507,18 @@ do
 		"done steps are checked off, and the next one opens")
 	Mock.questsDone[92742], Mock.questsDone[92744] = nil, nil
 	rowFor(92819).Expand:Click()
+end
+
+do
+	-- A quest with no giver or taker written leaves no line behind from the one chosen before
+	ns.Journal:OpenInstance(ns.GetInstance("WailingCaverns"))
+	tabs[5]:Click()
+	rowFor(6981):Click()
+	local before = detail.Giver:IsShown()
+	rowFor(1500):Click()
+	check(before and not detail.Giver:IsShown(), "Waking Naralex, with no giver written, shows no giver line")
+	ns.Journal:OpenInstance(ns.GetInstance("TheDeadmines"))
+	tabs[5]:Click()
 end
 
 do

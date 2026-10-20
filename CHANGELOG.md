@@ -12,6 +12,13 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.36.0]
+
+### Added
+- **Who gives a quest, on its page**: beneath Show Start and Show End, "Quest offered by Afadra
+  Dunwall, Ironforge", and who to hand it in to when that is someone else, as the buttons' tooltips
+  say it. *(player request)*
+
 ## [0.35.0] (restart)
 
 ### Added
