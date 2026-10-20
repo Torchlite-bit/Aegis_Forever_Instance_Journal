@@ -23,9 +23,9 @@ and the version shown in the AddOns list. Quote it in bug reports.
 - **Boxes on the Quests tab**: an open dropdown's quests sit in a parchment box under it, as an
   ability's text does, and the box grows as you open a chain. On a dungeon's overview, a key's
   quests sit in its note's box too.
-- **The Horde Skyborne's ship** on the world map: it lands on Skywatcher Plateau in Mulgore, by
-  Camp Gev'rek, in Horde red, for Zephras Isle (Skyborne only). Its Zephras Isle end is still to
-  come.
+- **The Horde Skyborne's ship** on the world map, in Horde red: its dock on Zephras Isle, west of
+  the Alliance's in Valanaar, and its landing on Skywatcher Plateau in Mulgore, by Camp Gev'rek
+  (Skyborne only).
 - **Skep's runs**: City of Dalaran's first recorded abilities, for all eight bosses and their
   adds, more Excavation Site timings, and the Violet Sorcerer's Sandals from City of Dalaran's
   trash. Skep joins the contributors list. Thank you!

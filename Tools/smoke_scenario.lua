@@ -2730,11 +2730,19 @@ WorldMapFrame:Hide()
 Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = nil, nil, nil, ""
 ns.db.travel = nil
 
--- The Horde Skyborne's ship lands in Mulgore, by Camp Gev'rek: a known spot nobody has stood on yet
+-- The Horde Skyborne's ship between Zephras Isle and Mulgore, by Camp Gev'rek: known spots nobody has
+-- stood on yet, beside the Alliance's
 OpenWorldMap(1412)
 local skycutter = transportPins()["Skywatcher Plateau"]
 check(skycutter and skycutter.spot.faction == "Horde" and skycutter.spot.to[1] == "Zephras Isle"
 	and skycutter.Texture._atlas == "TaxiNode_Continent_Horde", "the Horde Skyborne's ship in Mulgore, in Horde red")
+WorldMapFrame:SetMapID(2521)
+local hordeDock, allianceDock
+for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalTransportPinTemplate")) do
+	if pin.spot.faction == "Horde" then hordeDock = pin else allianceDock = pin end
+end
+check(hordeDock and hordeDock.spot.to[1] == "Mulgore" and hordeDock.Texture._atlas == "TaxiNode_Continent_Horde"
+	and allianceDock and allianceDock.spot.to[1] == "Dalaran", "and on Zephras Isle, the Horde's dock beside the Alliance's")
 WorldMapFrame:Hide()
 
 -- The Deeprun Tram's Ironforge end, unchanged from Classic, is the journal's own
