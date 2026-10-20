@@ -700,7 +700,7 @@ for _, boss in ipairs(cityOfDalaran.bosses) do if boss.name == "Lyn the Ignored"
 check(#lyn.abilities == 3 and lyn.abilities[2].spellID == 1304473 and lyn.abilities[2].flags[1] == "Curse"
 	and lyn.abilities[3].spellID == 1303266 and lyn.abilities[3].every and not lyn.extraAbilities
 	and lyn.fightNote:find("Tome of Dalaran", 1, true)
-	and lyn.notes[1]:find("Tome of Dalaran", 1, true), "Lyn the Ignored's abilities, and how to summon him")
+	and lyn.notes[1]:find("summoning circle", 1, true), "Lyn the Ignored's abilities, and where to summon him")
 local heartOfDisruption
 for _, quest in ipairs(cityOfDalaran.quests) do if quest.questID == 96984 then heartOfDisruption = quest end end
 check(#heartOfDisruption.prerequisites == 4 and heartOfDisruption.prerequisites[4].name == "Blood in the Streets",
@@ -744,6 +744,19 @@ do
 	check(lynNote.Description:GetText():find("Tome of Dalaran", 1, true) and lynNote.Description:GetText():find("summon him", 1, true)
 		and lynNote.Button.AbilityIcon:GetTexture() == "Interface\\TargetingFrame\\UI-TargetingFrame-Skull"
 		and not lynNote.Button.Note:IsShown(), "the hidden boss's note: a skull, and how to summon him")
+	-- The items the notes name are links: the item's quality colour (the page's ink for a common
+	-- one, which white would not read on), its tooltip when pointed at
+	check(lynNote.Description:GetText():find("|cff0070dd|Hitem:275989|h[Tome of Dalaran]|h|r", 1, true)
+		and lynNote.Description:GetText():find("|cff3d2408|Hitem:276561|h[Black Tome]|h|r", 1, true)
+		and key.Description:GetText():find("|Hitem:277507|h[Dalaran Sewer Key]|h", 1, true)
+		and not lynNote.Description:GetText():find("{item:", 1, true), "the notes' items are links, in their quality's colour")
+	lynNote:_RunScript("OnHyperlinkEnter", "item:275989")
+	check(GameTooltip:IsShown() and GameTooltip._link == "item:275989", "pointing at one shows the item")
+	lynNote:_RunScript("OnHyperlinkLeave")
+	check(not GameTooltip:IsShown(), "and leaving hides it")
+	-- A key's quests sit in its text's box: the box reaches below them
+	local _, _, _, boxRight, boxBottom = key.DescriptionBG:GetPoint(2)
+	check(boxRight == 9 and boxBottom == -(4 + 2 * 26 + 4), "the key's quests sit in its text's box, which grows to hold them")
 	check(lore.Description:GetText() == cityOfDalaran.description
 		and select(5, lore.Description:GetPoint(1)) < select(5, rows[2]:GetPoint(1)),
 		"the description after the notes")
@@ -911,6 +924,33 @@ do
 		check(#rows == 2 and rows[1].quest.steps and #rows[1].quest.steps == 2
 			and ns.QuestsPanel:Find(cityOfDalaran, 92433) == rows[1].quest, "a chain's same-named steps: one row, found by either step")
 		quest.prerequisites, alliance.quests = prerequisites, quests
+	end
+
+	-- A hidden boss's page opens on the same note, above the Overview, and says he is summoned
+	do
+		local lynBoss
+		for _, boss in ipairs(cityOfDalaran.bosses) do if boss.name == "Lyn the Ignored" then lynBoss = boss end end
+		ns.Journal:OpenBoss(cityOfDalaran, lynBoss)
+		tabs[1]:Click()
+		local overview = page.BossOverview.Child
+		local note = overview.bossNote
+		local bullets = {}
+		for _, bullet in ipairs(overview.Bullets) do if bullet:IsShown() then bullets[#bullets + 1] = bullet.Text:GetText() end end
+		local joined = table.concat(bullets, "\n")
+		check(note and note:IsShown() and note.Button.Title:GetText() == "Lyn the Ignored, a hidden boss" and note.Description:IsShown()
+			and note.Description:GetText():find("|Hitem:275989|h[Tome of Dalaran]|h", 1, true)
+			and select(5, overview.Header:GetPoint(1)) < select(5, note:GetPoint(1)),
+			"his page: the note on how to summon him, open, above the Overview")
+		check(joined:find(ns.L.BULLET_SUMMONED, 1, true) and not joined:find(ns.L.BULLET_RARE, 1, true)
+			and not joined:find("A hidden boss you summon. Take the Black Tome", 1, true),
+			"his bullets: summoned, not a chance rare, and the note's words not said twice")
+		local before = select(5, overview.Header:GetPoint(1))
+		note.Button:Click()
+		check(not note.Description:IsShown() and select(5, overview.Header:GetPoint(1)) > before, "a click folds it, the Overview moving up")
+		note.Button:Click()
+		-- Another boss has no note
+		ns.Journal:OpenBoss(cityOfDalaran, cityOfDalaran.bosses[1])
+		check(not overview.bossNote:IsShown() and cityOfDalaran.bosses[1].name ~= "Lyn the Ignored", "another boss has none")
 	end
 
 	-- A dungeon with nothing to prepare has no bar
@@ -1249,10 +1289,23 @@ do
 		and select(5, drops[1]:GetPoint(1)) == -6 and select(5, qrows[1]:GetPoint(1)) < select(5, drops[1]:GetPoint(1))
 		and select(4, qrows[1]:GetPoint(1)) == 8 and page.QuestList:GetHeight() == page.Bosses:GetHeight(),
 		"one dropdown, Dungeon Quests, open over the quests, the list as tall as the boss list")
+	local box = page.QuestList.Boxes[1]
+	local boxTop = select(5, box:GetPoint(1))
+	local boxBottom = select(5, box:GetPoint(2))
+	local lastRow = qrows[#qrows]
+	check(box:IsShown() and box.Bottom:IsShown() and boxTop > select(5, qrows[1]:GetPoint(1))
+		and boxBottom < select(5, lastRow:GetPoint(1)) - 26, "its quests sit in a box under it, as an ability's text does")
 	drops[1].Button:Click()
-	check(#questRows() == 0 and detail.Title:GetText() == "An Ancient Grudge", "folded: no quests listed, the chosen one kept")
+	check(#questRows() == 0 and detail.Title:GetText() == "An Ancient Grudge" and not box:IsShown() and not box.Bottom:IsShown(),
+		"folded: no quests listed, no box, the chosen one kept")
 	drops[1].Button:Click()
-	check(#questRows() == 5, "opened again")
+	check(#questRows() == 5 and box:IsShown(), "opened again")
+	-- A chain opened with its "+" grows the box
+	local incursionRow
+	for _, row in ipairs(questRows()) do if row.quest.questID == 96393 then incursionRow = row end end
+	incursionRow.Expand:Click()
+	check(#questRows() == 6 and select(5, box:GetPoint(2)) == boxBottom - 26, "a chain opened grows the box by its rows")
+	incursionRow.Expand:Click()
 end
 check(qrows[1].Text:GetText() == "[15] An Ancient Grudge" and qrows[1].quest == page.selectedQuest, "first quest chosen to start")
 check(detail.Title:GetText() == "An Ancient Grudge" and not detail.Status:IsShown(), "its page: the title, no status line when available")

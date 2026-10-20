@@ -312,6 +312,21 @@ local function CreateHeader(parent, onToggle)
 		end
 	end)
 	button:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+	-- Items named in the text are links (ns.Items:LinkText): pointing at one shows the item, a
+	-- modified click (shift) puts the client's own link in the chat.
+	pcall(header.SetHyperlinksEnabled, header, true)
+	pcall(header.SetScript, header, "OnHyperlinkEnter", function(self, link)
+		GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
+		pcall(GameTooltip.SetHyperlink, GameTooltip, link)
+		GameTooltip:Show()
+	end)
+	pcall(header.SetScript, header, "OnHyperlinkLeave", function() GameTooltip:Hide() end)
+	pcall(header.SetScript, header, "OnHyperlinkClick", function(_, link)
+		local itemID = tonumber(tostring(link):match("^item:(%d+)"))
+		local itemLink = itemID and ns.Items:Link(itemID)
+		if itemLink and type(HandleModifiedItemClick) == "function" then HandleModifiedItemClick(itemLink) end
+	end)
 	return header
 end
 

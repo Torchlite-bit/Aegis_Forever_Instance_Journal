@@ -826,12 +826,16 @@ local function FillInstanceOverview(page)
 	lore:SetVerticalScroll(0)
 end
 
--- Hand-written notes first, then quick facts from the data.
-local function BossBullets(boss)
+-- Hand-written notes first, then quick facts from the data. A rare that the player summons (a note
+-- of Before you go says how) is no chance meeting.
+local function BossBullets(boss, instance)
 	local bullets = {}
 	for _, note in ipairs(boss.notes or {}) do bullets[#bullets + 1] = note end
 	if boss.area then bullets[#bullets + 1] = string.format(L.BULLET_AREA, boss.area) end
-	if boss.rare then bullets[#bullets + 1] = L.BULLET_RARE end
+	if boss.rare then
+		local summoned = instance and ns.BeforeYouGo:BossNote(instance, boss)
+		bullets[#bullets + 1] = summoned and L.BULLET_SUMMONED or L.BULLET_RARE
+	end
 	if boss.level then bullets[#bullets + 1] = string.format(L.BULLET_LEVEL, boss.level) end
 	if boss.abilities and #boss.abilities > 0 then
 		bullets[#bullets + 1] = string.format(L.BULLET_ABILITIES, NameList(boss.abilities, 6))
@@ -850,21 +854,42 @@ local function BossBullets(boss)
 	return bullets
 end
 
-local function FillBossOverview(page)
+local FillBossOverview
+
+-- A hidden boss's note from Before you go (how to summon it), under the description, open until
+-- the player folds it; nil and hidden for any other boss. Returns how tall it is.
+local function PlaceBossNote(page, top)
+	local child = page.BossOverview.Child
+	local note = ns.BeforeYouGo:BossNote(page.instance, page.boss)
+	if note and not child.bossNote then
+		child.bossNote = ns.PaperHeader.Create(child, function()
+			child.noteClosed = not child.noteClosed
+			FillBossOverview(page)
+		end)
+	end
+	if child.bossNote then child.bossNote:SetShown(note ~= nil) end
+	if not note then return 0 end
+	child.bossNote:ClearAllPoints()
+	child.bossNote:SetPoint("TOPLEFT", 0, -top)
+	child.bossNote:SetWidth(310)
+	return ns.PaperHeader.Set(child.bossNote, note, 0, not child.noteClosed) + 9
+end
+
+FillBossOverview = function(page)
 	local child = page.BossOverview.Child
 	local boss = page.boss
+	if child.noteBoss ~= boss then child.noteBoss, child.noteClosed = boss, false end
 	local description = boss.description or (boss.trash and L.TRASH_DESCRIPTION) or nil
 	child.Description:SetText(description or "")
+	local hasDescription = description and description ~= ""
+	local top = hasDescription and (8 + child.Description:GetStringHeight() + 6) or 4
+	top = top + PlaceBossNote(page, top)
 	child.Header:ClearAllPoints()
-	if description and description ~= "" then
-		child.Header:SetPoint("TOPLEFT", child.Description, "BOTTOMLEFT", -6, -6)
-	else
-		child.Header:SetPoint("TOPLEFT", 0, -4)
-	end
+	child.Header:SetPoint("TOPLEFT", hasDescription and -4 or 0, -top)
 
 	local previous = child.Header
-	local height = (description and child.Description:GetStringHeight() or 0) + 8 + 30 + 9
-	for index, text in ipairs(BossBullets(boss)) do
+	local height = top + 30 + 3
+	for index, text in ipairs(BossBullets(boss, page.instance)) do
 		local bullet = child.Bullets[index]
 		if not bullet then
 			bullet = CreateFrame("Frame", nil, child)
@@ -884,7 +909,7 @@ local function FillBossOverview(page)
 		height = height + bullet:GetHeight() + 6
 		previous = bullet
 	end
-	for index = #BossBullets(boss) + 1, #child.Bullets do
+	for index = #BossBullets(boss, page.instance) + 1, #child.Bullets do
 		child.Bullets[index]:Hide()
 	end
 	child:SetHeight(height)
