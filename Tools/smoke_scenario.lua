@@ -1127,14 +1127,31 @@ do
 	check(Quest("WailingCaverns", 1500) and Quest("WailingCaverns", 914).requiredLevel == 10
 		and Quest("DireMaulEast", 7483) and Quest("DireMaulNorth", 7483) and Quest("DireMaulWest", 7483)
 		and Quest("DireMaulEast", 5526) and Quest("TempleOfAtalHakkar", 8232).classOnly == "HUNTER"
-		and Quest("HallOfThanes", 96403).faction == "Alliance" and Quest("BlackrockDepths", 4341).prerequisites[1].questID == 3701,
+		and Quest("HallOfThanes", 96403).faction == "Alliance" and Quest("BlackrockDepths", 4341).prerequisites[1].questID == 3702
+		and Quest("BlackrockDepths", 4341).prerequisites[2].questID == 3701,
 		"the quests the site lists for each dungeon, Forever's changes to them, and the class quests done inside")
 	check(#Quest("RuinsOfLordaeron", 97292).prerequisites == 4 and #Quest("DireMaulNorth", 5525).prerequisites == 0
 		and #Quest("DireMaulNorth", 5518).prerequisites == 0 and Quest("DireMaulNorth", 5519).prerequisites[1].questID == 5518
-		and not Quest("DireMaulNorth", 7703) and Quest("LowerBlackrockSpire", 4981)
+		and Quest("DireMaulNorth", 7703) and not Quest("DireMaulNorth", 1318) and Quest("LowerBlackrockSpire", 4981)
 		and Quest("LowerBlackrockSpire", 4981).turnin:find("Lower", 1, true) and Quest("Gnomeregan", 2923).endMap.mapID == 1455
-		and not Quest("ZulFarrak", 2861).startMap and Quest("Uldaman", 721).endMap.mapID == 1432,
-		"chains in order and no loops, Bijou where she is, Ironforge's givers on its own map, no capital's mark for every side")
+		and not Quest("ZulFarrak", 2861).startMap and Quest("Uldaman", 721).endMap.mapID == 1418,
+		"chains in order and no loops, Unfinished Gordok Business once and by the game's own id, Bijou where she is, "
+			.. "Ironforge's givers on its own map, Hammertoe Grez in the Badlands, no capital's mark for every side")
+	-- The quest audit (Data/Authored/QuestAudit.lua): a Forever quest's required chain without its
+	-- optional lead, quests that are another wing's moved out, duplicates the game never offers gone,
+	-- and a wrong start spot cleared
+	local horrors = Quest("ExcavationSiteWetlands", 95646)
+	local chain = {}
+	for _, step in ipairs(horrors.prerequisites) do chain[#chain + 1] = step.questID end
+	check(table.concat(chain, ",") == "276,277,275", "Horrors in the Highland needs Rethiel's three quests first: "
+		.. table.concat(chain, ","))
+	check(not Quest("LowerBlackrockSpire", 4734) and Quest("UpperBlackrockSpire", 4734)
+		and not Quest("DireMaulWest", 8967) and Quest("DireMaulEast", 8967) and not Quest("BlackrockDepths", 3911),
+		"another wing's quests and the game's unused duplicates are left out")
+	check(Quest("WailingCaverns", 6981).startMap == nil and Quest("WailingCaverns", 6981).endMap.mapID == 1413,
+		"a start spot that was wrong is cleared")
+	local ok, problem = pcall(ns.AmendInstance, "WailingCaverns", { removeQuests = { 999999 } })
+	check(not ok and tostring(problem):find("has no quest 999999", 1, true), "removing a quest the dungeon lacks is an error")
 end
 -- A recorded run of Excavation Site: each boss's encounter id and spells, the Relic Guardian's though
 -- the game calls him neutral, and the spiders that were fighting the dig nearby left out of the adds
@@ -2696,6 +2713,20 @@ local airship = ns.db.travel[#ns.db.travel]
 check(airship.kind == "airship" and airship.to[1] == "Zephras Isle" and airship.faction == "Alliance"
 	and airship.notes["Zephras Isle"] == "Skyborne only" and chatContains("Saved Airship to Zephras Isle (Skyborne only)"),
 	"airships are a kind of their own")
+-- A route Forever took out stays hidden where a player saved it themselves (the Skyborne's portal in
+-- Stormwind's mage tower); another route saved at the same spot still shows
+Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1453, 0.4997, 0.8686, "Wizard's Sanctum"
+SlashCmdList.AEGISJOURNAL("travel portal Dalaran (Skyborne only)")
+OpenWorldMap(1453)
+check(ns.db.travel[#ns.db.travel].to[1] == "Dalaran" and transportPins()["Wizard's Sanctum"] == nil,
+	"a saved route Forever took out is not shown")
+WorldMapFrame:Hide()
+SlashCmdList.AEGISJOURNAL("travel portal Darnassus")
+OpenWorldMap(1453)
+local sanctum = transportPins()["Wizard's Sanctum"]
+check(sanctum and #sanctum.spot.to == 1 and sanctum.spot.to[1] == "Darnassus" and #ns.db.travel[#ns.db.travel].to == 2,
+	"another route saved at the same spot still is, and the saved spot keeps both")
+WorldMapFrame:Hide()
 Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = nil, nil, nil, ""
 ns.db.travel = nil
 

@@ -104,9 +104,6 @@ Update("WailingCaverns", {
 		},
 		["Mutanus the Devourer"] = { notes = { "Thundercrack stuns everyone near him; he also puts players to sleep and fears them." } },
 	},
-	questPatches = {
-		[6981] = { endMap = { mapID = 1413, x = 0.482, y = 0.328 } },
-	},
 	addQuests = {
 		{
 			questID = 3369, name = "In Nightmares", level = 25, requiredLevel = 10, faction = "Horde",

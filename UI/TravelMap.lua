@@ -168,6 +168,25 @@ local function Joined(base, saved)
 	return spot
 end
 
+-- A saved spot without the routes Forever took out (Data/Authored/Transports.lua), or nil when it
+-- has no route left. The saved spot itself is left as it was.
+local function StillRuns(spot)
+	local to = {}
+	for _, destination in ipairs(spot.to or {}) do
+		local gone = false
+		for _, route in ipairs(ns.GetGoneTransports()) do
+			if SameSpot(spot, route.kind, route.mapID, route.x, route.y) and Contains(route.to, destination) then gone = true end
+		end
+		if not gone then to[#to + 1] = destination end
+	end
+	if #to == #(spot.to or {}) then return spot end
+	if #to == 0 then return nil end
+	local copy = {}
+	for key, value in pairs(spot) do copy[key] = value end
+	copy.to = to
+	return copy
+end
+
 local function ShownTransports()
 	local saved = Transports()
 	if shown and not savesChanged and shownFrom == saved then return shown end
@@ -177,7 +196,12 @@ local function ShownTransports()
 		if spot.unvisited then unvisited[#unvisited + 1] = spot else shown[#shown + 1] = spot end
 	end
 	local authored = #shown
+	local running = {}
 	for _, spot in ipairs(saved) do
+		local still = StillRuns(spot)
+		if still then running[#running + 1] = still end
+	end
+	for _, spot in ipairs(running) do
 		local joined = false
 		for index = 1, authored do
 			if SameSpot(shown[index], spot.kind, spot.mapID, spot.x, spot.y) then

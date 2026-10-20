@@ -12,7 +12,7 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
-## [0.35.0]
+## [0.35.0] (restart)
 
 ### Added
 - **Item links in Before you go**: the items its notes name (the Tome of Dalaran, the Black Tome,
@@ -36,9 +36,19 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ### Removed
 - **The Skyborne's portals** between Stormwind's mage tower and Dalaran: Forever took both out.
-  The Skyborne airship between Dalaran and Zephras Isle stays.
+  They are hidden where you saved them yourself with /aegis travel too. The Skyborne airship
+  between Dalaran and Zephras Isle stays.
 
 ### Fixed
+- **Every dungeon quest checked** against QuestieDB's Forever data (a snapshot of the live game),
+  the Forever Dungeon Journal, foreverchanges.pro and Alex Atlas Loot, and corrected: 251 quests
+  in all. Each quest now lists every quest you must do first, in order, and leaves out the
+  optional ones that only point the way: Horrors in the Highland needs Rethiel's Tramping Paws,
+  Fire Taboo and Blisters on the Land again. Givers and takers named, quests that start from an
+  item or an object say which, class quests marked for their class, and quest givers placed
+  where Forever's redrawn Stormwind and Redridge have them. 33 quests the journal lacked are in,
+  and 15 are gone: duplicates the game never offers (Unfinished Gordok Business is listed once,
+  as the quest the game gives) and another wing's quests.
 - **Dungeon and cave entrances on the world map** answer the mouse over their icon only: the
   tooltip and a click could catch the cursor well off the swirl.
 - **The Highland Horror** (Excavation Site) is crossed out on the dungeon map when killed. Bosses

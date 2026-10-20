@@ -2230,6 +2230,7 @@ L.STRINGS = {
 	["Zapper Fuel"] = "Carburant pour zappeur",
 	["Zaruk"] = "Zaruk",
 	["Zaruk in the Arathi Highlands sends you to her with Dragonmaw Rumors. The Dragonmaw Dispatch comes from the Dragonmaw forces inside the dungeon."] = "Zaruk, dans les Hautes-terres d'Arathi, vous envoie la voir avec la quête Rumeurs gueule-de-dragon. La Dépêche gueule-de-dragon s'obtient sur les forces gueule-de-dragon, à l'intérieur du donjon.",
+	["Most players come to Rethiel by The Greenwarden, from First Mate Fitzsimmons in Menethil Harbor: it leads to Tramping Paws but is not needed for it."] = "On arrive le plus souvent chez Rethiel par une quête du second Fitzsimmons, au Port de Menethil : elle mène à ses quêtes mais n'est pas nécessaire.",
 	["Zaruk, Hammerfall, Arathi Highlands"] = "Zaruk, Trépas-d'Orgrim, Hautes-terres d'Arathi",
 	["Zephras Isle"] = "Île de Zéphras",
 	["Zoram Strand, Ashenvale"] = "Rivage de Zoram, Orneval",

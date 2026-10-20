@@ -1710,6 +1710,7 @@ L.STRINGS = {
 	["The undead tunnel branches off before the portal."] = "Туннель нежити ответвляется перед порталом.",
 	["The vaults in Durgen Dirgehammer's room hold about 24 Dwarven Heirlooms: open them after the fight."] = "В хранилищах комнаты Дюргена Погребального Молота около 24 дворфийских реликвий: откройте их после боя.",
 	["Zaruk in the Arathi Highlands sends you to her with Dragonmaw Rumors. The Dragonmaw Dispatch comes from the Dragonmaw forces inside the dungeon."] = "Зарук в Нагорье Арати отправляет вас к ней с заданием «Слухи о Драконьей Пасти». Донесение Драконьей Пасти добывается у сил Драконьей Пасти внутри подземелья.",
+	["Most players come to Rethiel by The Greenwarden, from First Mate Fitzsimmons in Menethil Harbor: it leads to Tramping Paws but is not needed for it."] = "Обычно к Ретиэлю приходят по заданию «Зелёный страж» первого помощника Фицсиммонса из Менетила: оно ведёт к «Топочущим лапам», но для них не нужно.",
 	-- Phase and extra-ability titles.
 	["A large health pool"] = "Большой запас здоровья",
 	["A patrol"] = "Патруль",

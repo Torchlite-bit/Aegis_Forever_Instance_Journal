@@ -2230,6 +2230,7 @@ L.STRINGS = {
 	["Zapper Fuel"] = "Treibstoff für den Zapper",
 	["Zaruk"] = "Zaruk",
 	["Zaruk in the Arathi Highlands sends you to her with Dragonmaw Rumors. The Dragonmaw Dispatch comes from the Dragonmaw forces inside the dungeon."] = "Zaruk im Arathihochland schickt Euch mit „Gerüchte über das Drachenmal“ zu ihr. Die Depesche des Drachenmals erhaltet Ihr von den Truppen des Drachenmals im Dungeon.",
+	["Most players come to Rethiel by The Greenwarden, from First Mate Fitzsimmons in Menethil Harbor: it leads to Tramping Paws but is not needed for it."] = "Meist kommt man über einen Auftrag von Erster Maat Fitzsimmons im Hafen von Menethil zu Rethiel: Er führt zu Rethiels Aufträgen, wird für sie aber nicht gebraucht.",
 	["Zaruk, Hammerfall, Arathi Highlands"] = "Zaruk, Hammerfall, Arathihochland",
 	["Zephras Isle"] = "Insel Zephras",
 	["Zoram Strand, Ashenvale"] = "Zoramstrand, Eschental",

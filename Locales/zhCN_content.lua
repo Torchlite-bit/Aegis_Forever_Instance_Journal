@@ -2230,6 +2230,7 @@ L.STRINGS = {
 	["Zapper Fuel"] = "电击器燃料",
 	["Zaruk"] = "扎鲁克",
 	["Zaruk in the Arathi Highlands sends you to her with Dragonmaw Rumors. The Dragonmaw Dispatch comes from the Dragonmaw forces inside the dungeon."] = "阿拉希高地的扎鲁克会通过“龙喉传闻”派你去找她。龙喉急件来自地下城内的龙喉部队。",
+	["Most players come to Rethiel by The Greenwarden, from First Mate Fitzsimmons in Menethil Harbor: it leads to Tramping Paws but is not needed for it."] = "多数玩家通过米奈希尔港的大副菲兹西蒙斯的任务来到雷希尔身边：它会引向雷希尔的任务，但并非必需。",
 	["Zaruk, Hammerfall, Arathi Highlands"] = "扎鲁克，落锤镇，阿拉希高地",
 	["Zephras Isle"] = "泽弗拉斯岛",
 	["Zoram Strand, Ashenvale"] = "佐拉姆海岸，灰谷",

@@ -94,6 +94,7 @@ Data\Authored\Factions.lua
 Data\Authored\MapAreas.lua
 Data\Authored\ClassicMaps.lua
 Data\Authored\FromForeverChanges.lua
+Data\Authored\QuestAudit.lua
 Data\Authored\SiteLoot.lua
 Data\Authored\ItemNames.lua
 Data\Authored\Abilities.lua

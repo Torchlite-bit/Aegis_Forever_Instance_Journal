@@ -127,7 +127,8 @@ end
 	  addBosses = { boss, ... }                              bosses the dungeon's data lacks, added before
 	                                                         its trash (one it already has is left alone);
 	                                                         added first, so the other fields can name them
-	  questPatches = { [questID] = { field = value } }       merged into that quest
+	  questPatches = { [questID] = { field = value } }       merged into that quest (false clears a field)
+	  removeQuests = { questID, ... }                        quests that are not the dungeon's on Forever
 	  anything else                                          replaces the instance's field
 ]]
 local function AddBosses(instance, bosses)
@@ -176,7 +177,9 @@ function ns.AmendInstance(key, patch)
 					if candidate.questID == questID then quest = candidate end
 				end
 				assert(quest, "AmendInstance: " .. key .. " has no quest " .. tostring(questID))
-				for questField, questValue in pairs(questPatch) do quest[questField] = questValue end
+				for questField, questValue in pairs(questPatch) do
+					if questValue == false then quest[questField] = nil else quest[questField] = questValue end
+				end
 			end
 		elseif field == "addQuests" then
 			local known = {}
@@ -187,6 +190,15 @@ function ns.AmendInstance(key, patch)
 					known[quest.questID] = true
 				end
 			end
+		elseif field == "removeQuests" then
+			local gone = {}
+			for _, questID in ipairs(value) do gone[questID] = true end
+			local kept = {}
+			for _, quest in ipairs(instance.quests) do
+				if gone[quest.questID] then gone[quest.questID] = nil else kept[#kept + 1] = quest end
+			end
+			assert(next(gone) == nil, "AmendInstance: " .. key .. " has no quest " .. tostring(next(gone)))
+			instance.quests = kept
 		else
 			instance[field] = value
 		end
@@ -634,6 +646,18 @@ end
 
 function ns.GetTransports()
 	return transports
+end
+
+-- Routes Forever took out: { kind, mapID, x, y, to = { destination, ... } }, hidden from the
+-- spots players saved themselves too (UI/TravelMap.lua).
+local goneTransports = {}
+
+function ns.RemoveTransports(list)
+	for _, route in ipairs(list) do goneTransports[#goneTransports + 1] = route end
+end
+
+function ns.GetGoneTransports()
+	return goneTransports
 end
 
 -- Factions with rewards, by name.
