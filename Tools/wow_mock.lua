@@ -768,6 +768,8 @@ function IsInInstance()
 	if Mock.instance then return true, "party" end
 	return false, "none"
 end
+-- The combat log line being handed out (COMBAT_LOG_EVENT_UNFILTERED): set Mock.combatLog first.
+function CombatLogGetCurrentEventInfo() return unpack(Mock.combatLog or {}) end
 function GetInstanceInfo()
 	if Mock.instance then return Mock.instance.name, "party", 1, "Normal", 5, 0, false, Mock.instance.id, 5, 0 end
 	return "Eastern Kingdoms", "none", 0, "", 0, 0, false, 0, 0, 0

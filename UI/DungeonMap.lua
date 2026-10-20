@@ -164,6 +164,46 @@ function DungeonMap:MarkDefeated(instance, boss)
 	self:Refresh()
 end
 
+--[[
+	A boss the game holds no encounter for (the Excavation Site's Highland Horror, a rare) ends no
+	fight, so ENCOUNTER_END never names it: its death in the combat log marks it instead, by its
+	creature id where the journal knows it, else by its name. The log is read only inside a dungeon
+	that has such a boss, and only its deaths are looked at.
+]]
+local deaths = CreateFrame("Frame")
+local watched, watchedInstance
+
+local function CreatureID(guid)
+	local kind, _, _, _, _, id = strsplit("-", guid or "")
+	if kind == "Creature" or kind == "Vehicle" then return tonumber(id) end
+	return nil
+end
+
+local function WatchDeaths(instance)
+	watched, watchedInstance = nil, instance
+	for _, boss in ipairs(instance and instance.bosses or {}) do
+		if not boss.encounterID and not boss.trash then
+			watched = watched or {}
+			if boss.npcID then watched[boss.npcID] = boss end
+			watched[boss.name] = boss
+			if boss.enName then watched[boss.enName] = boss end
+		end
+	end
+	if watched then
+		ns.RegisterEvents(deaths, "COMBAT_LOG_EVENT_UNFILTERED")
+	else
+		ns.UnregisterEvents(deaths, "COMBAT_LOG_EVENT_UNFILTERED")
+	end
+end
+
+deaths:SetScript("OnEvent", function()
+	if not (watched and watchedInstance and CombatLogGetCurrentEventInfo) then return end
+	local _, subevent, _, _, _, _, _, destGUID, destName = CombatLogGetCurrentEventInfo()
+	if subevent ~= "UNIT_DIED" then return end
+	local boss = watched[CreatureID(ns.Readable(destGUID)) or 0] or watched[ns.Readable(destName) or ""]
+	if boss and not DungeonMap:IsDefeated(watchedInstance, boss) then DungeonMap:MarkDefeated(watchedInstance, boss) end
+end)
+
 ------------------------------------------------------------------------------------------
 -- Boss pins
 ------------------------------------------------------------------------------------------
@@ -1597,6 +1637,7 @@ events:SetScript("OnEvent", function(_, event, ...)
 		local ghost = UnitIsDeadOrGhost and UnitIsDeadOrGhost("player")
 		if instance and not wasInside and not ghost then defeated[instance.key] = nil end
 		wasInside = instance ~= nil
+		WatchDeaths(instance)
 		DungeonMap:Refresh()
 	elseif event == "ENCOUNTER_END" then
 		local encounterID, name, _, _, success = ...

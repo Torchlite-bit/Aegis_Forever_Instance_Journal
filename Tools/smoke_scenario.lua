@@ -1695,6 +1695,29 @@ WorldMapFrame:SetMapID(1415)
 check(not overlay:IsShown(), "browsing to another map puts it away")
 WorldMapFrame:Hide()
 
+-- A boss the game holds no encounter for (the Excavation Site's Highland Horror) is marked by its
+-- death in the combat log, read only in a dungeon that has one
+do
+	local dig = ns.GetInstance("ExcavationSiteWetlands")
+	local horror
+	for _, boss in ipairs(dig.bosses) do if boss.name == "Highland Horror" then horror = boss end end
+	local here = Mock.instance
+	Mock.instance = { name = "Excavation Site: Wetlands", id = dig.instanceID }
+	Mock.Fire("PLAYER_ENTERING_WORLD", false, false)
+	Mock.combatLog = { 0, "UNIT_DIED", false, "", "", 0, 0, "Creature-0-1-2998-1-260807-0000F00001", "Marsh Skulker", 0, 0 }
+	Mock.Fire("COMBAT_LOG_EVENT_UNFILTERED")
+	check(not horror.encounterID and not DungeonMap:IsDefeated(dig, horror), "another creature's death marks nothing")
+	Mock.combatLog = { 0, "SPELL_DAMAGE", false, "", "", 0, 0, "Creature-0-1-2998-1-260999-0000F00002", "Highland Horror", 0, 0 }
+	Mock.Fire("COMBAT_LOG_EVENT_UNFILTERED")
+	check(not DungeonMap:IsDefeated(dig, horror), "nor does anything but a death")
+	Mock.combatLog = { 0, "UNIT_DIED", false, "", "", 0, 0, "Creature-0-1-2998-1-260999-0000F00002", "Highland Horror", 0, 0 }
+	Mock.Fire("COMBAT_LOG_EVENT_UNFILTERED")
+	check(DungeonMap:IsDefeated(dig, horror), "the Highland Horror, who ends no encounter, is marked once he dies")
+	Mock.combatLog = nil
+	Mock.instance = here
+	Mock.Fire("PLAYER_ENTERING_WORLD", false, false)
+end
+
 -- Kills last the run: a corpse run keeps them, coming in fresh clears them
 Mock.instance = nil
 Mock.Fire("PLAYER_ENTERING_WORLD", false, false)
