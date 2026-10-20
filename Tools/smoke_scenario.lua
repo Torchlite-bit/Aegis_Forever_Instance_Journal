@@ -2730,6 +2730,13 @@ WorldMapFrame:Hide()
 Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = nil, nil, nil, ""
 ns.db.travel = nil
 
+-- The Horde Skyborne's ship lands in Mulgore, by Camp Gev'rek: a known spot nobody has stood on yet
+OpenWorldMap(1412)
+local skycutter = transportPins()["Skywatcher Plateau"]
+check(skycutter and skycutter.spot.faction == "Horde" and skycutter.spot.to[1] == "Zephras Isle"
+	and skycutter.Texture._atlas == "TaxiNode_Continent_Horde", "the Horde Skyborne's ship in Mulgore, in Horde red")
+WorldMapFrame:Hide()
+
 -- The Deeprun Tram's Ironforge end, unchanged from Classic, is the journal's own
 OpenWorldMap(1455)
 local tram = transportPins()["Tinker Town"]

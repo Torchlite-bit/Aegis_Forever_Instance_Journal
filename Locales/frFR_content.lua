@@ -2149,6 +2149,7 @@ L.STRINGS = {
 	["Uthel'nay, the Cleft of Shadow, Orgrimmar"] = "Uthel'nay, la Faille de l'Ombre, Orgrimmar",
 	["Vaelan, inside the dungeon"] = "Vaelan, dans le donjon",
 	["Valanaar"] = "Valanaar",
+	["Skywatcher Plateau"] = "Plateau des Guette-ciel",
 	["Varimathras"] = "Varimathras",
 	["Varimathras, Royal Quarter, Undercity"] = "Varimathras, Quartier royal, Fossoyeuse",
 	["Varimathras, Undercity"] = "Varimathras, Fossoyeuse",

@@ -235,4 +235,18 @@ ns.AddTransports({
 		to = { "Tanaris" },
 		unvisited = true,
 	},
+	-- The Horde Skyborne's ship, the Skycutter, between Zephras Isle and Mulgore: where it lands on
+	-- Skywatcher Plateau, by Camp Gev'rek (the client's area table puts both in Mulgore), as the
+	-- player gave it (2026-10-20). Its Zephras Isle end is still to be found.
+	{
+		kind = "airship",
+		mapID = 1412,
+		x = 0.342,
+		y = 0.128,
+		area = "Skywatcher Plateau",
+		faction = "Horde",
+		to = { "Zephras Isle" },
+		notes = { ["Zephras Isle"] = "Skyborne only" },
+		unvisited = true,
+	},
 })

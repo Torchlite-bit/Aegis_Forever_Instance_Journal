@@ -667,6 +667,7 @@ L.STRINGS = {
 	["Tinker Town"] = "Городок Механиков",
 	["Undercity"] = "Подгород",
 	["Valanaar"] = "Валанаар",
+	["Skywatcher Plateau"] = "Плато Небесного Стража",
 	["Wizard's Sanctum"] = "Святилище чародея",
 
 	["Alba Fairmoon"] = "Альба Фэрмун",
