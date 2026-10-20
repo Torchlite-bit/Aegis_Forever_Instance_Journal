@@ -12,6 +12,35 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.35.0]
+
+### Added
+- **Item links in Before you go**: the items its notes name (the Tome of Dalaran, the Black Tome,
+  the Grimy Key, the Dalaran Sewer Key) are item links, in their quality's colour. Point at one
+  for its tooltip, shift-click to put it in chat.
+- **Lyn the Ignored's page** opens on the Before you go note on how to summon him, above the
+  Overview, and no longer calls him a chance rare.
+- **Boxes on the Quests tab**: an open dropdown's quests sit in a parchment box under it, as an
+  ability's text does, and the box grows as you open a chain. On a dungeon's overview, a key's
+  quests sit in its note's box too.
+- **Skep's runs**: City of Dalaran's first recorded abilities, for all eight bosses and their
+  adds, more Excavation Site timings, and the Violet Sorcerer's Sandals from City of Dalaran's
+  trash. Skep joins the contributors list. Thank you!
+
+### Changed
+- **City of Dalaran's abilities** use the spells its bosses really cast, from Skep's combat logs,
+  and no longer show some of them twice.
+
+### Removed
+- **The Skyborne's portals** between Stormwind's mage tower and Dalaran: Forever took both out.
+  The Skyborne airship between Dalaran and Zephras Isle stays.
+
+### Fixed
+- **Dungeon and cave entrances on the world map** answer the mouse over their icon only: the
+  tooltip and a click could catch the cursor well off the swirl.
+- **The Highland Horror** (Excavation Site) is crossed out on the dungeon map when killed. Bosses
+  the game holds no encounter for, like him and the rares, are now marked by their death.
+
 ## [0.34.0]
 
 ### Added
