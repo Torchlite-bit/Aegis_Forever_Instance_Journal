@@ -700,8 +700,10 @@ local function QuestByID(instance, questID)
 	return nil
 end
 
--- A chain's steps as rows. Steps this dungeon does not list itself are kept as one object
--- each, so they can stay chosen; consecutive steps sharing a name become one row.
+-- A chain's steps as rows. A step this dungeon does not list itself is the quest the journal
+-- keeps for it (Data/Generated/QuestSteps.lua: its level, giver, objective, rewards, the page a
+-- dungeon quest has), else its name alone; one object each, so they can stay chosen. Consecutive
+-- steps sharing a name become one row, at the first part's level.
 local stepQuests = {}
 local function ChainRows(instance, quest)
 	-- Some chains list the quest itself among its steps; it already has its own row.
@@ -720,11 +722,13 @@ local function ChainRows(instance, quest)
 			if not stepQuests[key] then
 				local steps = {}
 				for position = index, last do steps[#steps + 1] = prerequisites[position] end
-				stepQuests[key] = { questID = step.questID, name = string.format(L.QUEST_PARTS, step.name or "", #steps), steps = steps }
+				local first = QuestByID(instance, step.questID) or ns.GetQuestStep(step.questID)
+				stepQuests[key] = { questID = step.questID, name = string.format(L.QUEST_PARTS, step.name or "", #steps),
+					steps = steps, level = first and first.level }
 			end
 			row = stepQuests[key]
 		else
-			row = QuestByID(instance, step.questID)
+			row = QuestByID(instance, step.questID) or ns.GetQuestStep(step.questID)
 			if not row then
 				stepQuests[step.questID] = stepQuests[step.questID] or { questID = step.questID, name = step.name }
 				row = stepQuests[step.questID]

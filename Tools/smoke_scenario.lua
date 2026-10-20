@@ -736,7 +736,7 @@ do
 		"the key's note open on its text and how far along the player is")
 	check(key.Button.AbilityIcon._atlas == "QuestNormal" and key.Button.Note:GetText() == "0/2" and key.Button.Note:IsShown(),
 		"its header: the quest mark of the step the player is on, and how many of its quests are done")
-	check(#rows == 2 and rows[1].quest.questID == 92432 and rows[1].Text:GetText() == "An Alarming Request"
+	check(#rows == 2 and rows[1].quest.questID == 92432 and rows[1].Text:GetText() == "[33] An Alarming Request"
 		and rows[2].quest.questID == 92458 and rows[2].Text:GetText() == "[33] Heart of Disruption"
 		and rows[2].Status._atlas == "QuestNormal" and rows[2].Status._desaturated and not rows[1].Expand:IsShown()
 		and select(4, rows[1]:GetPoint(1)) == 12,
@@ -831,7 +831,7 @@ do
 	headers, rows = shown(state.headers), shown(state.rows)
 	check(headers[1].Description:GetText():find("Magus Wordeen Voidglare", 1, true)
 		and not headers[1].Description:GetText():find("Emissary Jacques", 1, true) and headers[1].Button.Note:GetText() == "0/5"
-		and #rows == 5 and rows[1].Text:GetText() == "Prison Break In" and rows[4].Text:GetText() == "Blood in the Streets"
+		and #rows == 5 and rows[1].Text:GetText() == "[34] Prison Break In" and rows[4].Text:GetText() == "[34] Blood in the Streets"
 		and rows[5].quest.questID == 96984 and headers[2].Description:GetText():find("Tome of Dalaran", 1, true),
 		"the Horde's own chain: its five quests")
 	rows[3]:Click()
@@ -850,7 +850,7 @@ do
 	check(#drops == 2 and title(drops[1]) == "The Dalaran Sewer Key" and drops[1].Button.Note:GetText() == "0/5"
 		and drops[1].Button.AbilityIcon._atlas == "QuestNormal" and drops[1].Button.ExpandedIcon:GetText() == "-"
 		and title(drops[2]) == "Dungeon Quests" and drops[2].Button.ExpandedIcon:GetText() == "-"
-		and list[1].quest.questID == 544 and list[5].quest.questID == 96984 and list[1].Text:GetText() == "Prison Break In"
+		and list[1].quest.questID == 544 and list[5].quest.questID == 96984 and list[1].Text:GetText() == "[34] Prison Break In"
 		and select(5, list[1]:GetPoint(1)) < select(5, drops[1]:GetPoint(1))
 		and select(5, drops[2]:GetPoint(1)) < select(5, list[5]:GetPoint(1))
 		and select(5, list[6]:GetPoint(1)) < select(5, drops[2]:GetPoint(1)),
@@ -1467,7 +1467,8 @@ check(detail.Reputation:GetText() == "100 Stormwind Reputation" and detail.Recei
 
 rowFor(214).Expand:Click()
 local parts = questRows()[2]
-check(parts.quest.steps and parts.Text:GetText() == "The Defias Brotherhood (6 parts)", "six same-named steps make one row: " .. parts.Text:GetText())
+check(parts.quest.steps and parts.Text:GetText() == "[18] The Defias Brotherhood (6 parts)",
+	"six same-named steps make one row, at the first part's level: " .. parts.Text:GetText())
 parts:Click()
 check(detail.Title:GetText() == "The Defias Brotherhood (6 parts)" and detail.Objective:GetText():find("0 of 6", 1, true)
 	and not detail.ShowStart:IsShown(), "the chain's page counts its parts")
@@ -1476,6 +1477,28 @@ Mock.Fire("QUEST_LOG_UPDATE")
 check(detail.Objective:GetText():find("2 of 6", 1, true) and rowFor(65).Status._atlas == "QuestTurnin", "parts done so far, and the chain is under way")
 Mock.questsDone[65], Mock.questsDone[132] = nil, nil
 rowFor(214).Expand:Click()
+
+do
+	-- A step the dungeon does not list itself gets a dungeon quest's page (Data/Generated/QuestSteps.lua):
+	-- its level on its row, its objective, who gives and takes it and where, and what it needs first
+	rowFor(92819).Expand:Click()
+	local wells, gills = rowFor(92742), rowFor(92744)
+	check(wells and wells.Text:GetText() == "[12] Testing the Wells", "a step's row shows its level: " .. tostring(wells and wells.Text:GetText()))
+	wells:Click()
+	check(detail.Objective:GetText():find("Well Water Sample Kit", 1, true) and detail.ShowStart:IsEnabled()
+		and detail.ShowStart.point.mapID == 1436 and detail.ShowEnd:IsEnabled(), "its page: the objective, and Alba Fairmoon in Westfall")
+	check(not wells.Status._desaturated and gills.Status._desaturated and rowFor(92745).Status._desaturated
+		and not detail.Status:IsShown(), "the first step can be taken; the ones further on wait for those before them")
+	rowFor(92745):Click()
+	check(detail.Status:IsShown() and detail.Status:GetText():find("Testing the Wells", 1, true), "and its page says which: "
+		.. tostring(detail.Status:GetText()))
+	Mock.questsDone[92742], Mock.questsDone[92744] = true, true
+	Mock.Fire("QUEST_LOG_UPDATE")
+	check(not rowFor(92745).Status._desaturated and rowFor(92742).Status._texture == "Interface\\Buttons\\UI-CheckBox-Check",
+		"done steps are checked off, and the next one opens")
+	Mock.questsDone[92742], Mock.questsDone[92744] = nil, nil
+	rowFor(92819).Expand:Click()
+end
 
 do
 	-- A chain that names its own quest among its steps lists it once

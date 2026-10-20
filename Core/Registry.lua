@@ -648,6 +648,22 @@ function ns.GetTransports()
 	return transports
 end
 
+-- The quests the dungeons' chains need first that no dungeon lists itself ("steps"), each a quest
+-- of its own by its id, so the Quests tab gives them a dungeon quest's page
+-- (Data/Generated/QuestSteps.lua).
+local questSteps = {}
+
+function ns.AddQuestSteps(list)
+	for questID, quest in pairs(list) do
+		quest.questID = questID
+		questSteps[questID] = quest
+	end
+end
+
+function ns.GetQuestStep(questID)
+	return questSteps[questID]
+end
+
 -- Routes Forever took out: { kind, mapID, x, y, to = { destination, ... } }, hidden from the
 -- spots players saved themselves too (UI/TravelMap.lua).
 local goneTransports = {}
@@ -796,6 +812,7 @@ function ns.ApplyLocale()
 		for _, boss in ipairs(instance.bosses or {}) do TrBoss(boss) end
 		for _, quest in ipairs(instance.quests or {}) do TrQuest(quest) end
 	end
+	for _, quest in pairs(questSteps) do TrQuest(quest) end
 	if subMapNames then
 		for _, subMap in ipairs(subMaps) do
 			local name = subMapNames[subMap.key]
