@@ -166,11 +166,18 @@ end
 
 --[[
 	A boss the game holds no encounter for (the Excavation Site's Highland Horror, a rare) ends no
-	fight, so ENCOUNTER_END never names it: its death in the combat log marks it instead, by its
-	creature id where the journal knows it, else by its name. The log is read only inside a dungeon
-	that has such a boss, and only its deaths are looked at.
+	fight, so ENCOUNTER_END never names it. Forever keeps the combat log from addons: registering
+	COMBAT_LOG_EVENT_UNFILTERED, or even unregistering it, is a forbidden action, which pcall does
+	not catch. So the boss is marked when the player sees him lying dead: as their target, focus or
+	mouseover (as its health or flags change, as the target or mouseover changes, and once combat
+	ends, should the client have kept it back during the fight), or as his corpse is looted. Known
+	by his creature id where the journal knows it, else by his name. Watched only inside a dungeon
+	that has such a boss.
 ]]
 local deaths = CreateFrame("Frame")
+local DEATH_EVENTS = { "UNIT_HEALTH", "UNIT_FLAGS", "PLAYER_TARGET_CHANGED", "UPDATE_MOUSEOVER_UNIT",
+	"PLAYER_REGEN_ENABLED", "LOOT_OPENED" }
+local LOOKED_AT = { "target", "focus", "mouseover" }
 local watched, watchedInstance
 
 local function CreatureID(guid)
@@ -190,18 +197,43 @@ local function WatchDeaths(instance)
 		end
 	end
 	if watched then
-		ns.RegisterEvents(deaths, "COMBAT_LOG_EVENT_UNFILTERED")
+		ns.RegisterEvents(deaths, unpack(DEATH_EVENTS))
 	else
-		ns.UnregisterEvents(deaths, "COMBAT_LOG_EVENT_UNFILTERED")
+		ns.UnregisterEvents(deaths, unpack(DEATH_EVENTS))
 	end
 end
 
-deaths:SetScript("OnEvent", function()
-	if not (watched and watchedInstance and CombatLogGetCurrentEventInfo) then return end
-	local _, subevent, _, _, _, _, _, destGUID, destName = CombatLogGetCurrentEventInfo()
-	if subevent ~= "UNIT_DIED" then return end
-	local boss = watched[CreatureID(ns.Readable(destGUID)) or 0] or watched[ns.Readable(destName) or ""]
+local function Fallen(boss)
 	if boss and not DungeonMap:IsDefeated(watchedInstance, boss) then DungeonMap:MarkDefeated(watchedInstance, boss) end
+end
+
+-- A unit the player has at hand, if it is a watched boss lying dead. What the client keeps back
+-- counts as not known.
+local function LooksDead(unit)
+	local ok, dead = pcall(UnitIsDead, unit)
+	if not ok or ns.Readable(dead) ~= true then return end
+	Fallen(watched[CreatureID(ns.Readable(UnitGUID(unit))) or 0] or watched[ns.Readable(UnitName(unit)) or ""])
+end
+
+deaths:SetScript("OnEvent", function(_, event, unit)
+	if not (watched and watchedInstance) then return end
+	if event == "LOOT_OPENED" then
+		-- Each slot names the corpses it comes from: guid, count, guid, count, ...
+		for slot = 1, GetNumLootItems() do
+			local sources = { pcall(GetLootSourceInfo, slot) }
+			for index = 2, sources[1] and #sources or 0, 2 do
+				Fallen(watched[CreatureID(ns.Readable(sources[index])) or 0])
+			end
+		end
+	elseif event == "PLAYER_REGEN_ENABLED" then
+		for _, looked in ipairs(LOOKED_AT) do LooksDead(looked) end
+	elseif event == "PLAYER_TARGET_CHANGED" then
+		LooksDead("target")
+	elseif event == "UPDATE_MOUSEOVER_UNIT" then
+		LooksDead("mouseover")
+	elseif type(unit) == "string" then
+		LooksDead(unit)
+	end
 end)
 
 ------------------------------------------------------------------------------------------

@@ -1695,25 +1695,57 @@ WorldMapFrame:SetMapID(1415)
 check(not overlay:IsShown(), "browsing to another map puts it away")
 WorldMapFrame:Hide()
 
--- A boss the game holds no encounter for (the Excavation Site's Highland Horror) is marked by its
--- death in the combat log, read only in a dungeon that has one
+-- A boss the game holds no encounter for (the Excavation Site's Highland Horror) is marked once the
+-- player sees him lying dead: as the target, the mouseover, after combat, or by his loot. Forever
+-- keeps the combat log from addons, and nothing touches its event
 do
 	local dig = ns.GetInstance("ExcavationSiteWetlands")
 	local horror
 	for _, boss in ipairs(dig.bosses) do if boss.name == "Highland Horror" then horror = boss end end
 	local here = Mock.instance
-	Mock.instance = { name = "Excavation Site: Wetlands", id = dig.instanceID }
-	Mock.Fire("PLAYER_ENTERING_WORLD", false, false)
-	Mock.combatLog = { 0, "UNIT_DIED", false, "", "", 0, 0, "Creature-0-1-2998-1-260807-0000F00001", "Marsh Skulker", 0, 0 }
-	Mock.Fire("COMBAT_LOG_EVENT_UNFILTERED")
+	local HORROR_GUID, SKULKER_GUID = "Creature-0-1-2998-1-260999-0000F00002", "Creature-0-1-2998-1-260807-0000F00001"
+	-- In from outside: a fresh run.
+	local function Enter()
+		Mock.instance = nil
+		Mock.Fire("PLAYER_ENTERING_WORLD", false, false)
+		Mock.instance = { name = "Excavation Site: Wetlands", id = dig.instanceID }
+		Mock.Fire("PLAYER_ENTERING_WORLD", false, false)
+	end
+	Enter()
+	Mock.units.target = { name = "Marsh Skulker", guid = SKULKER_GUID, dead = true }
+	Mock.Fire("PLAYER_TARGET_CHANGED")
 	check(not horror.encounterID and not DungeonMap:IsDefeated(dig, horror), "another creature's death marks nothing")
-	Mock.combatLog = { 0, "SPELL_DAMAGE", false, "", "", 0, 0, "Creature-0-1-2998-1-260999-0000F00002", "Highland Horror", 0, 0 }
-	Mock.Fire("COMBAT_LOG_EVENT_UNFILTERED")
-	check(not DungeonMap:IsDefeated(dig, horror), "nor does anything but a death")
-	Mock.combatLog = { 0, "UNIT_DIED", false, "", "", 0, 0, "Creature-0-1-2998-1-260999-0000F00002", "Highland Horror", 0, 0 }
-	Mock.Fire("COMBAT_LOG_EVENT_UNFILTERED")
-	check(DungeonMap:IsDefeated(dig, horror), "the Highland Horror, who ends no encounter, is marked once he dies")
-	Mock.combatLog = nil
+	Mock.units.target = { name = "Highland Horror", guid = HORROR_GUID }
+	Mock.Fire("UNIT_HEALTH", "target")
+	check(not DungeonMap:IsDefeated(dig, horror), "nor does he, alive")
+	Mock.units.target.dead = true
+	Mock.Fire("UNIT_HEALTH", "target")
+	check(DungeonMap:IsDefeated(dig, horror), "the Highland Horror, who ends no encounter, is marked once he lies dead as the target")
+	Mock.units.target = nil
+
+	Enter()
+	check(not DungeonMap:IsDefeated(dig, horror), "a fresh run starts with him standing")
+	Mock.units.mouseover = { name = "Highland Horror", guid = HORROR_GUID, dead = true }
+	Mock.Fire("UPDATE_MOUSEOVER_UNIT")
+	check(DungeonMap:IsDefeated(dig, horror), "or as his corpse is pointed at")
+	Enter()
+	Mock.Fire("PLAYER_REGEN_ENABLED")
+	check(DungeonMap:IsDefeated(dig, horror), "or once combat ends, should the client have kept it back during the fight")
+	Mock.units.mouseover = nil
+
+	-- By his loot, where the journal knows his creature id (slots without a link: no loot recorded).
+	horror.npcID = 260999
+	Enter()
+	Mock.lootSlots = { { name = "Coins", guid = SKULKER_GUID } }
+	Mock.Fire("LOOT_OPENED")
+	check(not DungeonMap:IsDefeated(dig, horror), "another corpse's loot marks nothing")
+	Mock.lootSlots = { { name = "Coins", guid = HORROR_GUID } }
+	Mock.Fire("LOOT_OPENED")
+	check(DungeonMap:IsDefeated(dig, horror), "or as his corpse is looted")
+	Mock.lootSlots, horror.npcID = {}, nil
+
+	check(#Mock.forbidden == 0, "no event Forever keeps from addons is registered or unregistered: "
+		.. table.concat(Mock.forbidden, ", "))
 	Mock.instance = here
 	Mock.Fire("PLAYER_ENTERING_WORLD", false, false)
 end
@@ -2360,9 +2392,40 @@ do
 	mark:_RunScript("OnLeave")
 	check(not questEntry.highlightLocked, "and lets it go")
 	ns.QuestMap:LegendEnter({ kind = "turnin" })
-	check(questEntry.highlightLocked and turnInEntry.highlightLocked, "a ? lights Quest and Turn In, as the client's own do")
+	check(turnInEntry.highlightLocked and not questEntry.highlightLocked, "a ? lights Turn In only")
 	ns.QuestMap:LegendLeave()
-	check(not questEntry.highlightLocked and not turnInEntry.highlightLocked, "and both let go")
+	check(not questEntry.highlightLocked and not turnInEntry.highlightLocked, "and lets it go")
+
+	-- The client's own marks: one of a quest in the log lights its In Progress or Turn In entry only,
+	-- not Quest or Repeatable as well (the client matches those by the quest's kind); a quest on offer
+	-- still lights Quest. Its callbacks come in no set order: both orders are tried.
+	local progressEntry = legend:Entry("inprogress")
+	local repeatable
+	for _, child in ipairs({ questEntry:GetParent():GetChildren() }) do
+		if child.nameText == "Repeatable" then repeatable = child end
+	end
+	local style, kind = POIButtonUtil.Style, Enum.QuestClassification
+	local function ClientPin(template, pinStyle, classification)
+		return { pinTemplate = template, GetStyle = function() return pinStyle end,
+			GetQuestClassification = function() return classification end }
+	end
+	for _, reversed in ipairs({ false, true }) do
+		Mock.callbacksReversed = reversed
+		local order = reversed and " (callbacks the other way round)" or ""
+		EventRegistry:TriggerEvent("MapLegendPinOnEnter", ClientPin("QuestPinTemplate", style.QuestInProgress, kind.Normal))
+		check(progressEntry.highlightLocked and not questEntry.highlightLocked,
+			"a quest in progress lights In Progress, not Quest" .. order)
+		EventRegistry:TriggerEvent("MapLegendPinOnLeave")
+		EventRegistry:TriggerEvent("MapLegendPinOnEnter", ClientPin("QuestPinTemplate", style.QuestComplete, kind.Recurring))
+		check(turnInEntry.highlightLocked and not repeatable.highlightLocked and not questEntry.highlightLocked,
+			"a repeatable quest to hand in lights Turn In, not Repeatable" .. order)
+		EventRegistry:TriggerEvent("MapLegendPinOnLeave")
+		EventRegistry:TriggerEvent("MapLegendPinOnEnter", ClientPin("QuestOfferPinTemplate", nil, kind.Normal))
+		check(questEntry.highlightLocked and not progressEntry.highlightLocked, "a quest on offer still lights Quest" .. order)
+		EventRegistry:TriggerEvent("MapLegendPinOnLeave")
+		check(not questEntry.highlightLocked, "and lets it go" .. order)
+	end
+	Mock.callbacksReversed = nil
 	questEntry:_RunScript("OnEnter")
 	check(mark.legendGlow and mark.legendGlow:IsShown(), "hovering Quest in the legend lights up the journal's ! marks")
 	questEntry:_RunScript("OnLeave")

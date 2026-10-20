@@ -39,7 +39,11 @@ and the version shown in the AddOns list. Quote it in bug reports.
 - **Dungeon and cave entrances on the world map** answer the mouse over their icon only: the
   tooltip and a click could catch the cursor well off the swirl.
 - **The Highland Horror** (Excavation Site) is crossed out on the dungeon map when killed. Bosses
-  the game holds no encounter for, like him and the rares, are now marked by their death.
+  the game holds no encounter for, like him and the rares, are now marked once you see them dead:
+  as your target, focus or mouseover, or as you loot them. (Forever keeps the combat log from
+  addons, so it can't be used for this.)
+- **The world map's legend**: pointing at a quest in your log lights its In Progress or Turn In
+  entry only, no longer Quest as well; the journal's own "?" marks light Turn In only.
 
 ## [0.34.0]
 
