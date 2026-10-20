@@ -22,6 +22,7 @@ Size is a rough guess at the work: **S** a day or less, **M** a few days, **L** 
 | What | Why | Size |
 |---|---|:---:|
 | **Spanish (Spain and Latin America), Brazilian Portuguese and Korean** | The four client languages Forever offers that the journal doesn't speak yet. Planned for next week. | L |
+| **Who gives a quest, by Show Start** *(player request)* | The giver and where they stand written on the quest's page, "Quest offered by Afadra Dunwall, Ironforge", not only in the button's tooltip. | S |
 | **Boss tracking on the dungeon map** | The boss you're fighting marked on its pin (the one moment the game says where you are), the next boss to kill highlighted, and a clearer "You are here". | M |
 | **Keys, attunements and hidden bosses for every dungeon** | Before you go, filled in one dungeon at a time: the classic keys (the Scarlet Key, the Workshop Key, the Crescent Key, the Key to the City...), attunements, and any hidden boss to prepare for. | M |
 | **Map icons on or off inside dungeons** | The world map legend's switches done; next, the same for the journal's own dungeon maps (boss pins, quest marks, doors to other floors). | S |
