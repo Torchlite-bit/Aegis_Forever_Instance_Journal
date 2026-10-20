@@ -2061,6 +2061,9 @@ moonbrookCave:_RunScript("OnEnter")
 check(GameTooltip._text == "Defias Hideout" and GameTooltip:HasLine("The way to The Deadmines"), "its tooltip")
 moonbrookCave:_RunScript("OnLeave")
 local westfallDoor = WorldMapFrame:ActivePins("AegisJournalEntrancePinTemplate")[1]
+check(westfallDoor:GetWidth() == 22 and westfallDoor:GetHeight() == 22 and westfallDoor.Texture:GetWidth() == 32
+	and moonbrookCave:GetWidth() == 22 and moonbrookCave.Texture:GetWidth() == 32,
+	"a door or a cave answers the mouse over its icon only: the pin is the icon's size, the art keeps its own")
 westfallDoor:_RunScript("OnEnter")
 check(GameTooltip:HasLine("Its portal is below, in Defias Hideout: go down at the cave entrance."), "the Deadmines door points to it")
 westfallDoor:_RunScript("OnLeave")

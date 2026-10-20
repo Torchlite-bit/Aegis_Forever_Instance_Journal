@@ -41,6 +41,10 @@ local TILE_MAP_WIDTH, TILE_MAP_HEIGHT = 1002, 668
 -- Above other addons' dungeon overlays on the same canvas (MapUtils draws at 3000).
 local OVERLAY_LEVEL = 5000
 local DUNGEON_ATLAS, RAID_ATLAS = "Dungeon", "Raid"
+-- What answers the mouse on a door or cave pin: the icon itself. The client's atlases draw it with
+-- room around it, and a pin the atlas's size caught the cursor well off the swirl (a player's
+-- report, 2026-10-20): the pin is this size, its art keeps its own, centred over it.
+local PIN_HIT_SIZE = 22
 -- The player's arrow on a sub-map's picture, and how often it follows the player.
 local PLAYER_ARROW_ATLAS, PLAYER_ARROW_FILE = "WorldMapArrow", "Interface\\WorldMap\\WorldMapArrow"
 local PLAYER_ARROW_SIZE, PLAYER_ARROW_SECONDS = 24, 0.1
@@ -1297,6 +1301,14 @@ function DungeonMap:ShowSubMap(subMap)
 	return true
 end
 
+-- The art at the atlas's size (32 when the client gives none), the pin no bigger than the icon in it.
+local function SizeToIcon(pin)
+	local width, height = pin.Texture:GetSize()
+	if not width or width <= 0 then width, height = 32, 32 end
+	pin.Texture:SetSize(width, height)
+	pin:SetSize(math.min(width, PIN_HIT_SIZE), math.min(height, PIN_HIT_SIZE))
+end
+
 AegisJournalEntrancePinMixin = {}
 local EntrancePinMethods = { CheckMouseButtonPassthrough = DungeonMap.CheckMouseButtonPassthrough }
 
@@ -1341,12 +1353,7 @@ function EntrancePinMethods:OnAcquired(instance, x, y, together)
 	local atlas = self.isRaid and RAID_ATLAS or DUNGEON_ATLAS
 	self.Texture:SetAtlas(atlas, true)
 	self.HighlightTexture:SetAtlas(atlas, true)
-	local width, height = self.Texture:GetSize()
-	if not width or width <= 0 then
-		width, height = 32, 32
-		self.Texture:SetSize(width, height)
-	end
-	self:SetSize(width, height)
+	SizeToIcon(self)
 	self:SetPosition(x, y)
 end
 
@@ -1401,12 +1408,7 @@ function CavePinMethods:OnAcquired(subMap, x, y)
 			break
 		end
 	end
-	local width, height = self.Texture:GetSize()
-	if not width or width <= 0 then
-		width, height = 32, 32
-		self.Texture:SetSize(width, height)
-	end
-	self:SetSize(width, height)
+	SizeToIcon(self)
 	self:SetPosition(x, y)
 end
 
