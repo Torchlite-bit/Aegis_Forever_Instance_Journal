@@ -12,6 +12,18 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.37.0] (restart)
+
+### Added
+- **Spanish (Spain), Spanish (Latin America), Brazilian Portuguese and Korean**: the whole journal,
+  its interface and every name and text, on a client set to one of them, and `/aegis lang es`, `mx`,
+  `pt` or `ko` to preview it on any client. Names come from Blizzard's own for each client where they
+  exist; the rest is drafted and awaits native speakers' corrections, which are welcome on the Discord.
+
+### Changed
+- **Russian, German, French and Chinese** cover the texts added since they were first drafted: the
+  checked quests' givers, places and notes, the chain steps' pages, and the newer interface lines.
+
 ## [0.36.0]
 
 ### Added

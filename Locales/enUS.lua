@@ -31,10 +31,11 @@ L.KEY_TAKEN = "Shift+J is already bound to %s. Choose a key under Key Bindings >
 L.POSITION_RESET = "Window position reset."
 L.SLASH_HELP = "/aegis (or /ij) opens the journal. /aegis record starts or stops recording. /aegis reset moves the window back to its default place. /aegis perf measures the journal's memory and speed. /aegis where and /aegis taxi report where you stand and the flight points on your map. /aegis travel saves a boat, zeppelin, tram or portal for the world map. /aegis items finds the listed items the server knows nothing of. /aegis gear opens the Gear Finder, /aegis weights its stat weights; /aegis gearscan saves what it reads from your gear, for checking its scoring. /aegis options opens the journal's options. /aegis lang previews the journal in another of its languages."
 -- /aegis lang (Core/Init.lua)
-L.LANG_USAGE = "/aegis lang de, fr, ru, cn or tw shows the journal in German, French, Russian or Chinese (Simplified or Traditional) from your next /reload, to check a translation; /aegis lang off goes back to your client's language. Now: %s."
+L.LANG_USAGE = "/aegis lang de, fr, ru, cn, tw, es, mx, pt or ko shows the journal in German, French, Russian, Chinese (Simplified or Traditional), Spanish (Spain or Latin America), Brazilian Portuguese or Korean from your next /reload, to check a translation; /aegis lang off goes back to your client's language. Now: %s."
 L.LANG_SET = "From your next /reload the journal speaks %s: only its own words, as the game's own names stay your client's. Type /reload now; /aegis lang off goes back."
 L.LANG_OFF = "From your next /reload the journal speaks your client's language again. Type /reload now."
 L.LANG_FONTS = "Chinese needs a Chinese client's fonts: on yours some of its letters may not show."
+L.LANG_FONTS_KO = "Korean needs a Korean client's fonts: on yours some of its letters may not show."
 L.LANG_ON = "Previewing the journal in %s. /aegis lang off ends it."
 L.LANG_UNAVAILABLE = "This client read the journal before its saved settings, so the language preview could not start."
 L.ITEMS_START = "Asking the server about the %d items the journal lists. The answer comes in about %d seconds; carry on as you like."

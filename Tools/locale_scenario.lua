@@ -13,10 +13,12 @@ end
 
 local LOCALE = GetLocale()
 local LANGUAGE = ({ ruRU = "Russian", deDE = "German", frFR = "French", zhCN = "Simplified Chinese",
-	zhTW = "Traditional Chinese" })[LOCALE]
--- A language's own script, as UTF-8 writes it: Cyrillic, the CJK ideographs. German and French
--- share English's letters: their text is told by not being the English it replaces.
-local SCRIPT = ({ ruRU = "[\208\209]", zhCN = "[\228-\233]", zhTW = "[\228-\233]" })[LOCALE]
+	zhTW = "Traditional Chinese", esES = "Spanish (Spain)", esMX = "Spanish (Latin America)",
+	ptBR = "Brazilian Portuguese", koKR = "Korean" })[LOCALE]
+-- A language's own script, as UTF-8 writes it: Cyrillic, the CJK ideographs, Hangul. German, French,
+-- Spanish and Portuguese share English's letters: their text is told by not being the English it
+-- replaces.
+local SCRIPT = ({ ruRU = "[\208\209]", zhCN = "[\228-\233]", zhTW = "[\228-\233]", koKR = "[\234-\237]" })[LOCALE]
 local function InLanguage(text, englishText)
 	if type(text) ~= "string" or text == "" then return false end
 	if SCRIPT then return text:find(SCRIPT) ~= nil end

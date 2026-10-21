@@ -13,15 +13,14 @@ Size is a rough guess at the work: **S** a day or less, **M** a few days, **L** 
 
 | | What |
 |---|---|
-| 0.34.0 | **Trash** in each dungeon's boss list; **Before you go** on a dungeon's overview (City of Dalaran first); **map legend switches** for every kind of marker *(player request)*; quest marks only for quests you can take now; Show Start and Show End set a waypoint. |
 | 0.35.0 | **Every dungeon quest checked** against QuestieDB's Forever data and corrected (chains, givers, places; 33 quests added); **chain steps get a quest's page**, with their rewards; item tooltips show only the upgrade; the Horde Skyborne's ship *(player request)*. |
 | 0.36.0 | **Who gives a quest**, written on its page beneath Show Start *(player request)*; the quests the audit left open **checked on Wowhead** (four more added, three empty ones gone). |
+| 0.37.0 | **Spanish (Spain and Latin America), Brazilian Portuguese and Korean**, drafted and awaiting native speakers; the other five languages brought up to date. |
 
 ## Next
 
 | What | Why | Size |
 |---|---|:---:|
-| **Spanish (Spain and Latin America), Brazilian Portuguese and Korean** | The four client languages Forever offers that the journal doesn't speak yet. Planned for next week. | L |
 | **Boss tracking on the dungeon map** | The boss you're fighting marked on its pin (the one moment the game says where you are), the next boss to kill highlighted, and a clearer "You are here". | M |
 | **Keys, attunements and hidden bosses for every dungeon** | Before you go, filled in one dungeon at a time: the classic keys (the Scarlet Key, the Workshop Key, the Crescent Key, the Key to the City...), attunements, and any hidden boss to prepare for. | M |
 | **Map icons on or off inside dungeons** | The world map legend's switches done; next, the same for the journal's own dungeon maps (boss pins, quest marks, doors to other floors). | S |
