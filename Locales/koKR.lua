@@ -7,9 +7,10 @@ local _, ns = ...
 	Every other client skips it. Names new in WoW: Forever have no official Korean form yet: they
 	are drafted in the game's style (the glossary's), to be checked once Blizzard names them.
 ]]
-if not ns.Speaks("koKR") then return end
-
-local L = ns.L
+-- The journal's words where it speaks this language; the tables matched against the client's own
+-- text where the client does, previewed or not (ns.LocaleTargets, Locales/enUS.lua).
+local L, client = ns.LocaleTargets("koKR")
+if not L then return end
 
 L.JOURNAL_TITLE = "던전 도감"
 L.HOME = HOME or "홈"
@@ -600,3 +601,7 @@ L.AREA_NAMES = {
 	["Training Grounds"] = "훈련장",
 	["Warpwood Quarter"] = "굽이나무 지구",
 }
+
+-- Matched against the client's own text: the client's language's only, previewed or not.
+if client then client.EQUIP_PATTERNS, client.AREA_NAMES = L.EQUIP_PATTERNS, L.AREA_NAMES end
+L.EQUIP_PATTERNS, L.AREA_NAMES = nil, nil

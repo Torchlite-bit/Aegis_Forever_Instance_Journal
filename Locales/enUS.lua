@@ -19,6 +19,27 @@ function ns.Speaks(locale)
 	return GetLocale() == locale
 end
 
+--[[
+	What a translation holds to match the client's own text (an item's Equip: lines, the room the
+	player stands in, a boss or a faction the client names) is the client's language's, previewed
+	or not: it goes to ns.ClientL. ns.LocaleTargets gives a translation the table its words go to,
+	ns.L where the journal speaks its language (where only the client does, a table thrown away
+	once the language's two files have read it: Russian's faction names are in its interface
+	file), and ns.ClientL where the client speaks it; nothing where neither does.
+]]
+ns.ClientL = {}
+local unspoken
+function ns.LocaleTargets(locale)
+	local speaks, client = ns.Speaks(locale), GetLocale() == locale
+	if not (speaks or client) then return nil end
+	if not speaks then unspoken = unspoken or setmetatable({}, { __index = L }) end
+	return speaks and L or unspoken, client and ns.ClientL or nil
+end
+-- Once every translation has loaded and been read (Core/Registry.lua's ns.KeepClientNames).
+function ns.ForgetUnspokenWords()
+	unspoken = nil
+end
+
 L.JOURNAL_TITLE = "Instance Journal"
 L.HOME = HOME or "Home"
 L.TAB_DUNGEONS = DUNGEONS or "Dungeons"

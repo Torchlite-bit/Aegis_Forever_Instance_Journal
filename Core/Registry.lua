@@ -319,9 +319,14 @@ local function StandingFor(faction, reaction)
 	return standing
 end
 
+-- Whether a boss or a faction goes by a name: the journal's own, its English or the client's.
+function ns.NamedAs(entry, name)
+	return name ~= nil and (entry.name == name or entry.enName == name or entry.clientName == name)
+end
+
 local function FactionNamed(name)
 	for _, faction in ipairs(factions) do
-		if faction.name == name or faction.enName == name then return faction end
+		if ns.NamedAs(faction, name) then return faction end
 	end
 	return nil
 end
@@ -506,7 +511,7 @@ end
 -- Whether a faction's own rewards list an item (not counting wares a vendor was seen selling).
 function ns.FactionListsItem(factionName, itemID)
 	for _, faction in ipairs(factions) do
-		if faction.name == factionName or faction.enName == factionName then
+		if ns.NamedAs(faction, factionName) then
 			for _, standing in ipairs(faction.bosses) do
 				for _, row in ipairs(standing.loot) do
 					if row.itemID == itemID and not row.seen and not row.listed then return true end
@@ -695,8 +700,41 @@ end
 	records by (a fight the client names, a faction a ware's tooltip names, a recording sent in)
 	still finds it. The lookup tables are let go once used.
 ]]
+--[[
+	The client's own names, where its language is one the journal is translated into (ns.ClientL),
+	whichever language the journal previews: a boss's and a faction's, as what the client says of
+	them is matched by them too (a fight ending, a creature at hand, a ware's tooltip: ns.NamedAs),
+	and a route's, as the player may have saved it under that (UI/TravelMap.lua). Taken before the
+	journal's own words are laid over the data (Core/Init.lua), and let go once used.
+]]
+function ns.KeepClientNames()
+	ns.ForgetUnspokenWords()
+	local client = ns.ClientL
+	local bossNames, factionNames, strings = client.BOSS_NAMES, client.FACTION_NAMES, client.STRINGS
+	client.BOSS_NAMES, client.FACTION_NAMES, client.STRINGS = nil, nil, nil
+	if bossNames or factionNames then
+		for _, instance in ipairs(instances) do
+			instance.enName = instance.enName or instance.name
+			if instance.kind == "faction" and factionNames then instance.clientName = factionNames[instance.factionID] end
+			for _, boss in ipairs(instance.bosses or {}) do
+				boss.enName = boss.enName or boss.name
+				if bossNames then boss.clientName = bossNames[boss.enName] end
+			end
+		end
+	end
+	if strings then
+		for _, spot in ipairs(transports) do
+			if spot.to and not spot.clientTo then
+				spot.clientTo = {}
+				for index, destination in ipairs(spot.to) do spot.clientTo[index] = strings[destination] or destination end
+			end
+		end
+	end
+end
+
 function ns.ApplyLocale()
 	local L = ns.L
+	ns.KeepClientNames()
 	if not (L.INSTANCE_NAMES or L.BOSS_NAMES or L.STRINGS or L.FACTION_NAMES or L.SUBMAP_NAMES) then return end
 	local instanceNames = L.INSTANCE_NAMES
 	local locations = L.INSTANCE_LOCATIONS
@@ -719,6 +757,8 @@ function ns.ApplyLocale()
 	end
 	local function TrAbility(ability)
 		if type(ability) ~= "table" then return end
+		-- The English is kept, for the role alerts read from it (UI/AbilitiesPanel.lua).
+		ability.enName = ability.enName or ability.name
 		if ability.name and abilityNames then ability.name = abilityNames[ability.name] or ability.name end
 		if ability.text then ability.text = Tr(ability.text) end
 	end
@@ -821,6 +861,11 @@ function ns.ApplyLocale()
 	end
 	for _, spot in ipairs(transports) do
 		if spot.area then spot.area = Tr(spot.area) end
+		-- The English is kept, so a route the player saved under it is known as this one (UI/TravelMap.lua).
+		if spot.to and not spot.enTo then
+			spot.enTo = {}
+			for index, destination in ipairs(spot.to) do spot.enTo[index] = destination end
+		end
 		for index, destination in ipairs(spot.to or {}) do spot.to[index] = Tr(destination) end
 		-- A route's note ("Skyborne only") is kept under its destination: under the new name now.
 		if spot.notes then

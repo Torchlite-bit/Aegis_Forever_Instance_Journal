@@ -5,9 +5,10 @@ local _, ns = ...
 	the English table (Locales/enUS.lua), so every file that already holds ns.L sees these
 	strings, and anything not translated here stays English. Every other client skips it.
 ]]
-if not ns.Speaks("ruRU") then return end
-
-local L = ns.L
+-- The journal's words where it speaks this language; the tables matched against the client's own
+-- text where the client does, previewed or not (ns.LocaleTargets, Locales/enUS.lua).
+local L, client = ns.LocaleTargets("ruRU")
+if not L then return end
 
 L.JOURNAL_TITLE = "Путеводитель по подземельям"
 L.HOME = HOME or "Главная"
@@ -704,3 +705,7 @@ L.AREA_NAMES = {
 	["Training Grounds"] = "Тренировочная площадка",
 	["Warpwood Quarter"] = "Квартал Криводревов",
 }
+
+-- Matched against the client's own text: the client's language's only, previewed or not.
+if client then client.EQUIP_PATTERNS, client.AREA_NAMES = L.EQUIP_PATTERNS, L.AREA_NAMES end
+L.EQUIP_PATTERNS, L.AREA_NAMES = nil, nil

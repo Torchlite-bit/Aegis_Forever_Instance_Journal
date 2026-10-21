@@ -20,9 +20,10 @@ local _, ns = ...
 
 	By Staree4ok, for a client set to Russian; every other client skips it.
 ]]
-if not ns.Speaks("ruRU") then return end
-
-local L = ns.L
+-- The journal's words where it speaks this language; the tables matched against the client's own
+-- text where the client does, previewed or not (ns.LocaleTargets, Locales/enUS.lua).
+local L, client = ns.LocaleTargets("ruRU")
+if not L then return end
 
 -- Creature and boss names, as the data files write them.
 L.BOSS_NAMES = {
@@ -2599,3 +2600,7 @@ L.STRINGS = {
 	["Zaetar's Spirit, inside the dungeon"] = "Дух Зейтара, внутри подземелья",
 	["Zoram Strand, Ashenvale"] = "Зорамское взморье, Ясеневый лес",
 }
+
+-- The client's own names for the bosses, factions and places, which what it says of them (and the
+-- routes the player saved) are matched by (Core/Registry.lua's ns.KeepClientNames).
+if client then client.BOSS_NAMES, client.FACTION_NAMES, client.STRINGS = L.BOSS_NAMES, L.FACTION_NAMES, L.STRINGS end

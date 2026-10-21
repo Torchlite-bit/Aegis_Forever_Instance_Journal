@@ -16,6 +16,7 @@ Size is a rough guess at the work: **S** a day or less, **M** a few days, **L** 
 | 0.35.0 | **Every dungeon quest checked** against QuestieDB's Forever data and corrected (chains, givers, places; 33 quests added); **chain steps get a quest's page**, with their rewards; item tooltips show only the upgrade; the Horde Skyborne's ship *(player request)*. |
 | 0.36.0 | **Who gives a quest**, written on its page beneath Show Start *(player request)*; the quests the audit left open **checked on Wowhead** (four more added, three empty ones gone). |
 | 0.37.0 | **Spanish (Spain and Latin America), Brazilian Portuguese and Korean**, drafted and awaiting native speakers; the other five languages brought up to date. |
+| 0.37.1 | The language preview (`/aegis lang`) changes only the journal's words, not the Gear Finder, the room you're in or boss kills; captured quartermasters stay with their factions on games in other languages. |
 
 ## Next
 

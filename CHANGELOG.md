@@ -12,6 +12,25 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.37.1]
+
+### Fixed
+- Previewing a language with `/aegis lang` now changes only the journal's own words. Before, the
+  preview also changed what the journal reads from the game: the Gear Finder and the upgrades on item
+  tooltips misread item stats, the dungeon map lost track of the room you were in, and some bosses
+  weren't marked when killed. All of that now follows your game's language.
+- On a game in another language, the quartermasters you captured stay with their factions after a
+  reload. Before, they dropped out at your next reload.
+- Search finds an ability by the spell name its page shows, as well as by the journal's name for it.
+- A boat or airship route you saved yourself no longer shows twice when the journal names it in
+  another language, and your note on it stays.
+
+### Changed
+- On games in other languages, abilities nobody has written alerts for get them from the ability's
+  English name, as on an English game.
+- Recordings and `/aegis gearscan` say which language your game is in, and any you were previewing.
+  The gear scan and `/aegis items` name dungeons and bosses in English in the saved file.
+
 ## [0.37.0] (restart)
 
 ### Added

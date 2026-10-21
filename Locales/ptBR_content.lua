@@ -7,9 +7,10 @@ local _, ns = ...
 	name to follow. Every other client skips it.
 ]]
 
-if not ns.Speaks("ptBR") then return end
-
-local L = ns.L
+-- The journal's words where it speaks this language; the tables matched against the client's own
+-- text where the client does, previewed or not (ns.LocaleTargets, Locales/enUS.lua).
+local L, client = ns.LocaleTargets("ptBR")
+if not L then return end
 
 L.INSTANCE_NAMES = {
 	["AlcazPrison"] = "Prisão de Alcaz",
@@ -2521,3 +2522,7 @@ L.STRINGS = {
 	["Zephras Isle"] = "Ilha de Zefras",
 	["Zoram Strand, Ashenvale"] = "Praia de Zoram, Vale Gris",
 }
+
+-- The client's own names for the bosses, factions and places, which what it says of them (and the
+-- routes the player saved) are matched by (Core/Registry.lua's ns.KeepClientNames).
+if client then client.BOSS_NAMES, client.FACTION_NAMES, client.STRINGS = L.BOSS_NAMES, L.FACTION_NAMES, L.STRINGS end

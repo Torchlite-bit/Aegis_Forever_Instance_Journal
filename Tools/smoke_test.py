@@ -104,8 +104,25 @@ def main():
     locales = [name[len("Locales/"):-len(".lua")] for name in (f.replace(os.sep, "/") for f in toc_files())
                if name.startswith("Locales/") and len(name) == len("Locales/xxXX.lua") and not name.endswith("enUS.lua")]
     return (run_pass("smoke_scenario.lua") or next((1 for code in locales if run_pass("locale_scenario.lua", code)), 0)
-            # /aegis lang: German previewed on an English client.
-            or run_pass("preview_scenario.lua", "enUS", "AegisJournalDB = { previewLocale = 'deDE' }"))
+            # /aegis lang: German previewed on an English client, Spanish on a German one, and
+            # English on a Russian one (whose faction names are in its interface file).
+            or run_pass("preview_scenario.lua", "enUS", preview_saved("deDE", "Booty Bay", "Zephras Isle"))
+            or run_pass("preview_scenario.lua", "deDE", preview_saved("esES", "Beutebucht", "Insel Zephras"))
+            or run_pass("preview_scenario.lua", "ruRU", preview_saved("enUS", "Пиратская Бухта", "Остров Зефрас")))
+
+
+def preview_saved(preview, booty_bay, zephras_isle):
+    """The saved choice of language; a quartermaster the player captured earlier, whose wares'
+    tooltips named their faction (Booty Bay) in the client's words, one of them a ware Booty Bay
+    lists already (Data/Reputation/Captured.lua); and the Skyborne airship's route from Dalaran,
+    saved in the client's words with a note of the player's own."""
+    vendor = ("{ name = 'Captain Testy', place = { mapID = 1434, x = 0.27, y = 0.77 }, items = { "
+              "[990950] = { faction = '%s', reaction = 6, price = 100 }, "
+              "[274022] = { faction = '%s', reaction = 7, price = 50000 } } }" % (booty_bay, booty_bay))
+    route = ("{ kind = 'airship', mapID = 1416, x = 0.1268, y = 0.5202, area = 'Dalaran', faction = 'Alliance', "
+             "to = { '%s' }, notes = { ['%s'] = 'Saved note' } }" % (zephras_isle, zephras_isle))
+    return ("AegisJournalDB = { previewLocale = '%s', record = { vendors = { [990900] = %s } }, travel = { %s } }"
+            % (preview, vendor, route))
 
 
 if __name__ == "__main__":

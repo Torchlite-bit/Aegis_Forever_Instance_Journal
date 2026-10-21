@@ -1713,18 +1713,18 @@ do
 		and ns.AreaName("Anvilmar's Rest") == Mock.subzone,
 		"a German client's name for the area lights it up too, through the area's id")
 	ns.AREA_IDS = {}
-	ns.L.AREA_NAMES = { ["Anvilmar's Rest"] = "Anvilmars Rast" }
+	ns.ClientL.AREA_NAMES = { ["Anvilmar's Rest"] = "Anvilmars Rast" }
 	ns.Areas:Forget()
 	check(ns.AreaKey("Anvilmars Rast") == "Anvilmar's Rest" and ns.AreaName("Anvilmar's Rest") == "Anvilmars Rast",
 		"without an id, the translation's name")
 	-- Two rooms a translation names alike: a table holding either one is found by that name
-	ns.L.AREA_NAMES = { ["Anvilmar's Rest"] = "Halle", ["Dark Iron Ingress"] = "Halle" }
+	ns.ClientL.AREA_NAMES = { ["Anvilmar's Rest"] = "Halle", ["Dark Iron Ingress"] = "Halle" }
 	ns.Areas:Forget()
 	local spot, english = ns.AreaIn({ ["Dark Iron Ingress"] = 7 }, "Halle")
 	check(spot == 7 and english == "Dark Iron Ingress" and ns.AreaIn({ ["Anvilmar's Rest"] = 8 }, "Halle") == 8
 		and ns.AreaIn({ ["Anvilmar's Rest"] = 9 }, "Anvilmar's Rest") == 9 and ns.AreaIn({}, "Halle") == nil,
 		"two rooms one translation names alike are each found by that name")
-	ns.L.AREA_NAMES, ns.AREA_IDS = nil, ids
+	ns.ClientL.AREA_NAMES, ns.AREA_IDS = nil, ids
 	Mock.areaNames[9001] = nil
 	-- A Forever zone the world map gives a level range by name: by its name in the client's words too
 	local hyjal = ns.AREA_IDS["Mount Hyjal"] and ns.AREA_IDS["Mount Hyjal"][1]
@@ -3700,8 +3700,9 @@ do
 	local text = record.CopyBox:GetText() or ""
 	check(record.CopyScroll:IsShown() and not record.List:IsShown() and record.Copy:GetText() == "Back"
 		and record.ListTitle:GetText() == "Your recording, as text", "Copy turns the right page into the recording as text")
-	check(text:find("^AEGIS RECORDING;1;") and text:find(";Testy McTester\n", 1, true)
-		and text:find("\nQUEST;96403;Important Heirlooms;", 1, true), "the text, credited: " .. text:sub(1, 120))
+	check(text:find("^AEGIS RECORDING;1;") and text:find(";Testy McTester;enUS;\n", 1, true)
+		and text:find("\nQUEST;96403;Important Heirlooms;", 1, true),
+		"the text, credited, with the client's language and no preview: " .. text:sub(1, 120))
 	check(record.CopyHint:GetText():find("paste it in our Discord", 1, true) and not record.LogLink:IsShown()
 		and not text:find("COMBATLOG;", 1, true), "no combat log written: straight to Discord")
 	record.CopyBox:SetText("typed over")
@@ -3713,7 +3714,7 @@ do
 	ns.db.creditName = nil
 	Mock.units.player = { name = "Brandy" }
 	record.Copy:Click()
-	check(record.CopyBox:GetText():find(";Brandy\n", 1, true), "with no name given, the character's own")
+	check(record.CopyBox:GetText():find(";Brandy;enUS;\n", 1, true), "with no name given, the character's own")
 	record.Copy:Click()
 	check(record.List:IsShown(), "Back turns it back too")
 	Mock.units.player = nil
@@ -3961,19 +3962,19 @@ end)()
 	Mock.Fire("TOOLTIP_DATA_UPDATE", 4242)
 	check(IS:Read(Mock.ItemLink(LATE)).stats.CRIT == 2, "until the client says more of its tooltip came")
 
-	-- Another language's wordings, from its locale file (L.EQUIP_PATTERNS, "{n}" for the number)
+	-- Another language's wordings, from its locale file (ns.ClientL.EQUIP_PATTERNS, "{n}" for the number)
 	do
 		local GERMAN = 990784
 		Mock.itemInstant[GERMAN] = { "INVTYPE_NECK", 4, 0, "Miscellaneous" }
 		Mock.itemsCached[GERMAN] = true
 		Mock.itemLines[GERMAN] = { "Equip: Erh\195\182ht Eure Chance, einen kritischen Treffer zu erzielen, um 2%.",
 			"Equip: Erh\195\182ht durch Feuerzauber und Feuereffekte zugef\195\188gten Schaden um bis zu 9." }
-		ns.L.EQUIP_PATTERNS = { { "kritischen treffer zu erzielen, um {n}", "CRIT" },
+		ns.ClientL.EQUIP_PATTERNS = { { "kritischen treffer zu erzielen, um {n}", "CRIT" },
 			{ "durch feuerzauber.-um bis zu {n}", "FIRE DAMAGE" } }
 		IS:Forget()
 		local german = IS:Read(Mock.ItemLink(GERMAN)).stats
 		check(german.CRIT == 2 and german["FIRE DAMAGE"] == 9, "a German client's Equip: lines, by its own wordings")
-		ns.L.EQUIP_PATTERNS = nil
+		ns.ClientL.EQUIP_PATTERNS = nil
 		IS:Forget()
 		check(not IS:Read(Mock.ItemLink(GERMAN)).stats.CRIT, "and without them, the English ones only")
 	end

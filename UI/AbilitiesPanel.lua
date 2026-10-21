@@ -77,9 +77,10 @@ function ns.FlagTooltip(index)
 	return title, text
 end
 
--- Role alerts read from the spell when nobody has written them down.
+-- Role alerts read from the spell when nobody has written them down: from its English name, as
+-- the words looked for are English, and the client's description.
 local function AutoFlags(row, castTime, description)
-	local flags, text = {}, string.lower((row.name or "") .. " " .. (description or ""))
+	local flags, text = {}, string.lower((row.enName or row.name or "") .. " " .. (description or ""))
 	local function add(name)
 		if #flags < MAX_FLAGS then flags[#flags + 1] = name end
 	end

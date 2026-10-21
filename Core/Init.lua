@@ -151,9 +151,14 @@ events:SetScript("OnEvent", function(self, event, arg1)
 	if event == "ADDON_LOADED" then
 		if arg1 == addonName then
 			InitSavedVariables()
-			-- The content in the client's language, where the journal has it. A mistake in a
-			-- translation is reported, and the journal still opens.
-			local ok, problem = pcall(ns.ApplyLocale)
+			-- The content in the journal's language, where it has it. A mistake in a translation is
+			-- reported, and the journal still opens. The quartermasters the player captured join
+			-- their factions first, known by the client's names for them, so the translation covers
+			-- what they add.
+			local ok, problem = pcall(ns.KeepClientNames)
+			if not ok then geterrorhandler()(problem) end
+			ns.Recorder:ShareVendors()
+			ok, problem = pcall(ns.ApplyLocale)
 			if not ok then geterrorhandler()(problem) end
 			self:UnregisterEvent("ADDON_LOADED")
 		end

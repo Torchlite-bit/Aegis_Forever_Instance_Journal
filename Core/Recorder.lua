@@ -73,7 +73,6 @@ function Recorder:Init()
 	-- On unless the player turns it off: recording starts on entering a dungeon.
 	if state.autoRecord == nil then state.autoRecord = true end
 	self:Listen(state.recording == true)
-	self:ShareVendors()
 end
 
 function Recorder:OnChange(listener)
@@ -340,7 +339,9 @@ function Recorder:Export(credit)
 	local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version")
 	local _, build = pcall(GetBuildInfo)
 	local faction = Call(UnitFactionGroup, "player")
-	Line("AEGIS RECORDING", EXPORT_VERSION, version or "?", build, date("%Y-%m-%d %H:%M"), faction, credit)
+	-- The client's language and any previewed one come last, after the credit the Log Reader reads.
+	Line("AEGIS RECORDING", EXPORT_VERSION, version or "?", build, date("%Y-%m-%d %H:%M"), faction, credit, GetLocale(),
+		ns.previewLocale)
 	for _, id in ipairs(SortedKeys(state.visits)) do
 		local visit = state.visits[id]
 		Line("VISIT", id, visit.name, visit.count)

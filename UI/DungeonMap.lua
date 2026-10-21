@@ -135,7 +135,7 @@ local defeated = {}
 local function BossNamed(instance, name)
 	if not (instance and name) then return nil end
 	for _, boss in ipairs(instance.bosses) do
-		if boss.name == name or boss.enName == name then return boss end
+		if ns.NamedAs(boss, name) then return boss end
 		for _, alias in ipairs(boss.aliases or {}) do
 			if alias == name then return boss end
 		end
@@ -194,6 +194,7 @@ local function WatchDeaths(instance)
 			if boss.npcID then watched[boss.npcID] = boss end
 			watched[boss.name] = boss
 			if boss.enName then watched[boss.enName] = boss end
+			if boss.clientName then watched[boss.clientName] = boss end
 		end
 	end
 	if watched then

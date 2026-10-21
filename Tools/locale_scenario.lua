@@ -77,7 +77,10 @@ check(#untranslated == 0 and InLanguage(IS:SpecLabel(IS:Specs()[1].key)) and InL
 
 -- The client's Equip: wordings, where the language gives them (Core/ItemScore.lua): each a pattern
 -- Lua can run, for a stat the scoring knows, false (a line worth nothing) or a pair of stats.
-if L.EQUIP_PATTERNS then
+local EQUIP_PATTERNS = ns.ClientL.EQUIP_PATTERNS
+check(L.EQUIP_PATTERNS == nil and L.AREA_NAMES == nil and type(EQUIP_PATTERNS) == "table",
+	"the tables matched against the client's own text kept apart from the journal's words (ns.ClientL)")
+do
 	local known = {}
 	for _, key in ipairs({ "HOLY CRIT", "SPELL CRIT", "RANGED CRIT", "CRIT", "SPELL HIT", "HIT", "HEALING", "SPELL POWER",
 		"SPELL DAMAGE", "CASTING REGEN", "SPELL PENETRATION", "RANGED ATTACK POWER", "FERAL ATTACK POWER", "ATTACK POWER",
@@ -86,7 +89,7 @@ if L.EQUIP_PATTERNS then
 		known[key] = true
 	end
 	local bad = {}
-	for index, entry in ipairs(L.EQUIP_PATTERNS) do
+	for index, entry in ipairs(EQUIP_PATTERNS) do
 		local pattern = type(entry[1]) == "string" and entry[1]:gsub("{n}", function() return "(%d+%.?%d*)" end)
 		local ok = pattern and pcall(string.find, "equip", pattern)
 		local keys = type(entry[2]) == "table" and entry[2] or { entry[2] }
@@ -95,7 +98,7 @@ if L.EQUIP_PATTERNS then
 		end
 		if not ok then bad[#bad + 1] = index .. " " .. tostring(entry[1]) .. " " .. tostring(entry[2]) end
 	end
-	check(#L.EQUIP_PATTERNS > 20 and #bad == 0, "the client's Equip: wordings, each one usable: " .. table.concat(bad, "; "))
+	check(#EQUIP_PATTERNS > 20 and #bad == 0, "the client's Equip: wordings, each one usable: " .. table.concat(bad, "; "))
 end
 check(("\195\137"):lower() == "\195\137" and ("\208\154"):lower() == "\208\154",
 	"letters lowered as the game does, ASCII only, so the wordings are tested as the client reads them")
@@ -132,12 +135,12 @@ check(#misread == 0, "classic Equip: lines read right in " .. LANGUAGE .. ": " .
 -- The rooms inside dungeons, in the client's words (Core/Areas.lua): each one the journal uses,
 -- and found again by its translated name. Two English spellings of one room (Lower Blackrock
 -- Spire's Tazz'Alaor and Tazz'Alor) may share it: either is found.
-check(type(L.AREA_NAMES) == "table", "the rooms inside dungeons named in " .. LANGUAGE)
+check(type(ns.ClientL.AREA_NAMES) == "table", "the rooms inside dungeons named in " .. LANGUAGE)
 do
 	local used, stray = {}, {}
 	for _, name in ipairs(ns.AreaNamesUsed()) do used[name] = true end
-	for english, translated in pairs(L.AREA_NAMES) do
-		if not used[english] or L.AREA_NAMES[ns.AreaKey(translated)] ~= translated then stray[#stray + 1] = english end
+	for english, translated in pairs(ns.ClientL.AREA_NAMES) do
+		if not used[english] or ns.ClientL.AREA_NAMES[ns.AreaKey(translated)] ~= translated then stray[#stray + 1] = english end
 	end
 	check(#stray == 0, "every translated room is one the journal uses, and is found by its name: " .. table.concat(stray, ", "))
 end
@@ -161,7 +164,33 @@ check(ragefire.enName == "Ragefire Chasm" and deadmines.bosses[1].enName and (no
 	"each keeps its English name, which the journal matches and records by")
 check(ns.GetInstance("ScarletMonasteryLibrary").name:find(":", 1, true) or ns.GetInstance("ScarletMonasteryLibrary").name:find("\239\188\154", 1, true),
 	"Scarlet Monastery's wings named 'building: wing', as its shared door reads them")
-check(L.STRINGS == nil and L.BOSS_NAMES == nil, "the lookup tables let go once used")
+check(L.STRINGS == nil and L.BOSS_NAMES == nil and ns.ClientL.BOSS_NAMES == nil and ns.ClientL.FACTION_NAMES == nil,
+	"the lookup tables let go once used")
+do
+	-- Not previewed, the client's names are the journal's: what the client says of a boss finds it.
+	local differ, lists, bossNamed, factionsNamed = {}, {}, 0, 0
+	for _, kind in ipairs({ "dungeon", "raid" }) do
+		for _, instance in ipairs(ns.GetInstances(kind)) do lists[#lists + 1] = instance end
+	end
+	for _, faction in ipairs(ns.GetFactions()) do lists[#lists + 1] = faction end
+	for _, list in ipairs(lists) do
+		if list.clientName then factionsNamed = factionsNamed + 1 end
+		if list.clientName and list.clientName ~= list.name then differ[#differ + 1] = list.enName end
+		for _, boss in ipairs(list.bosses or {}) do
+			if boss.clientName then bossNamed = bossNamed + 1 end
+			if boss.clientName and boss.clientName ~= boss.name then differ[#differ + 1] = boss.enName end
+		end
+	end
+	local booty
+	for _, faction in ipairs(ns.GetFactions()) do
+		if faction.factionID == 21 then booty = faction end
+	end
+	-- As many bosses as the language names (Ragefire Chasm's bosses at least), and Booty Bay.
+	check(#differ == 0 and bossNamed >= named and deadmines.bosses[1].clientName == deadmines.bosses[1].name
+		and factionsNamed > 0 and booty.clientName == booty.name and booty.clientName ~= "Booty Bay",
+		"each boss and faction known by the client's name, which is the one shown: " .. bossNamed .. " bosses, "
+		.. factionsNamed .. " factions; " .. table.concat(differ, ", "))
+end
 local library, graveyard = ns.GetInstance("ScarletMonasteryLibrary"), ns.GetInstance("ScarletMonasteryGraveyard")
 local door = ns.DungeonMap.SharedDoorName({ library, graveyard })
 check(door ~= library.location and library.name:sub(1, #door) == door and graveyard.name:sub(1, #door) == door,
