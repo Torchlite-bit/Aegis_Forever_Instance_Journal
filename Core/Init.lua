@@ -72,15 +72,17 @@ function AegisJournal_Toggle()
 end
 
 --[[
-	/aegis lang <de|fr|ru|cn|tw|en|off>: the journal in another of its languages from the next
+	/aegis lang <de|fr|ru|cn|tw|es|mx|pt|ko|en|off>: the journal in another of its languages from the next
 	/reload, whatever the client's, to check a translation. Only its own words change: the game's
 	names (spells, items, the client's own interface words) stay the client's. Saved for the
 	account until /aegis lang off.
 ]]
 local LANGUAGE_CODES = { de = "deDE", dede = "deDE", fr = "frFR", frfr = "frFR", ru = "ruRU", ruru = "ruRU",
-	cn = "zhCN", zhcn = "zhCN", tw = "zhTW", zhtw = "zhTW", en = "enUS", enus = "enUS" }
+	cn = "zhCN", zhcn = "zhCN", tw = "zhTW", zhtw = "zhTW", es = "esES", eses = "esES", mx = "esMX", esmx = "esMX",
+	pt = "ptBR", ptbr = "ptBR", ko = "koKR", kr = "koKR", kokr = "koKR", en = "enUS", enus = "enUS" }
 local LANGUAGE_NAMES = { deDE = "German", frFR = "French", ruRU = "Russian", zhCN = "Simplified Chinese",
-	zhTW = "Traditional Chinese", enUS = "English" }
+	zhTW = "Traditional Chinese", esES = "Spanish (Spain)", esMX = "Spanish (Latin America)", ptBR = "Brazilian Portuguese",
+	koKR = "Korean", enUS = "English" }
 
 local function PreviewLanguage(typed)
 	typed = ((typed or ""):lower():gsub("[^%a]", ""))
@@ -98,6 +100,7 @@ local function PreviewLanguage(typed)
 	ns.db.previewLocale = code
 	ns.Print(string.format(L.LANG_SET, LANGUAGE_NAMES[code]))
 	if code == "zhCN" or code == "zhTW" then ns.Print(L.LANG_FONTS) end
+	if code == "koKR" then ns.Print(L.LANG_FONTS_KO) end
 end
 
 SLASH_AEGISJOURNAL1 = "/aegis"

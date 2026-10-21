@@ -22,6 +22,14 @@ Locales\zhCN.lua
 Locales\zhCN_content.lua
 Locales\zhTW.lua
 Locales\zhTW_content.lua
+Locales\esES.lua
+Locales\esES_content.lua
+Locales\esMX.lua
+Locales\esMX_content.lua
+Locales\ptBR.lua
+Locales\ptBR_content.lua
+Locales\koKR.lua
+Locales\koKR_content.lua
 Core\Init.lua
 Core\Compat.lua
 Core\Registry.lua
