@@ -33,6 +33,9 @@ local CHECKBOXES = {
 	{ variable = "AEGIS_JOURNAL_MINIMAP", name = "OPTIONS_MINIMAP", tip = "OPTIONS_MINIMAP_TIP",
 		get = function() return ns.MinimapButton.Shows() end,
 		set = function(shown) ns.MinimapButton.SetShows(shown) end },
+	{ variable = "AEGIS_JOURNAL_DOCK", name = "OPTIONS_DOCK", tip = "OPTIONS_DOCK_TIP",
+		get = function() return ns.Journal:IsDocked() end,
+		set = function(on) ns.Journal:SetDocked(on, true) end },
 }
 
 function Options:Register()

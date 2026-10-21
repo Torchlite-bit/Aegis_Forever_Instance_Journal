@@ -117,6 +117,11 @@ SlashCmdList.AEGISJOURNAL = function(message)
 	elseif command == "reset" then
 		ns.Journal:ResetPosition()
 		ns.Print(L.POSITION_RESET)
+	elseif command == "dock" then
+		local on = not ns.Journal:IsDocked()
+		local waits = ns.Journal:SetDocked(on)
+		ns.Print(on and L.DOCK_ON or L.DOCK_OFF)
+		if waits then ns.Print(L.DOCK_AFTER_COMBAT) end
 	elseif command == "perf" then
 		ns.Perf:Run()
 	elseif command == "where" then

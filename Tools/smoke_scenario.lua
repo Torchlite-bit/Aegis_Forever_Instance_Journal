@@ -43,6 +43,10 @@ Mock.Fire("PLAYER_LOGIN")
 check(ns.db and ns.charDB, "saved variables initialised")
 -- Recording by itself in dungeons is on for players; the scenario turns it on where it tests it.
 ns.Recorder:SetAutoRecord(false)
+-- Docked like the game's windows is the players' default; the scenario frees the window, and docks
+-- it where it tests docking.
+check(ns.Journal:IsDocked(), "the window docked at first, like the game's own")
+ns.db.docked = false
 check(Mock.bindings["SHIFT-J"] == "AEGISJOURNAL_TOGGLE", "Shift+J bound on first login")
 check(Mock.bindingsSaved == 1, "binding saved to the set in use")
 check(chatContains("Shift+J now opens"), "player told about Shift+J")
@@ -337,7 +341,7 @@ do
 	GetCreatureDifficultyColor = nil
 	-- Turned off in the journal's options (Options > AddOns), the badges go at once, and come back
 	local category, boxes = Mock.settingsCategory, Mock.settings
-	check(category and category.name == ns.L.OPTIONS_TITLE and #category.controls == 6
+	check(category and category.name == ns.L.OPTIONS_TITLE and #category.controls == 7
 		and boxes.AEGIS_JOURNAL_BOSS_LEVELS and boxes.AEGIS_JOURNAL_BOSS_LEVELS:GetValue() == true
 		and boxes.AEGIS_JOURNAL_BOSS_LEVELS.tooltip == ns.L.OPTIONS_BOSS_LEVELS_TIP,
 		"the journal's page in the game's options, the boss levels shown")
@@ -3469,6 +3473,295 @@ SlashCmdList.AEGISJOURNAL("reset")
 check(ns.db.position == nil, "/aegis reset clears the saved position")
 AegisJournal_Toggle()
 check(not f:IsShown(), "toggle closes it")
+-- Docked like the game's own windows (UI/Journal.lua), in the client's window manager as the mock
+-- plays it: at the top left, moved aside and put away by the game's windows, through Escape, its X
+-- and combat, let loose by a drag till it shuts, and free again
+;(function()
+	local L, box = ns.L, Mock.settings.AEGIS_JOURNAL_DOCK
+	local savedPlayer, savedWidth, savedTab = Mock.units.player, Mock.screen.width, f.selectedTab
+	local function X() return select(4, f:GetPoint(1)) end
+	local function Y() return select(5, f:GetPoint(1)) end
+	-- The next frame drawn: a journal placed by hand looks at the game's windows again.
+	local function NextFrame() if f.DockWatch:IsVisible() then f.DockWatch:_RunScript("OnUpdate", 0.016) end end
+	local function Clean() return #Mock.blocked == 0 and Mock.interfaceBlocked == 0 and #Mock.panelWindowsWrites == 0 end
+	local sounds, showCalls = 0, 0
+	local playSound, showUIPanel = ns.PlaySoundKit, ShowUIPanel
+	ns.PlaySoundKit = function(...) sounds = sounds + 1 return playSound(...) end
+	ShowUIPanel = function(...) showCalls = showCalls + 1 return showUIPanel(...) end
+	Mock.inCombat = nil
+	WorldMapFrame:Hide()
+	local vendor = Mock.BlizzardPanel("MockMerchantFrame", { area = "left", pushable = 0 }, 384)
+	local character = Mock.BlizzardPanel("MockCharacterFrame", { area = "left", pushable = 3, whileDead = 1, width = 713 }, 631)
+	local spells = Mock.BlizzardPanel("MockSpellBookFrame",
+		{ area = "centerOrLeft", pushable = 3, whileDead = 1, allowOtherPanels = 1 }, 809, true)
+	local finder = Mock.BlizzardPanel("MockGroupFinderFrame", { area = "left", pushable = 7 }, 400)
+	local menu = Mock.BlizzardPanel("MockGameMenuFrame", { area = "center", pushable = 0, whileDead = 1 }, 300)
+
+	check(box and box.default == true and box:GetValue() == false and box.tooltip == L.OPTIONS_DOCK_TIP,
+		"docking offered in the options, on by default (the scenario freed it)")
+	ns.db.position = { point = "TOPLEFT", relativePoint = "TOPLEFT", x = 300, y = -200 }
+	ns.Journal:ApplyPosition()
+	AegisJournal_Toggle()
+	check(f:IsShown() and X() == 300 and showCalls == 0 and f:GetAttribute("UIPanelLayout-defined")
+		and f:GetAttribute("UIPanelLayout-area") == nil and not f.DockWatch:IsShown(),
+		"free: where it was dragged, none of the game's windows")
+	Mock.inCombat = true
+	f.CloseButton:Click()
+	Mock.inCombat = nil
+	check(not f:IsShown() and Mock.interfaceBlocked == 0, "its X closes it in combat, nothing refused")
+
+	box:SetValue(true)
+	check(ns.db.docked == true and box:GetValue() == true and f:GetAttribute("UIPanelLayout-area") == "left"
+		and f:GetAttribute("UIPanelLayout-pushable") == 8 and f:GetAttribute("UIPanelLayout-width") == 843
+		and f:GetAttribute("UIPanelLayout-whileDead") == 1 and rawget(UIPanelWindows, "AegisJournalFrame") == nil,
+		"ticked: its place set on its own frame, nothing in the game's list")
+	for name, value in pairs(rawget(f, "_attributes")) do
+		check(type(value) ~= "function" and type(value) ~= "table", "only plain values among its attributes: " .. name)
+	end
+	AegisJournal_Toggle()
+	check(Mock.slots.left == f and X() == 16 and Y() == -116 and showCalls == 1 and not f.DockWatch:IsShown(),
+		"docked: opened through the game, in its left slot at the top left")
+	-- Dragged while docked: loose where it is put, out of the game's row; shut and opened again, docked again
+	sounds = 0
+	f:_RunScript("OnDragStart")
+	check(f._moving and not Mock.slots.left and f:IsShown() and f:GetAttribute("UIPanelLayout-area") == nil
+		and not f.DockWatch:IsShown() and sounds == 0, "dragged: let loose, out of the game's slot, still on screen, quietly")
+	f:ClearAllPoints()
+	f:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 500, -300)
+	f:_RunScript("OnDragStop")
+	check(not f._moving and X() == 500 and ns.db.position.x == 300, "where it was put; its free place kept")
+	Mock.AsClient(ShowUIPanel, vendor)
+	check(Mock.slots.left == vendor and not Mock.slots.center and f:IsShown() and X() == 500,
+		"a vendor opens at the left; the loose journal stays where it was put")
+	Mock.AsClient(HideUIPanel, vendor)
+	AegisJournal_Toggle()
+	check(not f:IsShown() and f:GetAttribute("UIPanelLayout-area") == "left", "shut: docked again")
+	AegisJournal_Toggle()
+	check(Mock.slots.left == f and X() == 16, "opened again: back at the top left")
+
+	-- The game's windows move it aside, and back
+	Mock.AsClient(ShowUIPanel, vendor)
+	check(Mock.slots.left == vendor and Mock.slots.center == f and X() == 432 and f:IsShown(), "a vendor: it slides aside")
+	Mock.AsClient(HideUIPanel, vendor)
+	check(Mock.slots.left == f and X() == 16, "the vendor shut: back at the left")
+	Mock.AsClient(ShowUIPanel, finder)
+	check(Mock.slots.left == finder and Mock.slots.center == f and X() == 448, "even the group finder (7) goes before it")
+	Mock.AsClient(HideUIPanel, finder)
+	AegisJournal_Toggle()
+	check(not f:IsShown() and not Mock.slots.left, "toggled shut: its slot freed")
+	Mock.AsClient(ShowUIPanel, vendor)
+	AegisJournal_Toggle()
+	check(Mock.slots.left == vendor and Mock.slots.center == f and X() == 432, "opened beside a window already open")
+	Mock.AsClient(ShowUIPanel, character)
+	check(Mock.slots.left == character and not vendor:IsShown() and Mock.slots.center == f and X() == 761,
+		"no room for three: the newest takes the vendor's place, the journal stays the last")
+	Mock.PressEscape()
+	check(not f:IsShown() and not character:IsShown() and next(Mock.slots) == nil and Clean(), "Escape shuts them all")
+
+	-- No room for two, at UI scale 1 on a wide screen
+	Mock.screen.width = 1365
+	AegisJournal_Toggle()
+	Mock.AsClient(ShowUIPanel, character)
+	check(Mock.slots.left == character and not f:IsShown() and not Mock.slots.center, "1365 wide: the character panel puts it away")
+	AegisJournal_Toggle()
+	check(Mock.slots.left == f and f:IsShown() and not character:IsShown(), "opened again: the newer stays, the panel shuts")
+	Mock.PressEscape()
+	Mock.screen.width = savedWidth
+
+	-- The game's menu takes no window: it opens by itself, over it
+	Mock.AsClient(ShowUIPanel, menu)
+	AegisJournal_Toggle()
+	check(f:IsShown() and not Mock.slots.left and X() == 16 and f.DockWatch:IsShown() and Mock.interfaceBlocked == 0,
+		"the game menu open: shown by itself over it")
+	NextFrame()
+	check(f:IsShown() and X() == 16, "and stays")
+	Mock.PressEscape()
+	check(not f:IsShown() and not menu:IsShown(), "Escape shuts both")
+
+	Mock.units.player = { dead = true }
+	AegisJournal_Toggle()
+	check(Mock.slots.left == f and not Mock.notWhileDead, "dead: it still opens")
+	AegisJournal_Toggle()
+	Mock.units.player = savedPlayer
+
+	Mock.AsClient(ShowUIPanel, vendor)
+	AegisJournal_Toggle()
+	Mock.screen.width = 1200
+	Mock.AsClient(UpdateScaleForFitForOpenPanels)
+	check(not f:IsShown() and Mock.slots.left == vendor, "a larger UI scale: no room, put away")
+	Mock.screen.width = savedWidth
+	Mock.PressEscape()
+
+	-- In combat: opened by itself, following the game's windows
+	Mock.inCombat = true
+	AegisJournal_Toggle()
+	check(f:IsShown() and not Mock.slots.left and X() == 16 and f.DockWatch:IsShown(), "combat: shown by itself at the top left")
+	Mock.AsClient(ShowUIPanel, vendor)
+	check(Mock.slots.left == vendor, "the game puts its own window at the left")
+	NextFrame()
+	check(X() == 432, "the journal moves aside on the next frame")
+	Mock.AsClient(ShowUIPanel, spells)
+	check(Mock.slots.center == spells and #Mock.blocked == 0, "the spellbook opens beside the vendor, by the game's own code")
+	NextFrame()
+	check(not f:IsShown(), "no room left: the journal shuts, as the last of the row")
+	Mock.AsClient(HideUIPanel, spells)
+	AegisJournal_Toggle()
+	check(f:IsShown() and X() == 432, "opened in combat beside the vendor")
+	Mock.AsClient(HideUIPanel, vendor)
+	NextFrame()
+	check(X() == 16, "the vendor shut: back at the left")
+	Mock.PressEscape()
+	check(not f:IsShown() and Clean(), "Escape in combat")
+	Mock.ResetPanels()
+
+	-- Shut in combat while in a slot, opened again in combat, and combat's end
+	Mock.inCombat = nil
+	Mock.AsClient(ShowUIPanel, vendor)
+	AegisJournal_Toggle()
+	check(Mock.slots.center == f, "out of combat, in the slot beside the vendor")
+	Mock.inCombat = true
+	AegisJournal_Toggle()
+	check(not f:IsShown() and Mock.slots.center == f and Mock.interfaceBlocked == 0, "shut in combat: still counted in its slot")
+	AegisJournal_Toggle()
+	check(f:IsShown() and Mock.slots.center == f and X() == 432 and not f.DockWatch:IsShown(), "opened again in combat: in its slot")
+	f.CloseButton:Click()
+	check(not f:IsShown() and Mock.slots.center == f and Mock.interfaceBlocked == 0, "its X in combat")
+	Mock.inCombat = nil
+	Mock.Fire("PLAYER_REGEN_ENABLED")
+	check(Mock.slots.center == nil and Mock.slots.left == vendor, "combat over: its slot freed")
+	Mock.PressEscape()
+
+	-- Opened in combat and still open after: it keeps following
+	Mock.inCombat = true
+	AegisJournal_Toggle()
+	Mock.inCombat = nil
+	Mock.Fire("PLAYER_REGEN_ENABLED")
+	Mock.AsClient(ShowUIPanel, character)
+	NextFrame()
+	check(f:IsShown() and X() == 761, "opened in combat, it follows after combat too")
+	AegisJournal_Toggle()
+	check(not f:IsShown() and Clean(), "and shuts")
+	Mock.PressEscape()
+
+	-- Dragged loose in combat while in a slot: let out of it once combat ends
+	Mock.AsClient(ShowUIPanel, vendor)
+	AegisJournal_Toggle()
+	Mock.inCombat = true
+	f:_RunScript("OnDragStart")
+	f:ClearAllPoints()
+	f:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 600, -200)
+	f:_RunScript("OnDragStop")
+	check(f:IsShown() and Mock.slots.center == f and X() == 600 and Mock.interfaceBlocked == 0,
+		"dragged in combat: loose where it was put, still counted in its slot")
+	Mock.inCombat = nil
+	Mock.Fire("PLAYER_REGEN_ENABLED")
+	check(f:IsShown() and Mock.slots.center == nil and Mock.slots.left == vendor and X() == 600,
+		"combat over: let out of its slot, still where it was put")
+	AegisJournal_Toggle()
+	check(not f:IsShown() and f:GetAttribute("UIPanelLayout-area") == "left", "and docked again once shut")
+	Mock.PressEscape()
+	-- Placed by hand in combat and dragged: it no longer follows the game's windows
+	Mock.inCombat = true
+	AegisJournal_Toggle()
+	f:_RunScript("OnDragStart")
+	f:ClearAllPoints()
+	f:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 700, -200)
+	f:_RunScript("OnDragStop")
+	Mock.AsClient(ShowUIPanel, vendor)
+	NextFrame()
+	check(f:IsShown() and X() == 700 and not f.DockWatch:IsShown(), "placed by hand in combat and dragged: it stays put")
+	AegisJournal_Toggle()
+	Mock.PressEscape()
+	Mock.inCombat = nil
+	Mock.Fire("PLAYER_REGEN_ENABLED")
+	check(not f:IsShown() and f:GetAttribute("UIPanelLayout-area") == "left" and Clean(), "shut: docked again, cleanly")
+
+	-- No room in combat: over the panel, until a newer window opens
+	Mock.screen.width = 1365
+	Mock.AsClient(ShowUIPanel, character)
+	Mock.inCombat = true
+	AegisJournal_Toggle()
+	check(f:IsShown() and X() == 16 and f.DockWatch:IsShown(), "no room in combat: over the panel")
+	NextFrame()
+	check(f:IsShown() and X() == 16, "and stays over it")
+	Mock.AsClient(ShowUIPanel, vendor)
+	NextFrame()
+	check(not f:IsShown(), "a newer window: it shuts")
+	Mock.PressEscape()
+	Mock.inCombat = nil
+	Mock.screen.width = savedWidth
+
+	-- Put away by the game in combat: its own scripts ask nothing of the manager
+	Mock.AsClient(ShowUIPanel, vendor)
+	AegisJournal_Toggle()
+	Mock.inCombat = true
+	Mock.AsClient(ShowUIPanel, spells)
+	check(not f:IsShown() and Mock.slots.left == vendor and Mock.slots.center == spells and Clean(), "put away in combat, cleanly")
+	Mock.PressEscape()
+	Mock.inCombat = nil
+
+	-- The world map (with its quest log), and a boss opened from its pin
+	rawset(UIPanelWindows, "WorldMapFrame", { area = "left", pushable = 0, whileDead = 1, allowOtherPanels = 1, width = 1035 })
+	AegisJournal_Toggle()
+	Mock.AsClient(ShowUIPanel, WorldMapFrame)
+	check(Mock.slots.left == WorldMapFrame and not f:IsShown(), "the map leaves no room: the journal put away")
+	local deadmines, boss = ns.GetInstance("TheDeadmines"), nil
+	for _, candidate in ipairs(deadmines.bosses) do if not candidate.trash then boss = candidate break end end
+	ns.DungeonMap:OpenBoss(deadmines, boss)
+	check(not WorldMapFrame:IsShown() and Mock.slots.left == f and X() == 16, "a boss from the map: the map shut, the journal at the left")
+	AegisJournal_Toggle()
+	rawset(UIPanelWindows, "WorldMapFrame", nil)
+
+	-- Switching while open, and in combat
+	Mock.AsClient(ShowUIPanel, vendor)
+	AegisJournal_Toggle()
+	sounds = 0
+	SlashCmdList.AEGISJOURNAL("dock")
+	check(not ns.db.docked and f:IsShown() and X() == 300 and Mock.slots.center == nil and Mock.slots.left == vendor
+		and f:GetAttribute("UIPanelLayout-area") == nil and sounds == 0 and chatContains(L.DOCK_OFF)
+		and Mock.settingsNotified.AEGIS_JOURNAL_DOCK == 1, "/aegis dock while open: free, where it was dragged, quietly")
+	SlashCmdList.AEGISJOURNAL("dock")
+	check(ns.db.docked and Mock.slots.center == f and X() == 432 and chatContains(L.DOCK_ON)
+		and Mock.settingsNotified.AEGIS_JOURNAL_DOCK == 2, "and docked again, beside the vendor")
+	Mock.inCombat = true
+	SlashCmdList.AEGISJOURNAL("dock")
+	check(not ns.db.docked and not box:GetValue() and f:GetAttribute("UIPanelLayout-area") == "left"
+		and chatContains(L.DOCK_AFTER_COMBAT), "in combat: the choice saved, the window as it was")
+	Mock.inCombat = nil
+	Mock.Fire("PLAYER_REGEN_ENABLED")
+	check(f:GetAttribute("UIPanelLayout-area") == nil and f:IsShown() and X() == 300 and Mock.slots.center == nil,
+		"applied when combat ends")
+	box:SetValue(true)
+	SlashCmdList.AEGISJOURNAL("reset")
+	check(ns.db.position == nil and Mock.slots.center == f and X() == 432, "/aegis reset while docked: it stays in its slot")
+	Mock.PressEscape()
+
+	-- The client will not let the slots be read: over at the top left, no error
+	Mock.panelReadFails = true
+	Mock.AsClient(ShowUIPanel, vendor)
+	Mock.inCombat = true
+	AegisJournal_Toggle()
+	NextFrame()
+	check(f:IsShown() and X() == 16, "slots unreadable: shown at the top left")
+	Mock.PressEscape()
+	Mock.inCombat, Mock.panelReadFails = nil, nil
+
+	-- The mock can tell: a protected window touched by an addon's code in combat, and an addon's
+	-- ShowUIPanel in combat
+	Mock.inCombat = true
+	spells:Show()
+	ShowUIPanel(vendor)
+	check(Mock.blocked[1] == "MockSpellBookFrame:Show()" and Mock.interfaceBlocked == 1, "the blocked and refused calls are seen")
+	Mock.blocked, Mock.interfaceBlocked, Mock.inCombat = {}, 0, nil
+
+	ShowUIPanel, ns.PlaySoundKit = showUIPanel, playSound
+	box:SetValue(false)
+	Mock.ResetPanels()
+	ns.db.position = nil
+	ns.Journal:ApplyPosition()
+	ns.Journal:SelectTab(savedTab or 1)
+	check(not f:IsShown() and not ns.db.docked and Clean(), "free and shut again")
+end)()
 
 -- A second login must not take Shift+J back after the player changed it
 Mock.bindings["SHIFT-J"] = "SOMETHING_ELSE"
@@ -5326,4 +5619,5 @@ end)()
 	IS:Forget()
 end)()
 
+check(#Mock.blocked == 0 and Mock.interfaceBlocked == 0, "no blocked or refused call in the whole run")
 return string.format("All %d checks passed.", checks)
