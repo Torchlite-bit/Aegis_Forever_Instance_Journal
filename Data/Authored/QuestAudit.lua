@@ -14,7 +14,8 @@ local _, ns = ...
 	           another wing's quests
 	Prerequisites list every quest a player must have done first, oldest first: optional
 	breadcrumbs, and steps any one of several will do, are left out. Each change names its sources.
-	The quests still open after the audit wait for a check on Wowhead (Dev/docs).
+	What those left open was then read on Wowhead's Forever pages and checked again (Wowhead); the
+	few Wowhead could not settle either are listed in Dev/docs/quest-audit-2026-10-20.md.
 ]]
 
 local function Audit(key, spec)
@@ -64,9 +65,12 @@ Audit("RuinsOfLordaeron", {
 		},
 	},
 	patches = {
-		-- Remember That I Love You: endMap (Questie, foreverchanges)
+		-- Remember That I Love You: pickup, startItem, endMap, note (Questie, foreverchanges, Wowhead)
 		[92415] = {
+			pickup = "Blood-Stained Parchment, found inside Ruins of Lordaeron",
+			startItem = { itemID = 251270, name = "Blood-Stained Parchment" },
 			endMap = { mapID = 1453, x = 0.563, y = 0.54, label = "Orphan Matron Nightingale — Cathedral Square" },
+			note = "Starts from the Blood-Stained Parchment (or the Last Scrawlings of Edward Heartweaver); the quest then gives you the Blood-Stained Letter to bring to Nightingale.",
 		},
 		-- Bloodied Insignia: endMap (Questie, foreverchanges)
 		[95195] = {
@@ -96,7 +100,7 @@ Audit("RuinsOfLordaeron", {
 
 Audit("TheDeadmines", {
 	add = {
-		-- A Moon-Kissed Blade (Questie)
+		-- A Moon-Kissed Blade (Questie, Wowhead)
 		{
 			questID = 95036, name = "A Moon-Kissed Blade", level = 25, requiredLevel = 20, faction = "Horde", classOnly = "PALADIN",
 			pickup = "Lumina Windsinger, the Sepulcher, Silverpine Forest",
@@ -108,6 +112,14 @@ Audit("TheDeadmines", {
 		},
 	},
 	patches = {
+		-- Oh Brother...: startMap (Wowhead)
+		[167] = {
+			startMap = { mapID = 1453, x = 0.703, y = 0.408, label = "Wilder Thistlenettle" },
+		},
+		-- Collecting Memories: startMap (Wowhead)
+		[168] = {
+			startMap = { mapID = 1453, x = 0.703, y = 0.408, label = "Wilder Thistlenettle" },
+		},
 		-- The Unsent Letter: endMap (Questie, FDJ, foreverchanges)
 		[373] = {
 			endMap = { mapID = 1453, x = 0.577, y = 0.479, label = "Baros Alexston" },
@@ -136,6 +148,18 @@ Audit("TheDeadmines", {
 				{ questID = 92751, name = "Detonation at a Distance" },
 				{ questID = 92752, name = "Explosive Consultation" },
 				{ questID = 92753, name = "Destruction in Deadmines" },
+			},
+		},
+		-- A Moon-Kissed Blade: prerequisites (Questie, Wowhead)
+		[95036] = {
+			prerequisites = {
+				{ questID = 91858, name = "Diplomatic Incident" },
+				{ questID = 91859, name = "A Curious Pair" },
+				{ questID = 91860, name = "A Grim Fate" },
+				{ questID = 91861, name = "Into Fenris Keep" },
+				{ questID = 91862, name = "Lumina Windsinger" },
+				{ questID = 96204, name = "The Windshaper's Wrath" },
+				{ questID = 95034, name = "The Debt" },
 			},
 		},
 	},
@@ -171,6 +195,11 @@ Audit("WailingCaverns", {
 			endMap = { mapID = 1413, x = 0.482, y = 0.328, label = "Falla Sagewind" },
 		},
 	},
+	remove = {
+		999, -- When Dreams Turn to Nightmares: an empty stub in the game's data, never offered: no giver, no text (Wowhead)
+		1500, -- Waking Naralex: an empty stub in the game's data, never offered: no giver, no text (Wowhead)
+		3366, -- The Glowing Shard: a dead copy of The Glowing Shard (6981), which the journal lists (Wowhead)
+	},
 })
 
 Audit("ShadowfangKeep", {
@@ -199,6 +228,17 @@ Audit("BlackfathomDeeps", {
 		[1275] = {
 			note = "Optional breadcrumb: The Corruption Abroad, from Argos Nightwhisper in Stormwind, leads here.",
 			prerequisites = {},
+		},
+		-- The Test of Righteousness: prerequisites (Wowhead)
+		[1806] = {
+			prerequisites = {
+				{ questID = 1649, name = "The Tome of Valor" },
+				{ questID = 1650, name = "The Tome of Valor" },
+				{ questID = 1651, name = "The Tome of Valor" },
+				{ questID = 1652, name = "The Tome of Valor" },
+				{ questID = 1653, name = "The Test of Righteousness" },
+				{ questID = 1654, name = "The Test of Righteousness" },
+			},
 		},
 		-- Blackfathom Villainy: endMap (Questie, foreverchanges, AAL)
 		[6561] = {
@@ -251,9 +291,10 @@ Audit("ExcavationSiteWetlands", {
 
 Audit("CityOfDalaran", {
 	patches = {
-		-- Starving Arcane: startMap (Questie, FDJ, foreverchanges)
+		-- Starving Arcane: startMap, prerequisites (Questie, FDJ, foreverchanges, Wowhead)
 		[92457] = {
 			startMap = { mapID = 1421, x = 0.686, y = 0.452, label = "Image of Archmage Modera — Lordamere Lake near Dalaran" },
+			prerequisites = { { questID = 92432, name = "An Alarming Request" } },
 		},
 		-- Heart of Disruption: startMap (Questie, foreverchanges)
 		[92458] = {
@@ -358,6 +399,16 @@ Audit("RazorfenKraul", {
 			startItem = { itemID = 17008, name = "Small Scroll", note = "Dropped by Charlga Razorflank." },
 			endMap = { mapID = 1458, x = 0.563, y = 0.922, label = "Varimathras — Royal Quarter, Undercity" },
 			objective = "Take the Small Scroll to Varimathras in the Undercity.",
+			prerequisites = {},
+		},
+		-- Elemental Aid (Wowhead)
+		{
+			questID = 79360, name = "Elemental Aid", level = 33, requiredLevel = 30, faction = "Horde", classOnly = "SHAMAN",
+			pickup = "Rau Cliffrunner, Thousand Needles", turnin = "Rau Cliffrunner, Thousand Needles",
+			startMap = { mapID = 1441, x = 0.461, y = 0.517, label = "Rau Cliffrunner" },
+			endMap = { mapID = 1441, x = 0.461, y = 0.517, label = "Rau Cliffrunner" },
+			objective = "Defeat Charlga Razorflank in Razorfen Kraul and collect information on the quilboar's plans.",
+			note = "Charlga Razorflank drops the Tattered Note.",
 			prerequisites = {},
 		},
 		-- Elemental Aid (Questie)
@@ -722,6 +773,10 @@ Audit("ZulFarrak", {
 		-- Tiara of the Deep: prerequisites (Questie, foreverchanges)
 		[2846] = {
 			prerequisites = {},
+		},
+		-- Tabetha's Task: note (Wowhead)
+		[2861] = {
+			note = "Given by Jennea Cannon (Stormwind), Bink (Ironforge), Deino (Orgrimmar) and Anastasia Hartwell (Undercity).",
 		},
 		-- Scarab Shells: prerequisites (Questie, foreverchanges)
 		[2865] = {
@@ -1350,6 +1405,16 @@ Audit("DireMaulEast", {
 
 Audit("LowerBlackrockSpire", {
 	add = {
+		-- Hot Fiery Death (Wowhead)
+		{
+			questID = 5103, name = "Hot Fiery Death", level = 60, requiredLevel = 55, faction = "Both",
+			pickup = "Human Remains, inside the dungeon", turnin = "Malyfous Darkhammer, Winterspring",
+			endMap = { mapID = 1452, x = 0.610, y = 0.388, label = "Malyfous Darkhammer" },
+			startObject = { name = "Human Remains", note = "Inside the dungeon." },
+			objective = "Take the Unfired Plate Gauntlets lying by the Human Remains to Malyfous Darkhammer in Everlook.",
+			note = "For warrior, paladin and shaman blacksmiths with a skill of 270. The remains and the gauntlets are by a lava flow, down a tunnel behind the orc tents at the start of the long orc hall before the spiders.",
+			prerequisites = {},
+		},
 		-- Final Preparations (Questie, foreverchanges)
 		{
 			questID = 8994, name = "Final Preparations", level = 60, requiredLevel = 58, faction = "Both",
@@ -1362,14 +1427,16 @@ Audit("LowerBlackrockSpire", {
 		},
 	},
 	patches = {
-		-- Seal of Ascension: pickup, prerequisites (Questie, foreverchanges)
+		-- Seal of Ascension: pickup, turnin, prerequisites (Questie, foreverchanges, Wowhead)
 		[4742] = {
-			pickup = "Vaelan, inside the dungeon",
+			pickup = "Scarshield Infiltrator, inside the dungeon",
+			turnin = "Scarshield Infiltrator, inside the dungeon",
 			prerequisites = {},
 		},
-		-- Seal of Ascension: pickup (Questie, foreverchanges)
+		-- Seal of Ascension: pickup, turnin (Questie, foreverchanges, Wowhead)
 		[4743] = {
-			pickup = "Vaelan, inside the dungeon",
+			pickup = "Scarshield Infiltrator, inside the dungeon",
+			turnin = "Scarshield Infiltrator, inside the dungeon",
 		},
 		-- Doomrigger's Clasp: prerequisites (Questie, foreverchanges)
 		[4764] = {
@@ -1700,6 +1767,16 @@ Audit("DireMaulWest", {
 
 Audit("DireMaulNorth", {
 	add = {
+		-- Enchanted Thorium Platemail: Volume I (Wowhead)
+		{
+			questID = 7649, name = "Enchanted Thorium Platemail: Volume I", level = 60, requiredLevel = 50, faction = "Both",
+			pickup = "Enchanted Thorium Platemail: Volume I, bound from its two halves",
+			turnin = "Lorekeeper Lydros, inside the dungeon",
+			startItem = { itemID = 18769, name = "Enchanted Thorium Platemail", note = "Combine the Top Half (King Gordok, Dire Maul North) and the Bottom Half (Goraluk Anvilcrack, Upper Blackrock Spire) of Advanced Armorsmithing: Volume I." },
+			objective = "Bring the book to Lorekeeper Lydros in Dire Maul.",
+			note = "For blacksmiths (skill 300). Rewards the Plans: Enchanted Thorium Breastplate.",
+			prerequisites = {},
+		},
 		-- Unfinished Gordok Business (AAL, Questie, foreverchanges)
 		{
 			questID = 7703, name = "Unfinished Gordok Business", level = 60, requiredLevel = 56, faction = "Both",
@@ -2094,6 +2171,17 @@ Audit("StratholmeMainGate", {
 
 Audit("StratholmeServiceGate", {
 	add = {
+		-- Corruption (Wowhead)
+		{
+			questID = 5307, name = "Corruption", level = 60, requiredLevel = 50, faction = "Both",
+			pickup = "Seril Scourgebane, Everlook, Winterspring",
+			turnin = "Seril Scourgebane, Everlook, Winterspring",
+			startMap = { mapID = 1452, x = 0.613, y = 0.372, label = "Seril Scourgebane" },
+			endMap = { mapID = 1452, x = 0.613, y = 0.372, label = "Seril Scourgebane" },
+			objective = "Destroy the Black Guard Swordsmith in Stratholme and bring the Insignia of the Black Guard to Seril Scourgebane.",
+			note = "For blacksmiths (skill 250). The Swordsmith appears near Baroness Anastari when you pick up the blacksmithing plans there.",
+			prerequisites = {},
+		},
 		-- Menethil's Gift (Questie, foreverchanges)
 		{
 			questID = 5464, name = "Menethil's Gift", level = 60, requiredLevel = 57, faction = "Both",
@@ -2174,6 +2262,43 @@ Audit("StratholmeServiceGate", {
 				{ questID = 8928, name = "A Shifty Merchant" },
 			},
 		},
+		-- The Left Piece of Lord Valthalak's Amulet: prerequisites (Wowhead)
+		[8968] = {
+			prerequisites = {
+				{ questID = 8921, name = "The Ectoplasmic Distiller" },
+				{ questID = 8924, name = "Hunting for Ectoplasm" },
+				{ questID = 8925, name = "A Portable Power Source" },
+				{ questID = 8928, name = "A Shifty Merchant" },
+				{ questID = 8945, name = "Dead Man's Plea" },
+				{ questID = 8946, name = "Proof of Life" },
+				{ questID = 8947, name = "Anthion's Strange Request" },
+				{ questID = 8948, name = "Anthion's Old Friend" },
+				{ questID = 8949, name = "Falrin's Vendetta" },
+				{ questID = 8950, name = "The Instigator's Enchantment" },
+				{ questID = 9015, name = "The Challenge" },
+				{ questID = 8961, name = "Three Kings of Flame" },
+				{ questID = 8964, name = "Components of Importance" },
+			},
+		},
+		-- The Right Piece of Lord Valthalak's Amulet: prerequisites (Wowhead)
+		[8991] = {
+			prerequisites = {
+				{ questID = 8921, name = "The Ectoplasmic Distiller" },
+				{ questID = 8924, name = "Hunting for Ectoplasm" },
+				{ questID = 8925, name = "A Portable Power Source" },
+				{ questID = 8928, name = "A Shifty Merchant" },
+				{ questID = 8945, name = "Dead Man's Plea" },
+				{ questID = 8946, name = "Proof of Life" },
+				{ questID = 8947, name = "Anthion's Strange Request" },
+				{ questID = 8948, name = "Anthion's Old Friend" },
+				{ questID = 8949, name = "Falrin's Vendetta" },
+				{ questID = 8950, name = "The Instigator's Enchantment" },
+				{ questID = 9015, name = "The Challenge" },
+				{ questID = 8961, name = "Three Kings of Flame" },
+				{ questID = 8970, name = "I See Alcaz Island In Your Future..." },
+				{ questID = 8987, name = "More Components of Importance" },
+			},
+		},
 	},
 })
 
@@ -2229,10 +2354,10 @@ Audit("UpperBlackrockSpire", {
 				{ questID = 4734, name = "Egg Freezing" },
 			},
 		},
-		-- Seal of Ascension: pickup, turnin (Questie, foreverchanges, AAL)
+		-- Seal of Ascension: pickup, turnin (Questie, foreverchanges, AAL, Wowhead)
 		[4743] = {
-			pickup = "Vaelan (a Scarshield Infiltrator), inside Lower Blackrock Spire",
-			turnin = "Vaelan (a Scarshield Infiltrator), inside Lower Blackrock Spire",
+			pickup = "Scarshield Infiltrator, inside Lower Blackrock Spire",
+			turnin = "Scarshield Infiltrator, inside Lower Blackrock Spire",
 		},
 		-- Doomrigger's Clasp: prerequisites (Questie, foreverchanges)
 		[4764] = {
@@ -2344,6 +2469,23 @@ Audit("UpperBlackrockSpire", {
 				{ questID = 3528, name = "The God Hakkar" },
 				{ questID = 5065, name = "The Lost Tablets of Mosh'aru" },
 				{ questID = 4788, name = "The Final Tablets" },
+			},
+		},
+		-- The Left Piece of Lord Valthalak's Amulet: prerequisites (Wowhead)
+		[8966] = {
+			prerequisites = {
+				{ questID = 8921, name = "The Ectoplasmic Distiller" },
+				{ questID = 8924, name = "Hunting for Ectoplasm" },
+				{ questID = 8925, name = "A Portable Power Source" },
+				{ questID = 8928, name = "A Shifty Merchant" },
+				{ questID = 8945, name = "Dead Man's Plea" },
+				{ questID = 8946, name = "Proof of Life" },
+				{ questID = 8947, name = "Anthion's Strange Request" },
+				{ questID = 8948, name = "Anthion's Old Friend" },
+				{ questID = 8949, name = "Falrin's Vendetta" },
+				{ questID = 8950, name = "The Instigator's Enchantment" },
+				{ questID = 9015, name = "The Challenge" },
+				{ questID = 8961, name = "Three Kings of Flame" },
 			},
 		},
 		-- The Right Piece of Lord Valthalak's Amulet: prerequisites (Questie, foreverchanges)

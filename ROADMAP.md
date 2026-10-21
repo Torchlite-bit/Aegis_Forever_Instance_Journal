@@ -13,9 +13,9 @@ Size is a rough guess at the work: **S** a day or less, **M** a few days, **L** 
 
 | | What |
 |---|---|
-| 0.33.0 | **German, French, Simplified and Traditional Chinese**, drafted and awaiting native speakers, and `/aegis lang` to preview a translation on any client. |
 | 0.34.0 | **Trash** in each dungeon's boss list; **Before you go** on a dungeon's overview (City of Dalaran first); **map legend switches** for every kind of marker *(player request)*; quest marks only for quests you can take now; Show Start and Show End set a waypoint. |
 | 0.35.0 | **Every dungeon quest checked** against QuestieDB's Forever data and corrected (chains, givers, places; 33 quests added); **chain steps get a quest's page**, with their rewards; item tooltips show only the upgrade; the Horde Skyborne's ship *(player request)*. |
+| 0.36.0 | **Who gives a quest**, written on its page beneath Show Start *(player request)*; the quests the audit left open **checked on Wowhead** (four more added, three empty ones gone). |
 
 ## Next
 

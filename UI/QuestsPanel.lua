@@ -434,6 +434,7 @@ local function FillDetail(detail, quest)
 	if quest.steps then
 		child.ShowStart:Hide()
 		child.ShowEnd:Hide()
+		child.Giver:Hide()
 	else
 		SetMapButton(child.ShowStart, StartPoint(quest), quest.name, quest.pickup)
 		SetMapButton(child.ShowEnd, EndPoint(quest), quest.name, quest.turnin)
@@ -441,6 +442,19 @@ local function FillDetail(detail, quest)
 		child.ShowEnd:ClearAllPoints()
 		child.ShowEnd:SetPoint("LEFT", child.ShowStart, "RIGHT", 12, 0)
 		child.ShowEnd:Show()
+		-- Who gives it and who takes it, written out beneath the buttons as their tooltips say it
+		-- (a player's request): the taker only where it is someone else.
+		local givers = {}
+		if quest.pickup then givers[#givers + 1] = string.format(L.QUEST_OFFERED_BY, quest.pickup) end
+		if quest.turnin and quest.turnin ~= quest.pickup then
+			givers[#givers + 1] = string.format(L.QUEST_HAND_IN_TO, quest.turnin)
+		end
+		if #givers > 0 then
+			child.Giver:SetText(table.concat(givers, "\n"))
+			place(child.Giver, 6)
+		else
+			child.Giver:Hide()
+		end
 	end
 
 	-- Rewards
@@ -580,6 +594,7 @@ function QuestsPanel:Create(page, info)
 	child.Description = Text(child)
 	child.ShowStart = CreateMapButton(child, L.QUEST_SHOW_START)
 	child.ShowEnd = CreateMapButton(child, L.QUEST_SHOW_END)
+	child.Giver = Text(child)
 	child.RewardsHeader = Text(child, headerFont, TITLE_COLOR)
 	child.RewardsHeader:SetText(L.QUEST_REWARDS)
 	child.Receive = Text(child, nil, TITLE_COLOR)
@@ -907,7 +922,7 @@ function QuestsPanel:Refresh(page)
 		FillDetail(page.QuestDetail, selected)
 	else
 		for _, key in ipairs({ "Title", "Status", "Objective", "Note", "DescriptionHeader", "Description", "ShowStart",
-			"ShowEnd", "RewardsHeader", "Receive", "Money", "Experience", "Reputation", "Choose", "Also" }) do
+			"ShowEnd", "Giver", "RewardsHeader", "Receive", "Money", "Experience", "Reputation", "Choose", "Also" }) do
 			detailChild[key]:Hide()
 		end
 		for _, box in ipairs(detailChild.RewardBoxes) do box:Hide() end
