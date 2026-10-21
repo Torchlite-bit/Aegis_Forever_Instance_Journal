@@ -16,8 +16,13 @@ local factions = {}
 -- Sorted lists handed out by GetInstances and GetFactions, kept until the data changes.
 -- Callers read them and never change them.
 local listCache, factionList = {}, nil
+-- Where each item drops (ns.ItemDrops), built on first use; and how many times the data has changed.
+local drops, moreDrops, dropInstance
+local dataVersion = 0
 local function DataChanged()
 	listCache, factionList = {}, nil
+	drops, moreDrops, dropInstance = nil, nil, nil
+	dataVersion = dataVersion + 1
 end
 
 -- Art given as a list of files the client may have: the first it has, else nil.
@@ -689,6 +694,69 @@ function ns.GetFactions()
 		table.sort(factionList, function(a, b) return a.name < b.name end)
 	end
 	return factionList
+end
+
+--[[
+	Where each item drops, for its tooltip (UI/ItemTooltip.lua): the bosses whose loot lists it, and
+	the trash, in the journal's order (dungeons, then raids, as GetInstances sorts them; each one's
+	bosses in their order, its trash last). Most items drop in one place: drops[itemID] is that boss,
+	and moreDrops[itemID] lists them all only for an item with more than one. A faction's rewards are
+	not drops, and are left out. Built on first use, and again after the data changes.
+]]
+local function IndexDrops()
+	drops, moreDrops, dropInstance = {}, {}, {}
+	for _, kind in ipairs({ "dungeon", "raid" }) do
+		for _, instance in ipairs(ns.GetInstances(kind)) do
+			for _, boss in ipairs(instance.bosses) do
+				dropInstance[boss] = instance
+				for _, row in ipairs(boss.loot or {}) do
+					local itemID = row.itemID
+					-- One known by its name only ("?Name") has no tooltip of its own.
+					if type(itemID) == "number" then
+						local first = drops[itemID]
+						if not first then
+							drops[itemID] = boss
+						elseif first ~= boss then
+							-- A boss's rows are walked together: one listing an item twice is the last one here.
+							local more = moreDrops[itemID]
+							if not more then
+								moreDrops[itemID] = { first, boss }
+							elseif more[#more] ~= boss then
+								more[#more + 1] = boss
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+end
+
+local function NextDrop(itemID, index)
+	index = index + 1
+	local more, boss = moreDrops[itemID], nil
+	if more then
+		boss = more[index]
+	elseif index == 1 then
+		boss = drops[itemID]
+	end
+	if boss then return index, boss, dropInstance[boss] end
+end
+
+-- for _, boss, instance in ns.ItemDrops(itemID) do ... end
+function ns.ItemDrops(itemID)
+	if not drops then IndexDrops() end
+	return NextDrop, itemID, 0
+end
+
+function ns.HasDrops(itemID)
+	if not drops then IndexDrops() end
+	return drops[itemID] ~= nil
+end
+
+-- Goes up each time the data changes: whatever is worked out from it is worked out again.
+function ns.DataVersion()
+	return dataVersion
 end
 
 --[[

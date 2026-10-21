@@ -32,6 +32,18 @@ Measure("Build the journal (first open)", 1, function() AegisJournal_Toggle() en
 local f = AegisJournalFrame
 local dungeons = ns.GetInstances("dungeon")
 Measure("Build the book (first dungeon opened)", 1, function() ns.Journal:OpenInstance(dungeons[1]) end)
+
+-- Where an item drops, on its tooltip: the drops indexed on the first, then a line kept per item.
+Mock.itemsCached[5191] = true
+ns.AmendInstance("TheDeadmines", {})
+Measure("First item tooltip (indexes the drops)", 1, function()
+	GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+	GameTooltip:SetHyperlink(Mock.ItemLink(5191))
+end)
+Measure("An item's tooltip with where it drops", 2000, function()
+	GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+	GameTooltip:SetHyperlink(Mock.ItemLink(5191))
+end)
 f.Tabs[1]:Click()
 collectgarbage("collect")
 local afterBuild = KB()
@@ -84,6 +96,8 @@ Measure("Zone changes while not recording", 1000, function()
 	Mock.Fire("ZONE_CHANGED_INDOORS")
 end)
 
+-- The world map's side panel button, a frame as the client's is (as Tools/smoke_scenario.lua makes it).
+WorldMapFrame.SidePanelToggle = CreateFrame("Frame", nil, WorldMapFrame)
 Mock.instance = { name = "The Hall of Thanes", id = 3065 }
 Mock.Fire("PLAYER_ENTERING_WORLD", false, false)
 Measure("Open the world map inside Hall of Thanes", 200, function()
@@ -97,6 +111,7 @@ Measure("Browse 20 maps with the world map open", 50, function()
 	for mapID = 1420, 1439 do WorldMapFrame:SetMapID(mapID) end
 	WorldMapFrame:Hide()
 end)
+
 
 collectgarbage("collect")
 local final = KB()

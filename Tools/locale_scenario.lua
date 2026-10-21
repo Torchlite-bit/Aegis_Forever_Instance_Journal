@@ -191,6 +191,24 @@ do
 		"each boss and faction known by the client's name, which is the one shown: " .. bossNamed .. " bosses, "
 		.. factionsNamed .. " factions; " .. table.concat(differ, ", "))
 end
+-- Where an item drops, on its tooltip, in the language: its boss and dungeon by their translated names
+do
+	local untranslated = {}
+	for _, key in ipairs({ "DROPS_FROM_BOSS", "DROPS_FROM_TRASH", "DROPS_FROM_BOSSES", "DROPS_IN", "DROPS_ALSO_IN",
+		"OPTIONS_SOURCES", "OPTIONS_SOURCES_TIP" }) do
+		if not InLanguage(L[key], english[key]) then untranslated[#untranslated + 1] = key end
+	end
+	local vancleef
+	for _, boss in ipairs(deadmines.bosses) do
+		if boss.enName == "Edwin VanCleef" then vancleef = boss end
+	end
+	Mock.itemsCached[5191] = true
+	GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+	GameTooltip:SetHyperlink(Mock.ItemLink(5191))
+	local line = string.format(L.DROPS_FROM_BOSS, vancleef.name, deadmines.name)
+	check(#untranslated == 0 and GameTooltip:HasLine(line), "where an item drops, in " .. LANGUAGE .. ": " .. line .. " "
+		.. table.concat(untranslated, ", "))
+end
 local library, graveyard = ns.GetInstance("ScarletMonasteryLibrary"), ns.GetInstance("ScarletMonasteryGraveyard")
 local door = ns.DungeonMap.SharedDoorName({ library, graveyard })
 check(door ~= library.location and library.name:sub(1, #door) == door and graveyard.name:sub(1, #door) == door,

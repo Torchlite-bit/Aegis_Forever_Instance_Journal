@@ -248,6 +248,8 @@ end
 
 local function ShowEntryTooltip(owner, entry)
 	if entry.kind == "item" then
+		-- The result names where it drops itself, one result per place, each opening it.
+		ns.ItemTooltip:UseSource(owner, entry.itemID)
 		GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
 		if ns.Items:IsIdentified(entry.itemID) then
 			GameTooltip:SetItemByID(entry.itemID)

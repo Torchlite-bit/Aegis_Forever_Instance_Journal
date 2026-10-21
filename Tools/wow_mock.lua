@@ -495,9 +495,14 @@ ScrollUtil = { InitScrollFrameWithScrollBar = function() end }
 function ScrollFrame_OnLoad(scroll) scroll.ScrollBar = CreateFrame("EventFrame", nil, scroll) end
 GameTooltip = CreateFrame("GameTooltip", "GameTooltip")
 GameTooltip._lines = {}
-function GameTooltip:SetOwner(owner) self._lines, self._owner, self._link = {}, owner, nil end
+function GameTooltip:SetOwner(owner) self._lines, self._styles, self._owner, self._link, self._data = {}, {}, owner, nil, nil end
 function GameTooltip:GetOwner() return self._owner end
-function GameTooltip:AddLine(text) self._lines[#self._lines + 1] = text end
+-- Each line's colour and wrapping, by its index (_styles).
+function GameTooltip:AddLine(text, r, g, b, wrap)
+	self._lines[#self._lines + 1] = text
+	self._styles = self._styles or {}
+	self._styles[#self._lines] = { r = r, g = g, b = b, wrap = wrap }
+end
 -- A two-column line is kept as "left<tab>right".
 function GameTooltip:AddDoubleLine(left, right) self._lines[#self._lines + 1] = left .. "\t" .. right end
 
@@ -1098,12 +1103,22 @@ ItemLocation = { CreateFromEquipmentSlot = function(_, slot) return { equipmentS
 C_Item.GetItemGUID = function(location) return Mock.WornGUID(location.equipmentSlotIndex) end
 -- What the tooltip was asked to show: retail's tooltip info, its getter and the getter's arguments.
 -- Mock.noItemGUIDs leaves the guids out, as a client without them would.
+-- Like the client's, a tooltip shown for an item starts afresh (TooltipDataHandler's ProcessInfo).
 local function ShowItem(tooltip, link, guid, getterName, ...)
+	tooltip._lines, tooltip._styles = {}, {}
 	tooltip._link = link
 	tooltip._info = { getterName = getterName or "GetHyperlink", getterArgs = { ... } }
 	tooltip._lines[#tooltip._lines + 1] = Mock.itemNames[ItemIDOf(link)] or link
 	if Mock.noItemGUIDs then guid = nil end
 	local data = { type = Enum.TooltipDataType.Item, id = ItemIDOf(link), hyperlink = link, guid = guid }
+	tooltip._data = data
+	for _, callback in ipairs(Mock.tooltipPostCalls[Enum.TooltipDataType.Item] or {}) do callback(tooltip, data) end
+end
+-- An item added beneath the one shown (a set's piece under its token): nothing is cleared, and the
+-- tooltip's own item stays the one shown.
+function Mock.AppendItem(tooltip, link)
+	tooltip._lines[#tooltip._lines + 1] = Mock.itemNames[ItemIDOf(link)] or link
+	local data = { type = Enum.TooltipDataType.Item, id = ItemIDOf(link), hyperlink = link }
 	for _, callback in ipairs(Mock.tooltipPostCalls[Enum.TooltipDataType.Item] or {}) do callback(tooltip, data) end
 end
 function GameTooltip:SetHyperlink(link) ShowItem(self, link) end
@@ -1179,8 +1194,18 @@ function GameTooltip:SetBagItem(bag, slot)
 	if item then ShowItem(self, ItemLink(item[1]), item[2], "GetBagItem", bag, slot) end
 end
 function GameTooltip:GetPrimaryTooltipInfo() return self._info end
+function GameTooltip:GetPrimaryTooltipData() return self._data end
 function GameTooltip:GetItem()
 	if self._link then return Mock.itemNames[ItemIDOf(self._link)] or "Item", self._link end
+end
+-- A chat link's tooltip, and one beside the main tooltip with what is worn.
+for _, name in ipairs({ "ItemRefTooltip", "ShoppingTooltip1" }) do
+	local tooltip = CreateFrame("GameTooltip", name)
+	tooltip._lines, tooltip._styles = {}, {}
+	for _, method in ipairs({ "SetOwner", "GetOwner", "AddLine", "AddDoubleLine", "HasLine", "SetHyperlink", "SetItemByID",
+		"GetPrimaryTooltipInfo", "GetPrimaryTooltipData", "GetItem" }) do
+		tooltip[method] = GameTooltip[method]
+	end
 end
 function GetInventoryItemTexture(unit, slot)
 	local itemID = unit == "player" and Mock.worn[slot]

@@ -184,6 +184,8 @@ L.MINIMAP_DRAG = "Drag to move it around the minimap."
 L.OPTIONS_ARROWS_TIP = "A green arrow on items that are upgrades for your spec, as the Gear Finder counts them: in your bags, in the loot window and on loot rolls."
 L.WEIGHTS_SHOW_GAINS = "Show stat weights in tooltips"
 L.WEIGHTS_SHOW_GAINS_TIP = "Under every item, a line for each of your specs: what the item is worth by its weights, and a green arrow with what it adds to your gear when it is an upgrade. For all your characters. With Pawn installed, this shows or hides the journal's scale in Pawn instead, and with it Pawn's upgrade arrows for the journal's weights: Pawn marks upgrades only for the scales it shows."
+L.OPTIONS_SOURCES = "Show where items drop in tooltips"
+L.OPTIONS_SOURCES_TIP = "Under every item that drops in the journal's dungeons and raids, a line naming the boss and the dungeon: in your bags, on your character, in chat links, at merchants and wherever else the game shows the item. For all your characters."
 L.GEAR_WHY_CUSTOM = "%s (your weights)"
 -- The specs' names and the units their weights count in are the generated weights' own English
 -- (Data/Generated/GearWeights.lua). A translation names them here: by spec key
@@ -317,6 +319,13 @@ L.LOOT_UNFAVORITE = "Remove from favorites"
 L.LOOT_PINNED = "Pinned"
 L.LOOT_ALL = "Loot"
 L.LOOT_TRASH = "Dungeon trash"
+-- Where an item drops, on its tooltip (UI/ItemTooltip.lua): its boss and dungeon, its number of
+-- bosses there, its trash; the dungeons, for one of several; on a loot row, the other dungeons.
+L.DROPS_FROM_BOSS = "Drops from %s in %s"
+L.DROPS_FROM_TRASH = "Drops from trash in %s"
+L.DROPS_FROM_BOSSES = "Drops from %d bosses in %s"
+L.DROPS_IN = "Drops in %s"
+L.DROPS_ALSO_IN = "Also drops in %s"
 -- The world map legend's entries, each a switch (UI/MapLegend.lua).
 L.LEGEND_CLICK_HIDE = "Click to hide these on the map."
 L.LEGEND_CLICK_SHOW = "Hidden. Click to show these on the map again."

@@ -337,7 +337,7 @@ do
 	GetCreatureDifficultyColor = nil
 	-- Turned off in the journal's options (Options > AddOns), the badges go at once, and come back
 	local category, boxes = Mock.settingsCategory, Mock.settings
-	check(category and category.name == ns.L.OPTIONS_TITLE and #category.controls == 5
+	check(category and category.name == ns.L.OPTIONS_TITLE and #category.controls == 6
 		and boxes.AEGIS_JOURNAL_BOSS_LEVELS and boxes.AEGIS_JOURNAL_BOSS_LEVELS:GetValue() == true
 		and boxes.AEGIS_JOURNAL_BOSS_LEVELS.tooltip == ns.L.OPTIONS_BOSS_LEVELS_TIP,
 		"the journal's page in the game's options, the boss levels shown")
@@ -350,6 +350,21 @@ do
 	check(ns.db.hideGearTipGains and not ns.GearPanel.ShowsGains(), "the stat weights in tooltips, the same box as the weights editor's")
 	boxes.AEGIS_JOURNAL_ITEM_TIPS:SetValue(true)
 	check(not ns.db.hideGearTipGains and boxes.AEGIS_JOURNAL_ITEM_TIPS:GetValue() == true, "and back")
+	-- Where items drop, on their tooltips: on, and turned off for the whole account
+	local vancleefLine = "Drops from Edwin VanCleef in The Deadmines"
+	GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+	GameTooltip:SetHyperlink(Mock.ItemLink(5191))
+	local shownBefore = GameTooltip:HasLine(vancleefLine)
+	boxes.AEGIS_JOURNAL_ITEM_SOURCES:SetValue(false)
+	GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+	GameTooltip:SetHyperlink(Mock.ItemLink(5191))
+	check(shownBefore and ns.db.hideItemSources and not ns.ItemTooltip.ShowsSources() and not GameTooltip:HasLine(vancleefLine)
+		and boxes.AEGIS_JOURNAL_ITEM_SOURCES.tooltip == ns.L.OPTIONS_SOURCES_TIP,
+		"where items drop, in their tooltips, and the box that turns it off")
+	boxes.AEGIS_JOURNAL_ITEM_SOURCES:SetValue(true)
+	GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+	GameTooltip:SetHyperlink(Mock.ItemLink(5191))
+	check(not ns.db.hideItemSources and GameTooltip:HasLine(vancleefLine), "and back")
 	check(SLASH_AEGISJOURNAL1 == "/aegis" and SLASH_AEGISJOURNAL3 == "/ij" and ns.L.SLASH_HELP:find("/ij", 1, true),
 		"/ij opens the journal as /aegis does, and the help says so")
 	SlashCmdList.AEGISJOURNAL("options")
@@ -3327,9 +3342,48 @@ check(page.boss and page.boss.name == "Edwin VanCleef", "a boss opens on its pag
 
 search("rockslicer")
 check(previewNames()[1] == "Rockslicer", "loot is found by name")
-searchButtons[1]:Click()
-check(page.boss.name == "Rhahk'Zor" and page.Loot:IsShown() and page.Loot.revealedItemID == 872,
-	"an item opens its boss's loot, brought into view")
+do
+	-- The result names where it drops, and a click opens it: its tooltip adds no line of its own
+	local function SaysWhereItDrops()
+		for _, line in ipairs(GameTooltip._lines) do
+			if type(line) == "string" and (line:find("^Drops ") or line:find("^Also drops ")) then return line end
+		end
+	end
+	searchButtons[1]:_RunScript("OnEnter")
+	local resultSays = SaysWhereItDrops()
+	searchButtons[1]:_RunScript("OnLeave")
+	check(resultSays == nil and ns.ItemTooltip:SourceText(872) == "Drops from Rhahk'Zor in The Deadmines",
+		"a search result's item names no place in its tooltip: the result is the place")
+	searchButtons[1]:Click()
+	check(page.boss.name == "Rhahk'Zor" and page.Loot:IsShown() and page.Loot.revealedItemID == 872,
+		"an item opens its boss's loot, brought into view")
+	local rockslicerRow
+	for _, row in ipairs(lootRows()) do
+		if row.itemID == 872 then rockslicerRow = row end
+	end
+	rockslicerRow:_RunScript("OnEnter")
+	local rowSays = SaysWhereItDrops()
+	rockslicerRow:_RunScript("OnLeave")
+	check(rockslicerRow and rowSays == nil, "nor does its loot row, where no other dungeon drops it")
+	-- A loot row's item that drops in other dungeons too names only those
+	local shadowfang = ns.GetInstance("ShadowfangKeep")
+	local captain
+	for _, boss in ipairs(shadowfang.bosses) do
+		if (boss.enName or boss.name) == "Deathsworn Captain" then captain = boss end
+	end
+	Mock.itemsCached[6641] = true
+	ns.Journal:OpenBoss(shadowfang, captain)
+	ns.EncounterPage:SetTab(ns.Journal:Page(), ns.EncounterPage.TAB_LOOT)
+	ns.LootPanel:Reveal(6641)
+	local alsoRow
+	for _, row in ipairs(lootRows()) do
+		if row.itemID == 6641 then alsoRow = row end
+	end
+	alsoRow:_RunScript("OnEnter")
+	local alsoSays = SaysWhereItDrops()
+	alsoRow:_RunScript("OnLeave")
+	check(alsoSays == "Also drops in Ruins of Lordaeron", "a loot row names only the other dungeons its item drops in: " .. tostring(alsoSays))
+end
 
 search("graveweave")
 check(#ns.Search:Find("graveweave") == 1 and previewNames()[1] == "Graveweave Bindings"
@@ -4383,7 +4437,7 @@ end)()
 		end
 		check(back.entry and count == 1 and Upgraded(finderLines) and not Has(finderLines, "Worth ")
 			and not Has(finderLines, "Gear Finder (") and not Has(finderLines, "Other upgrades")
-			and Has(finderLines, ns.L.GEAR_TIP_CELL_CLICK),
+			and Has(finderLines, ns.L.GEAR_TIP_CELL_CLICK) and not Has(finderLines, "Drops "),
 			"the Gear Finder's tooltips kept plain: the item, each spec's line once, where it drops, the click")
 		-- The gain it shows for its own spec is the one the Gear Finder found (a second ring's, over
 		-- the other); another frame's tooltip weighs the item afresh.
@@ -4406,6 +4460,102 @@ end)()
 		back:_RunScript("OnEnter")
 		check(not Row(GameTooltip._lines, label), "the Gear Finder's too")
 		ns.GearPanel.SetShowsGains(true)
+
+		-- Where it drops: a gold line on the item itself, wherever the game shows it
+		local IT = ns.ItemTooltip
+		-- The line that says where an item drops, its place among the lines, and its colour.
+		local function SourceOf(tooltip)
+			for index, line in ipairs(tooltip._lines) do
+				if type(line) == "string" and (line:find("^Drops ") or line:find("^Also drops ")) then
+					return line, index, tooltip._styles and tooltip._styles[index]
+				end
+			end
+		end
+		local function Tip(itemID, tooltip)
+			tooltip = tooltip or GameTooltip
+			tooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+			tooltip:SetHyperlink(Mock.ItemLink(itemID))
+			return SourceOf(tooltip)
+		end
+		for _, itemID in ipairs({ 5191, 10402, 14611, 10797, 252512, 6641, 18387 }) do Mock.itemsCached[itemID] = true end
+		local cached9326 = Mock.itemsCached[9326]
+		Mock.itemsCached[9326] = nil
+		local expected = {
+			[5191] = "Drops from Edwin VanCleef in The Deadmines",
+			[10402] = "Drops from trash in The Deadmines",
+			[14611] = "Drops from 6 bosses in Scholomance",
+			[10797] = "Drops from 4 bosses in The Temple of Atal'Hakkar",
+			[252512] = "Drops in Blackfathom Deeps, The Stockade, Razorfen Kraul, and 2 more",
+			[6641] = "Drops in Ruins of Lordaeron, Shadowfang Keep",
+			[18387] = "Drops from Tsu'zee in Dire Maul: Capital Gardens",
+		}
+		local wrongText = {}
+		for itemID, text in pairs(expected) do
+			local shown = Tip(itemID)
+			if IT:SourceText(itemID) ~= text or shown ~= text then
+				wrongText[#wrongText + 1] = itemID .. ": " .. tostring(IT:SourceText(itemID)) .. " / " .. tostring(shown)
+			end
+		end
+		check(#wrongText == 0, "each item names its boss and dungeon, its bosses there, its trash, or its dungeons: "
+			.. table.concat(wrongText, "; "))
+		check(IT:SourceText(9326) == nil and Tip(9326) == nil, "a dungeon's common trash drop, left off its Trash page, gets no line")
+		Mock.itemsCached[9326] = cached9326
+		local _, _, style = Tip(5191)
+		check(style and style.r == 1 and style.g == 0.82 and style.b == 0 and style.wrap == true,
+			"in the Gear Finder's gold, wrapping rather than widening the tooltip")
+		-- Below the upgrade lines, last
+		local capeLines = TipLines(Mock.ItemLink(CAPE))
+		local _, upgradeAt = Row(capeLines, label)
+		local capeSource, sourceAt = SourceOf(GameTooltip)
+		check(capeSource and upgradeAt and sourceAt > upgradeAt and sourceAt == #capeLines,
+			"after the upgrade lines: " .. tostring(capeSource))
+		-- Shown again, the tooltip has it once; an item added beneath another is not the one shown
+		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+		GameTooltip:SetHyperlink(Mock.ItemLink(5191))
+		GameTooltip:SetHyperlink(Mock.ItemLink(5191))
+		local sources = 0
+		for _, line in ipairs(GameTooltip._lines) do
+			if type(line) == "string" and line:find("^Drops ") then sources = sources + 1 end
+		end
+		Mock.AppendItem(GameTooltip, Mock.ItemLink(10402))
+		check(sources == 1 and not GameTooltip:HasLine(expected[10402]), "once, however often the tooltip is shown again, and not for an item added beneath it")
+		-- On the item itself: a chat link's tooltip too, not the one beside it with what is worn, nor an item no dungeon drops
+		check(Tip(5191, ItemRefTooltip) == expected[5191] and Tip(5191, ShoppingTooltip1) == nil and Tip(WORN_CAPE) == nil,
+			"on a chat link's tooltip, not on the worn item's beside it, and not on an item no dungeon drops")
+		-- What the client keeps back, or a tooltip it forbids, is left alone
+		local secret = issecretvalue
+		issecretvalue = function(value) return value == 5191 or value == Mock.ItemLink(5191) end
+		local ok, kept = pcall(Tip, 5191)
+		issecretvalue = secret
+		GameTooltip.IsForbidden = function() return true end
+		local forbidden = Tip(5191)
+		GameTooltip.IsForbidden = nil
+		check(ok and kept == nil and forbidden == nil, "an item the client keeps back, or a tooltip it forbids, is left alone")
+		-- The data changing (a boss's loot amended) is followed at once
+		local deadmines = ns.GetInstance("TheDeadmines")
+		local vancleef
+		for _, boss in ipairs(deadmines.bosses) do
+			if (boss.enName or boss.name) == "Edwin VanCleef" then vancleef = boss end
+		end
+		local vancleefLoot, amended = vancleef.loot, {}
+		for _, row in ipairs(vancleefLoot) do amended[#amended + 1] = row end
+		amended[#amended + 1] = { itemID = 990970 }
+		amended[#amended + 1] = { itemID = 990970 }
+		amended[#amended + 1] = { itemID = 990971 }
+		ns.AmendInstance("TheDeadmines", { bosses = { ["Edwin VanCleef"] = { loot = amended } } })
+		local added = Tip(990970)
+		-- An item hidden until the server confirms it gets no line, until the client describes it
+		ns.Items:AddUnconfirmed({ [990971] = true })
+		local hidden = Tip(990971)
+		Mock.itemsCached[990971] = true
+		local described = Tip(990971)
+		Mock.itemsCached[990971] = nil
+		ns.AmendInstance("TheDeadmines", { bosses = { ["Edwin VanCleef"] = { loot = vancleefLoot } } })
+		check(added == "Drops from Edwin VanCleef in The Deadmines" and Tip(990970) == nil,
+			"a boss's loot changing is followed at once, an item he lists twice counted once: " .. tostring(added))
+		check(hidden == nil and described == "Drops from Edwin VanCleef in The Deadmines",
+			"a hidden item gets none, until the client describes it: " .. tostring(hidden) .. " / " .. tostring(described))
+
 		local other = { _lines = {}, AddLine = GameTooltip.AddLine, AddDoubleLine = GameTooltip.AddDoubleLine }
 		for _, callback in ipairs(Mock.tooltipPostCalls[Enum.TooltipDataType.Item]) do
 			callback(other, { hyperlink = Mock.ItemLink(CAPE) })
@@ -4575,7 +4725,8 @@ end)()
 		Mock.bagItems["0:1"] = { CAPE }
 		ContainerFrameCombinedBags:Show()
 		ContainerFrameCombinedBags:UpdateItems()
-		check(#GameTooltip._lines == 1 and not UA:Marked(bagCape), "Pawn's tooltips and arrows are the ones shown")
+		check(#GameTooltip._lines == 2 and GameTooltip._lines[2] == ns.ItemTooltip:SourceText(CAPE) and not UA:Marked(bagCape),
+			"Pawn's tooltips and arrows are the ones shown; where it drops stays")
 		local redraws = 0
 		UA.baganator = { RequestItemButtonsRefresh = function() redraws = redraws + 1 end }
 		UA:Refresh()
