@@ -19,6 +19,15 @@ and the version shown in the AddOns list. Quote it in bug reports.
   Dunwall, Ironforge", and who to hand it in to when that is someone else, as the buttons' tooltips
   say it. *(player request)*
 
+### Fixed
+- **The quests the audit left open, checked on Wowhead**: 64 items read on Wowhead's Forever pages
+  and checked again. 35 confirmed what the journal had. The rest: The Test of Righteousness needs its
+  whole Tome of Valor chain in every dungeon that lists it, Starving Arcane needs An Alarming
+  Request, the Seal of Ascension is the Scarshield Infiltrator's, Wilder Thistlenettle stands where
+  Forever's Stormwind has him, and four quests are added (Hot Fiery Death, Corruption, Enchanted
+  Thorium Platemail: Volume I, the shamans' Elemental Aid). Three empty Wailing Caverns quests the
+  game never offered are gone.
+
 ## [0.35.0] (restart)
 
 ### Added

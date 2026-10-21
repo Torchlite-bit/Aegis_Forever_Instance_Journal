@@ -917,12 +917,13 @@ do
 		local quest
 		for _, candidate in ipairs(cityOfDalaran.quests) do if candidate.questID == 92458 then quest = candidate end end
 		local prerequisites, quests = quest.prerequisites, alliance.quests
-		quest.prerequisites = { { questID = 92432, name = "An Alarming Request" }, { questID = 92433, name = "An Alarming Request" } }
-		alliance.quests = { 92432, 92433, 92458 }
+		-- Made-up ids, so no real chain of the dungeon names these steps too.
+		quest.prerequisites = { { questID = 90911, name = "A Two-Part Errand" }, { questID = 90912, name = "A Two-Part Errand" } }
+		alliance.quests = { 90911, 90912, 92458 }
 		state = open()
 		rows = shown(state.rows)
 		check(#rows == 2 and rows[1].quest.steps and #rows[1].quest.steps == 2
-			and ns.QuestsPanel:Find(cityOfDalaran, 92433) == rows[1].quest, "a chain's same-named steps: one row, found by either step")
+			and ns.QuestsPanel:Find(cityOfDalaran, 90912) == rows[1].quest, "a chain's same-named steps: one row, found by either step")
 		quest.prerequisites, alliance.quests = prerequisites, quests
 	end
 
@@ -1124,7 +1125,7 @@ do
 			if quest.questID == questID then return quest end
 		end
 	end
-	check(Quest("WailingCaverns", 1500) and Quest("WailingCaverns", 914).requiredLevel == 10
+	check(Quest("WailingCaverns", 914).requiredLevel == 10
 		and Quest("DireMaulEast", 7483) and Quest("DireMaulNorth", 7483) and Quest("DireMaulWest", 7483)
 		and Quest("DireMaulEast", 5526) and Quest("TempleOfAtalHakkar", 8232).classOnly == "HUNTER"
 		and Quest("HallOfThanes", 96403).faction == "Alliance" and Quest("BlackrockDepths", 4341).prerequisites[1].questID == 3702
@@ -1146,7 +1147,8 @@ do
 	check(table.concat(chain, ",") == "276,277,275", "Horrors in the Highland needs Rethiel's three quests first: "
 		.. table.concat(chain, ","))
 	check(not Quest("LowerBlackrockSpire", 4734) and Quest("UpperBlackrockSpire", 4734)
-		and not Quest("DireMaulWest", 8967) and Quest("DireMaulEast", 8967) and not Quest("BlackrockDepths", 3911),
+		and not Quest("DireMaulWest", 8967) and Quest("DireMaulEast", 8967) and not Quest("BlackrockDepths", 3911)
+		and not Quest("WailingCaverns", 1500) and not Quest("WailingCaverns", 999) and not Quest("WailingCaverns", 3366),
 		"another wing's quests and the game's unused duplicates are left out")
 	check(Quest("WailingCaverns", 6981).startMap == nil and Quest("WailingCaverns", 6981).endMap.mapID == 1413,
 		"a start spot that was wrong is cleared")
@@ -1515,8 +1517,12 @@ do
 	tabs[5]:Click()
 	rowFor(6981):Click()
 	local before = detail.Giver:IsShown()
-	rowFor(1500):Click()
-	check(before and not detail.Giver:IsShown(), "Waking Naralex, with no giver written, shows no giver line")
+	local shard = rowFor(6981).quest
+	local pickup, turnin = shard.pickup, shard.turnin
+	shard.pickup, shard.turnin = nil, nil
+	rowFor(6981):Click()
+	check(before and not detail.Giver:IsShown(), "a quest with no giver or taker written shows no giver line")
+	shard.pickup, shard.turnin = pickup, turnin
 	ns.Journal:OpenInstance(ns.GetInstance("TheDeadmines"))
 	tabs[5]:Click()
 end
