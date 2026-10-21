@@ -25,7 +25,8 @@ check(L.JOURNAL_TITLE ~= english.JOURNAL_TITLE and not L.JOURNAL_TITLE:find("[\2
 Mock.Fire("ADDON_LOADED", "Aegis_Forever_Instance_Journal")
 Mock.Fire("PLAYER_LOGIN")
 check(ns.GetInstance("BlackfathomDeeps").name ~= "Blackfathom Deeps", "the dungeons' names in German too")
-check(Said(string.format(english.LANG_ON, "German")), "a reminder at login that the journal is previewed")
+check(Said(string.format(L.LANG_ON, "German")) and L.LANG_ON ~= english.LANG_ON,
+	"a reminder at login that the journal is previewed, in the previewed language")
 -- The journal opens in it, and its tabs work
 ns.Journal:Toggle()
 check(AegisJournalFrame:IsShown(), "the journal opens in the preview")
@@ -36,9 +37,17 @@ Mock.chat = {}
 SlashCmdList.AEGISJOURNAL("lang fr")
 check(ns.db.previewLocale == "frFR" and Said("French"), "/aegis lang fr: French from the next reload")
 SlashCmdList.AEGISJOURNAL("lang klingon")
-check(ns.db.previewLocale == "frFR" and Said("Now: German"), "an unknown language: the command's help, nothing changed")
+check(ns.db.previewLocale == "frFR" and Said(string.format(L.LANG_USAGE, "German")),
+	"an unknown language: the command's help, in the previewed language, nothing changed")
 SlashCmdList.AEGISJOURNAL("lang tw")
-check(ns.db.previewLocale == "zhTW" and Said("fonts"), "Chinese: a word about its fonts")
+check(ns.db.previewLocale == "zhTW" and Said(L.LANG_FONTS), "Chinese: a word about its fonts")
+local codes = {}
+for typed, code in pairs({ es = "esES", mx = "esMX", pt = "ptBR", ko = "koKR" }) do
+	SlashCmdList.AEGISJOURNAL("lang " .. typed)
+	if ns.db.previewLocale ~= code then codes[#codes + 1] = typed end
+end
+check(#codes == 0 and Said(L.LANG_FONTS_KO), "/aegis lang es, mx, pt and ko, Korean with its word about fonts: "
+	.. table.concat(codes, ", "))
 SlashCmdList.AEGISJOURNAL("lang off")
 check(ns.db.previewLocale == nil, "/aegis lang off: the client's language again")
 return string.format("All %d preview checks passed (German on an English client).", checks)
