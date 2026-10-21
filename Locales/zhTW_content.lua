@@ -81,6 +81,8 @@ L.FACTION_NAMES = {
 
 L.SUBMAP_NAMES = {
 	["DeadminesApproach"] = "迪菲亞藏身處",
+	["WailingCavernsApproach"] = "哀嚎洞穴",
+	["WailingCavernsApproachBarrens"] = "哀嚎洞穴",
 	["DeeprunTram"] = "礦道地鐵",
 	["OldIronforge"] = "舊鐵爐堡",
 }

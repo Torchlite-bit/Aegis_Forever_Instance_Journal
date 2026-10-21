@@ -920,6 +920,7 @@ Mock.maps = {
 	[1427] = { name = "Searing Gorge", mapType = 3, parent = 1415, continent = 0, left = 500, top = 900, width = 50, height = 50 },
 	[1414] = { name = "Kalimdor", mapType = 2, parent = 947, continent = 1, left = 0, top = 0, width = 1000, height = 1500 },
 	[1412] = { name = "Mulgore", mapType = 3, parent = 1414, continent = 1, left = 300, top = 900, width = 120, height = 150 },
+	[1413] = { name = "The Barrens", mapType = 3, parent = 1414, continent = 1, left = 450, top = 700, width = 200, height = 300 },
 	[2521] = { name = "Zephras Isle", mapType = 3, parent = 947, continent = 2, left = 0, top = 0, width = 200, height = 200 },
 	-- Its world rectangle lies the other way round from a door's (x, y) as the game's data gives
 	-- them, so a door lands on it only with its axes swapped.

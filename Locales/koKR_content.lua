@@ -81,6 +81,8 @@ L.FACTION_NAMES = {
 
 L.SUBMAP_NAMES = {
 	["DeadminesApproach"] = "데피아즈단 은신처",
+	["WailingCavernsApproach"] = "통곡의 동굴",
+	["WailingCavernsApproachBarrens"] = "통곡의 동굴",
 	["DeeprunTram"] = "깊은굴 지하철",
 	["OldIronforge"] = "구 아이언포지",
 }

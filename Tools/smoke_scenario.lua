@@ -2209,7 +2209,14 @@ check(table.concat(doorNames, ",") == "BlackrockDepths,CityOfDalaran,HallOfThane
 	"the continent shows the doors of its zones: " .. table.concat(doorNames, ","))
 check(deadminesDoor._position[1] == 0.4069 and deadminesDoor._position[2] == 0.7958, "on the continent where it was read")
 WorldMapFrame:SetMapID(1414)
-check(#WorldMapFrame:ActivePins("AegisJournalEntrancePinTemplate") == 0, "none on a continent whose zones it does not know")
+do
+	local wailingDoor
+	for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalEntrancePinTemplate")) do
+		if pin.instance.key == "WailingCaverns" then wailingDoor = pin end
+	end
+	check(wailingDoor and wailingDoor._position[1] == 0.5239 and wailingDoor._position[2] == 0.5525,
+		"Wailing Caverns' portal on Kalimdor, where the game's data puts it, below the Barrens")
+end
 -- A door given in the world's coordinates (as the game's data has Maraudon's): put on its zone's
 -- map by the client, the axis order being the one that lands on it
 do
@@ -2275,6 +2282,36 @@ local mineArrow = mine.PlayerPin
 check(mineArrow:IsShown() and math.abs(mineArrow._points[1][4] - 0.248 * mine.Art._width) < 1e-3, "and the player at the portal")
 WorldMapFrame:Hide()
 Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = nil, nil, nil, ""
+
+-- The Wailing Caverns' cave: Blizzard's own drawn map of it, from the client's tiles, on Kalimdor
+-- or on the Barrens, whichever the client reports there
+do
+	OpenWorldMap(1413)
+	local mouth
+	for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalCavePinTemplate")) do
+		if pin.subMap.key == "WailingCavernsApproach" then mouth = pin end
+	end
+	check(mouth and mouth._position[1] == 0.4597 and mouth._position[2] == 0.3625, "the cave's mouth on the Barrens")
+	WorldMapFrame:Hide()
+	for _, case in ipairs({ { 1414, 0.5256, 0.5492, "Cavern of Mists", "WailingCavernsApproach" },
+		{ 1413, 0.4772, 0.3502, "The Wailing Caverns", "WailingCavernsApproachBarrens" } }) do
+		Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = case[1], case[2], case[3], case[4]
+		OpenWorldMap()
+		local cave = DungeonMap:Overlay()
+		local tile = cave.Art.Tiles and cave.Art.Tiles[1]
+		check(cave:IsShown() and cave.subMap and cave.subMap.key == case[5] and tile and tile:IsShown()
+			and tile:GetTexture() == "Interface\\WorldMap\\MicroDungeon\\Barrens\\WailingCavernsBarrens\\WailingCavernsBarrens20_1"
+			and not cave.Art.Picture:IsShown() and cave.Doors[1]:IsShown() and cave.Doors[1].instance.key == "WailingCaverns"
+			and cave.PlayerPin:IsShown(), "in the cave, on " .. case[1] .. ": Blizzard's drawn map of it, the portal and the player")
+		WorldMapFrame:Hide()
+	end
+	-- On the ground above it, by the oasis: the Barrens' own map
+	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1413, 0.4772, 0.3502, "Lushwater Oasis"
+	OpenWorldMap()
+	check(not DungeonMap:Overlay():IsShown(), "on the ground above the cave, the Barrens' own map")
+	WorldMapFrame:Hide()
+	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = nil, nil, nil, ""
+end
 
 -- In combat the map still hands out the journal's pins: none of them asks the blocked call
 Mock.inCombat = true

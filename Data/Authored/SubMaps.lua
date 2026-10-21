@@ -96,3 +96,52 @@ ns.AddSubMap({
 	zones = { ["Deeprun Tram"] = true },
 	enteredBy = "tram",
 })
+
+--[[
+	The Wailing Caverns' cave, below the Barrens, on Blizzard's own drawn map of it: the client's
+	tiles (retail's microdungeon map 11, the same files and the same cave in Forever's client), so
+	nothing is shipped. Where the picture lies was worked out from the game's data: its corners are
+	retail's map region for it, read on the continent and on the Barrens. The cave's area is not
+	under the Barrens, so the client is expected to report a player in it on Kalimdor (1414), as it
+	reports the Defias Hideout on the Eastern Kingdoms; it is set up on the Barrens (1413) too, in
+	case it says that instead. Its rooms read "The Wailing Caverns", the pool's "Cavern of Mists".
+	The way in is the cave's mouth in the ravine; the portal, the picture's swirl.
+]]
+local WAILING_TILES = "Interface\\WorldMap\\MicroDungeon\\Barrens\\WailingCavernsBarrens\\WailingCavernsBarrens20_"
+local WAILING_AREAS = { ["The Wailing Caverns"] = true, ["Cavern of Mists"] = true, ["Wailing Caverns"] = true }
+local WAILING_PORTAL = { WailingCaverns = { x = 0.548, y = 0.669 } }
+
+ns.AddSubMap({
+	key = "WailingCavernsApproach",
+	name = "Wailing Caverns",
+	parentMapID = 1414,
+	tiles = WAILING_TILES,
+	way = { mapID = 1413, x = 0.4597, y = 0.3625 },
+	calibration = {
+		{ map = { 0.515467, 0.541711 }, picture = { 0, 0 } },
+		{ map = { 0.530957, 0.557200 }, picture = { 1, 1 } },
+	},
+	areas = WAILING_AREAS,
+	instances = WAILING_PORTAL,
+})
+
+-- The same cave, should the client report it on the Barrens; its way in is the one above.
+ns.AddSubMap({
+	key = "WailingCavernsApproachBarrens",
+	name = "Wailing Caverns",
+	parentMapID = 1413,
+	tiles = WAILING_TILES,
+	calibration = {
+		{ map = { 0.446587, 0.311193 }, picture = { 0, 0 } },
+		{ map = { 0.502837, 0.367438 }, picture = { 1, 1 } },
+	},
+	areas = WAILING_AREAS,
+	instances = WAILING_PORTAL,
+})
+
+if ns.GetInstance("WailingCaverns") then
+	ns.AmendInstance("WailingCaverns", {
+		zoneEntrance = { mapID = 1414, x = 0.5239, y = 0.5525 },
+		via = "WailingCavernsApproach",
+	})
+end

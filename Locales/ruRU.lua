@@ -538,6 +538,8 @@ L.INSTANCE_DESCRIPTIONS = {
 L.SUBMAP_NAMES = {
 	OldIronforge = "Старый Стальгорн",
 	DeadminesApproach = "Убежище Братства Справедливости",
+	WailingCavernsApproach = "Пещеры Стенаний",
+	WailingCavernsApproachBarrens = "Пещеры Стенаний",
 	DeeprunTram = "Подземный поезд",
 }
 

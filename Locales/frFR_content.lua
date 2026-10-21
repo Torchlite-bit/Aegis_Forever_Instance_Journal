@@ -81,6 +81,8 @@ L.FACTION_NAMES = {
 
 L.SUBMAP_NAMES = {
 	["DeadminesApproach"] = "Planque des Défias",
+	["WailingCavernsApproach"] = "Cavernes des lamentations",
+	["WailingCavernsApproachBarrens"] = "Cavernes des lamentations",
 	["DeeprunTram"] = "Tram des profondeurs",
 	["OldIronforge"] = "Vieux Forgefer",
 }
