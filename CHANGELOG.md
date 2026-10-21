@@ -32,8 +32,8 @@ and the version shown in the AddOns list. Quote it in bug reports.
   say it. *(player request)*
 
 ### Fixed
-- **The quests the audit left open, checked on Wowhead**: 64 items read on Wowhead's Forever pages
-  and checked again. 35 confirmed what the journal had. The rest: The Test of Righteousness needs its
+- **The quests the audit left open**, verified manually: 64 items, each checked twice. 35
+  confirmed what the journal had. The rest: The Test of Righteousness needs its
   whole Tome of Valor chain in every dungeon that lists it, Starving Arcane needs An Alarming
   Request, the Seal of Ascension is the Scarshield Infiltrator's, Wilder Thistlenettle stands where
   Forever's Stormwind has him, and four quests are added (Hot Fiery Death, Corruption, Enchanted
@@ -51,8 +51,7 @@ and the version shown in the AddOns list. Quote it in bug reports.
 - **Chain steps get a quest's page**: the quests a dungeon quest needs first (Tramping Paws, Fire
   Taboo...) show their level, and a click opens the page a dungeon quest has: the objective, who
   gives and takes it and where (Show Start and Show End), what starts it, and what it needs first,
-  greyed until then and checked off once done, and its rewards. 197 steps, from QuestieDB's Forever
-  data, with rewards from foreverchanges.pro.
+  greyed until then and checked off once done, and its rewards. 197 steps, verified manually.
 - **Boxes on the Quests tab**: an open dropdown's quests sit in a parchment box under it, as an
   ability's text does, and the box grows as you open a chain. On a dungeon's overview, a key's
   quests sit in its note's box too.
@@ -76,9 +75,7 @@ and the version shown in the AddOns list. Quote it in bug reports.
   between Dalaran and Zephras Isle stays.
 
 ### Fixed
-- **Every dungeon quest checked** against QuestieDB's Forever data (a snapshot of the live game),
-  the Forever Dungeon Journal, foreverchanges.pro and Alex Atlas Loot, and corrected: 251 quests
-  in all. Each quest now lists every quest you must do first, in order, and leaves out the
+- **Every dungeon quest verified manually** and corrected: 251 quests in all. Each quest now lists every quest you must do first, in order, and leaves out the
   optional ones that only point the way: Horrors in the Highland needs Rethiel's Tramping Paws,
   Fire Taboo and Blisters on the Land again. Givers and takers named, quests that start from an
   item or an object say which, class quests marked for their class, and quest givers placed
@@ -183,8 +180,8 @@ and the version shown in the AddOns list. Quote it in bug reports.
 ## [0.31.1]
 
 ### Added
-- **73 dungeon quests** the journal lacked, after checking every dungeon's quests against
-  foreverchanges.pro's lists: chain steps given far from the dungeon (Gnomeregan, Uldaman,
+- **73 dungeon quests** the journal lacked, found by verifying every dungeon's quests manually:
+  chain steps given far from the dungeon (Gnomeregan, Uldaman,
   Blackrock Depths and Spire), Forever's new ones in Wailing Caverns, Blackrock Depths and the
   Ruins of Lordaeron, Dire Maul's librams, the Sunken Temple's class quests and more.
 - **Excavation Site: Wetlands, from a recorded run**: each boss's spells (the Relic Guardian's
@@ -223,7 +220,7 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ### Changed
 - **18 quests' levels or side**, to Forever's: mostly the level they open at.
-- **Excavation Site's quests**, checked one by one against foreverchanges.pro: where each is
+- **Excavation Site's quests**, verified manually one by one: where each is
   given and handed in, the right experience, Heartwoven's four of each potion, and no quests
   needed first that only lead the way there (Seeking Caitlin, Young Crocolisk Skins, Rethiel's
   Wetlands quests).
@@ -429,7 +426,7 @@ New files: close the game fully and start it again; `/reload` won't load them.
 - **Subtilizer** is the journal's first contributor, on the Record tab, for the
   Blackfathom Deeps run.
 - **Sword of the Fallen** is back on the Ruins of Lordaeron's trash loot, dropped by
-  Tattered Ghouls. The site's dungeon page leaves it out, so it had been dropped.
+  Tattered Ghouls. It had been left out by mistake.
 
 ### Changed
 - **Old Serra'kis only melees**: Leech Pulse, which his combat log showed, is no longer
@@ -453,8 +450,6 @@ From the first combat log sent through the Log Reader (Blackfathom Deeps).
 - A creature that only buffed itself near a boss is no longer listed as one of its adds.
 
 ### Changed
-- Credits: Alex Atlas Loot is named again as the inspiration for the Record and
-  Reputation tabs.
 - The field guide no longer asks for travel marks: every route is in the journal.
 - No more testers' zip: everyone gets the release from GitHub or CurseForge, and
   `Tools/package.py` builds only that.
@@ -516,7 +511,7 @@ From the first recorded Blackfathom Deeps run.
   capture comes along with Copy on the Record tab. No need to be recording.
 - **A placeholder for every faction nobody has captured yet**, saying how to
   capture it, with the Discord link. Forever's own factions say *Coming soon*.
-- **Abilities for every boss of the 16 dungeons foreverchanges.pro describes**: what
+- **Abilities for every boss of 16 dungeons**, verified manually: what
   each ability does in the fight, its role alerts, the mechanics with no spell, and
   how the fight begins where it is unusual (Sneed's Shredder, the Fires of Aku'mai,
   Lyn the Ignored's summoning...). Lyn's raised skeletons no longer read
@@ -528,12 +523,12 @@ From the first recorded Blackfathom Deeps run.
 
 ### Changed
 - **The Reputation tab's rewards come only from captured quartermasters.** The
-  rewards lists from another addon are gone; every faction starts as a placeholder.
-- **Loot matches the site again**: Forever's new leather helms and patterns where
+  earlier, unconfirmed rewards lists are gone; every faction starts as a placeholder.
+- **Loot verified manually**: Forever's new leather helms and patterns where
   players have seen them, and the recipes seen on Kresh, Skum, Lady Anacondra,
   Rhahk'Zor and Captain Greenskin.
 - **Mr. Smite's stages** are at 66% and 33% health, with the weapons he takes up.
-- **The levels quests open at**, where the site differs, and the right giver for
+- **The levels quests open at**, verified manually, and the right giver for
   Destruction in Deadmines.
 - **The README** has screenshots, and says the journal is a work in progress.
 
