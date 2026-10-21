@@ -83,6 +83,8 @@ L.SUBMAP_NAMES = {
 	["DeadminesApproach"] = "迪菲亚藏身处",
 	["WailingCavernsApproach"] = "哀嚎洞穴",
 	["WailingCavernsApproachBarrens"] = "哀嚎洞穴",
+	["ScarletMonasteryHall"] = "血色修道院",
+	["ScarletMonasteryHallContinent"] = "血色修道院",
 	["DeeprunTram"] = "矿道地铁",
 	["OldIronforge"] = "旧铁炉堡",
 }

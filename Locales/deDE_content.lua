@@ -83,6 +83,8 @@ L.SUBMAP_NAMES = {
 	["DeadminesApproach"] = "Versteck der Defias",
 	["WailingCavernsApproach"] = "Die Höhlen des Wehklagens",
 	["WailingCavernsApproachBarrens"] = "Die Höhlen des Wehklagens",
+	["ScarletMonasteryHall"] = "Scharlachrotes Kloster",
+	["ScarletMonasteryHallContinent"] = "Scharlachrotes Kloster",
 	["DeeprunTram"] = "Die Tiefenbahn",
 	["OldIronforge"] = "Alt-Eisenschmiede",
 }

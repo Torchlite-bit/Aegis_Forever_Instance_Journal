@@ -83,6 +83,8 @@ L.SUBMAP_NAMES = {
 	["DeadminesApproach"] = "데피아즈단 은신처",
 	["WailingCavernsApproach"] = "통곡의 동굴",
 	["WailingCavernsApproachBarrens"] = "통곡의 동굴",
+	["ScarletMonasteryHall"] = "붉은십자군 수도원",
+	["ScarletMonasteryHallContinent"] = "붉은십자군 수도원",
 	["DeeprunTram"] = "깊은굴 지하철",
 	["OldIronforge"] = "구 아이언포지",
 }

@@ -145,3 +145,56 @@ if ns.GetInstance("WailingCaverns") then
 		via = "WailingCavernsApproach",
 	})
 end
+
+--[[
+	The Scarlet Monastery's hall, where the doors of its four wings are. The picture
+	(Media/Maps/ScarletMonasteryHall) is Blizzard's map of the hall, drawn for the classic
+	monastery: retail's has only its two newer doors, so the passages to the Cathedral and the
+	Armory are drawn back in and its door names left off (the journal names each wing's door
+	itself), with a sketch of a Scarlet crusader in the empty parchment. Where it lies comes from
+	the game's data: retail's map region for the hall, read on Tirisfal and on the continent, and
+	the four doors are the game's own portals. The monastery is an area of its own, not under
+	Tirisfal, so the client may report a player in the hall on the Eastern Kingdoms (1415), as it
+	reports the Defias Hideout; it is set up on Tirisfal (1420) too. The hall reads "Scarlet
+	Monastery", its vestibule "The Grand Vestibule". The building's way in is marked on Tirisfal
+	where the wings' shared door stood, and each wing's door moves to its own portal in the hall.
+]]
+local SCARLET_HALL = {
+	name = "Scarlet Monastery",
+	-- A building's way in: retail's delve entrance, not the cave's.
+	icon = "building",
+	art = "Interface\\AddOns\\Aegis_Forever_Instance_Journal\\Media\\Maps\\ScarletMonasteryHall",
+	artRight = 1002 / 1024,
+	artBottom = 668 / 1024,
+	areas = { ["Scarlet Monastery"] = true, ["The Grand Vestibule"] = true },
+	instances = {
+		ScarletMonasteryGraveyard = { x = 0.6753, y = 0.1789 },
+		ScarletMonasteryCathedral = { x = 0.7831, y = 0.1731 },
+		ScarletMonasteryArmory = { x = 0.8745, y = 0.5184 },
+		ScarletMonasteryLibrary = { x = 0.7972, y = 0.6147 },
+	},
+}
+local function ScarletHall(key, parentMapID, topLeft, bottomRight)
+	local subMap = { key = key, parentMapID = parentMapID }
+	for field, value in pairs(SCARLET_HALL) do subMap[field] = value end
+	subMap.calibration = {
+		{ map = topLeft, picture = { 0, 0 } },
+		{ map = bottomRight, picture = { 1, 1 } },
+	}
+	ns.AddSubMap(subMap)
+end
+ScarletHall("ScarletMonasteryHall", 1420, { 0.817334, 0.294994 }, { 0.862701, 0.340359 })
+ns.GetSubMap("ScarletMonasteryHall").way = { mapID = 1420, x = 0.826, y = 0.338 }
+-- The same hall, should the client report it on the continent; its way in is the one above.
+ScarletHall("ScarletMonasteryHallContinent", 1415, { 0.473297, 0.192519 }, { 0.479121, 0.198343 })
+
+-- The wings' shared door on Tirisfal moves into the hall, amid their portals (the game's portal
+-- triggers, a few yards apart: one icon for the four, as before), the way in marking the entrance.
+for _, key in ipairs({ "ScarletMonasteryGraveyard", "ScarletMonasteryLibrary", "ScarletMonasteryArmory", "ScarletMonasteryCathedral" }) do
+	if ns.GetInstance(key) then
+		ns.AmendInstance(key, {
+			zoneEntrance = { mapID = 1420, x = 0.8529, y = 0.3118 },
+			via = "ScarletMonasteryHall",
+		})
+	end
+end

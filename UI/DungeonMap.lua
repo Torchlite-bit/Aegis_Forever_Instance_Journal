@@ -1119,9 +1119,17 @@ end
 local ENTRANCE_PIN_TEMPLATE = "AegisJournalEntrancePinTemplate"
 local ENTRANCE_CVAR = "showDungeonEntrancesOnMap"
 local MAP_TYPE_CONTINENT, MAP_TYPE_ZONE = 2, 3
--- Retail's cave entrance (its map legend's "Cave"), for the way down to an area below a zone.
+-- Retail's cave entrance (its map legend's "Cave"), for the way down to an area below a zone;
+-- a building's way in (icon = "building": the Scarlet Monastery's hall) shows retail's delve
+-- entrance, or the cave where the client lacks it.
 local CAVE_PIN_TEMPLATE = "AegisJournalCavePinTemplate"
 local CAVE_ATLASES = { "CaveUnderground-Up", "CaveUnderground-Down" }
+local BUILDING_ATLASES = { "delves-regular", "CaveUnderground-Up", "CaveUnderground-Down" }
+
+-- A building's way in, not a cave's way down.
+local function IsBuilding(subMap)
+	return subMap ~= nil and subMap.icon == "building"
+end
 local LEGEND_GLOW_ATLAS = "UI-QuestPoi-OuterGlow"
 
 --[[
@@ -1290,6 +1298,8 @@ local function ShowSharedDoorTooltip(pin)
 		local range = instance.levelMin and string.format(L.LEVEL_RANGE, instance.levelMin, instance.levelMax or instance.levelMin) or ""
 		GameTooltip:AddDoubleLine(instance.name, range, 1, 1, 1, 1, 0.82, 0)
 	end
+	local via = instances[1].via and ns.GetSubMap(instances[1].via)
+	if via then GameTooltip:AddLine(string.format(IsBuilding(via) and L.ENTRANCE_VIA_BUILDING or L.ENTRANCE_VIA, via.name), 1, 1, 1, true) end
 	GameTooltip:AddLine(L.ENTRANCE_CHOOSE_LEFT_CLICK, 0.1, 1, 0.1)
 	GameTooltip:AddLine(L.ENTRANCE_RIGHT_CLICK, 0.1, 1, 0.1)
 	GameTooltip:Show()
@@ -1303,9 +1313,9 @@ local function ShowEntranceTooltip(pin)
 	GameTooltip:SetOwner(pin, "ANCHOR_RIGHT")
 	GameTooltip:SetText(instance.name, 1, 1, 1)
 	GameTooltip:AddLine(description, 1, 0.82, 0)
-	-- A dungeon reached through an area below the zone says where the way down is.
+	-- A dungeon reached through an area below the zone, or a building, says where the way in is.
 	local via = instance.via and ns.GetSubMap(instance.via)
-	if via then GameTooltip:AddLine(string.format(L.ENTRANCE_VIA, via.name), 1, 1, 1, true) end
+	if via then GameTooltip:AddLine(string.format(IsBuilding(via) and L.ENTRANCE_VIA_BUILDING or L.ENTRANCE_VIA, via.name), 1, 1, 1, true) end
 	GameTooltip:AddLine(L.ENTRANCE_LEFT_CLICK, 0.1, 1, 0.1)
 	GameTooltip:AddLine(L.ENTRANCE_RIGHT_CLICK, 0.1, 1, 0.1)
 	GameTooltip:Show()
@@ -1354,7 +1364,11 @@ function DungeonMap:SetWaypoint(instance, title)
 		local wayMapID, x, y = WayPoint(via)
 		if not x then return false end
 		SetWaypointAt(wayMapID, x, y, via.name)
-		ns.Print(string.format(L.ENTRANCE_WAYPOINT_VIA, via.name, instance.name))
+		if IsBuilding(via) then
+			ns.Print(string.format(L.ENTRANCE_WAYPOINT_SET, title or via.name))
+		else
+			ns.Print(string.format(L.ENTRANCE_WAYPOINT_VIA, via.name, instance.name))
+		end
 		return true
 	end
 	local entrance = self:Entrance(instance)
@@ -1474,7 +1488,7 @@ function CavePinMethods:LegendKind() return "cave" end
 function CavePinMethods:OnAcquired(subMap, x, y)
 	self.subMap, self.wayX, self.wayY = subMap, x, y
 	self:HideMapLegendGlow()
-	for _, atlas in ipairs(CAVE_ATLASES) do
+	for _, atlas in ipairs(IsBuilding(subMap) and BUILDING_ATLASES or CAVE_ATLASES) do
 		if ns.AtlasExists(atlas) then
 			self.Texture:SetAtlas(atlas, true)
 			self.HighlightTexture:SetAtlas(atlas, true)
@@ -1490,13 +1504,17 @@ CavePinMethods.CheckMouseButtonPassthrough = DungeonMap.CheckMouseButtonPassthro
 
 function CavePinMethods:OnMouseEnter()
 	local subMap = self.subMap
-	SetAreaLabel(self, subMap.name, L.CAVE_LABEL)
+	SetAreaLabel(self, subMap.name, IsBuilding(subMap) and L.BUILDING_LABEL or L.CAVE_LABEL)
 	GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
 	GameTooltip:SetText(subMap.name, 1, 1, 1)
+	-- Each dungeon it leads to, by name (the Scarlet Monastery's hall leads to four).
+	local leadsTo = {}
 	for key in pairs(subMap.instances) do
 		local instance = ns.GetInstance(key)
-		if instance then GameTooltip:AddLine(string.format(L.CAVE_LEADS_TO, instance.name), 1, 0.82, 0) end
+		if instance then leadsTo[#leadsTo + 1] = instance.name end
 	end
+	table.sort(leadsTo)
+	for _, name in ipairs(leadsTo) do GameTooltip:AddLine(string.format(L.CAVE_LEADS_TO, name), 1, 0.82, 0) end
 	GameTooltip:AddLine(string.format(L.CAVE_LEFT_CLICK, subMap.name), 0.1, 1, 0.1)
 	GameTooltip:AddLine(L.ENTRANCE_RIGHT_CLICK, 0.1, 1, 0.1)
 	GameTooltip:Show()
@@ -1509,7 +1527,7 @@ function CavePinMethods:OnMouseClickAction(button)
 	local subMap = self.subMap
 	if button == "RightButton" then
 		SetWaypointAt(self:GetMap():GetMapID(), self.wayX, self.wayY, subMap.name)
-		ns.Print(string.format(L.CAVE_WAYPOINT_SET, subMap.name))
+		ns.Print(string.format(IsBuilding(subMap) and L.ENTRANCE_WAYPOINT_SET or L.CAVE_WAYPOINT_SET, subMap.name))
 	else
 		DungeonMap:ShowSubMap(subMap)
 	end

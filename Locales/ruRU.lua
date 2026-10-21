@@ -396,6 +396,8 @@ L.ENTRANCE_WAYPOINT_SET = "Точка маршрута установлена у
 L.ENTRANCE_VIA = "Портал находится ниже, в зоне «%s»: спуститесь у входа в пещеру."
 L.ENTRANCE_WAYPOINT_VIA = "Точка маршрута установлена у спуска в %s, к %s."
 L.CAVE_LABEL = "Вход в пещеру"
+L.BUILDING_LABEL = "Вход"
+L.ENTRANCE_VIA_BUILDING = "Портал находится внутри: %s. Войдите через вход."
 L.CAVE_LEADS_TO = "Путь к %s"
 L.CAVE_LEFT_CLICK = "ЛКМ — посмотреть карту: %s"
 L.CAVE_WAYPOINT_SET = "Точка маршрута установлена у спуска в %s."
@@ -540,6 +542,8 @@ L.SUBMAP_NAMES = {
 	DeadminesApproach = "Убежище Братства Справедливости",
 	WailingCavernsApproach = "Пещеры Стенаний",
 	WailingCavernsApproachBarrens = "Пещеры Стенаний",
+	ScarletMonasteryHall = "Монастырь Алого ордена",
+	ScarletMonasteryHallContinent = "Монастырь Алого ордена",
 	DeeprunTram = "Подземный поезд",
 }
 

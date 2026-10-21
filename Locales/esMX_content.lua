@@ -83,6 +83,8 @@ L.SUBMAP_NAMES = {
 	["DeadminesApproach"] = "Ladronera de los Defias",
 	["WailingCavernsApproach"] = "Cuevas de los Lamentos",
 	["WailingCavernsApproachBarrens"] = "Cuevas de los Lamentos",
+	["ScarletMonasteryHall"] = "Monasterio Escarlata",
+	["ScarletMonasteryHallContinent"] = "Monasterio Escarlata",
 	["DeeprunTram"] = "Tranvía Subterráneo",
 	["OldIronforge"] = "Antigua Forjaz",
 }

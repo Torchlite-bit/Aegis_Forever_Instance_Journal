@@ -2313,6 +2313,47 @@ do
 	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = nil, nil, nil, ""
 end
 
+-- The Scarlet Monastery's hall: Blizzard's map of it redrawn for its four wings, on Tirisfal or on
+-- the continent, whichever the client reports there
+do
+	-- Its way in on Tirisfal, a building's: retail's delve entrance, where the wings' door stood
+	OpenWorldMap(1420)
+	local entrance
+	for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalCavePinTemplate")) do
+		if pin.subMap.key == "ScarletMonasteryHall" then entrance = pin end
+	end
+	check(entrance and entrance._position[1] == 0.826 and entrance._position[2] == 0.338
+		and entrance.Texture._atlas == "delves-regular", "the hall's way in on Tirisfal, with the delve icon a building takes")
+	entrance:_RunScript("OnEnter")
+	local leads = {}
+	for _, line in ipairs(GameTooltip._lines) do
+		if type(line) == "string" and line:find("^The way to ") then leads[#leads + 1] = line end
+	end
+	check(GameTooltip._text == "Scarlet Monastery" and Mock.areaLabel and Mock.areaLabel.description == "Entrance"
+		and table.concat(leads, "|") == "The way to Scarlet Monastery: Armory|The way to Scarlet Monastery: Cathedral|"
+			.. "The way to Scarlet Monastery: Graveyard|The way to Scarlet Monastery: Library",
+		"its tooltip: an entrance, leading to the four wings, by name: " .. table.concat(leads, "|"))
+	entrance:_RunScript("OnLeave")
+	WorldMapFrame:Hide()
+	for _, case in ipairs({ { 1420, 0.84, 0.31, "Scarlet Monastery", "ScarletMonasteryHall" },
+		{ 1415, 0.4762, 0.1953, "The Grand Vestibule", "ScarletMonasteryHallContinent" } }) do
+		Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = case[1], case[2], case[3], case[4]
+		OpenWorldMap()
+		local hall = DungeonMap:Overlay()
+		local wings = {}
+		for _, door in ipairs(hall.Doors) do
+			if door:IsShown() then wings[#wings + 1] = door.instance.key end
+		end
+		table.sort(wings)
+		check(hall:IsShown() and hall.subMap and hall.subMap.key == case[5]
+			and hall.Art.Picture:GetTexture():find("Media\\Maps\\ScarletMonasteryHall", 1, true)
+			and table.concat(wings, ",") == "ScarletMonasteryArmory,ScarletMonasteryCathedral,ScarletMonasteryGraveyard,ScarletMonasteryLibrary"
+			and hall.PlayerPin:IsShown(), "in the hall, on " .. case[1] .. ": its map with the four wings' doors: " .. table.concat(wings, ","))
+		WorldMapFrame:Hide()
+	end
+	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = nil, nil, nil, ""
+end
+
 -- In combat the map still hands out the journal's pins: none of them asks the blocked call
 Mock.inCombat = true
 OpenWorldMap(1436)
