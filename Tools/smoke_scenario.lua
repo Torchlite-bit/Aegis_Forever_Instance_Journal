@@ -4544,6 +4544,20 @@ end)()
 		amended[#amended + 1] = { itemID = 990971 }
 		ns.AmendInstance("TheDeadmines", { bosses = { ["Edwin VanCleef"] = { loot = amended } } })
 		local added = Tip(990970)
+		-- Another boss there listing it (twice) too: the line follows, the bosses each counted once
+		local rhahk
+		for _, boss in ipairs(deadmines.bosses) do
+			if (boss.enName or boss.name) == "Rhahk'Zor" then rhahk = boss end
+		end
+		local rhahkLoot, rhahkAmended = rhahk.loot, {}
+		for _, row in ipairs(rhahkLoot) do rhahkAmended[#rhahkAmended + 1] = row end
+		rhahkAmended[#rhahkAmended + 1] = { itemID = 990970 }
+		rhahkAmended[#rhahkAmended + 1] = { itemID = 990970 }
+		ns.AmendInstance("TheDeadmines", { bosses = { ["Rhahk'Zor"] = { loot = rhahkAmended } } })
+		local twoBosses = Tip(990970)
+		ns.AmendInstance("TheDeadmines", { bosses = { ["Rhahk'Zor"] = { loot = rhahkLoot } } })
+		check(twoBosses == "Drops from 2 bosses in The Deadmines",
+			"a second boss listing it, twice: the line follows at once, each boss counted once: " .. tostring(twoBosses))
 		-- An item hidden until the server confirms it gets no line, until the client describes it
 		ns.Items:AddUnconfirmed({ [990971] = true })
 		local hidden = Tip(990971)
