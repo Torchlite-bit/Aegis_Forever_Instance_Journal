@@ -2966,6 +2966,10 @@ do
 		and caveEntry.metaData.Style == "cave", "an Entrance entry with the delve icon, its pins told from caves by their style")
 	check(buildingEntry.layoutIndex == 4 and buildingEntry.gridRow == 2 and buildingEntry.gridColumn == 2,
 		"Entrance under Cave Entrance")
+	check(caveEntry.tooltipText == ns.L.LEGEND_CAVE_TOOLTIP and buildingEntry.tooltipText == ns.L.LEGEND_BUILDING_TOOLTIP
+		and caveEntry.tooltipText:find("where a dungeon's door is", 1, true)
+		and buildingEntry.tooltipText:find("where a dungeon's door is", 1, true),
+		"Cave Entrance's tooltip in the journal's words, like Entrance's: where a dungeon's door is")
 end
 local movement = caveEntry:GetParent()
 local flight = select(1, movement:GetChildren())

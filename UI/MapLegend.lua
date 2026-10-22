@@ -53,13 +53,14 @@ local TRANSPORT_TEMPLATE = "AegisJournalTransportPinTemplate"
 
 -- The entries the journal adds under Movement, in order (two to a row: Entrance falls under Cave
 -- Entrance). Caves and the entrances of buildings are pins of one template, told apart by their
--- style (the pin's GetStyle, which the client's legend matches against MetaData.Style).
+-- style (the pin's GetStyle, which the client's legend matches against MetaData.Style). Both say
+-- in the journal's own words where they lead, the cave's as the building's does.
 local ADDED_ENTRIES = {
 	{
 		kind = "cave",
 		Atlas = "CaveUnderground-Up",
 		Name = MAP_LEGEND_CAVE or L.CAVE_LABEL,
-		Tooltip = MAP_LEGEND_CAVE_TOOLTIP or L.LEGEND_CAVE_TOOLTIP,
+		Tooltip = L.LEGEND_CAVE_TOOLTIP,
 		TemplateNames = { CAVE_TEMPLATE },
 		MetaData = { Style = "cave" },
 	},
