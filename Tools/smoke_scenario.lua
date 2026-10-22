@@ -2335,7 +2335,11 @@ do
 		"its tooltip: an entrance, leading to the four wings, by name: " .. table.concat(leads, "|"))
 	entrance:_RunScript("OnLeave")
 	WorldMapFrame:Hide()
-	for _, case in ipairs({ { 1420, 0.84, 0.31, "Scarlet Monastery", "ScarletMonasteryHall" },
+	-- The player's own readings at the way in (/aegis where, 2026-10-21), and the hall
+	for _, case in ipairs({ { 1420, 0.8237, 0.3276, "Terrace of Repose", "ScarletMonasteryHall" },
+		{ 1420, 0.8251, 0.3329, "Terrace of Repose", "ScarletMonasteryHall" },
+		{ 1420, 0.84, 0.31, "Whispering Gardens", "ScarletMonasteryHall" },
+		{ 1420, 0.84, 0.31, "Scarlet Monastery", "ScarletMonasteryHall" },
 		{ 1415, 0.4762, 0.1953, "The Grand Vestibule", "ScarletMonasteryHallContinent" } }) do
 		Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = case[1], case[2], case[3], case[4]
 		OpenWorldMap()

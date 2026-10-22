@@ -155,9 +155,11 @@ end
 	the game's data: retail's map region for the hall, read on Tirisfal and on the continent, and
 	the four doors are the game's own portals. The monastery is an area of its own, not under
 	Tirisfal, so the client may report a player in the hall on the Eastern Kingdoms (1415), as it
-	reports the Defias Hideout; it is set up on Tirisfal (1420) too. The hall reads "Scarlet
-	Monastery", its vestibule "The Grand Vestibule". The building's way in is marked on Tirisfal
-	where the wings' shared door stood, and each wing's door moves to its own portal in the hall.
+	reports the Defias Hideout; it is set up on Tirisfal (1420) too. In game (2026-10-21) the
+	client reports Tirisfal there, the steps and the way in reading "Terrace of Repose" (a Tirisfal
+	area, 161, as is "Whispering Gardens", 160, beside it); the hall may read "Scarlet Monastery",
+	its vestibule "The Grand Vestibule". The building's way in is marked on Tirisfal where the
+	wings' shared door stood, and each wing's door moves to its own portal in the hall.
 ]]
 local SCARLET_HALL = {
 	name = "Scarlet Monastery",
@@ -166,7 +168,8 @@ local SCARLET_HALL = {
 	art = "Interface\\AddOns\\Aegis_Forever_Instance_Journal\\Media\\Maps\\ScarletMonasteryHall",
 	artRight = 1002 / 1024,
 	artBottom = 668 / 1024,
-	areas = { ["Scarlet Monastery"] = true, ["The Grand Vestibule"] = true },
+	areas = { ["Terrace of Repose"] = true, ["Whispering Gardens"] = true, ["Scarlet Monastery"] = true,
+		["The Grand Vestibule"] = true },
 	instances = {
 		ScarletMonasteryGraveyard = { x = 0.6753, y = 0.1789 },
 		ScarletMonasteryCathedral = { x = 0.7831, y = 0.1731 },
