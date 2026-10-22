@@ -23,6 +23,7 @@ ns.AddSubMap({
 	key = "OldIronforge",
 	name = "Old Ironforge",
 	parentMapID = 1455,
+	icon = "building",
 	art = "Interface\\AddOns\\Aegis_Forever_Instance_Journal\\Media\\Maps\\OldIronforge",
 	artRight = 1002 / 1024,
 	artBottom = 668 / 1024,

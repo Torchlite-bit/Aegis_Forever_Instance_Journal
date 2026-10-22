@@ -1737,7 +1737,9 @@ local CavePinMethods = {}
 CavePinMethods.OnLoad = EntrancePinMethods.OnLoad
 CavePinMethods.ShowMapLegendGlow = EntrancePinMethods.ShowMapLegendGlow
 CavePinMethods.HideMapLegendGlow = EntrancePinMethods.HideMapLegendGlow
-function CavePinMethods:LegendKind() return "cave" end
+-- Its legend entry, Cave Entrance or Entrance (a building's); the client's legend matches it by style.
+function CavePinMethods:LegendKind() return IsBuilding(self.subMap) and "building" or "cave" end
+function CavePinMethods:GetStyle() return self:LegendKind() end
 
 function CavePinMethods:OnAcquired(subMap, x, y)
 	self.subMap, self.wayX, self.wayY = subMap, x, y
@@ -1777,7 +1779,7 @@ function CavePinMethods:OnMouseEnter()
 	GameTooltip:AddLine(string.format(L.CAVE_LEFT_CLICK, subMap.name), 0.1, 1, 0.1)
 	GameTooltip:AddLine(L.ENTRANCE_RIGHT_CLICK, 0.1, 1, 0.1)
 	GameTooltip:Show()
-	ns.MapLegend:PinEnter("cave")
+	ns.MapLegend:PinEnter(self:LegendKind())
 end
 
 CavePinMethods.OnMouseLeave = EntrancePinMethods.OnMouseLeave
@@ -1839,10 +1841,13 @@ function EntranceProviderMethods:RefreshAllData()
 			map:AcquirePin(ENTRANCE_PIN_TEMPLATE, door.instances[1], door.x, door.y, door.instances)
 		end
 	end
-	-- Caves show on their own zone's map only, as on retail.
-	for _, subMap in ipairs(ns.MapLegend.Shows("cave") and ns.GetSubMaps() or {}) do
+	-- Caves and buildings' entrances show on their own zone's map only, as on retail; each kind
+	-- hidden from the map legend on its own.
+	for _, subMap in ipairs(ns.GetSubMaps()) do
 		local wayMapID, x, y = WayPoint(subMap)
-		if wayMapID == mapID and x then map:AcquirePin(CAVE_PIN_TEMPLATE, subMap, x, y) end
+		if wayMapID == mapID and x and ns.MapLegend.Shows(IsBuilding(subMap) and "building" or "cave") then
+			map:AcquirePin(CAVE_PIN_TEMPLATE, subMap, x, y)
+		end
 	end
 end
 

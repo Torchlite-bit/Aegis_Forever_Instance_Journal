@@ -2730,24 +2730,24 @@ end
 cave = WorldMapFrame:ActivePins("AegisJournalCavePinTemplate")[1]
 check(hallDoor and hallDoor._position[1] == 0.2815 and hallDoor._position[2] == 0.4775,
 	"the Hall of Thanes over its portal on the Ironforge map")
-check(cave and cave.subMap.key == "OldIronforge" and cave.Texture._atlas == "CaveUnderground-Up"
-	and cave._position[1] == 0.435 and cave._position[2] == 0.52, "retail's cave entrance where the way down is")
-check(#WorldMapFrame:ActivePins("AegisJournalCavePinTemplate") == 1, "one cave")
+check(cave and cave.subMap.key == "OldIronforge" and cave.Texture._atlas == "delves-regular"
+	and cave._position[1] == 0.435 and cave._position[2] == 0.52, "the delve icon of a way in where the way down is (the player's pick)")
+check(#WorldMapFrame:ActivePins("AegisJournalCavePinTemplate") == 1, "one way in")
 hallDoor:_RunScript("OnEnter")
-check(GameTooltip:HasLine("Its portal is below, in Old Ironforge: go down at the cave entrance."), "the dungeon's tooltip points to the cave")
+check(GameTooltip:HasLine("Its portal is inside, in Old Ironforge: go in at the entrance."), "the dungeon's tooltip points to the way in")
 cave:_RunScript("OnEnter")
 check(GameTooltip._text == "Old Ironforge" and GameTooltip:HasLine("The way to The Hall of Thanes")
 	and GameTooltip:HasLine("Left-click to see the map of Old Ironforge"), "the cave says where it leads")
-check(Mock.areaLabel and Mock.areaLabel.name == "Old Ironforge" and Mock.areaLabel.description == "Cave Entrance",
-	"and the map's area label calls it a cave entrance")
+check(Mock.areaLabel and Mock.areaLabel.name == "Old Ironforge" and Mock.areaLabel.description == "Entrance",
+	"and the map's area label calls it an entrance")
 cave:_RunScript("OnLeave")
 check(Mock.areaLabel == nil, "the label goes with the mouse")
 hallDoor:Click("RightButton")
 check(Mock.userWaypoint.uiMapID == 1455 and Mock.userWaypoint.position.x == 0.435 and Mock.userWaypoint.position.y == 0.52
-	and chatContains("Waypoint set to the way down into Old Ironforge, for The Hall of Thanes."),
+	and chatContains("Waypoint set to the entrance of Old Ironforge."),
 	"the dungeon's waypoint leads to the way down, which is walkable")
 cave:Click("RightButton")
-check(chatContains("Waypoint set to the way down into Old Ironforge."), "so does the cave's")
+check(chatContains("Waypoint set to the entrance of Old Ironforge."), "so does the way in's")
 
 -- Left-click on the cave: Old Ironforge over the world map
 cave:Click("LeftButton")
@@ -2863,7 +2863,14 @@ check(dungeonEntry and dungeonEntry.nameText == "Dungeon" and raidEntry and raid
 	"the legend's own Dungeon and Raid entries found")
 check(caveEntry and caveEntry.atlas == "CaveUnderground-Up" and caveEntry.nameText == "Cave Entrance"
 	and caveEntry.templates[1] == "AegisJournalCavePinTemplate", "a Cave Entrance entry with retail's icon")
-check(legend:Entry("delve") == nil, "and no Delve entry: the ways down are all caves")
+do
+	local buildingEntry = legend:Entry("building")
+	check(buildingEntry and buildingEntry.atlas == "delves-regular" and buildingEntry.nameText == "Entrance"
+		and buildingEntry.templates[1] == "AegisJournalCavePinTemplate" and buildingEntry.metaData.Style == "building"
+		and caveEntry.metaData.Style == "cave", "an Entrance entry with the delve icon, its pins told from caves by their style")
+	check(buildingEntry.layoutIndex == 4 and buildingEntry.gridRow == 2 and buildingEntry.gridColumn == 2,
+		"Entrance under Cave Entrance")
+end
 local movement = caveEntry:GetParent()
 local flight = select(1, movement:GetChildren())
 check(flight.nameText == "Flightpoint" and caveEntry.layoutIndex == 2 and caveEntry.gridRow == 1 and caveEntry.gridColumn == 2
@@ -2880,24 +2887,56 @@ check(ironforgeDoor.isRaid == false, "entrances say whether they are raids, as t
 dungeonEntry:_RunScript("OnEnter")
 check(ironforgeDoor.legendGlow and ironforgeDoor.legendGlow:IsShown() and ironforgeDoor.legendGlow._atlas == "UI-QuestPoi-OuterGlow",
 	"hovering Dungeon in the legend lights up the dungeons, with retail's glow")
-check(not caveDoor.legendGlow, "and not the cave")
+check(not caveDoor.legendGlow, "and not the way in")
 dungeonEntry:_RunScript("OnLeave")
 check(not ironforgeDoor.legendGlow:IsShown(), "until the mouse leaves")
 raidEntry:_RunScript("OnEnter")
 check(not ironforgeDoor.legendGlow:IsShown(), "Raid does not light up a dungeon")
 raidEntry:_RunScript("OnLeave")
 caveEntry:_RunScript("OnEnter")
-check(caveDoor.legendGlow and caveDoor.legendGlow:IsShown(), "Cave Entrance lights up the cave")
+check(not caveDoor.legendGlow, "Cave Entrance leaves Old Ironforge's way in, a building's, dark")
 caveEntry:_RunScript("OnLeave")
+legend:Entry("building"):_RunScript("OnEnter")
+check(caveDoor.legendGlow and caveDoor.legendGlow:IsShown(), "Entrance lights it up")
+legend:Entry("building"):_RunScript("OnLeave")
 check(not caveDoor.legendGlow:IsShown(), "and lets it go")
 ironforgeDoor:_RunScript("OnEnter")
 check(dungeonEntry.highlightLocked == true and not raidEntry.highlightLocked, "hovering a dungeon lights its legend entry")
 ironforgeDoor:_RunScript("OnLeave")
 check(dungeonEntry.highlightLocked == false, "until the mouse leaves")
 caveDoor:_RunScript("OnEnter")
-check(caveEntry.highlightLocked == true, "the cave lights its entry too")
+check(legend:Entry("building").highlightLocked == true and not caveEntry.highlightLocked, "the way in lights its own entry, Entrance")
 caveDoor:_RunScript("OnLeave")
-check(caveEntry.highlightLocked == false, "and lets it go")
+check(legend:Entry("building").highlightLocked == false, "and lets it go")
+-- A cave's mouth (the Wailing Caverns', on the Barrens): Cave Entrance's, not Entrance's
+do
+	local buildingEntry = legend:Entry("building")
+	OpenWorldMap(1413)
+	local mouth = WorldMapFrame:ActivePins("AegisJournalCavePinTemplate")[1]
+	check(mouth and mouth.subMap.key == "WailingCavernsApproach" and mouth.Texture._atlas == "CaveUnderground-Up",
+		"a cave's mouth keeps the cave icon")
+	caveEntry:_RunScript("OnEnter")
+	buildingEntry:_RunScript("OnEnter")
+	buildingEntry:_RunScript("OnLeave")
+	check(mouth.legendGlow and mouth.legendGlow:IsShown(), "Cave Entrance lights the cave, Entrance does not put it out")
+	caveEntry:_RunScript("OnLeave")
+	check(not mouth.legendGlow:IsShown(), "and lets it go")
+	mouth:_RunScript("OnEnter")
+	check(caveEntry.highlightLocked == true and not buildingEntry.highlightLocked, "the cave lights Cave Entrance only")
+	mouth:_RunScript("OnLeave")
+	-- Each kind hidden from its own entry
+	legend:Toggle("building")
+	check(#WorldMapFrame:ActivePins("AegisJournalCavePinTemplate") == 1 and ns.db.mapHidden.building and buildingEntry:GetAlpha() < 1,
+		"Entrance switched off: the caves stay")
+	WorldMapFrame:SetMapID(1455)
+	check(#WorldMapFrame:ActivePins("AegisJournalCavePinTemplate") == 0, "and Old Ironforge's way in goes")
+	legend:Toggle("building")
+	check(#WorldMapFrame:ActivePins("AegisJournalCavePinTemplate") == 1 and not ns.db.mapHidden.building, "back on, it comes back")
+	legend:Toggle("cave")
+	check(#WorldMapFrame:ActivePins("AegisJournalCavePinTemplate") == 1, "Cave Entrance switched off: the way in stays")
+	legend:Toggle("cave")
+	caveDoor = WorldMapFrame:ActivePins("AegisJournalCavePinTemplate")[1]
+end
 -- The journal's quest marks: a "!" lights the legend's Quest entry, a "?" Turn In as well, as the
 -- client's own marks do; hovering Quest lights the journal's "!" marks up
 do
