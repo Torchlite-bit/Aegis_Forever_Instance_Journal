@@ -45,7 +45,7 @@ and to send in your recorded runs.
 
 | Dungeons | City of Dalaran |
 |:---:|:---:|
-| <img src="docs/images/dungeons.png" alt="The Dungeons tab, Forever's own marked with its emblem" width="430"> | <img src="docs/images/journal-city-of-dalaran.png" alt="The journal open on City of Dalaran" width="430"> |
+| <img src="docs/images/dungeons.png" alt="The Dungeons tab, Forever's own marked with its emblem" width="430"> | <img src="docs/images/journal-city-of-dalaran.jpg" alt="The journal open on City of Dalaran, with Before you go: its key's quest chain and its hidden boss" width="430"> |
 
 - **Retail's Encounter Journal**, rebuilt to its measurements (Blizzard's own
   doesn't load on Forever): breadcrumb bar, search box, and five tabs:
@@ -78,9 +78,9 @@ Five side tabs, as in retail, plus one:
 
 | Overview | Loot | Abilities |
 |:---:|:---:|:---:|
-| <img src="docs/images/boss-overview.png" alt="A boss's overview" width="280"> | <img src="docs/images/boss-loot.png" alt="A boss's loot" width="280"> | <img src="docs/images/boss-abilities.png" alt="A boss's abilities" width="280"> |
+| <img src="docs/images/boss-overview.png" alt="A boss's overview" width="280"> | <img src="docs/images/boss-loot.png" alt="A boss's loot" width="280"> | <img src="docs/images/boss-abilities.jpg" alt="Faldrim Anvilmar's abilities, with their icons and the damage and timings recorded runs measured" width="280"> |
 | **Model** | **Quests** | **Quests on the map** |
-| <img src="docs/images/boss-model.png" alt="A boss in 3D" width="280"> | <img src="docs/images/boss-quests.png" alt="The dungeon's quests" width="280"> | <img src="docs/images/map-ruins-of-lordaeron.jpg" alt="Ruins of Lordaeron map with a quest mark's tooltip" width="280"> |
+| <img src="docs/images/boss-model.png" alt="A boss in 3D" width="280"> | <img src="docs/images/boss-quests.jpg" alt="City of Dalaran's quests: the Sewer Key chain, who offers a quest and who takes it back, its rewards" width="280"> | <img src="docs/images/map-ruins-of-lordaeron.jpg" alt="Ruins of Lordaeron map with a quest mark's tooltip" width="280"> |
 
 ### 🗺️ Dungeon maps
 
@@ -89,17 +89,35 @@ Five side tabs, as in retail, plus one:
 - **A boss with several possible spots** gets small faded pins; hover one and
   all of its spots light up.
 - **Forever's own dungeons** use Santiago Reyes's hand-drawn maps.
-- **The places Blizzard never mapped**: Old Ironforge, the Defias Hideout on the
+- **The places the game has no map of**: Old Ironforge, the Defias Hideout on the
   way to the Deadmines, and the Deeprun Tram, with your arrow where the game
   gives a position.
-- **The ways in**: the Wailing Caverns' cave, Uldaman's dig, Maraudon's two caves,
-  Blackrock Mountain's two levels and the ruins of Dire Maul on Blizzard's own drawn
-  maps, and the Scarlet Monastery's hall redrawn for its four wings, each shown
-  when you're there, with your arrow and the dungeon doors.
 
 | The Hall of Thanes | City of Dalaran, with the map legend | Old Ironforge |
 |:---:|:---:|:---:|
 | <img src="docs/images/map-hall-of-thanes.jpg" alt="The Hall of Thanes map" width="280"> | <img src="docs/images/map-city-of-dalaran.png" alt="City of Dalaran map and legend" width="280"> | <img src="docs/images/map-old-ironforge.jpg" alt="Old Ironforge map" width="280"> |
+
+### 🏰 Maps of the ways in
+
+Several of the caves, halls and ruins between a zone and a dungeon's door have
+maps of their own. Walk in and the world map changes to them, with your arrow and
+the dungeon doors on it; walk out and it changes back. Click a cave or entrance icon on the zone map to
+look inside before you go.
+
+<p align="center"><img src="docs/images/map-scarlet-monastery-hall.jpg" alt="The Scarlet Monastery's hall, redrawn for the classic four wings, with a door at each wing's portal and sketches of a Scarlet crusader and the Ashbringer" width="860"></p>
+<p align="center"><em>The Scarlet Monastery's hall, redrawn by Torchlite for the classic four wings.</em></p>
+
+- **Redrawn for the journal** from Blizzard's map: the Scarlet Monastery's hall,
+  its passages to the Cathedral and the Armory drawn back in, a door at each wing's portal, and
+  sketches of a Scarlet crusader and the Ashbringer. More are on the way.
+- **Blizzard's own drawn maps**: the Wailing Caverns' cave, Uldaman's dig,
+  Maraudon's two caves, Blackrock Mountain's two levels and the ruins of Dire Maul.
+- **Blackrock Mountain's levels** are one more step of the map's location bar:
+  pick the Spire's ring or the level down to the Depths.
+
+| Dire Maul's ruins, with your arrow | Blackrock Mountain, its levels in the location bar | Feralas: the wings' doors and the way into the ruins |
+|:---:|:---:|:---:|
+| <img src="docs/images/map-dire-maul-ruins.jpg" alt="The ruins of Dire Maul on the world map, a dungeon icon at each of the wings' five doors, the player's arrow and the map legend" width="280"> | <img src="docs/images/map-blackrock-mountain.jpg" alt="Blackrock Mountain's ring, with the levels menu open on the location bar and the legend's Cave Entrance and Entrance" width="280"> | <img src="docs/images/world-map-feralas.jpg" alt="Feralas with Dire Maul's three wing doors and the entrance icon of its ruins" width="280"> |
 
 ### 🧭 World map
 
