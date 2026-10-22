@@ -16,7 +16,8 @@ local _, ns = ...
 	sharedAreas  names that spots both above and below have (the arrival reads "The High
 	             Seat", like the throne room above): a player seen below stays below in these
 	             until they walk into a street the area below does not reach
-	instances    where each dungeon's portal is on the picture
+	instances    where each dungeon's portal is on the picture (a list of points for a dungeon
+	             with several doors on it)
 ]]
 
 ns.AddSubMap({
@@ -414,10 +415,11 @@ end
 	"Eldre' Thalas", the arena "The Maul": names no ground outside has. The courtyard's grass, the
 	wings' doorways and the tunnels read nothing, like the Feralas ground around them, so they only
 	keep a player already on the picture (unnamed). The way in is the foot of the great stair, where
-	the road up the valley reaches the ruins, about 165 yards south of the picture. Each wing's door
-	is its swirl; the west wing has two doorways, so its one door sits between them. The east wing's
-	side door (the swirl at the end of the south-east tunnel) and its back door by Lariss Pavilion
-	get no icon.
+	the road up the valley reaches the ruins, about 165 yards south of the picture. Every swirl is a
+	door and has its icon: the north wing's; the west wing's two doorways; the east wing's main door
+	and its side door at the end of the south-east tunnel (classic's trigger 3184, which leads into
+	the Warpwood Quarter too). Feralas' map keeps one door a wing; the east wing's back door by
+	Lariss Pavilion is on neither.
 ]]
 ns.AddSubMap({
 	key = "DireMaulRuins",
@@ -436,8 +438,8 @@ ns.AddSubMap({
 	unnamed = true,
 	instances = {
 		DireMaulNorth = { x = 0.7023, y = 0.1379 },
-		DireMaulEast = { x = 0.8160, y = 0.4074 },
-		DireMaulWest = { x = 0.5754, y = 0.4471 },
+		DireMaulEast = { { x = 0.8160, y = 0.4074 }, { x = 0.9438, y = 0.6664 } },
+		DireMaulWest = { { x = 0.5754, y = 0.3939 }, { x = 0.5754, y = 0.5003 } },
 	},
 })
 

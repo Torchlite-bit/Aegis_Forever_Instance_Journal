@@ -1188,11 +1188,12 @@ local function DrawSubMap(subMap)
 	overlay.Here:Hide()
 	-- Levels (Blackrock Mountain's): a menu of them, as a dungeon's floors have.
 	ShowFloorMenu(subMap.levels and LevelName(subMap.levels[subMap.level]) or nil)
-	-- Dungeons that share a door on the picture are one door, their names in order.
+	-- Dungeons that share a door on the picture are one door, their names in order; a dungeon with
+	-- several doors on it (a list of points: Dire Maul's west and east wings) has an icon on each.
 	local spots = {}
-	for key, point in pairs(subMap.instances) do
+	for key, points in pairs(subMap.instances) do
 		local instance = ns.GetInstance(key)
-		if instance then
+		for _, point in ipairs(instance and (points[1] and points or { points }) or {}) do
 			local spot
 			for _, other in ipairs(spots) do
 				if other.x == point.x and other.y == point.y then spot = other end

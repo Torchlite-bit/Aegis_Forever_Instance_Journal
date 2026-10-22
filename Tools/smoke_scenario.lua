@@ -2700,9 +2700,14 @@ do
 	table.sort(doorKeys)
 	check(key == "DireMaulRuins" and ruins.Art.Picture:GetTexture():find("Media\\Maps\\DireMaulRuins", 1, true)
 		and math.abs(ruins.Art.Picture._texCoord[2] - 1000 / 1024) < 1e-9 and math.abs(ruins.Art.Picture._texCoord[4] - 667 / 1024) < 1e-9
-		and table.concat(doorKeys, ",") == "DireMaulEast,DireMaulNorth,DireMaulWest" and ruins.PlayerPin:IsShown()
+		and table.concat(doorKeys, ",") == "DireMaulEast,DireMaulEast,DireMaulNorth,DireMaulWest,DireMaulWest" and ruins.PlayerPin:IsShown()
 		and math.abs(ruins.PlayerPin._points[1][4] - (0.5945 - 0.495224) / (0.683018 - 0.495224) * ruins.Art._width) < 1e-3,
-		"in the hall: the ruins' picture, the three wings' doors, the player where they stand")
+		"in the hall: the ruins' picture, an icon on each of its five doors, the player where they stand")
+	local westDoors = {}
+	for _, door in ipairs(ruins.Doors) do
+		if door:IsShown() and door.instance.key == "DireMaulWest" then westDoors[#westDoors + 1] = door._points[1][5] end
+	end
+	check(#westDoors == 2 and westDoors[1] ~= westDoors[2], "the west wing's two doorways, an icon each")
 	WorldMapFrame:Hide()
 	-- The courtyard's paving, then its nameless grass: kept; the arena
 	check(At(0.6441, 0.2878, "Eldre' Thalas") == "DireMaulRuins", "on the courtyard's paving")
