@@ -32,10 +32,9 @@ and to send in your recorded runs.
 
 - [What it does](#what-it-does): the journal, boss pages, maps, reputation, the Gear Finder, search and the Record tab
 - [Santiago Reyes's maps](#santiago-reyess-maps)
-- [Install](#install) · [Using it](#using-it)
+- [Install](#install)
 - [A few honest notes](#a-few-honest-notes)
-- [Under the hood](#under-the-hood)
-- [Something broken?](#something-broken) · [Contributing](#contributing)
+- [Something broken?](#something-broken)
 
 ---
 
@@ -240,26 +239,6 @@ the folder to exactly `Aegis_Forever_Instance_Journal`**: GitHub's ZIP unpacks a
 
 ---
 
-## Using it
-
-| Do this | Get that |
-|---|---|
-| **Shift+J** or `/aegis` | Open or close the journal |
-| `/aegis record` | Start or stop recording |
-| `/aegis gear` · `/aegis weights` | Open the Gear Finder · its stat weights |
-| `/aegis travel boat Auberdine` | Mark a boat, zeppelin, airship, tram or portal where you stand |
-| `/aegis travel list` · `/aegis travel undo` | What you've marked · take back the last one |
-| `/aegis where` | Print exactly where you stand |
-| `/aegis items` | Find the journal's items the server doesn't have yet |
-| `/aegis perf` | How much time and memory the journal uses |
-| `/aegis reset` | Put the window back in its default place |
-| `/aegis dock` | Dock the window at the top left, or free it again |
-
-**Shift+J taken by another addon?** The journal offers to take it once, or set
-your own key in **Key Bindings › AddOns › Toggle Instance Journal**.
-
----
-
 ## A few honest notes
 
 - **Forever hides a lot inside its dungeons.** There's no player position there,
@@ -270,30 +249,6 @@ your own key in **Key Bindings › AddOns › Toggle Instance Journal**.
 - **Damage and timings come only from recorded runs.** Many bosses have none yet.
 - **The announced dungeons and the raids** hold only what Blizzard has said so
   far. Their pages say *Coming soon*.
-
----
-
-## Under the hood
-
-```
-Aegis_Forever_Instance_Journal/
-├── Core/          registry, recorder, items, reputation, perf, compatibility
-├── UI/            the journal window, its pages, and the map providers
-├── Data/
-│   ├── Instances/   each dungeon and raid: bosses, loot, quests, maps
-│   ├── Authored/    notes, fixes and amendments written by hand
-│   ├── Generated/   abilities and recorded fights, from the developer's build tools
-│   ├── Reputation/  faction rewards
-│   └── Travel/      boats, zeppelins, trams and portals
-├── Media/         maps, raid pictures and the journal's own textures
-├── Locales/       every string the journal shows
-├── Tools/         the tests and the release scripts (never shipped)
-└── docs/          the README's pictures and the Log Reader page (never shipped)
-```
-
-Everything is the Forever client's own API, guarded where the client withholds
-values. `python Tools/smoke_test.py` runs the whole addon against a mock client
-and checks it; `--perf` measures it.
 
 ---
 
@@ -308,30 +263,6 @@ and checks it; `--perf` measures it.
 Recent changes are in [CHANGELOG.md](CHANGELOG.md).
 
 ---
-
-## Contributing
-
-**The easiest way to help is to play.** Leave the Record tab on, run a dungeon,
-press **Copy**, then paste it on the
-[**Log Reader**](https://torchlite-bit.github.io/Aegis_Forever_Instance_Journal/log-reader/)
-with your combat log, which adds the bosses' spells. Post what it gives you in the
-Discord. The page reads the log in your browser and never uploads it.
-
-PRs are welcome too. Say hi on **[Discord](https://discord.gg/Hr66t25vE7)** first
-if you're planning something big.
-
-1. Keep `python Tools/smoke_test.py` passing: every push and pull request runs it.
-2. Bump the version in the `.toc`, this file's **H1** and "Check the version"
-   line, and add a [`CHANGELOG.md`](CHANGELOG.md) entry.
-3. A new `.lua` file or texture needs a full client restart: say so in the
-   changelog.
-
-**Releases are automatic.** Every push to `main` publishes a release named
-after the `.toc` version, with the addon zip and that version's changelog entry.
-A push that keeps the version refreshes that release's zip. Each new version also
-goes to CurseForge, once: bump the version for CurseForge to get a new file. Its
-changelog is posted in our Discord's #changelogs forum, and later pushes edit that
-post to match.
 
 ## License
 
