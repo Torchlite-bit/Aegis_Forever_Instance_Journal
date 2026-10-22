@@ -59,8 +59,6 @@ and the version shown in the AddOns list. Quote it in bug reports.
 - On a game in another language, the quartermasters you captured stay with their factions after a
   reload. Before, they dropped out at your next reload.
 - Search finds an ability by the spell name its page shows, as well as by the journal's name for it.
-- A boat or airship route you saved yourself no longer shows twice when the journal names it in
-  another language, and your note on it stays.
 
 ## [0.37.0] (restart)
 
