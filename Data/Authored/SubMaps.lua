@@ -244,10 +244,10 @@ end
 	Span. The doorway by the Molten Core's ledge, "Blackrock Mountain" too,
 	keeps a player come up from the Quarry below on the lower map; and the Depths' door, named
 	nothing at all (unnamed), keeps one come from the Masonary.
-	The way in, with a building's icon (the player's pick), shows at the Burning Steppes gate,
-	where the player's /aegis where read 1428 (0.2940, 0.3829) as the minimap turned to the
-	mountain (2026-10-21); at the Searing Gorge gate, read there on 1427 (0.3485, 0.8583), is the
-	mountain's door.
+	The ways in, with a building's icon (the player's pick), show at both gates, where the
+	player's /aegis where read 1428 (0.2940, 0.3829) and 1427 (0.3485, 0.8583) as the minimap
+	turned to the mountain (2026-10-21); each names all three dungeons (alsoLeadsTo: the Depths'
+	door is on the lower picture).
 ]]
 local BLACKROCK_LOWER_TILES = "Interface\\WorldMap\\MicroDungeon\\SearingGorge\\BlackrockMountain\\BlackrockMountain16_"
 local BLACKROCK_DEPTHS_DOOR = { BlackrockDepths = { x = 0.3922, y = 0.1766 } }
@@ -270,12 +270,15 @@ ns.AddSubMap({
 	areas = { ["The Molten Span"] = true, ["Blackrock Spire"] = true, ["Forgewright's Tomb"] = true },
 	indoorAreas = { ["Blackrock Mountain"] = true },
 	instances = BLACKROCK_SPIRE_DOOR,
+	alsoLeadsTo = { "BlackrockDepths" },
 })
 ns.AddSubMap({
 	key = "BlackrockMountainGorge",
 	name = "Blackrock Mountain",
 	parentMapID = 1427,
+	icon = "building",
 	tiles = BLACKROCK_RING_TILES,
+	way = { mapID = 1427, x = 0.3485, y = 0.8583 },
 	calibration = {
 		{ map = { 0.1965, 0.8235 }, picture = { 0, 0 } },
 		{ map = { 0.5158, 1.1429 }, picture = { 1, 1 } },
@@ -283,7 +286,14 @@ ns.AddSubMap({
 	areas = {},
 	indoorAreas = { ["Blackrock Mountain"] = true },
 	instances = BLACKROCK_SPIRE_DOOR,
+	alsoLeadsTo = { "BlackrockDepths" },
 })
+
+-- The mountain's door on Searing Gorge, its three dungeons', a little into the mountain from the
+-- gate's way in (the player's request, 2026-10-21), so both icons show.
+for _, key in ipairs({ "BlackrockDepths", "LowerBlackrockSpire", "UpperBlackrockSpire" }) do
+	if ns.GetInstance(key) then ns.AmendInstance(key, { zoneEntrance = { mapID = 1427, x = 0.328, y = 0.888 } }) end
+end
 ns.AddSubMap({
 	key = "BlackrockDepthsApproach",
 	name = "Blackrock Mountain",

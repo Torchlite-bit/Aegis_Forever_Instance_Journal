@@ -2412,9 +2412,31 @@ do
 		if type(line) == "string" and line:find("^The way to ") then leads[#leads + 1] = line end
 	end
 	check(GameTooltip._text == "Blackrock Mountain" and Mock.areaLabel and Mock.areaLabel.description == "Entrance"
-		and table.concat(leads, "|") == "The way to Lower Blackrock Spire|The way to Upper Blackrock Spire",
-		"its tooltip: the mountain, leading to the Spire's two dungeons: " .. table.concat(leads, "|"))
+		and table.concat(leads, "|") == "The way to Blackrock Depths|The way to Lower Blackrock Spire|The way to Upper Blackrock Spire",
+		"its tooltip: the mountain, leading to its three dungeons: " .. table.concat(leads, "|"))
 	gate:_RunScript("OnLeave")
+	WorldMapFrame:Hide()
+	-- The Searing Gorge gate: its way in too, where the minimap turned, the mountain's door beside it
+	OpenWorldMap(1427)
+	local gorgeGate, door
+	for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalCavePinTemplate")) do
+		if pin.subMap.key:find("^Blackrock") then
+			check(gorgeGate == nil, "one way in on Searing Gorge")
+			gorgeGate = pin
+		end
+	end
+	check(gorgeGate and gorgeGate.subMap.key == "BlackrockMountainGorge" and gorgeGate._position[1] == 0.3485
+		and gorgeGate._position[2] == 0.8583 and gorgeGate.Texture._atlas == "delves-regular",
+		"the way in at the Searing Gorge gate, with the delve icon")
+	gorgeGate:_RunScript("OnEnter")
+	check(GameTooltip:HasLine("The way to Blackrock Depths") and GameTooltip:HasLine("The way to Upper Blackrock Spire"),
+		"naming the mountain's dungeons")
+	gorgeGate:_RunScript("OnLeave")
+	for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalEntrancePinTemplate")) do
+		if pin.instance.key == "BlackrockDepths" then door = pin end
+	end
+	check(door and #door.instances == 3 and door._position[1] == 0.328 and door._position[2] == 0.888,
+		"and the mountain's door, its three dungeons', a little into the mountain beside it")
 	WorldMapFrame:Hide()
 
 	local LOWER = "Interface\\WorldMap\\MicroDungeon\\SearingGorge\\BlackrockMountain\\BlackrockMountain16_1"

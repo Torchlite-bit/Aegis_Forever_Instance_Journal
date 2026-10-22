@@ -1581,9 +1581,14 @@ function CavePinMethods:OnMouseEnter()
 	SetAreaLabel(self, subMap.name, IsBuilding(subMap) and L.BUILDING_LABEL or L.CAVE_LABEL)
 	GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
 	GameTooltip:SetText(subMap.name, 1, 1, 1)
-	-- Each dungeon it leads to, by name (the Scarlet Monastery's hall leads to four).
+	-- Each dungeon it leads to, by name (the Scarlet Monastery's hall leads to four), with those
+	-- further in, on another of its pictures (alsoLeadsTo: Blackrock Depths, below the ring).
 	local leadsTo = {}
 	for key in pairs(subMap.instances) do
+		local instance = ns.GetInstance(key)
+		if instance then leadsTo[#leadsTo + 1] = instance.name end
+	end
+	for _, key in ipairs(subMap.alsoLeadsTo or {}) do
 		local instance = ns.GetInstance(key)
 		if instance then leadsTo[#leadsTo + 1] = instance.name end
 	end
