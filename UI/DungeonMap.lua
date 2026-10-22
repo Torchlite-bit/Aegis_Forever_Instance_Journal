@@ -430,6 +430,29 @@ local function LevelName(name)
 	return L.SUBMAP_LEVELS and L.SUBMAP_LEVELS[name] or name
 end
 
+-- The floor menu's choices: an area's levels (Blackrock Mountain), or a dungeon's floors.
+local function FillFloorMenu(_, root)
+	local subMap = overlay.subMap
+	if subMap and subMap.levels then
+		for index, name in ipairs(subMap.levels) do
+			root:CreateRadio(LevelName(name),
+				function() return overlay.subMap and overlay.subMap.level == index end,
+				function() DungeonMap:ShowLevel(subMap, index) end)
+		end
+		return
+	end
+	local instance = overlay.instance
+	if not instance then return end
+	for index in ipairs(Floors(instance)) do
+		root:CreateRadio(FloorName(instance, index),
+			function() return overlay.floor == index end,
+			function()
+				chosenFloor[instance.key] = index
+				DungeonMap:Refresh()
+			end)
+	end
+end
+
 local function CreateFloorDropdown()
 	local ok, dropdown = pcall(CreateFrame, "DropdownButton", nil, Container(), "WowStyle1DropdownTemplate")
 	if not (ok and dropdown and dropdown.SetupMenu) then return nil end
@@ -442,30 +465,150 @@ local function CreateFloorDropdown()
 		dropdown:SetPoint("TOPLEFT", Container(), "TOPLEFT", 6, -6)
 	end
 	dropdown:SetFrameLevel(overlay:GetFrameLevel() + 100)
-	dropdown:SetupMenu(function(_, root)
-		-- An area below a zone with levels (Blackrock Mountain): each level's picture.
-		local subMap = overlay.subMap
-		if subMap and subMap.levels then
-			for index, name in ipairs(subMap.levels) do
-				root:CreateRadio(LevelName(name),
-					function() return overlay.subMap and overlay.subMap.level == index end,
-					function() DungeonMap:ShowLevel(subMap, index) end)
-			end
-			return
-		end
-		local instance = overlay.instance
-		if not instance then return end
-		for index in ipairs(Floors(instance)) do
-			root:CreateRadio(FloorName(instance, index),
-				function() return overlay.floor == index end,
-				function()
-					chosenFloor[instance.key] = index
-					DungeonMap:Refresh()
-				end)
-		end
-	end)
+	dropdown:SetupMenu(FillFloorMenu)
 	dropdown:Hide()
 	return dropdown
+end
+
+--[[
+	The floor menu as one more step of the world map's location bar, after the zone's ("World >
+	Eastern Kingdoms > Burning Steppes > Blackrock Spire"), its choices on the step's arrow, as the
+	bar's own steps have theirs. The step is a button of the bar's own template, but the journal's,
+	beside the bar's list of steps and never in it: the bar's menus clear every step after their
+	own, and the world map takes no taint from the journal this way (it only reads the bar, and
+	sets its own button and the zone step's look). The zone's step turns back into a link, as the
+	bar's earlier steps are, its click showing the zone's own map. Each time the bar lays itself
+	out again (NavBar_CheckLength, on a new map) or changes size, the step follows its last.
+	The bar counts only its own steps when it folds them into its overflow button, so the step
+	fits in the room they leave (counted as the bar counts, by their widths), its name cut short
+	(the whole of it on the mouse) when it must be; with too little room, the bar folded already,
+	or no bar, the menu stays beside the map pin button.
+]]
+local CRUMB_EXTRA = 53         -- a step's width beyond its text, with a menu arrow (NavBar_AddButton)
+local CRUMB_TIP = 21           -- the step's own arrow's tip, past its right edge (arrowUp)
+local CRUMB_MIN_TEXT = 40      -- less room for its name than this: the menu beside the pin button
+local crumb, menuText, menuMayBar, crumbZone
+local hookedSteps = setmetatable({}, { __mode = "k" })
+
+-- The map's location bar and its last step, the zone's.
+local function LocationBar()
+	local bar = WorldMapFrame and rawget(WorldMapFrame, "NavBar")
+	local steps = bar and rawget(bar, "navList")
+	return bar, steps and steps[#steps], steps
+end
+
+-- The zone's step clicked: known before its click is handled (PreClick), as handling it may lay
+-- the bar out again and hand its button to another step.
+local function ZoneStepClicked(self, button)
+	if self == crumbZone and menuText and button == "LeftButton" then Dismiss() end
+end
+
+-- The room the bar's shown steps leave after them, counted by their widths as the bar counts.
+local function RoomLeft(bar, steps)
+	local used = 0
+	for index, step in ipairs(steps) do
+		if step:IsShown() then
+			used = used + step:GetWidth()
+			if index < #steps then used = used + (step.xoffset or 0) end
+		end
+	end
+	return bar:GetWidth() - used - (steps[#steps].xoffset or 0) - CRUMB_TIP
+end
+
+-- The zone's step as the bar leaves its last: the current one, not a link.
+local function RestoreZoneStep()
+	local _, last = LocationBar()
+	if crumbZone and crumbZone == last then
+		crumbZone:Disable()
+		if crumbZone.selected then crumbZone.selected:Show() end
+	end
+	crumbZone = nil
+end
+
+local function MakeCrumb(bar)
+	local ok, step = pcall(CreateFrame, "Button", nil, bar, rawget(bar, "template") or "NavButtonTemplate")
+	if not (ok and step and step.text and step.MenuArrowButton and step.MenuArrowButton.SetupMenu) then return nil end
+	-- Not the template's own menu (NavButtonTemplate_OnShow): it would clear the bar's steps.
+	step:SetScript("OnShow", nil)
+	step.MenuArrowButton:SetupMenu(FillFloorMenu)
+	step.MenuArrowButton:Show()
+	-- The step the map is at, as the bar's last one is; a name cut short, whole on the mouse.
+	if step.selected then step.selected:Show() end
+	step:Disable()
+	if type(NavBar_ButtonOnEnter) == "function" then step:SetScript("OnEnter", NavBar_ButtonOnEnter) end
+	if type(NavBar_ButtonOnLeave) == "function" then step:SetScript("OnLeave", NavBar_ButtonOnLeave) end
+	return step
+end
+
+-- The step on the bar for menuText, if the bar has room for it: true when it shows.
+local function PlaceCrumb()
+	local bar, last, steps = LocationBar()
+	if not (menuText and last) then return false end
+	local overflow = rawget(bar, "overflowButton")
+	if overflow and overflow:IsShown() then return false end
+	crumb = crumb or MakeCrumb(bar)
+	if not crumb then return false end
+	crumb:SetText(menuText)
+	crumb.text:SetWidth(0)
+	local full = crumb.text:GetStringWidth()
+	local width = math.min(full, RoomLeft(bar, steps) - CRUMB_EXTRA)
+	if width < math.min(full, CRUMB_MIN_TEXT) then
+		crumb:Hide()
+		return false
+	end
+	crumb.text:SetWidth(width < full and width or 0)
+	crumb:SetWidth(width + CRUMB_EXTRA)
+	crumb:ClearAllPoints()
+	crumb:SetPoint("LEFT", last, "RIGHT", last.xoffset or 0, 0)
+	-- Under the zone's step, whose arrow's tip lies over it, as each step's does over the next.
+	crumb:SetFrameLevel(math.max(last:GetFrameLevel() - 1, bar:GetFrameLevel()))
+	if crumb.MenuArrowButton.GenerateMenu then crumb.MenuArrowButton:GenerateMenu() end
+	crumb:Show()
+	if crumbZone and crumbZone ~= last then RestoreZoneStep() end
+	last:Enable()
+	if last.selected then last.selected:Hide() end
+	if not hookedSteps[last] then
+		hookedSteps[last] = true
+		last:HookScript("PreClick", ZoneStepClicked)
+	end
+	crumbZone = last
+	return true
+end
+
+-- The floor menu where it fits: the bar's step, else beside the map pin button, else none.
+local function UpdateFloorMenu()
+	local menuOnBar = menuText ~= nil and menuMayBar and PlaceCrumb()
+	if not menuOnBar then
+		if crumb then crumb:Hide() end
+		RestoreZoneStep()
+	end
+	local dropdown = overlay and overlay.FloorDropdown
+	if not dropdown then return end
+	dropdown:SetShown(menuText ~= nil and not menuOnBar)
+	if menuText and not menuOnBar then
+		if dropdown.GenerateMenu then dropdown:GenerateMenu() end
+		if dropdown.SetText then dropdown:SetText(menuText) end
+	end
+end
+
+-- Follows the bar as it lays itself out again (a new map) or changes size (the map maximized).
+local barWatched
+local function WatchBar()
+	local bar = LocationBar()
+	if barWatched or not bar then return end
+	barWatched = true
+	hooksecurefunc("NavBar_CheckLength", function(laidOut)
+		if menuText and laidOut == (LocationBar()) then UpdateFloorMenu() end
+	end)
+	bar:HookScript("OnSizeChanged", function() if menuText then UpdateFloorMenu() end end)
+end
+
+-- The floor menu, with the current floor's name (or none: hidden); onBar false keeps it off the
+-- location bar (a dungeon shown over a zone not its own).
+local function ShowFloorMenu(text, onBar)
+	WatchBar()
+	menuText, menuMayBar = text, onBar ~= false
+	UpdateFloorMenu()
 end
 
 --[[
@@ -1044,14 +1187,7 @@ local function DrawSubMap(subMap)
 	for _, spot in ipairs(overlay.Transitions) do spot:Hide() end
 	overlay.Here:Hide()
 	-- Levels (Blackrock Mountain's): a menu of them, as a dungeon's floors have.
-	local dropdown = overlay.FloorDropdown
-	if dropdown then
-		dropdown:SetShown(subMap.levels ~= nil)
-		if subMap.levels then
-			if dropdown.GenerateMenu then dropdown:GenerateMenu() end
-			if dropdown.SetText then dropdown:SetText(LevelName(subMap.levels[subMap.level])) end
-		end
-	end
+	ShowFloorMenu(subMap.levels and LevelName(subMap.levels[subMap.level]) or nil)
 	-- Dungeons that share a door on the picture are one door, their names in order.
 	local spots = {}
 	for key, point in pairs(subMap.instances) do
@@ -1111,7 +1247,7 @@ local function UpdateOverlay()
 		if overlay then
 			overlay:Hide()
 			overlay.instance, overlay.subMap = nil, nil
-			if overlay.FloorDropdown then overlay.FloorDropdown:Hide() end
+			ShowFloorMenu(nil)
 			StopPlayerArrow()
 		end
 		return
@@ -1137,12 +1273,11 @@ local function UpdateOverlay()
 	overlay:Show()
 	TuckAfterDraw()
 
-	local dropdown = overlay.FloorDropdown
-	if dropdown then
-		dropdown:SetShown(#floors > 1)
-		if #floors > 1 and dropdown.GenerateMenu then dropdown:GenerateMenu() end
-		if #floors > 1 and dropdown.SetText then dropdown:SetText(FloorName(instance, index)) end
-	end
+	-- On the location bar only over the dungeon's own zone (where the journal opens it, if its door
+	-- is known), not after a zone it is not in.
+	local entrance = forced and forced.instance == instance and DungeonMap:Entrance(instance)
+	ShowFloorMenu(#floors > 1 and FloorName(instance, index) or nil,
+		not (forced and forced.instance == instance) or (entrance ~= nil and entrance.mapID == mapID))
 end
 
 ------------------------------------------------------------------------------------------
@@ -1159,15 +1294,16 @@ local zoneWatch = CreateFrame("Frame")
 zoneWatch:SetScript("OnEvent", function() UpdateOverlay() end)
 
 function ProviderMethods:OnShow()
-	dismissed, homeMapID = false, nil
 	ns.RegisterEvents(zoneWatch, unpack(ZONE_EVENTS))
 end
 
+-- What one opening of the map chose (a dungeon shown, the overlay put away, the map it opened on)
+-- ends as it closes: the client draws the map before it tells its providers it shows.
 function ProviderMethods:OnHide()
 	ns.UnregisterEvents(zoneWatch, unpack(ZONE_EVENTS))
-	forced, homeMapID = nil, nil
+	forced, dismissed, homeMapID = nil, false, nil
 	if overlay then overlay:Hide() end
-	if overlay and overlay.FloorDropdown then overlay.FloorDropdown:Hide() end
+	ShowFloorMenu(nil)
 	StopPlayerArrow()
 end
 
@@ -1759,7 +1895,12 @@ function DungeonMap:Show(instance, floorIndex)
 	local floor = floors[floorIndex or 1] or floors[1]
 	if self:IsNative(floor) then return OpenWorld(floor.uiMapID) end
 
-	if not WorldMapFrame:IsShown() and not OpenWorld(nil) then return false end
+	-- On the dungeon's own zone, where its door is known: the map's location bar then reads
+	-- "... > Silverpine Forest > The Courtyard", and putting the dungeon away shows its door.
+	local entrance = self:Entrance(instance)
+	if not (entrance and entrance.mapID and OpenWorld(entrance.mapID)) then
+		if not WorldMapFrame:IsShown() and not OpenWorld(nil) then return false end
+	end
 	chosenFloor[instance.key] = floorIndex or chosenFloor[instance.key]
 	forced = { instance = instance, mapID = WorldMapFrame:GetMapID(), floor = floorIndex or 1 }
 	dismissed = false
@@ -1770,6 +1911,11 @@ end
 -- The overlay's state, for the smoke test.
 function DungeonMap:Overlay()
 	return overlay
+end
+
+-- The floor menu's step on the map's location bar, once made.
+function DungeonMap:FloorStep()
+	return crumb
 end
 
 ------------------------------------------------------------------------------------------

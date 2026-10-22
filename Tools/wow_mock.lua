@@ -177,7 +177,14 @@ function Region:_RunScript(name, ...)
 	Mock.secure = false
 	return RestoreSecure(was, handler(self, ...))
 end
-function Region:Click(button) return self:_RunScript("OnClick", button or "LeftButton", false) end
+-- PreClick, then OnClick, then PostClick, as the client runs a button's click.
+function Region:Click(button)
+	button = button or "LeftButton"
+	self:_RunScript("PreClick", button, false)
+	local results = { self:_RunScript("OnClick", button, false) }
+	self:_RunScript("PostClick", button, false)
+	return unpack(results)
+end
 
 -- Events Forever keeps from addons: registering or unregistering one is a forbidden action (pcall does
 -- not catch it), noted in Mock.forbidden.
@@ -364,6 +371,17 @@ function CreateFrame(frameType, name, parent, template)
 		local close = CreateFrame("Button", name and name .. "CloseButton", frame)
 		close:SetScript("OnClick", function(self) HideUIPanel(self:GetParent()) end)
 		rawset(frame, "CloseButton", close)
+	end
+	if template == "NavButtonTemplate" then
+		-- A step of a location bar (Blizzard_FrameXML/Mainline/NavigationBar.xml): its text, the
+		-- current step's look (selected), and the dropdown arrow its menu opens on.
+		rawset(frame, "text", frame:CreateFontString(nil, "OVERLAY"))
+		rawset(frame, "selected", frame:CreateTexture(nil, "OVERLAY"))
+		frame.selected:Hide()
+		rawset(frame, "MenuArrowButton", CreateFrame("DropdownButton", nil, frame))
+		frame.MenuArrowButton:Hide()
+		frame:SetScript("OnShow", function() Mock.navButtonOnShow = (Mock.navButtonOnShow or 0) + 1 end)
+		function frame:SetText(text) self._text = text; self.text:SetText(text) end
 	end
 	if template == "MapLegendButtonTemplate" then
 		-- Retail's map legend entry (Blizzard_UIPanels_Game/Mainline/MapLegendFrame.lua): hovering
@@ -622,6 +640,106 @@ WorldMapFrame.ScrollContainer.Child = mapCanvas
 -- Forever's map pin button, in the canvas's top-left corner (Camelot/Blizzard_WorldMap.lua).
 WorldMapFrame.WorldMapTrackingPinButton = CreateFrame("Button", nil, WorldMapFrame.ScrollContainer)
 WorldMapFrame._providers, WorldMapFrame._pools = {}, {}
+-- The map's location bar ("World > Eastern Kingdoms > Burning Steppes"), modelled on Forever's
+-- NavBar (Blizzard_FrameXML/Mainline/NavigationBar.lua): a home step (the world map) and a step per
+-- map down to the one shown, each as wide as its text plus its menu arrow; the last the current
+-- one (selected, disabled), the others links. Laid out again for each map, the same list emptied
+-- in place and its freed buttons reused last first (NavBar_Reset, NavBar_AddButton); when the
+-- steps are wider than the bar (583 px, the windowed map's) less its buffer, the first are folded
+-- into the overflow button (NavBar_CheckLength). A link's click clears the steps after it, lays
+-- the bar out again, then opens its map (NavBar_ButtonOnClick).
+local navBar = CreateFrame("Frame", nil, WorldMapFrame)
+navBar.template, navBar.navList, navBar.freeButtons, navBar.widthBuffer = "NavButtonTemplate", {}, {}, 20
+navBar:SetFrameLevel(10)
+navBar:SetWidth(583)
+navBar.overflowButton = CreateFrame("Button", nil, navBar)
+navBar.overflowButton:SetWidth(44)
+navBar.overflowButton.xoffset = -18
+navBar.overflowButton:Hide()
+WorldMapFrame.NavBar = navBar
+function NavBar_CheckLength(bar)
+	local list = rawget(bar, "navList")
+	if not list then return end
+	local maxWidth, width, folded = bar:GetWidth() - bar.widthBuffer, 0, false
+	for index = #list, 1, -1 do
+		width = width + list[index]:GetWidth()
+		if width > maxWidth then
+			list[index]:Hide()
+			folded = true
+		else
+			list[index]:Show()
+		end
+	end
+	bar.overflowButton:SetShown(folded)
+	local previous = folded and bar.overflowButton or nil
+	for index, button in ipairs(list) do
+		if button:IsShown() then
+			if previous then button:SetPoint("LEFT", previous, "RIGHT", previous.xoffset or 0, 0) end
+			previous = button
+		end
+		button:SetFrameLevel(bar:GetFrameLevel() + #list - index + 1)
+		if index < #list then
+			button.selected:Hide()
+			button:Enable()
+		else
+			button.selected:Show()
+			button:Disable()
+		end
+	end
+end
+local function ClearTrailingSteps(bar, button)
+	for index = #bar.navList, 1, -1 do
+		if bar.navList[index] == button then break end
+		bar.navList[index]:Hide()
+		bar.freeButtons[#bar.freeButtons + 1] = bar.navList[index]
+		bar.navList[index] = nil
+	end
+	NavBar_CheckLength(bar)
+end
+local function NavStep(bar)
+	local button = table.remove(bar.freeButtons)
+	if button then return button end
+	-- Each gets its click once, when made.
+	button = CreateFrame("Button", nil, bar, "NavButtonTemplate")
+	button:SetScript("OnClick", function(step, mouse)
+		if mouse == "LeftButton" then
+			ClearTrailingSteps(bar, step)
+			WorldMapFrame:SetMapID(step.id)
+		end
+	end)
+	return button
+end
+function navBar:Refresh()
+	for index = 2, #self.navList do
+		self.navList[index]:Hide()
+		self.freeButtons[#self.freeButtons + 1] = self.navList[index]
+	end
+	for index = #self.navList, 2, -1 do self.navList[index] = nil end
+	local chain, mapID = {}, Mock.worldMapID
+	while mapID and Mock.maps[mapID] do
+		table.insert(chain, 1, mapID)
+		mapID = Mock.maps[mapID].parent
+	end
+	if chain[1] ~= 947 then table.insert(chain, 1, 947) end
+	for position, id in ipairs(chain) do
+		local button = self.navList[position]
+		if not button then
+			button = NavStep(self)
+			self.navList[position] = button
+		end
+		button:ClearAllPoints()
+		button:SetText(Mock.maps[id].name)
+		button.id = id
+		if position == 1 then
+			button.xoffset = -15
+			button:SetWidth(math.min(128, button.text:GetStringWidth() + 50))
+		else
+			button:SetWidth(button.text:GetStringWidth() + 53)
+		end
+		button:Show()
+	end
+	NavBar_CheckLength(self)
+end
 function WorldMapFrame:GetCanvas() return mapCanvas end
 function WorldMapFrame:GetMapID() return Mock.worldMapID end
 function WorldMapFrame:OnMapChanged() end
@@ -632,6 +750,8 @@ function WorldMapFrame:AddDataProvider(provider)
 end
 function WorldMapFrame:SetMapID(mapID)
 	Mock.worldMapID = mapID
+	local bar = rawget(self, "NavBar")
+	if bar then bar:Refresh() end
 	self:OnMapChanged()
 	for _, provider in ipairs(self._providers) do provider:OnMapChanged() end
 end
@@ -670,12 +790,16 @@ function WorldMapFrame:ActivePins(template)
 	end
 	return list
 end
+-- As the client opens it (WorldMapMixin:OnShow, MapCanvasMixin:OnShow): its map set and the
+-- location bar laid out, the data drawn, and only then each provider told the map shows.
 WorldMapFrame.Show = function(self)
 	local was = self._shown
 	Region.Show(self)
 	if not was then
-		for _, provider in ipairs(self._providers) do provider:OnShow() end
+		local bar = rawget(self, "NavBar")
+		if bar then bar:Refresh() end
 		for _, provider in ipairs(self._providers) do provider:RefreshAllData(true) end
+		for _, provider in ipairs(self._providers) do provider:OnShow() end
 	end
 end
 WorldMapFrame.Hide = function(self)
@@ -821,11 +945,16 @@ C_TaxiMap = {
 	end,
 }
 
--- Opens on the given map, or on the player's.
+-- Opens on the given map, or on the player's: set as the map shows (drawn once), or moved to it
+-- when the map is open already.
 function OpenWorldMap(mapID)
-	Mock.worldMapID = mapID or Mock.playerMapID or 947
+	local target = mapID or Mock.playerMapID or 947
+	if WorldMapFrame:IsShown() then
+		WorldMapFrame:SetMapID(target)
+		return
+	end
+	Mock.worldMapID = target
 	WorldMapFrame:Show()
-	WorldMapFrame:SetMapID(Mock.worldMapID)
 end
 function UnitIsDeadOrGhost() return Mock.ghost == true end
 function SetPortraitTextureFromCreatureDisplayID(texture, displayID) texture._portrait = displayID end
@@ -919,6 +1048,7 @@ Mock.maps = {
 	[1455] = { name = "Ironforge", mapType = 3, parent = 1415, continent = 0, left = 450, top = 700, width = 40, height = 30 },
 	[1416] = { name = "Alterac Mountains", mapType = 3, parent = 1415, continent = 0, left = 380, top = 560, width = 70, height = 60 },
 	[1420] = { name = "Tirisfal Glades", mapType = 3, parent = 1415, continent = 0, left = 300, top = 400, width = 90, height = 70 },
+	[1421] = { name = "Silverpine Forest", mapType = 3, parent = 1415, continent = 0, left = 280, top = 470, width = 80, height = 90 },
 	[1427] = { name = "Searing Gorge", mapType = 3, parent = 1415, continent = 0, left = 500, top = 900, width = 50, height = 50 },
 	[1428] = { name = "Burning Steppes", mapType = 3, parent = 1415, continent = 0, left = 500, top = 950, width = 60, height = 50 },
 	[1418] = { name = "Badlands", mapType = 3, parent = 1415, continent = 0, left = 560, top = 840, width = 80, height = 60 },

@@ -1908,13 +1908,28 @@ end
 
 -- Several floors: a floor menu, and the stairs between them
 do
+	-- Standing in Tirisfal, the journal opens Shadowfang Keep's map on its own zone, Silverpine
+	Mock.playerMapID = 1420
 	ns.Journal:OpenInstance(ns.GetInstance("ShadowfangKeep"))
 	tabs[1]:Click()
 	page.InstanceOverview.MapButton:Click()
-	local floorMenu = overlay.FloorDropdown
-	check(floorMenu:IsShown() and #floorMenu._menu.radios == 4 and floorMenu._menu.radios[1].isSelected(), "a menu of the four levels the site shows")
-	check(floorMenu._points[1][2] == WorldMapFrame.WorldMapTrackingPinButton and floorMenu._points[1][3] == "RIGHT",
-		"beside the map pin button, not under it")
+	local step, bar = ns.DungeonMap:FloorStep(), WorldMapFrame.NavBar
+	local trail = {}
+	for _, button in ipairs(bar.navList) do trail[#trail + 1] = button:GetText() end
+	trail[#trail + 1] = step:GetText()
+	check(Mock.worldMapID == 1421 and table.concat(trail, " > ") == "Azeroth > Eastern Kingdoms > Silverpine Forest > The Courtyard",
+		"a dungeon's map opens on its own zone, which the location bar names: " .. table.concat(trail, " > "))
+	local zone = bar.navList[#bar.navList]
+	local floorMenu = step.MenuArrowButton
+	check(step:IsShown() and step:GetText() == "The Courtyard" and not overlay.FloorDropdown:IsShown() and floorMenu:IsShown()
+		and #floorMenu._menu.radios == 4 and floorMenu._menu.radios[1].isSelected(),
+		"a menu of the four levels the site shows, as one more step of the map's location bar, on its arrow")
+	check(step._points[1][2] == zone and step._points[1][3] == "RIGHT" and step:GetFrameLevel() < zone:GetFrameLevel()
+		and step.selected:IsShown() and not step:IsEnabled() and zone:IsEnabled() and not zone.selected:IsShown()
+		and step:GetScript("OnShow") == nil, "after the zone's step, under its arrow: the current step, the zone's a link again")
+	local ownSteps = 0
+	for _, button in ipairs(bar.navList) do if button == step then ownSteps = ownSteps + 1 end end
+	check(ownSteps == 0, "beside the bar's own list of steps, never in it")
 	local levelNames = {}
 	for _, radio in ipairs(floorMenu._menu.radios) do levelNames[#levelNames + 1] = radio.text end
 	check(table.concat(levelNames, ", ") == "The Courtyard, Dining Hall, The Wall Walk, Arugal's Chamber",
@@ -1929,7 +1944,8 @@ do
 	for _, spot in ipairs(shown(overlay.Transitions)) do courtyardWays[#courtyardWays + 1] = spot.to end
 	check(table.concat(courtyardWays, ",") == "3", "the courtyard's way up to the wall walk, moved to the new floors: " .. table.concat(courtyardWays, ","))
 	shown(overlay.Transitions)[1]:Click()
-	check(overlay.floor == 3 and floorMenu._menu.radios[3].isSelected(), "the stairs go up a level")
+	check(overlay.floor == 3 and floorMenu._menu.radios[3].isSelected() and step:GetText() == "The Wall Walk",
+		"the stairs go up a level, the step named for it")
 	local wallWalkWays = {}
 	for _, spot in ipairs(shown(overlay.Transitions)) do wallWalkWays[#wallWalkWays + 1] = spot.to end
 	check(table.concat(wallWalkWays, ",") == "4", "and on up to Arugal: " .. table.concat(wallWalkWays, ","))
@@ -1944,8 +1960,39 @@ do
 	table.sort(topBosses)
 	check(overlay.floor == 4 and table.concat(topBosses, ", ") == "Archmage Arugal, Arugal's Voidwalker, Fenrus the Devourer, Wolf Master Nandos",
 		"the top level's bosses: " .. table.concat(topBosses, ", "))
+	-- The bar laid out again (a map shown anew): the step follows its last
+	bar:Refresh()
+	zone = bar.navList[#bar.navList]
+	check(step:IsShown() and step._points[1][2] == zone and zone:IsEnabled(), "laid out again, the bar keeps the step after its zone")
+	-- The zone's step, a link: its own map, without the dungeon's
+	zone:Click("LeftButton")
+	zone = bar.navList[#bar.navList] -- the bar laid out again may have given its button to another step
+	check(not overlay:IsShown() and not step:IsShown() and not zone:IsEnabled() and zone.selected:IsShown()
+		and zone:GetText() == "Silverpine Forest", "a click on the zone's step shows the zone's own map, the zone the current step again")
+	page.InstanceOverview.MapButton:Click()
+	check(step:IsShown(), "and the dungeon's map brings the step back")
 	WorldMapFrame:Hide()
-	check(not floorMenu:IsShown(), "the floor menu goes with the map")
+	check(not step:IsShown() and not overlay.FloorDropdown:IsShown(), "the floor menu goes with the map")
+	-- A map with no location bar: the menu beside the map pin button instead
+	local navBar = WorldMapFrame.NavBar
+	WorldMapFrame.NavBar = nil
+	page.InstanceOverview.MapButton:Click()
+	check(overlay.FloorDropdown:IsShown() and not step:IsShown() and #overlay.FloorDropdown._menu.radios == 4
+		and overlay.FloorDropdown._points[1][2] == WorldMapFrame.WorldMapTrackingPinButton and overlay.FloorDropdown._points[1][3] == "RIGHT",
+		"with no location bar, the menu beside the map pin button, not under it")
+	WorldMapFrame:Hide()
+	WorldMapFrame.NavBar = navBar
+	-- A dungeon with no known door, shown over the player's own zone: not a step after a zone it is
+	-- not in, the menu beside the map pin button
+	local keep = ns.GetInstance("ShadowfangKeep")
+	local door = keep.zoneEntrance
+	keep.zoneEntrance = nil
+	page.InstanceOverview.MapButton:Click()
+	check(Mock.worldMapID == 1420 and overlay:IsShown() and not step:IsShown() and overlay.FloorDropdown:IsShown(),
+		"no door known: the map on the player's zone, the floor menu off its location bar")
+	WorldMapFrame:Hide()
+	keep.zoneEntrance = door
+	Mock.playerMapID = nil
 end
 
 -- The journal's quests on the maps: a "!" where each starts, greyed while it cannot be taken
@@ -2204,7 +2251,7 @@ for _, pin in ipairs(doors) do
 	if pin.instance.key == "TheDeadmines" then deadminesDoor = pin end
 end
 table.sort(doorNames)
-check(table.concat(doorNames, ",") == "BlackrockDepths,CityOfDalaran,HallOfThanes,RuinsOfLordaeron,ScarletMonasteryGraveyard,TheDeadmines,"
+check(table.concat(doorNames, ",") == "BlackrockDepths,CityOfDalaran,HallOfThanes,RuinsOfLordaeron,ScarletMonasteryGraveyard,ShadowfangKeep,TheDeadmines,"
 	.. "TheStockade,Uldaman",
 	"the continent shows the doors of its zones: " .. table.concat(doorNames, ","))
 check(deadminesDoor._position[1] == 0.4069 and deadminesDoor._position[2] == 0.7958, "on the continent where it was read")
@@ -2379,7 +2426,9 @@ do
 		check(cave:IsShown() and cave.subMap and cave.subMap.key == case[3] and tile and tile:IsShown()
 			and tile:GetTexture() == TILES .. case[4] and cave.Doors[1]:IsShown() and cave.Doors[1].instance.key == "Maraudon"
 			and cave.PlayerPin:IsShown(), case[5] .. ": the " .. case[3] .. " map, its portal and the player")
-		check(not (cave.FloorDropdown and cave.FloorDropdown:IsShown()), "no level menu for a cave of one level")
+		local step = DungeonMap:FloorStep()
+		check(not (cave.FloorDropdown and cave.FloorDropdown:IsShown()) and not (step and step:IsShown()),
+			"no level menu for a cave of one level")
 		if case[3] == "MaraudonPurple" and case[1] == 0.3835 then
 			local px = (0.3835 - 0.377763) / (0.392981 - 0.377763)
 			check(math.abs(cave.PlayerPin._points[1][4] - px * cave.Art._width) < 1e-3, "the player where they stand on it")
@@ -2523,23 +2572,77 @@ do
 	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1428, 0.2915, 0.2233, "The Molten Span"
 	OpenWorldMap()
 	local view = DungeonMap:Overlay()
-	local levels = view.FloorDropdown
-	check(view.subMap.key == "BlackrockMountain" and levels:IsShown() and #levels._menu.radios == 2
+	local levelStep = DungeonMap:FloorStep()
+	local levels = levelStep.MenuArrowButton
+	local steps = {}
+	for _, button in ipairs(WorldMapFrame.NavBar.navList) do steps[#steps + 1] = button:GetText() end
+	steps[#steps + 1] = levelStep:GetText()
+	check(view.subMap.key == "BlackrockMountain" and levelStep:IsShown() and #levels._menu.radios == 2
 		and levels._menu.radios[1].text == "Blackrock Spire" and levels._menu.radios[2].text == "Blackrock Depths"
-		and levels._menu.radios[1].isSelected() and levels:GetText() == "Blackrock Spire",
-		"on the ring: a menu of the mountain's two levels, the ring's chosen")
+		and levels._menu.radios[1].isSelected() and table.concat(steps, " > ") == "Azeroth > Eastern Kingdoms > Burning Steppes > Blackrock Spire",
+		"on the ring: the location bar ends in the level, its arrow a menu of the mountain's two: " .. table.concat(steps, " > "))
 	levels._menu.radios[2].setSelected()
 	view = DungeonMap:Overlay()
-	check(view:IsShown() and view.subMap.key == "BlackrockDepthsApproachSteppes" and view.FloorDropdown._menu.radios[2].isSelected()
-		and view.Doors[1].instance.key == "BlackrockDepths" and not view.PlayerPin:IsShown(),
+	check(view:IsShown() and view.subMap.key == "BlackrockDepthsApproachSteppes" and levels._menu.radios[2].isSelected()
+		and levelStep:GetText() == "Blackrock Depths" and view.Doors[1].instance.key == "BlackrockDepths" and not view.PlayerPin:IsShown(),
 		"Blackrock Depths chosen: the way down's picture on Burning Steppes, its door, no arrow (the player is above)")
-	view.FloorDropdown._menu.radios[1].setSelected()
+	levels._menu.radios[1].setSelected()
 	view = DungeonMap:Overlay()
 	check(view.subMap.key == "BlackrockMountain" and view.PlayerPin:IsShown(), "and back to the ring, the player on it")
+	-- Put away with a right click: Burning Steppes the current step again
+	local barSteps = WorldMapFrame.NavBar.navList
+	view.Doors[1]:Click("RightButton")
+	check(not view:IsShown() and not levelStep:IsShown() and not barSteps[#barSteps]:IsEnabled()
+		and barSteps[#barSteps].selected:IsShown(), "put away: Burning Steppes the current step again")
+	WorldMapFrame:Hide()
+	OpenWorldMap()
+	check(levelStep:IsShown() and barSteps[#barSteps]:IsEnabled(), "back with the map")
+	-- The bar counts only its own steps: the level's fits in the room they leave, its name cut short
+	local bar = WorldMapFrame.NavBar
+	local function Room()
+		local used = 0
+		for index, button in ipairs(bar.navList) do
+			if button:IsShown() then used = used + button:GetWidth() + (index < #bar.navList and button.xoffset or 0) end
+		end
+		return bar:GetWidth() - used - 21
+	end
+	check(levelStep:GetWidth() <= Room() and levelStep.text:GetWidth() > 0
+		and levelStep.text:GetWidth() < levelStep.text:GetUnboundedStringWidth(),
+		"the level's step fits the bar, its name cut short where it must be")
+	-- Too narrow a bar (the map made smaller): the menu beside the pin button, the zone current again
+	bar:SetWidth(470)
+	bar:_RunScript("OnSizeChanged")
+	check(not levelStep:IsShown() and view.FloorDropdown:IsShown() and view.FloorDropdown:GetText() == "Blackrock Spire"
+		and not barSteps[#barSteps]:IsEnabled() and barSteps[#barSteps].selected:IsShown(),
+		"no room left on the bar: the menu beside the map pin button, the zone the current step again")
+	bar:SetWidth(583)
+	bar:_RunScript("OnSizeChanged")
+	check(levelStep:IsShown() and not view.FloorDropdown:IsShown(), "room again: back on the bar")
+	-- The bar folding its own first step into its overflow button, its other steps leaving room
+	-- enough by their widths alone (the overflow button takes some too): the menu off the bar
+	bar:SetWidth(440)
+	bar:Refresh()
+	check(bar.overflowButton:IsShown() and not levelStep:IsShown() and view.FloorDropdown:IsShown(),
+		"the bar folded: the menu beside the map pin button")
+	bar:SetWidth(583)
+	bar:Refresh()
+	check(not bar.overflowButton:IsShown() and levelStep:IsShown(), "unfolded: back on the bar")
+	-- Eastern Kingdoms clicked: its map, without the cave's step; back down to Burning Steppes, back
+	barSteps[2]:Click("LeftButton")
+	check(Mock.worldMapID == 1415 and not levelStep:IsShown() and not view:IsShown()
+		and barSteps[#barSteps]:GetText() == "Eastern Kingdoms" and not barSteps[#barSteps]:IsEnabled(),
+		"a click on Eastern Kingdoms: its own map, the bar ending there")
+	WorldMapFrame:SetMapID(1428)
+	check(levelStep:IsShown() and DungeonMap:Overlay():IsShown(), "back on Burning Steppes, the ring and its step again")
+	-- Burning Steppes, the zone's step, clicked: the zone's own map (known before the bar lays
+	-- itself out again and reuses its buttons in another order)
+	barSteps[#barSteps]:Click("LeftButton")
+	check(not DungeonMap:Overlay():IsShown() and not levelStep:IsShown() and Mock.worldMapID == 1428,
+		"a click on Burning Steppes, the zone's step: Burning Steppes' own map")
 	WorldMapFrame:Hide()
 	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1427, 0.3485, 0.8583, "Blackrock Mountain"
 	OpenWorldMap()
-	DungeonMap:Overlay().FloorDropdown._menu.radios[2].setSelected()
+	DungeonMap:FloorStep().MenuArrowButton._menu.radios[2].setSelected()
 	check(DungeonMap:Overlay().subMap.key == "BlackrockDepthsApproach", "on Searing Gorge, the way down's picture placed there")
 	WorldMapFrame:Hide()
 	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone, Mock.indoors = nil, nil, nil, "", nil
