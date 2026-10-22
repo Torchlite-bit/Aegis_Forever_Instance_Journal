@@ -884,19 +884,38 @@ local function PlayerIndoors()
 	return inside == true or inside == 1
 end
 
+-- Two pictures over the same ground with the same area name (Maraudon's two caves): the one with
+-- claims (boxes on its own picture, { left, top, right, bottom }) takes the spots in them, the
+-- other the rest; outside the other's picture, it takes them all.
+local function Claims(subMap, px, py)
+	for _, box in ipairs(subMap.claims) do
+		if px >= box[1] and py >= box[2] and px <= box[3] and py <= box[4] then return true end
+	end
+	return false
+end
+
 local function PlayerSubMap(mapID)
 	local playerMap, x, y = ns.PlayerMapPosition()
 	local below
 	if x then
 		local ok, area = pcall(GetSubZoneText)
 		area = ok and ns.Readable(area) or nil
+		local claimed, yielding
 		for _, subMap in ipairs(ns.GetSubMaps()) do
-			if area and subMap.areas and subMap.parentMapID == playerMap and OnSubMap(subMap, x, y) and (ns.AreaIn(subMap.areas, area)
+			local px, py
+			if subMap.parentMapID == playerMap then px, py = OnSubMap(subMap, x, y) end
+			if area and subMap.areas and px and (ns.AreaIn(subMap.areas, area)
 				or (subMap == playerBelow and ns.AreaIn(subMap.sharedAreas, area))) and (not subMap.indoors or PlayerIndoors()) then
-				below = subMap
-				break
+				if not subMap.claims then
+					below = below or subMap
+				elseif Claims(subMap, px, py) then
+					claimed = claimed or subMap
+				else
+					yielding = yielding or subMap
+				end
 			end
 		end
+		below = claimed or below or yielding
 	elseif not playerMap then
 		local zone = ZoneName()
 		for _, subMap in ipairs(ns.GetSubMaps()) do

@@ -2222,8 +2222,8 @@ end
 do
 	local maraudon = ns.GetInstance("Maraudon")
 	local door = ns.DungeonMap:Entrance(maraudon)
-	check(door and door.mapID == 1443 and math.abs(door.x - (2918.4 - 2800) / 300) < 1e-6
-		and math.abs(door.y - (-1422.6 + 1600) / 400) < 1e-6, "Maraudon's door, from the world's coordinates onto Desolace")
+	check(door and door.mapID == 1443 and math.abs(door.x - (2617.57 - 2500) / 700) < 1e-6
+		and math.abs(door.y - (-1484.07 + 1700) / 700) < 1e-6, "Maraudon's door, from the world's coordinates onto Desolace")
 	WorldMapFrame:SetMapID(1443)
 	local onDesolace = WorldMapFrame:ActivePins("AegisJournalEntrancePinTemplate")
 	check(#onDesolace == 1 and onDesolace[1].instance.key == "Maraudon", "and shown there")
@@ -2345,6 +2345,51 @@ do
 	OpenWorldMap()
 	check(not DungeonMap:Overlay():IsShown(), "on the terrace outside, the Badlands' own map")
 	WorldMapFrame:Hide()
+	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = nil, nil, nil, ""
+end
+
+-- Maraudon's two caves: Blizzard's drawn maps of both, on Kalimdor, one way in on Desolace; where
+-- their pictures overlap, the orange shows but on the purple cave's own floor
+do
+	OpenWorldMap(1443)
+	local mouths = {}
+	for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalCavePinTemplate")) do
+		if pin.subMap.key:find("^Maraudon") then mouths[#mouths + 1] = pin end
+	end
+	check(#mouths == 1 and mouths[1].subMap.key == "MaraudonOrange" and mouths[1]._position[1] == 0.2886
+		and mouths[1]._position[2] == 0.6254, "one way in on Desolace, the shared mouth, the orange cave's")
+	mouths[1]:_RunScript("OnEnter")
+	check(GameTooltip._text == "Maraudon (Orange)", "named for its cave")
+	mouths[1]:_RunScript("OnLeave")
+	WorldMapFrame:Hide()
+	local TILES = "Interface\\WorldMap\\MicroDungeon\\Desolace\\MaraudonOutside\\MaraudonOutside"
+	for _, case in ipairs({
+		{ 0.39264, 0.58223, "MaraudonOrange", "21_1", "at the orange portal" },
+		{ 0.38600, 0.56992, "MaraudonPurple", "22_1", "at the purple portal" },
+		{ 0.3900, 0.5750, "MaraudonOrange", "21_1", "where the pictures overlap, off the purple floor" },
+		{ 0.3835, 0.5760, "MaraudonPurple", "22_1", "where they overlap, on the purple floor" },
+		{ 0.3860, 0.5795, "MaraudonPurple", "22_1", "on the purple floor's lower lobe" } }) do
+		Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1414, case[1], case[2], "Maraudon"
+		OpenWorldMap()
+		local cave = DungeonMap:Overlay()
+		local tile = cave.Art.Tiles and cave.Art.Tiles[1]
+		check(cave:IsShown() and cave.subMap and cave.subMap.key == case[3] and tile and tile:IsShown()
+			and tile:GetTexture() == TILES .. case[4] and cave.Doors[1]:IsShown() and cave.Doors[1].instance.key == "Maraudon"
+			and cave.PlayerPin:IsShown(), case[5] .. ": the " .. case[3] .. " map, its portal and the player")
+		if case[3] == "MaraudonPurple" and case[1] == 0.3835 then
+			local px = (0.3835 - 0.377763) / (0.392981 - 0.377763)
+			check(math.abs(cave.PlayerPin._points[1][4] - px * cave.Art._width) < 1e-3, "the player where they stand on it")
+		end
+		WorldMapFrame:Hide()
+	end
+	-- Out in the Valley of Spears above: Desolace's own map; and at the mouth, should the client
+	-- give the cave's rectangle on Kalimdor but the valley's name, not a cave's
+	for _, case in ipairs({ { 1443, 0.2886, 0.6254 }, { 1414, 0.3835, 0.5760 } }) do
+		Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = case[1], case[2], case[3], "Valley of Spears"
+		OpenWorldMap()
+		check(not DungeonMap:Overlay():IsShown(), "in the valley outside, on " .. case[1] .. ": not a cave's map")
+		WorldMapFrame:Hide()
+	end
 	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = nil, nil, nil, ""
 end
 

@@ -927,7 +927,7 @@ Mock.maps = {
 	[2521] = { name = "Zephras Isle", mapType = 3, parent = 947, continent = 2, left = 0, top = 0, width = 200, height = 200 },
 	-- Its world rectangle lies the other way round from a door's (x, y) as the game's data gives
 	-- them, so a door lands on it only with its axes swapped.
-	[1443] = { name = "Desolace", mapType = 3, parent = 1414, continent = 1, left = 2800, top = -1600, width = 300, height = 400 },
+	[1443] = { name = "Desolace", mapType = 3, parent = 1414, continent = 1, left = 2500, top = -1700, width = 700, height = 700 },
 }
 function CreateVector2D(x, y)
 	return { x = x, y = y, GetXY = function(self) return self.x, self.y end }

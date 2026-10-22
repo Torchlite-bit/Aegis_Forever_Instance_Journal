@@ -180,6 +180,53 @@ if ns.GetInstance("Uldaman") then
 end
 
 --[[
+	Maraudon's two caves in Desolace, the orange and the purple, on Blizzard's own drawn maps of
+	them (retail's microdungeon maps 67 and 68, the client's tiles). Both are one building of the
+	game's, whose area is Maraudon's own, not a part of Desolace, so the client reports a player
+	in them on Kalimdor (1414), as it does the Defias Hideout on the Eastern Kingdoms; every room
+	reads "Maraudon", a name no ground outside has. They share the mouth, in the orange cave's
+	shrine, so only it has the way in. Their pictures overlap where the caves meet: there the
+	orange one shows, but for the purple cave's own floor (claims, measured from the game's
+	floors: of the purple cave's 2-yard cells, 46 of 8,749 at the join under the mouth still show
+	the orange). Each has its portal, where the game's trigger for it is.
+]]
+local MARAUDON_TILES = "Interface\\WorldMap\\MicroDungeon\\Desolace\\MaraudonOutside\\MaraudonOutside"
+ns.AddSubMap({
+	key = "MaraudonOrange",
+	name = "Maraudon (Orange)",
+	parentMapID = 1414,
+	tiles = MARAUDON_TILES .. "21_",
+	way = { mapID = 1443, x = 0.2886, y = 0.6254 },
+	calibration = {
+		{ map = { 0.379923, 0.572689 }, picture = { 0, 0 } },
+		{ map = { 0.396228, 0.588994 }, picture = { 1, 1 } },
+	},
+	areas = { ["Maraudon"] = true },
+	instances = { Maraudon = { x = 0.7799, y = 0.5852 } },
+})
+ns.AddSubMap({
+	key = "MaraudonPurple",
+	name = "Maraudon (Purple)",
+	parentMapID = 1414,
+	tiles = MARAUDON_TILES .. "22_",
+	calibration = {
+		{ map = { 0.377763, 0.566262 }, picture = { 0, 0 } },
+		{ map = { 0.392981, 0.581480 }, picture = { 1, 1 } },
+	},
+	areas = { ["Maraudon"] = true },
+	claims = { { 0.20, 0.42, 0.60, 0.78 }, { 0.49, 0.78, 0.61, 0.95 } },
+	instances = { Maraudon = { x = 0.5412, y = 0.2401 } },
+})
+
+-- Its door on Desolace: the orange cave's portal (the game's trigger 3133), below the mouth.
+if ns.GetInstance("Maraudon") then
+	ns.AmendInstance("Maraudon", {
+		zoneEntrance = { mapID = 1443, world = { 1, -1484.07, 2617.57 } },
+		via = "MaraudonOrange",
+	})
+end
+
+--[[
 	The Scarlet Monastery's hall, where the doors of its four wings are. The picture
 	(Media/Maps/ScarletMonasteryHall) is Blizzard's map of the hall, drawn for the classic
 	monastery: retail's has only its two newer doors, so the passages to the Cathedral and the
