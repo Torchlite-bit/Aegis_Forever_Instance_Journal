@@ -2404,14 +2404,14 @@ do
 			gate = pin
 		end
 	end
-	check(gate and gate.subMap.key == "BlackrockMountain" and gate._position[1] == 0.2940 and gate._position[2] == 0.3829,
-		"the way in at the Burning Steppes gate")
+	check(gate and gate.subMap.key == "BlackrockMountain" and gate._position[1] == 0.2940 and gate._position[2] == 0.3829
+		and gate.Texture._atlas == "delves-regular", "the way in at the Burning Steppes gate, with the delve icon a building takes")
 	gate:_RunScript("OnEnter")
 	local leads = {}
 	for _, line in ipairs(GameTooltip._lines) do
 		if type(line) == "string" and line:find("^The way to ") then leads[#leads + 1] = line end
 	end
-	check(GameTooltip._text == "Blackrock Mountain"
+	check(GameTooltip._text == "Blackrock Mountain" and Mock.areaLabel and Mock.areaLabel.description == "Entrance"
 		and table.concat(leads, "|") == "The way to Lower Blackrock Spire|The way to Upper Blackrock Spire",
 		"its tooltip: the mountain, leading to the Spire's two dungeons: " .. table.concat(leads, "|"))
 	gate:_RunScript("OnLeave")

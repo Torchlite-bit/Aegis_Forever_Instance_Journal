@@ -244,9 +244,10 @@ end
 	Span. The doorway by the Molten Core's ledge, "Blackrock Mountain" too,
 	keeps a player come up from the Quarry below on the lower map; and the Depths' door, named
 	nothing at all (unnamed), keeps one come from the Masonary.
-	The way in shows at the Burning Steppes gate, where the player's /aegis where read 1428
-	(0.2940, 0.3829) as the minimap turned to the mountain (2026-10-21); at the Searing Gorge gate,
-	read there on 1427 (0.3485, 0.8583), is the mountain's door.
+	The way in, with a building's icon (the player's pick), shows at the Burning Steppes gate,
+	where the player's /aegis where read 1428 (0.2940, 0.3829) as the minimap turned to the
+	mountain (2026-10-21); at the Searing Gorge gate, read there on 1427 (0.3485, 0.8583), is the
+	mountain's door.
 ]]
 local BLACKROCK_LOWER_TILES = "Interface\\WorldMap\\MicroDungeon\\SearingGorge\\BlackrockMountain\\BlackrockMountain16_"
 local BLACKROCK_DEPTHS_DOOR = { BlackrockDepths = { x = 0.3922, y = 0.1766 } }
@@ -259,6 +260,7 @@ ns.AddSubMap({
 	key = "BlackrockMountain",
 	name = "Blackrock Mountain",
 	parentMapID = 1428,
+	icon = "building",
 	tiles = BLACKROCK_RING_TILES,
 	way = { mapID = 1428, x = 0.2940, y = 0.3829 },
 	calibration = {
