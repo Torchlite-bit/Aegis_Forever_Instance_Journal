@@ -425,6 +425,11 @@ local function Dismiss()
 	DungeonMap:Refresh()
 end
 
+-- A level's name, in the journal's language (its English, from retail's own level names, is the key).
+local function LevelName(name)
+	return L.SUBMAP_LEVELS and L.SUBMAP_LEVELS[name] or name
+end
+
 local function CreateFloorDropdown()
 	local ok, dropdown = pcall(CreateFrame, "DropdownButton", nil, Container(), "WowStyle1DropdownTemplate")
 	if not (ok and dropdown and dropdown.SetupMenu) then return nil end
@@ -438,6 +443,16 @@ local function CreateFloorDropdown()
 	end
 	dropdown:SetFrameLevel(overlay:GetFrameLevel() + 100)
 	dropdown:SetupMenu(function(_, root)
+		-- An area below a zone with levels (Blackrock Mountain): each level's picture.
+		local subMap = overlay.subMap
+		if subMap and subMap.levels then
+			for index, name in ipairs(subMap.levels) do
+				root:CreateRadio(LevelName(name),
+					function() return overlay.subMap and overlay.subMap.level == index end,
+					function() DungeonMap:ShowLevel(subMap, index) end)
+			end
+			return
+		end
 		local instance = overlay.instance
 		if not instance then return end
 		for index in ipairs(Floors(instance)) do
@@ -1006,6 +1021,10 @@ local function UpdatePlayerArrow()
 	local mapID, x, y = ns.PlayerMapPosition()
 	local px, py
 	if subMap.parentMapID and mapID == subMap.parentMapID and x then px, py = OnSubMap(subMap, x, y) end
+	-- Another level than the player's, chosen from the menu: they are not on it.
+	if px and subMap.levels and playerBelow and playerBelow.levels == subMap.levels and playerBelow.level ~= subMap.level then
+		px = nil
+	end
 	if not px then
 		pin:Hide()
 		return
@@ -1024,7 +1043,15 @@ local function DrawSubMap(subMap)
 	for _, pin in ipairs(overlay.Pins) do pin:Hide() end
 	for _, spot in ipairs(overlay.Transitions) do spot:Hide() end
 	overlay.Here:Hide()
-	if overlay.FloorDropdown then overlay.FloorDropdown:Hide() end
+	-- Levels (Blackrock Mountain's): a menu of them, as a dungeon's floors have.
+	local dropdown = overlay.FloorDropdown
+	if dropdown then
+		dropdown:SetShown(subMap.levels ~= nil)
+		if subMap.levels then
+			if dropdown.GenerateMenu then dropdown:GenerateMenu() end
+			if dropdown.SetText then dropdown:SetText(LevelName(subMap.levels[subMap.level])) end
+		end
+	end
 	-- Dungeons that share a door on the picture are one door, their names in order.
 	local spots = {}
 	for key, point in pairs(subMap.instances) do
@@ -1460,6 +1487,23 @@ function DungeonMap:ShowSubMap(subMap)
 	ns.PlaySoundKit("IG_QUEST_LOG_OPEN")
 	provider:RefreshAllData()
 	return true
+end
+
+-- Another level of an area below a zone, from its menu: that level's picture over the map shown,
+-- the one the client places on this zone where the level has one here.
+function DungeonMap:ShowLevel(subMap, index)
+	local mapID = WorldMapFrame:GetMapID()
+	local choice
+	for _, other in ipairs(ns.GetSubMaps()) do
+		if other.levels == subMap.levels and other.level == index then
+			if other.parentMapID == mapID then
+				choice = other
+				break
+			end
+			choice = choice or other
+		end
+	end
+	return choice ~= nil and self:ShowSubMap(choice)
 end
 
 -- The art at the atlas's size (32 when the client gives none), the pin no bigger than the icon in it.

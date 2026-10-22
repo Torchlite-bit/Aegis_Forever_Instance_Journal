@@ -2237,7 +2237,7 @@ doors = WorldMapFrame:ActivePins("AegisJournalEntrancePinTemplate")
 doors[1]:Click("RightButton")
 check(Mock.userWaypoint and Mock.userWaypoint.uiMapID == 1436 and Mock.userWaypoint.position.x == 0.4254
 	and Mock.superTracked, "right-click: the client's own waypoint, to the way down in Moonbrook")
-check(chatContains("Waypoint set to the way down into Defias Hideout, for The Deadmines."), "and says so")
+check(chatContains("Waypoint set to the entrance of Defias Hideout."), "and says so")
 local stockade = ns.GetInstance("TheStockade")
 check(ns.DungeonMap:SetWaypoint(stockade) and chatContains("Waypoint set to the entrance of The Stockade"),
 	"a door with no way down gets its waypoint at the door")
@@ -2256,8 +2256,8 @@ check(not WorldMapFrame:IsShown() and page:IsShown() and page.instance.key == "T
 OpenWorldMap(1436)
 local moonbrookCave = WorldMapFrame:ActivePins("AegisJournalCavePinTemplate")[1]
 check(moonbrookCave and moonbrookCave.subMap.key == "DeadminesApproach" and moonbrookCave._position[1] == 0.4254
-	and moonbrookCave._position[2] == 0.7176 and moonbrookCave.Texture._atlas == "CaveUnderground-Up",
-	"the cave entrance at the Moonbrook house's door, on Westfall's map")
+	and moonbrookCave._position[2] == 0.7176 and moonbrookCave.Texture._atlas == "delves-regular",
+	"the way in at the Moonbrook house's door, on Westfall's map, with the delve icon (the player's pick)")
 moonbrookCave:_RunScript("OnEnter")
 check(GameTooltip._text == "Defias Hideout" and GameTooltip:HasLine("The way to The Deadmines"), "its tooltip")
 moonbrookCave:_RunScript("OnLeave")
@@ -2266,7 +2266,7 @@ check(westfallDoor:GetWidth() == 22 and westfallDoor:GetHeight() == 22 and westf
 	and moonbrookCave:GetWidth() == 22 and moonbrookCave.Texture:GetWidth() == 32,
 	"a door or a cave answers the mouse over its icon only: the pin is the icon's size, the art keeps its own")
 westfallDoor:_RunScript("OnEnter")
-check(GameTooltip:HasLine("Its portal is below, in Defias Hideout: go down at the cave entrance."), "the Deadmines door points to it")
+check(GameTooltip:HasLine("Its portal is inside, in Defias Hideout: go in at the entrance."), "the Deadmines door points to it")
 westfallDoor:_RunScript("OnLeave")
 WorldMapFrame:SetMapID(1415)
 check(#WorldMapFrame:ActivePins("AegisJournalCavePinTemplate") == 0, "the cave shows on its zone, not the continent")
@@ -2362,6 +2362,9 @@ do
 	check(GameTooltip._text == "Maraudon (Orange)", "named for its cave")
 	mouths[1]:_RunScript("OnLeave")
 	WorldMapFrame:Hide()
+	check(ns.DungeonMap:SetWaypoint(ns.GetInstance("Maraudon")) and Mock.userWaypoint.uiMapID == 1443
+		and Mock.userWaypoint.position.x == 0.2886 and chatContains("Waypoint set to the way down into Maraudon (Orange), for Maraudon."),
+		"Maraudon's waypoint: to the way down, named so")
 	local TILES = "Interface\\WorldMap\\MicroDungeon\\Desolace\\MaraudonOutside\\MaraudonOutside"
 	for _, case in ipairs({
 		{ 0.39264, 0.58223, "MaraudonOrange", "21_1", "at the orange portal" },
@@ -2376,6 +2379,7 @@ do
 		check(cave:IsShown() and cave.subMap and cave.subMap.key == case[3] and tile and tile:IsShown()
 			and tile:GetTexture() == TILES .. case[4] and cave.Doors[1]:IsShown() and cave.Doors[1].instance.key == "Maraudon"
 			and cave.PlayerPin:IsShown(), case[5] .. ": the " .. case[3] .. " map, its portal and the player")
+		check(not (cave.FloorDropdown and cave.FloorDropdown:IsShown()), "no level menu for a cave of one level")
 		if case[3] == "MaraudonPurple" and case[1] == 0.3835 then
 			local px = (0.3835 - 0.377763) / (0.392981 - 0.377763)
 			check(math.abs(cave.PlayerPin._points[1][4] - px * cave.Art._width) < 1e-3, "the player where they stand on it")
@@ -2515,6 +2519,29 @@ do
 	key, lower = At(1427, 0.2755, 0.7238, "")
 	check(key == "BlackrockDepthsApproach" and lower.Doors[1].instance.key == "BlackrockDepths",
 		"at the Depths' door, named nothing, come from the Masonary: still the way down's map")
+	-- Its levels' menu, by retail's names: on the ring, the way down's picture a choice away, and back
+	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1428, 0.2915, 0.2233, "The Molten Span"
+	OpenWorldMap()
+	local view = DungeonMap:Overlay()
+	local levels = view.FloorDropdown
+	check(view.subMap.key == "BlackrockMountain" and levels:IsShown() and #levels._menu.radios == 2
+		and levels._menu.radios[1].text == "Blackrock Spire" and levels._menu.radios[2].text == "Blackrock Depths"
+		and levels._menu.radios[1].isSelected() and levels:GetText() == "Blackrock Spire",
+		"on the ring: a menu of the mountain's two levels, the ring's chosen")
+	levels._menu.radios[2].setSelected()
+	view = DungeonMap:Overlay()
+	check(view:IsShown() and view.subMap.key == "BlackrockDepthsApproachSteppes" and view.FloorDropdown._menu.radios[2].isSelected()
+		and view.Doors[1].instance.key == "BlackrockDepths" and not view.PlayerPin:IsShown(),
+		"Blackrock Depths chosen: the way down's picture on Burning Steppes, its door, no arrow (the player is above)")
+	view.FloorDropdown._menu.radios[1].setSelected()
+	view = DungeonMap:Overlay()
+	check(view.subMap.key == "BlackrockMountain" and view.PlayerPin:IsShown(), "and back to the ring, the player on it")
+	WorldMapFrame:Hide()
+	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1427, 0.3485, 0.8583, "Blackrock Mountain"
+	OpenWorldMap()
+	DungeonMap:Overlay().FloorDropdown._menu.radios[2].setSelected()
+	check(DungeonMap:Overlay().subMap.key == "BlackrockDepthsApproach", "on Searing Gorge, the way down's picture placed there")
+	WorldMapFrame:Hide()
 	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone, Mock.indoors = nil, nil, nil, "", nil
 end
 

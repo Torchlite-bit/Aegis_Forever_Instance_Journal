@@ -96,6 +96,12 @@ L.SUBMAP_NAMES = {
 	["OldIronforge"] = "Antigua Forjaz",
 }
 
+-- Levels of an area below a zone (its menu on the world map), by their English names.
+L.SUBMAP_LEVELS = {
+	["Blackrock Spire"] = "Cumbre de Roca Negra",
+	["Blackrock Depths"] = "Profundidades de Roca Negra",
+}
+
 L.BOSS_NAMES = {
 	["Agathelos the Raging"] = "Agathelos el Furioso",
 	["Aggem Thorncurse"] = "Aggem Malaespina",

@@ -57,6 +57,7 @@ ns.AddSubMap({
 	key = "DeadminesApproach",
 	name = "Defias Hideout",
 	parentMapID = 1415,
+	icon = "building",
 	art = "Interface\\AddOns\\Aegis_Forever_Instance_Journal\\Media\\Maps\\DeadminesApproach",
 	artRight = 1000 / 1024,
 	artBottom = 667 / 1024,
@@ -255,11 +256,15 @@ local BLACKROCK_SPIRE_DOOR = {
 	LowerBlackrockSpire = { x = 0.7894, y = 0.3308 },
 	UpperBlackrockSpire = { x = 0.7894, y = 0.3308 },
 }
+-- Its levels, by retail's own names for them (its menu, as a dungeon's floors have one).
+local BLACKROCK_LEVELS = { "Blackrock Spire", "Blackrock Depths" }
 local BLACKROCK_RING_TILES = "Interface\\WorldMap\\MicroDungeon\\SearingGorge\\BlackrockMountain\\BlackrockMountain14_"
 ns.AddSubMap({
 	key = "BlackrockMountain",
 	name = "Blackrock Mountain",
 	parentMapID = 1428,
+	levels = BLACKROCK_LEVELS,
+	level = 1,
 	icon = "building",
 	tiles = BLACKROCK_RING_TILES,
 	way = { mapID = 1428, x = 0.2940, y = 0.3829 },
@@ -276,6 +281,8 @@ ns.AddSubMap({
 	key = "BlackrockMountainGorge",
 	name = "Blackrock Mountain",
 	parentMapID = 1427,
+	levels = BLACKROCK_LEVELS,
+	level = 1,
 	icon = "building",
 	tiles = BLACKROCK_RING_TILES,
 	way = { mapID = 1427, x = 0.3485, y = 0.8583 },
@@ -298,6 +305,8 @@ ns.AddSubMap({
 	key = "BlackrockDepthsApproach",
 	name = "Blackrock Mountain",
 	parentMapID = 1427,
+	levels = BLACKROCK_LEVELS,
+	level = 2,
 	tiles = BLACKROCK_LOWER_TILES,
 	calibration = {
 		{ map = { 0.1365, 0.6633 }, picture = { 0, 0 } },
@@ -311,6 +320,8 @@ ns.AddSubMap({
 	key = "BlackrockDepthsApproachSteppes",
 	name = "Blackrock Mountain",
 	parentMapID = 1428,
+	levels = BLACKROCK_LEVELS,
+	level = 2,
 	tiles = BLACKROCK_LOWER_TILES,
 	calibration = {
 		{ map = { 0.1232, 0.0284 }, picture = { 0, 0 } },

@@ -554,6 +554,12 @@ L.SUBMAP_NAMES = {
 	DeeprunTram = "Подземный поезд",
 }
 
+-- Levels of an area below a zone (its menu on the world map), by their English names.
+L.SUBMAP_LEVELS = {
+	["Blackrock Spire"] = "Пик Черной горы",
+	["Blackrock Depths"] = "Глубины Черной горы",
+}
+
 L.FACTION_NAMES = {
 	[529] = "Серебряный Рассвет",
 	[2586] = "Торговая палата Азерота",
