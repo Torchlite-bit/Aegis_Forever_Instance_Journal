@@ -42,6 +42,12 @@ welcome, never required:
 [Ko-fi](https://ko-fi.com/sr433_20) or
 [PayPal](https://www.paypal.com/donate/?cmd=_donations&business=reyes.guevara.santiago@gmail.com&item_name=WoWMaps&currency_code=USD).
 
+## Torchlite's maps
+
+The maps Torchlite makes for the journal, each signed "Redrawn by Torchlite" in its lower right
+corner (`Media/Maps/ScarletMonasteryHall.tga` so far), are drawn over Blizzard's own map art.
+Torchlite's work in them is all rights reserved: see [LICENSE-MAPS.md](LICENSE-MAPS.md).
+
 ## Lionel Schramm's paintings
 
 The pictures of Onyxia's Lair and of the dungeons that have none of their own

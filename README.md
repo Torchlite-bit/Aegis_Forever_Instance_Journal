@@ -304,9 +304,15 @@ post to match.
 
 ## License
 
-The code is MIT. See [LICENSE](LICENSE). Santiago Reyes's maps are his and are
-not covered by it. World of Warcraft, its art and its game data are Blizzard
-Entertainment's; this addon is not made or endorsed by Blizzard.
+The code is MIT. See [LICENSE](LICENSE). The maps are not covered by it:
+
+- **Torchlite's maps**, each signed "Redrawn by Torchlite", are all rights reserved. They come
+  with the addon, but using them anywhere else needs Torchlite's permission. See
+  [LICENSE-MAPS.md](LICENSE-MAPS.md).
+- **Santiago Reyes's maps** are his, used with his permission. See [CREDITS.md](CREDITS.md).
+
+World of Warcraft, its art and its game data are Blizzard Entertainment's; this addon is not
+made or endorsed by Blizzard.
 
 ---
 

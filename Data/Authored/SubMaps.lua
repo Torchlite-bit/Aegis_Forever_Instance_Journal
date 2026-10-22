@@ -337,7 +337,9 @@ ns.AddSubMap({
 	(Media/Maps/ScarletMonasteryHall) is Blizzard's map of the hall, drawn for the classic
 	monastery: retail's has only its two newer doors, so the passages to the Cathedral and the
 	Armory are drawn back in and its door names left off (the journal names each wing's door
-	itself), with a sketch of a Scarlet crusader in the empty parchment. Where it lies comes from
+	itself), with sketches of a Scarlet crusader and the Ashbringer in the empty parchment, the
+	gold frame of Blizzard's classic Scarlet Monastery wing maps at its corners, and Torchlite's
+	signature (Dev/maps/ScarletMonasteryHall builds it; LICENSE-MAPS.md). Where it lies comes from
 	the game's data: retail's map region for the hall, read on Tirisfal and on the continent, and
 	the four doors are the game's own portals. The monastery is an area of its own, not under
 	Tirisfal, so the client may report a player in the hall on the Eastern Kingdoms (1415), as it
