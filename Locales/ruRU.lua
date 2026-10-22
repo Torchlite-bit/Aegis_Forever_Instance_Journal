@@ -550,6 +550,7 @@ L.SUBMAP_NAMES = {
 	BlackrockMountainGorge = "Черная гора",
 	BlackrockDepthsApproach = "Черная гора",
 	BlackrockDepthsApproachSteppes = "Черная гора",
+	DireMaulRuins = "Забытый Город",
 	ScarletMonasteryHall = "Монастырь Алого ордена",
 	ScarletMonasteryHallContinent = "Монастырь Алого ордена",
 	DeeprunTram = "Подземный поезд",

@@ -90,6 +90,7 @@ L.SUBMAP_NAMES = {
 	["BlackrockMountainGorge"] = "검은바위 산",
 	["BlackrockDepthsApproach"] = "검은바위 산",
 	["BlackrockDepthsApproachSteppes"] = "검은바위 산",
+	["DireMaulRuins"] = "혈투의 전장",
 	["ScarletMonasteryHall"] = "붉은십자군 수도원",
 	["ScarletMonasteryHallContinent"] = "붉은십자군 수도원",
 	["DeeprunTram"] = "깊은굴 지하철",

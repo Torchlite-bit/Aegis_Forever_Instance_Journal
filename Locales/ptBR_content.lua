@@ -90,6 +90,7 @@ L.SUBMAP_NAMES = {
 	["BlackrockMountainGorge"] = "Montanha Rocha Negra",
 	["BlackrockDepthsApproach"] = "Montanha Rocha Negra",
 	["BlackrockDepthsApproachSteppes"] = "Montanha Rocha Negra",
+	["DireMaulRuins"] = "Gládio Cruel",
 	["ScarletMonasteryHall"] = "Monastério Escarlate",
 	["ScarletMonasteryHallContinent"] = "Monastério Escarlate",
 	["DeeprunTram"] = "Metrô Correfundo",

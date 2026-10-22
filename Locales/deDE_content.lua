@@ -90,6 +90,7 @@ L.SUBMAP_NAMES = {
 	["BlackrockMountainGorge"] = "Der Schwarzfels",
 	["BlackrockDepthsApproach"] = "Der Schwarzfels",
 	["BlackrockDepthsApproachSteppes"] = "Der Schwarzfels",
+	["DireMaulRuins"] = "Düsterbruch",
 	["ScarletMonasteryHall"] = "Scharlachrotes Kloster",
 	["ScarletMonasteryHallContinent"] = "Scharlachrotes Kloster",
 	["DeeprunTram"] = "Die Tiefenbahn",

@@ -402,15 +402,58 @@ for _, key in ipairs({ "ScarletMonasteryGraveyard", "ScarletMonasteryLibrary", "
 end
 
 --[[
+	The ruins of Dire Maul in Feralas, outside the dungeon: the courtyard with its arena (The Maul),
+	Eldreth Row's hall and rooms south of it, and the doors of the three wings. The picture
+	(Media/Maps/DireMaulRuins) is the player's, Blizzard's drawn map of the ruins, 1000 x 667 at the
+	top left of a 1024 x 1024 texture (Dev/maps). Retail's map of it has no place in the world, so
+	where it lies comes from the game's data: Forever's model of the ruins fitted to the drawing at
+	one scale, 0.766 px a yard (the hall's pillars, the courtyard's walls, the arena, the south-east
+	tunnel), 1305 x 870 yards. The ruins stand on Feralas's ground and none of their rooms has an
+	area of its own, so the client reports a player there on Feralas (1444). The hall and the rooms
+	south of it read "Eldreth Row", the courtyard's paving and the passages up from the hall
+	"Eldre' Thalas", the arena "The Maul": names no ground outside has. The courtyard's grass, the
+	wings' doorways and the tunnels read nothing, like the Feralas ground around them, so they only
+	keep a player already on the picture (unnamed). The way in is the foot of the great stair, where
+	the road up the valley reaches the ruins, about 165 yards south of the picture. Each wing's door
+	is its swirl; the west wing has two doorways, so its one door sits between them. The east wing's
+	side door (the swirl at the end of the south-east tunnel) and its back door by Lariss Pavilion
+	get no icon.
+]]
+ns.AddSubMap({
+	key = "DireMaulRuins",
+	name = "Dire Maul",
+	parentMapID = 1444,
+	icon = "building",
+	art = "Interface\\AddOns\\Aegis_Forever_Instance_Journal\\Media\\Maps\\DireMaulRuins",
+	artRight = 1000 / 1024,
+	artBottom = 667 / 1024,
+	way = { mapID = 1444, x = 0.5913, y = 0.4475 },
+	calibration = {
+		{ map = { 0.495224, 0.223780 }, picture = { 0, 0 } },
+		{ map = { 0.683018, 0.411668 }, picture = { 1, 1 } },
+	},
+	areas = { ["Eldre' Thalas"] = true, ["Eldreth Row"] = true, ["The Maul"] = true },
+	unnamed = true,
+	instances = {
+		DireMaulNorth = { x = 0.7023, y = 0.1379 },
+		DireMaulEast = { x = 0.8160, y = 0.4074 },
+		DireMaulWest = { x = 0.5754, y = 0.4471 },
+	},
+})
+
+--[[
 	Dire Maul's three wings, each door over its own portal in the ruins on Feralas, where the
 	game's own triggers stand (classic's 3189 for the north wing, 3183 for the east, and 3186 and
 	3187 for the west wing's two doorways side by side: its door between them, as retail's later
-	single trigger 6369 has it). Their data had all three at one spot well south of the ruins.
+	single trigger 6369 has it). Their data had all three at one spot well south of the ruins. The
+	way to each is through the ruins: their waypoint goes to the foot of the great stair.
 ]]
 for key, world in pairs({
 	DireMaulNorth = { 1, -3519.95, 1089.93 },
 	DireMaulEast = { 1, -3759.69, 934.93 },
 	DireMaulWest = { 1, -3790.0, 1247.0 },
 }) do
-	if ns.GetInstance(key) then ns.AmendInstance(key, { zoneEntrance = { mapID = 1444, world = world } }) end
+	if ns.GetInstance(key) then
+		ns.AmendInstance(key, { zoneEntrance = { mapID = 1444, world = world }, via = "DireMaulRuins" })
+	end
 end

@@ -90,6 +90,7 @@ L.SUBMAP_NAMES = {
 	["BlackrockMountainGorge"] = "Mont Rochenoire",
 	["BlackrockDepthsApproach"] = "Mont Rochenoire",
 	["BlackrockDepthsApproachSteppes"] = "Mont Rochenoire",
+	["DireMaulRuins"] = "Hache-Tripes",
 	["ScarletMonasteryHall"] = "Monastère écarlate",
 	["ScarletMonasteryHallContinent"] = "Monastère écarlate",
 	["DeeprunTram"] = "Tram des profondeurs",

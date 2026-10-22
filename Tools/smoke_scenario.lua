@@ -2661,6 +2661,59 @@ do
 	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone, Mock.indoors = nil, nil, nil, "", nil
 end
 
+-- The ruins of Dire Maul on Feralas: the player's picture of Blizzard's drawn map, shown in the
+-- ruins' named streets, its doors the wings', the way in at the foot of the great stair
+do
+	OpenWorldMap(1444)
+	local stair
+	for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalCavePinTemplate")) do
+		if pin.subMap.key == "DireMaulRuins" then stair = pin end
+	end
+	check(stair and stair._position[1] == 0.5913 and stair._position[2] == 0.4475 and stair.Texture._atlas == "delves-regular",
+		"the way into the ruins at the foot of the great stair, with the delve icon")
+	local northDoor
+	for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalEntrancePinTemplate")) do
+		if pin.instance.key == "DireMaulNorth" then northDoor = pin end
+	end
+	northDoor:_RunScript("OnEnter")
+	check(GameTooltip:HasLine("Its portal is inside, in Dire Maul: go in at the entrance."), "a wing's door says the way is through the ruins")
+	northDoor:_RunScript("OnLeave")
+	WorldMapFrame:Hide()
+	check(ns.DungeonMap:SetWaypoint(ns.GetInstance("DireMaulNorth")) and Mock.userWaypoint.uiMapID == 1444
+		and Mock.userWaypoint.position.x == 0.5913 and Mock.userWaypoint.position.y == 0.4475, "and its waypoint goes to the stair")
+	local function At(x, y, area)
+		Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1444, x, y, area
+		OpenWorldMap()
+		local shown = DungeonMap:Overlay()
+		local key = shown:IsShown() and shown.subMap and shown.subMap.key or nil
+		return key, shown
+	end
+	-- Fresh on nameless ground, and on named Feralas ground inside the picture: Feralas' own map
+	check(At(0.6132, 0.2662, "") == nil, "nameless ground, not seen in the ruins: Feralas' map")
+	WorldMapFrame:Hide()
+	check(At(0.5200, 0.3000, "The Twin Colossals") == nil, "Feralas ground in the picture's rectangle: Feralas' map")
+	WorldMapFrame:Hide()
+	-- The hall, Eldreth Row: the picture, the wings' doors, the player where they stand
+	local key, ruins = At(0.5945, 0.3594, "Eldreth Row")
+	local doorKeys = {}
+	for _, door in ipairs(ruins.Doors) do if door:IsShown() then doorKeys[#doorKeys + 1] = door.instance.key end end
+	table.sort(doorKeys)
+	check(key == "DireMaulRuins" and ruins.Art.Picture:GetTexture():find("Media\\Maps\\DireMaulRuins", 1, true)
+		and math.abs(ruins.Art.Picture._texCoord[2] - 1000 / 1024) < 1e-9 and math.abs(ruins.Art.Picture._texCoord[4] - 667 / 1024) < 1e-9
+		and table.concat(doorKeys, ",") == "DireMaulEast,DireMaulNorth,DireMaulWest" and ruins.PlayerPin:IsShown()
+		and math.abs(ruins.PlayerPin._points[1][4] - (0.5945 - 0.495224) / (0.683018 - 0.495224) * ruins.Art._width) < 1e-3,
+		"in the hall: the ruins' picture, the three wings' doors, the player where they stand")
+	WorldMapFrame:Hide()
+	-- The courtyard's paving, then its nameless grass: kept; the arena
+	check(At(0.6441, 0.2878, "Eldre' Thalas") == "DireMaulRuins", "on the courtyard's paving")
+	WorldMapFrame:Hide()
+	check(At(0.6132, 0.2662, "") == "DireMaulRuins", "on its nameless grass, come from the paving: still the ruins")
+	WorldMapFrame:Hide()
+	check(At(0.6256, 0.2994, "The Maul") == "DireMaulRuins", "in the arena, the Maul")
+	WorldMapFrame:Hide()
+	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = nil, nil, nil, ""
+end
+
 -- The Scarlet Monastery's hall: Blizzard's map of it redrawn for its four wings, on Tirisfal or on
 -- the continent, whichever the client reports there
 do
