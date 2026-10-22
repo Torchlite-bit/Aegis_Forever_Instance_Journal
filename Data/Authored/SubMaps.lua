@@ -228,10 +228,11 @@ if ns.GetInstance("Maraudon") then
 end
 
 --[[
-	Inside Blackrock Mountain, on Blizzard's own drawn maps of it, the client's tiles: the ring level
-	(retail's map 33: the chained ring over the lava, Forgewright's Tomb, the Spire's corridors; its
-	labels still name retail's two Spire doors, where classic has one for both dungeons) and the
-	way down to Blackrock Depths (map 35). The game has no map of the mountain: the client reports
+	Inside Blackrock Mountain, on Blizzard's own drawn maps of it: the ring level (retail's map 33:
+	the chained ring over the lava, Forgewright's Tomb, the Spire's corridors), its labels for
+	retail's two Spire doors and the Lower one's swirl painted out (Media/Maps/BlackrockMountainRing:
+	classic has one door for both dungeons), and the way down to Blackrock Depths (map 35, the
+	client's tiles). The game has no map of the mountain: the client reports
 	a player in it on the zone of the ground below, Burning Steppes (1428) under most of it, Searing
 	Gorge (1427) under its gate's tunnel, the Masonary, the Depths' door and the Quarry's north end.
 	So the ring's picture is on both (only the tunnel on Searing Gorge's), the lower one too.
@@ -258,7 +259,8 @@ local BLACKROCK_SPIRE_DOOR = {
 }
 -- Its levels, by retail's own names for them (its menu, as a dungeon's floors have one).
 local BLACKROCK_LEVELS = { "Blackrock Spire", "Blackrock Depths" }
-local BLACKROCK_RING_TILES = "Interface\\WorldMap\\MicroDungeon\\SearingGorge\\BlackrockMountain\\BlackrockMountain14_"
+-- Retail's map 33 with its two Spire labels and its Lower Spire swirl painted out (Dev/maps).
+local BLACKROCK_RING_ART = "Interface\\AddOns\\Aegis_Forever_Instance_Journal\\Media\\Maps\\BlackrockMountainRing"
 ns.AddSubMap({
 	key = "BlackrockMountain",
 	name = "Blackrock Mountain",
@@ -266,7 +268,9 @@ ns.AddSubMap({
 	levels = BLACKROCK_LEVELS,
 	level = 1,
 	icon = "building",
-	tiles = BLACKROCK_RING_TILES,
+	art = BLACKROCK_RING_ART,
+	artRight = 1002 / 1024,
+	artBottom = 668 / 1024,
 	way = { mapID = 1428, x = 0.2940, y = 0.3829 },
 	calibration = {
 		{ map = { 0.1688, 0.1505 }, picture = { 0, 0 } },
@@ -284,7 +288,9 @@ ns.AddSubMap({
 	levels = BLACKROCK_LEVELS,
 	level = 1,
 	icon = "building",
-	tiles = BLACKROCK_RING_TILES,
+	art = BLACKROCK_RING_ART,
+	artRight = 1002 / 1024,
+	artBottom = 668 / 1024,
 	way = { mapID = 1427, x = 0.3485, y = 0.8583 },
 	calibration = {
 		{ map = { 0.1965, 0.8235 }, picture = { 0, 0 } },

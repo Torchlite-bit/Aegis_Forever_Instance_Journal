@@ -2511,9 +2511,8 @@ do
 	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1427, 0.3485, 0.8583, "Blackrock Mountain"
 	OpenWorldMap()
 	local shown = DungeonMap:Overlay()
-	local tile = shown.Art.Tiles and shown.Art.Tiles[1]
-	check(shown:IsShown() and shown.subMap and shown.subMap.key == "BlackrockMountainGorge" and tile and tile:IsShown()
-		and tile:GetTexture() == "Interface\\WorldMap\\MicroDungeon\\SearingGorge\\BlackrockMountain\\BlackrockMountain14_1"
+	check(shown:IsShown() and shown.subMap and shown.subMap.key == "BlackrockMountainGorge" and shown.Art.Picture:IsShown()
+		and shown.Art.Picture:GetTexture():find("Media\\Maps\\BlackrockMountainRing", 1, true)
 		and shown.Doors[1]:IsShown() and #shown.Doors[1].instances == 2 and shown.PlayerPin:IsShown(),
 		"in the Searing Gorge gate's tunnel: the ring's map, on Searing Gorge, with the Spire's door")
 	WorldMapFrame:Hide()
@@ -2527,9 +2526,8 @@ do
 		{ 0.2700, 0.2700, "Forgewright's Tomb", true } }) do
 		Mock.indoors = case[4]
 		local key, shown = At(1428, case[1], case[2], case[3])
-		local tile = shown.Art.Tiles and shown.Art.Tiles[1]
-		check(key == "BlackrockMountain" and tile and tile:IsShown()
-			and tile:GetTexture() == "Interface\\WorldMap\\MicroDungeon\\SearingGorge\\BlackrockMountain\\BlackrockMountain14_1",
+		check(key == "BlackrockMountain" and shown.Art.Picture:IsShown()
+			and shown.Art.Picture:GetTexture():find("Media\\Maps\\BlackrockMountainRing", 1, true),
 			"in " .. case[3] .. ": the ring level's map")
 	end
 	Mock.indoors = true
