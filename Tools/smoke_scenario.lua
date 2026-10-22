@@ -3662,6 +3662,23 @@ check(not f:IsShown(), "toggle closes it")
 	Mock.PressEscape()
 	check(not f:IsShown() and not character:IsShown() and next(Mock.slots) == nil and Clean(), "Escape shuts them all")
 
+	-- A window that widens as it shows, after the row is laid out (Forever's character sheet sets
+	-- its width in its OnShow): the journal moves past its full width at once
+	local widening = Mock.BlizzardPanel("MockWideningFrame", { area = "left", pushable = 3, whileDead = 1 }, 448)
+	widening:SetScript("OnShow", function(self)
+		self:SetAttribute("UIPanelLayout-defined", true)
+		self:SetAttribute("UIPanelLayout-area", "left")
+		self:SetAttribute("UIPanelLayout-pushable", 3)
+		self:SetAttribute("UIPanelLayout-whileDead", 1)
+		self:SetAttribute("UIPanelLayout-width", 713)
+	end)
+	AegisJournal_Toggle()
+	Mock.AsClient(ShowUIPanel, widening)
+	check(Mock.slots.left == widening and Mock.slots.center == f and X() == 761,
+		"a window widening as it shows: the journal past its full width, not its first: " .. tostring(X()))
+	Mock.PressEscape()
+	check(not f:IsShown() and Clean(), "and shut cleanly")
+
 	-- No room for two, at UI scale 1 on a wide screen
 	Mock.screen.width = 1365
 	AegisJournal_Toggle()

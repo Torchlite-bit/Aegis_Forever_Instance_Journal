@@ -373,6 +373,43 @@ local function Loosen(f)
 	Release(f)
 end
 
+-- A window's width as the manager counts it: its own attribute, else the game's list of its
+-- windows (only read), else its frame's (:100-109).
+local function PanelWidth(panel)
+	local width = panel:GetAttribute("UIPanelLayout-defined") and panel:GetAttribute("UIPanelLayout-width")
+	if type(width) ~= "number" and type(UIPanelWindows) == "table" then
+		local layout = UIPanelWindows[panel:GetName() or ""]
+		width = type(layout) == "table" and layout.width or nil
+	end
+	if type(width) ~= "number" then width = panel:GetWidth() end
+	return width * panel:GetScale()
+end
+
+--[[
+	A window that widens as it opens leaves the journal beside its narrower self, over it, until the
+	row is next laid out: Forever's character sheet sets its width as it shows, after the manager
+	placed the row (Camelot/CharacterFrame.lua: OnShow, RefreshRightPane, SetUIPanelAttribute, with
+	no new layout). So once one of the game's windows has opened, a journal second in the row is put
+	where the manager would put it now, past the window's present width. Only the journal moves; the
+	manager's next layout puts it in the same place.
+]]
+local function SettleInRow()
+	local f = frame
+	if not (f and docked and managed and not loose and f:IsShown()) then return end
+	local left = Slot("left")
+	if Slot("center") ~= f or not left or left == f or not left:IsShown() then return end
+	local x = LayoutValue("LEFT_OFFSET") + PanelWidth(left) + LayoutValue("PANEl_SPACING_X")
+	local scale = f:GetScale()
+	local point, _, _, currentX = f:GetPoint(1)
+	if point == "TOPLEFT" and type(currentX) == "number" and math.abs(currentX * scale - x) < 1 then return end
+	f:ClearAllPoints()
+	f:SetPoint("TOPLEFT", UIParent, "TOPLEFT", x / scale, DockY(f) / scale)
+end
+
+if EventRegistry and EventRegistry.RegisterCallback then
+	EventRegistry:RegisterCallback("UIParentPanelManager.ShowUIPanel", SettleInRow, Journal)
+end
+
 -- Combat over: a slot it left in combat goes back to the manager (UIPANEL_SKIP_SHOWN_CHECK, :1131),
 -- one dragged loose in combat is let out of its slot, and a change of mode made in combat takes effect.
 dockEvents:SetScript("OnEvent", function(self)

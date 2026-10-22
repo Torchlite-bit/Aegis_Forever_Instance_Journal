@@ -1630,8 +1630,13 @@ local function Allowed()                                                        
 end
 function ShowUIPanel(frame)                                                       -- 871-903
 	if not frame or frame:IsShown() or not Allowed() then return end
-	if not Attr(frame, "area") then frame:Show() return end
-	Pass(ShowPanel, frame)
+	if not Attr(frame, "area") then
+		frame:Show()
+	else
+		Pass(ShowPanel, frame)
+	end
+	-- Told once it shows (872-876, 902).
+	if frame:IsShown() then EventRegistry:TriggerEvent("UIParentPanelManager.ShowUIPanel", frame) end
 end
 function HideUIPanel(frame, skipLayout, skipShownCheck)                           -- 905-936
 	if not frame or (not skipShownCheck and not frame:IsShown()) or not Allowed() then return end
