@@ -20,9 +20,11 @@ used.
 
 The maps of the Forever dungeons (The Hall of Thanes, Ruins of Lordaeron, Excavation Site:
 Wetlands and City of Dalaran) are Santiago Reyes's own reinterpretations, made for his project
-Atlas de Azeroth: Forever (`Media/Maps/*.tga`). They are not official World of Warcraft
-artwork, and he is not commercially or professionally affiliated with Blizzard. He lets them
-be used free of charge, on these terms, which the journal keeps:
+Atlas de Azeroth: Forever (`Media/Maps/HallOfThanes.tga`, `RuinsOfLordaeron.tga`,
+`ExcavationSiteWetlands.tga`, `CityOfDalaranCity.tga` and `CityOfDalaranSewers.tga`). They
+are not official World of Warcraft artwork, and he is not commercially or professionally
+affiliated with Blizzard. He lets them be used free of charge, on these terms, which the
+journal keeps:
 
 - His watermark (the project's name, the map's title and the year) stays on every map. The
   journal only resizes his pictures and converts them to the game's texture format: nothing is
@@ -63,11 +65,12 @@ content, the dungeons', raids' and factions' names, bosses, abilities, quests an
 [pull request #25](https://github.com/Torchlite-bit/Aegis_Forever_Instance_Journal/pull/25) and
 shows on a client set to Russian.
 
-## German, French and Chinese
+## Drafted translations
 
-The German, French, Simplified Chinese and Traditional Chinese translations
-(`Locales/deDE`, `frFR`, `zhCN`, `zhTW` and their `_content` files) were drafted with Claude AI
-and have not yet been checked by native speakers. Corrections are welcome, and so is anyone who
+The German, French, Spanish (Spain and Latin America), Brazilian Portuguese, Korean, Simplified
+Chinese and Traditional Chinese translations (`Locales/deDE`, `frFR`, `esES`, `esMX`, `ptBR`,
+`koKR`, `zhCN`, `zhTW` and their `_content` files) were drafted with Claude AI and have not yet
+been checked by native speakers. Corrections are welcome, and so is anyone who
 would like to take one of them on.
 
 ## Claude AI
