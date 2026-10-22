@@ -227,6 +227,68 @@ if ns.GetInstance("Maraudon") then
 end
 
 --[[
+	Inside Blackrock Mountain, on Blizzard's own drawn maps of it, the client's tiles: the ring level
+	(retail's map 33: the chained ring over the lava, Forgewright's Tomb, the Spire's corridors; its
+	labels still name retail's two Spire doors, where classic has one for both dungeons) and the
+	way down to Blackrock Depths (map 35). The game has no map of the mountain: the client reports a player in it on the
+	zone of the ground below, Burning Steppes (1428) under most of it, Searing Gorge (1427) under the
+	Masonary, the Depths' door and the Quarry's north end. So the lower picture is on both.
+	The ring's rooms read The Molten Span, Blackrock Spire or Forgewright's Tomb; the lower level's,
+	The Grinding Quarry or The Masonary. The Molten Span is one room of the game's that reaches down
+	to the Molten Core's ledge too: it shows the ring. The tunnels read "Blackrock Mountain", like
+	the ground outside both gates: no picture there, but the doorway by the Molten Core's ledge
+	keeps a player come up from the Quarry below; and the Depths' door, named nothing at all
+	(unnamed), keeps one come from the Masonary.
+	The way in shows at the Burning Steppes gate, where the player's /aegis where read 1428
+	(0.2940, 0.3829) as the minimap turned to the mountain (2026-10-21); at the Searing Gorge gate,
+	read there on 1427 (0.3485, 0.8583), is the mountain's door.
+]]
+local BLACKROCK_LOWER_TILES = "Interface\\WorldMap\\MicroDungeon\\SearingGorge\\BlackrockMountain\\BlackrockMountain16_"
+local BLACKROCK_DEPTHS_DOOR = { BlackrockDepths = { x = 0.3922, y = 0.1766 } }
+ns.AddSubMap({
+	key = "BlackrockMountain",
+	name = "Blackrock Mountain",
+	parentMapID = 1428,
+	tiles = "Interface\\WorldMap\\MicroDungeon\\SearingGorge\\BlackrockMountain\\BlackrockMountain14_",
+	way = { mapID = 1428, x = 0.2940, y = 0.3829 },
+	calibration = {
+		{ map = { 0.1688, 0.1505 }, picture = { 0, 0 } },
+		{ map = { 0.4121, 0.3938 }, picture = { 1, 1 } },
+	},
+	areas = { ["The Molten Span"] = true, ["Blackrock Spire"] = true, ["Forgewright's Tomb"] = true },
+	instances = {
+		LowerBlackrockSpire = { x = 0.7894, y = 0.3308 },
+		UpperBlackrockSpire = { x = 0.7894, y = 0.3308 },
+	},
+})
+ns.AddSubMap({
+	key = "BlackrockDepthsApproach",
+	name = "Blackrock Mountain",
+	parentMapID = 1427,
+	tiles = BLACKROCK_LOWER_TILES,
+	calibration = {
+		{ map = { 0.1365, 0.6633 }, picture = { 0, 0 } },
+		{ map = { 0.4771, 1.0039 }, picture = { 1, 1 } },
+	},
+	areas = { ["The Masonary"] = true, ["The Grinding Quarry"] = true },
+	unnamed = true,
+	instances = BLACKROCK_DEPTHS_DOOR,
+})
+ns.AddSubMap({
+	key = "BlackrockDepthsApproachSteppes",
+	name = "Blackrock Mountain",
+	parentMapID = 1428,
+	tiles = BLACKROCK_LOWER_TILES,
+	calibration = {
+		{ map = { 0.1232, 0.0284 }, picture = { 0, 0 } },
+		{ map = { 0.3826, 0.2879 }, picture = { 1, 1 } },
+	},
+	areas = { ["The Grinding Quarry"] = true },
+	sharedAreas = { ["Blackrock Mountain"] = true },
+	instances = BLACKROCK_DEPTHS_DOOR,
+})
+
+--[[
 	The Scarlet Monastery's hall, where the doors of its four wings are. The picture
 	(Media/Maps/ScarletMonasteryHall) is Blizzard's map of the hall, drawn for the classic
 	monastery: retail's has only its two newer doors, so the passages to the Cathedral and the

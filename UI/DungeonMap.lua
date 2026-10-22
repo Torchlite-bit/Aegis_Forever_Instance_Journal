@@ -873,7 +873,8 @@ end
 
 -- The area below `mapID` the player is in: inside its picture, in a spot the streets above
 -- do not name. Some spots below share a name with a street above (sharedAreas): once the
--- player has been seen below, those keep them there. Where the client gives no map at all
+-- player has been seen below, those keep them there, as a spot the client names nothing does
+-- for a picture marked unnamed (the door of Blackrock Depths). Where the client gives no map at all
 -- (the Deeprun Tram), the zone's name tells the place (zones), over any map.
 -- Indoors, as the client says (its minimap switches with it): a building's map (indoors = true)
 -- shows only inside it, the ground before its doors reading the same area name.
@@ -904,8 +905,9 @@ local function PlayerSubMap(mapID)
 		for _, subMap in ipairs(ns.GetSubMaps()) do
 			local px, py
 			if subMap.parentMapID == playerMap then px, py = OnSubMap(subMap, x, y) end
-			if area and subMap.areas and px and (ns.AreaIn(subMap.areas, area)
-				or (subMap == playerBelow and ns.AreaIn(subMap.sharedAreas, area))) and (not subMap.indoors or PlayerIndoors()) then
+			if area and subMap.areas and px and (ns.AreaIn(subMap.areas, area) or (subMap == playerBelow
+				and (ns.AreaIn(subMap.sharedAreas, area) or (subMap.unnamed and area == ""))))
+				and (not subMap.indoors or PlayerIndoors()) then
 				if not subMap.claims then
 					below = below or subMap
 				elseif Claims(subMap, px, py) then
@@ -942,16 +944,40 @@ local function SubMapDoor(index)
 		door.Texture:SetAtlas(DUNGEON_ATLAS)
 		door:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight", "ADD")
 		door:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+		-- One door to several dungeons (Lower and Upper Blackrock Spire): each by name, a left
+		-- click to choose from them, as on the zone maps.
 		door:SetScript("OnEnter", function(self)
 			GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-			GameTooltip:SetText(self.instance.name, 1, 1, 1)
-			GameTooltip:AddLine(EntranceDescription(self.instance), 1, 0.82, 0)
-			GameTooltip:AddLine(L.ENTRANCE_LEFT_CLICK, 0.1, 1, 0.1)
+			if #self.instances > 1 then
+				GameTooltip:SetText(DungeonMap.SharedDoorName(self.instances), 1, 1, 1)
+				for _, instance in ipairs(self.instances) do
+					local range = instance.levelMin and string.format(L.LEVEL_RANGE, instance.levelMin, instance.levelMax or instance.levelMin) or ""
+					GameTooltip:AddDoubleLine(instance.name, range, 1, 1, 1, 1, 0.82, 0)
+				end
+				GameTooltip:AddLine(L.ENTRANCE_CHOOSE_LEFT_CLICK, 0.1, 1, 0.1)
+			else
+				GameTooltip:SetText(self.instance.name, 1, 1, 1)
+				GameTooltip:AddLine(EntranceDescription(self.instance), 1, 0.82, 0)
+				GameTooltip:AddLine(L.ENTRANCE_LEFT_CLICK, 0.1, 1, 0.1)
+			end
 			GameTooltip:Show()
 		end)
 		door:SetScript("OnLeave", function() GameTooltip:Hide() end)
 		door:SetScript("OnClick", function(self, button)
-			if button == "RightButton" then Dismiss() else DungeonMap:OpenInstance(self.instance) end
+			local instances = self.instances
+			if button == "RightButton" then
+				Dismiss()
+			elseif #instances > 1 and MenuUtil and MenuUtil.CreateContextMenu then
+				GameTooltip:Hide()
+				MenuUtil.CreateContextMenu(self, function(_, root)
+					root:CreateTitle(DungeonMap.SharedDoorName(instances))
+					for _, instance in ipairs(instances) do
+						root:CreateButton(instance.name, function() DungeonMap:OpenInstance(instance) end)
+					end
+				end)
+			else
+				DungeonMap:OpenInstance(self.instance)
+			end
 		end)
 		overlay.Doors[index] = door
 	end
@@ -994,18 +1020,32 @@ local function DrawSubMap(subMap)
 	for _, spot in ipairs(overlay.Transitions) do spot:Hide() end
 	overlay.Here:Hide()
 	if overlay.FloorDropdown then overlay.FloorDropdown:Hide() end
-	local scale, count = PinScale(), 0
+	-- Dungeons that share a door on the picture are one door, their names in order.
+	local spots = {}
 	for key, point in pairs(subMap.instances) do
 		local instance = ns.GetInstance(key)
 		if instance then
-			count = count + 1
-			local door = SubMapDoor(count)
-			door.instance = instance
-			Place(door, point.x, point.y, scale)
-			door:Show()
+			local spot
+			for _, other in ipairs(spots) do
+				if other.x == point.x and other.y == point.y then spot = other end
+			end
+			if not spot then
+				spot = { x = point.x, y = point.y, instances = {} }
+				spots[#spots + 1] = spot
+			end
+			spot.instances[#spot.instances + 1] = instance
 		end
 	end
-	for extra = count + 1, #overlay.Doors do overlay.Doors[extra]:Hide() end
+	table.sort(spots, function(a, b) return a.x < b.x or (a.x == b.x and a.y < b.y) end)
+	local scale = PinScale()
+	for index, spot in ipairs(spots) do
+		table.sort(spot.instances, function(a, b) return a.name < b.name end)
+		local door = SubMapDoor(index)
+		door.instance, door.instances = spot.instances[1], spot.instances
+		Place(door, spot.x, spot.y, scale)
+		door:Show()
+	end
+	for extra = #spots + 1, #overlay.Doors do overlay.Doors[extra]:Hide() end
 	overlay:Show()
 	UpdatePlayerArrow()
 	if not overlay.playerTicker and C_Timer.NewTicker then
