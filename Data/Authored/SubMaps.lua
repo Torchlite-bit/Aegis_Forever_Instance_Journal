@@ -158,13 +158,17 @@ end
 	reports the Defias Hideout; it is set up on Tirisfal (1420) too. In game (2026-10-21) the
 	client reports Tirisfal there, the steps and the way in reading "Terrace of Repose" (a Tirisfal
 	area, 161, as is "Whispering Gardens", 160, beside it); the hall may read "Scarlet Monastery",
-	its vestibule "The Grand Vestibule". The building's way in is marked on Tirisfal where the
+	its vestibule "The Grand Vestibule". The ground before the gate reads "Terrace of Repose" too,
+	so the map shows only indoors, as the minimap switches to the building's: from the stair
+	corridor in (the player's readings: outdoors at the gate, indoors at 0.8371, 0.3221). The building's way in is marked on Tirisfal where the
 	wings' shared door stood, and each wing's door moves to its own portal in the hall.
 ]]
 local SCARLET_HALL = {
 	name = "Scarlet Monastery",
 	-- A building's way in: retail's delve entrance, not the cave's.
 	icon = "building",
+	-- Shown inside only: the terrace before its gate has the same area name.
+	indoors = true,
 	art = "Interface\\AddOns\\Aegis_Forever_Instance_Journal\\Media\\Maps\\ScarletMonasteryHall",
 	artRight = 1002 / 1024,
 	artBottom = 668 / 1024,

@@ -849,6 +849,8 @@ function GetInstanceInfo()
 	return "Eastern Kingdoms", "none", 0, "", 0, 0, false, 0, 0, 0
 end
 function GetSubZoneText() return Mock.subzone end
+-- Indoors, as the client tells it (Mock.indoors); the minimap's zoom follows it (MINIMAP_UPDATE_ZOOM).
+function IsIndoors() return Mock.indoors == true end
 function GetRealZoneText() return Mock.instance and Mock.instance.name or "Ironforge" end
 -- The name the minimap shows: the area's, else the zone's.
 function GetMinimapZoneText()

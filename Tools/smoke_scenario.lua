@@ -2335,9 +2335,9 @@ do
 		"its tooltip: an entrance, leading to the four wings, by name: " .. table.concat(leads, "|"))
 	entrance:_RunScript("OnLeave")
 	WorldMapFrame:Hide()
-	-- The player's own readings at the way in (/aegis where, 2026-10-21), and the hall
-	for _, case in ipairs({ { 1420, 0.8237, 0.3276, "Terrace of Repose", "ScarletMonasteryHall" },
-		{ 1420, 0.8251, 0.3329, "Terrace of Repose", "ScarletMonasteryHall" },
+	-- Indoors, from the stair corridor in (the player's own reading there, /aegis where, 2026-10-21)
+	Mock.indoors = true
+	for _, case in ipairs({ { 1420, 0.8371, 0.3221, "Terrace of Repose", "ScarletMonasteryHall" },
 		{ 1420, 0.84, 0.31, "Whispering Gardens", "ScarletMonasteryHall" },
 		{ 1420, 0.84, 0.31, "Scarlet Monastery", "ScarletMonasteryHall" },
 		{ 1415, 0.4762, 0.1953, "The Grand Vestibule", "ScarletMonasteryHallContinent" } }) do
@@ -2355,7 +2355,29 @@ do
 			and hall.PlayerPin:IsShown(), "in the hall, on " .. case[1] .. ": its map with the four wings' doors: " .. table.concat(wings, ","))
 		WorldMapFrame:Hide()
 	end
-	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = nil, nil, nil, ""
+	-- Outdoors, on the terrace before the gate and the road beyond (the same area name): Tirisfal's
+	-- own map; the player's own readings
+	Mock.indoors = false
+	local outside = {}
+	for _, spot in ipairs({ { 0.8237, 0.3276 }, { 0.8251, 0.3329 }, { 0.822, 0.321 } }) do
+		Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1420, spot[1], spot[2], "Terrace of Repose"
+		OpenWorldMap()
+		if DungeonMap:Overlay():IsShown() then outside[#outside + 1] = spot[1] .. "," .. spot[2] end
+		WorldMapFrame:Hide()
+	end
+	check(#outside == 0, "outdoors before the gate, the same area name: Tirisfal's own map: " .. table.concat(outside, " "))
+	-- Stepping in and out with the map open: the hall's map comes and goes
+	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1420, 0.8371, 0.3221, "Terrace of Repose"
+	OpenWorldMap()
+	local before = DungeonMap:Overlay():IsShown()
+	Mock.indoors = true
+	Mock.Fire("MINIMAP_UPDATE_ZOOM")
+	local inside = DungeonMap:Overlay():IsShown() and DungeonMap:Overlay().subMap.key == "ScarletMonasteryHall"
+	Mock.indoors = false
+	Mock.Fire("MINIMAP_UPDATE_ZOOM")
+	check(not before and inside and not DungeonMap:Overlay():IsShown(), "stepping in with the map open shows the hall; stepping out, Tirisfal again")
+	WorldMapFrame:Hide()
+	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone, Mock.indoors = nil, nil, nil, "", nil
 end
 
 -- In combat the map still hands out the journal's pins: none of them asks the blocked call

@@ -875,6 +875,15 @@ end
 -- do not name. Some spots below share a name with a street above (sharedAreas): once the
 -- player has been seen below, those keep them there. Where the client gives no map at all
 -- (the Deeprun Tram), the zone's name tells the place (zones), over any map.
+-- Indoors, as the client says (its minimap switches with it): a building's map (indoors = true)
+-- shows only inside it, the ground before its doors reading the same area name.
+local function PlayerIndoors()
+	if type(IsIndoors) ~= "function" then return false end
+	local ok, inside = pcall(IsIndoors)
+	inside = ok and ns.Readable(inside)
+	return inside == true or inside == 1
+end
+
 local function PlayerSubMap(mapID)
 	local playerMap, x, y = ns.PlayerMapPosition()
 	local below
@@ -883,7 +892,7 @@ local function PlayerSubMap(mapID)
 		area = ok and ns.Readable(area) or nil
 		for _, subMap in ipairs(ns.GetSubMaps()) do
 			if area and subMap.areas and subMap.parentMapID == playerMap and OnSubMap(subMap, x, y) and (ns.AreaIn(subMap.areas, area)
-				or (subMap == playerBelow and ns.AreaIn(subMap.sharedAreas, area))) then
+				or (subMap == playerBelow and ns.AreaIn(subMap.sharedAreas, area))) and (not subMap.indoors or PlayerIndoors()) then
 				below = subMap
 				break
 			end
@@ -1052,7 +1061,8 @@ end
 local ProviderMethods = {}
 
 -- The area the player stands in matters only while the map is open: listen only then.
-local ZONE_EVENTS = { "ZONE_CHANGED", "ZONE_CHANGED_INDOORS", "ZONE_CHANGED_NEW_AREA" }
+-- MINIMAP_UPDATE_ZOOM: the player stepping indoors or out, as the minimap follows it.
+local ZONE_EVENTS = { "ZONE_CHANGED", "ZONE_CHANGED_INDOORS", "ZONE_CHANGED_NEW_AREA", "MINIMAP_UPDATE_ZOOM" }
 local zoneWatch = CreateFrame("Frame")
 -- Walking down into an area below the zone, or back up, changes what the map shows.
 zoneWatch:SetScript("OnEvent", function() UpdateOverlay() end)
@@ -1655,7 +1665,7 @@ end
 
 -- Being below a zone depends on the streets the player walked through, so inside a zone with
 -- an area below, its streets are followed even while the map is closed.
-local BELOW_EVENTS = { "ZONE_CHANGED", "ZONE_CHANGED_INDOORS" }
+local BELOW_EVENTS = { "ZONE_CHANGED", "ZONE_CHANGED_INDOORS", "MINIMAP_UPDATE_ZOOM" }
 local belowWatch = CreateFrame("Frame")
 belowWatch:SetScript("OnEvent", function() PlayerSubMap() end)
 
