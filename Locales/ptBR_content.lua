@@ -83,6 +83,7 @@ L.SUBMAP_NAMES = {
 	["DeadminesApproach"] = "Esconderijo Défias",
 	["WailingCavernsApproach"] = "Caverna Ululante",
 	["WailingCavernsApproachBarrens"] = "Caverna Ululante",
+	["UldamanApproach"] = "Uldaman",
 	["ScarletMonasteryHall"] = "Monastério Escarlate",
 	["ScarletMonasteryHallContinent"] = "Monastério Escarlate",
 	["DeeprunTram"] = "Metrô Correfundo",

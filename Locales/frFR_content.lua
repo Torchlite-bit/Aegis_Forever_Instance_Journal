@@ -83,6 +83,7 @@ L.SUBMAP_NAMES = {
 	["DeadminesApproach"] = "Planque des Défias",
 	["WailingCavernsApproach"] = "Cavernes des lamentations",
 	["WailingCavernsApproachBarrens"] = "Cavernes des lamentations",
+	["UldamanApproach"] = "Uldaman",
 	["ScarletMonasteryHall"] = "Monastère écarlate",
 	["ScarletMonasteryHallContinent"] = "Monastère écarlate",
 	["DeeprunTram"] = "Tram des profondeurs",

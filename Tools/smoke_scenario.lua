@@ -2205,7 +2205,7 @@ for _, pin in ipairs(doors) do
 end
 table.sort(doorNames)
 check(table.concat(doorNames, ",") == "BlackrockDepths,CityOfDalaran,HallOfThanes,RuinsOfLordaeron,ScarletMonasteryGraveyard,TheDeadmines,"
-	.. "TheStockade",
+	.. "TheStockade,Uldaman",
 	"the continent shows the doors of its zones: " .. table.concat(doorNames, ","))
 check(deadminesDoor._position[1] == 0.4069 and deadminesDoor._position[2] == 0.7958, "on the continent where it was read")
 WorldMapFrame:SetMapID(1414)
@@ -2309,6 +2309,41 @@ do
 	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1413, 0.4772, 0.3502, "Lushwater Oasis"
 	OpenWorldMap()
 	check(not DungeonMap:Overlay():IsShown(), "on the ground above the cave, the Barrens' own map")
+	WorldMapFrame:Hide()
+	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = nil, nil, nil, ""
+end
+
+-- Uldaman's dig: Blizzard's own drawn map of the excavation cave, from the client's tiles, on the Badlands
+do
+	OpenWorldMap(1418)
+	local mouth
+	for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalCavePinTemplate")) do
+		if pin.subMap.key == "UldamanApproach" then mouth = pin end
+	end
+	check(mouth and mouth._position[1] == 0.4445 and mouth._position[2] == 0.1216
+		and mouth.Texture._atlas ~= "delves-regular", "the dig's mouth on the Badlands, with the cave icon")
+	local door
+	for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalEntrancePinTemplate")) do
+		if pin.instance.key == "Uldaman" then door = pin end
+	end
+	check(door and door._position[1] == 0.3521 and door._position[2] == 0.1001, "Uldaman's door over its portal, deep in the dig")
+	WorldMapFrame:Hide()
+	for _, room in ipairs({ "Uldaman", "Excavation Center", "Dig One", "Hall of the Keepers", "North Common Hall",
+		"South Common Hall", "The Sealed Hall" }) do
+		Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1418, 0.40, 0.11, room
+		OpenWorldMap()
+		local cave = DungeonMap:Overlay()
+		local tile = cave.Art.Tiles and cave.Art.Tiles[1]
+		check(cave:IsShown() and cave.subMap and cave.subMap.key == "UldamanApproach" and tile and tile:IsShown()
+			and tile:GetTexture() == "Interface\\WorldMap\\MicroDungeon\\Badlands\\Uldaman\\Uldaman18_1"
+			and not cave.Art.Picture:IsShown() and cave.Doors[1]:IsShown() and cave.Doors[1].instance.key == "Uldaman"
+			and cave.PlayerPin:IsShown(), "in the dig, in " .. room .. ": Blizzard's drawn map of it, the portal and the player")
+		WorldMapFrame:Hide()
+	end
+	-- Out on the terrace before it: the Badlands' own map
+	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1418, 0.4445, 0.1216, "The Maker's Terrace"
+	OpenWorldMap()
+	check(not DungeonMap:Overlay():IsShown(), "on the terrace outside, the Badlands' own map")
 	WorldMapFrame:Hide()
 	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = nil, nil, nil, ""
 end

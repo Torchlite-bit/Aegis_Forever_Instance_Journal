@@ -147,6 +147,39 @@ if ns.GetInstance("WailingCaverns") then
 end
 
 --[[
+	Uldaman's dig: the excavation cave below the Badlands' northern cliffs that leads to the
+	dungeon, on Blizzard's own drawn map of it (retail's microdungeon map 16, the client's tiles, the
+	same cave in Forever's client). Its area is a subzone of the Badlands, so the client reports it
+	there (1418). Its rooms are named (Excavation Center, Dig One, the Hall of the Keepers, the North
+	and South Common Halls, The Sealed Hall), the rest reading "Uldaman"; no ground outside uses these
+	names (it reads The Maker's Terrace or the Badlands themselves). The way in is the cave's mouth;
+	the portal, the picture's swirl. The dungeon's back door, far to the east, is not on it.
+]]
+ns.AddSubMap({
+	key = "UldamanApproach",
+	name = "Uldaman",
+	parentMapID = 1418,
+	tiles = "Interface\\WorldMap\\MicroDungeon\\Badlands\\Uldaman\\Uldaman18_",
+	way = { mapID = 1418, x = 0.4445, y = 0.1216 },
+	calibration = {
+		{ map = { 0.269179, 0.039447 }, picture = { 0, 0 } },
+		{ map = { 0.495310, 0.265578 }, picture = { 1, 1 } },
+	},
+	areas = {
+		["Uldaman"] = true, ["Excavation Center"] = true, ["Dig One"] = true, ["Hall of the Keepers"] = true,
+		["North Common Hall"] = true, ["South Common Hall"] = true, ["The Sealed Hall"] = true,
+	},
+	instances = { Uldaman = { x = 0.3667, y = 0.2680 } },
+})
+
+if ns.GetInstance("Uldaman") then
+	ns.AmendInstance("Uldaman", {
+		zoneEntrance = { mapID = 1418, x = 0.3521, y = 0.1001 },
+		via = "UldamanApproach",
+	})
+end
+
+--[[
 	The Scarlet Monastery's hall, where the doors of its four wings are. The picture
 	(Media/Maps/ScarletMonasteryHall) is Blizzard's map of the hall, drawn for the classic
 	monastery: retail's has only its two newer doors, so the passages to the Cathedral and the

@@ -542,6 +542,7 @@ L.SUBMAP_NAMES = {
 	DeadminesApproach = "Убежище Братства Справедливости",
 	WailingCavernsApproach = "Пещеры Стенаний",
 	WailingCavernsApproachBarrens = "Пещеры Стенаний",
+	UldamanApproach = "Ульдаман",
 	ScarletMonasteryHall = "Монастырь Алого ордена",
 	ScarletMonasteryHallContinent = "Монастырь Алого ордена",
 	DeeprunTram = "Подземный поезд",
