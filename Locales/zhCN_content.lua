@@ -87,6 +87,7 @@ L.SUBMAP_NAMES = {
 	["MaraudonOrange"] = "玛拉顿（橙色）",
 	["MaraudonPurple"] = "玛拉顿（紫色）",
 	["BlackrockMountain"] = "黑石山",
+	["BlackrockMountainGorge"] = "黑石山",
 	["BlackrockDepthsApproach"] = "黑石山",
 	["BlackrockDepthsApproachSteppes"] = "黑石山",
 	["ScarletMonasteryHall"] = "血色修道院",

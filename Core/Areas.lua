@@ -51,6 +51,7 @@ function ns.AreaNamesUsed()
 	end
 	for _, subMap in ipairs(ns.GetSubMaps()) do
 		Keys(subMap.areas)
+		Keys(subMap.indoorAreas)
 		Keys(subMap.sharedAreas)
 		Keys(subMap.zones)
 	end

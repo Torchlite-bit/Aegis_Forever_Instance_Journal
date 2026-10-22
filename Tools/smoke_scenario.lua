@@ -2426,18 +2426,38 @@ do
 		WorldMapFrame:Hide()
 		return key, shown
 	end
-	-- Fresh outside either gate, and at the Depths' door unseen below: the zone's own map
+	-- Before the gates, outdoors, and at the Depths' door unseen below: the zone's own map
+	Mock.indoors = false
 	check(At(1428, 0.2940, 0.3829, "Blackrock Mountain") == nil and At(1427, 0.3485, 0.8583, "Blackrock Mountain") == nil
-		and At(1427, 0.2755, 0.7238, "") == nil, "outside the gates, and nameless ground, show the zone's own map")
-	-- The ring: the Molten Span, the Spire's door, the Tomb
-	for _, case in ipairs({ { 0.2915, 0.2233, "The Molten Span" }, { 0.3603, 0.2273, "Blackrock Spire" },
-		{ 0.2700, 0.2700, "Forgewright's Tomb" } }) do
+		and At(1427, 0.2755, 0.7238, "") == nil, "before the gates, and nameless ground, show the zone's own map")
+	-- Through either gate, indoors, the tunnels named like the ground outside: the ring's map, on
+	-- Searing Gorge for its gate's tunnel (the player's readings where the minimap turned)
+	Mock.indoors = true
+	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1427, 0.3485, 0.8583, "Blackrock Mountain"
+	OpenWorldMap()
+	local shown = DungeonMap:Overlay()
+	local tile = shown.Art.Tiles and shown.Art.Tiles[1]
+	check(shown:IsShown() and shown.subMap and shown.subMap.key == "BlackrockMountainGorge" and tile and tile:IsShown()
+		and tile:GetTexture() == "Interface\\WorldMap\\MicroDungeon\\SearingGorge\\BlackrockMountain\\BlackrockMountain14_1"
+		and shown.Doors[1]:IsShown() and #shown.Doors[1].instances == 2 and shown.PlayerPin:IsShown(),
+		"in the Searing Gorge gate's tunnel: the ring's map, on Searing Gorge, with the Spire's door")
+	WorldMapFrame:Hide()
+	local key
+	check(At(1428, 0.2940, 0.3829, "Blackrock Mountain") == "BlackrockMountain"
+		and At(1428, 0.2870, 0.3700, "Blackrock Mountain") == "BlackrockMountain", "in the Burning Steppes gate's tunnel: the ring's map")
+	-- The ring: the Molten Span (where the map used to turn), the Spire's door, the Tomb; its own names
+	-- count even should the client not call the cavern indoors
+	for _, case in ipairs({ { 0.2915, 0.2233, "The Molten Span", true }, { 0.2748, 0.2318, "The Molten Span", false },
+		{ 0.2796, 0.3509, "The Molten Span", true }, { 0.3603, 0.2273, "Blackrock Spire", false },
+		{ 0.2700, 0.2700, "Forgewright's Tomb", true } }) do
+		Mock.indoors = case[4]
 		local key, shown = At(1428, case[1], case[2], case[3])
 		local tile = shown.Art.Tiles and shown.Art.Tiles[1]
 		check(key == "BlackrockMountain" and tile and tile:IsShown()
 			and tile:GetTexture() == "Interface\\WorldMap\\MicroDungeon\\SearingGorge\\BlackrockMountain\\BlackrockMountain14_1",
 			"in " .. case[3] .. ": the ring level's map")
 	end
+	Mock.indoors = true
 	-- The Spire's one door for both of its dungeons: one icon, both names, a choice on a click
 	local _, ring = At(1428, 0.3603, 0.2273, "Blackrock Spire")
 	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1428, 0.3603, 0.2273, "Blackrock Spire"
@@ -2456,11 +2476,12 @@ do
 	check(Mock.contextMenu and Mock.contextMenu.title == "Blackrock Mountain" and #Mock.contextMenu.buttons == 2
 		and Mock.contextMenu.buttons[1].text == "Lower Blackrock Spire", "a left click offers both")
 	WorldMapFrame:Hide()
-	-- Down the chain to the Molten Core's ledge: still the ring (one room of the game's); through the
-	-- doorway from above, nothing; into the Quarry, the lower map
+	-- Down the chain to the Molten Core's ledge: still the ring (one room of the game's), and through
+	-- the doorway from above; into the Quarry, the lower map
 	check(At(1428, 0.2626, 0.2457, "The Molten Span") == "BlackrockMountain", "on the ledge by the Molten Core: the ring's map")
-	check(At(1428, 0.2600, 0.2500, "Blackrock Mountain") == nil, "the doorway, come from the ring: no map")
-	local key, lower = At(1428, 0.2500, 0.2000, "The Grinding Quarry")
+	check(At(1428, 0.2600, 0.2500, "Blackrock Mountain") == "BlackrockMountain", "the doorway, come from the ring: the ring's map")
+	local lower
+	key, lower = At(1428, 0.2500, 0.2000, "The Grinding Quarry")
 	local tile = lower.Art.Tiles and lower.Art.Tiles[1]
 	check(key == "BlackrockDepthsApproachSteppes" and tile and tile:GetTexture() == LOWER and lower.Doors[1]:IsShown()
 		and lower.Doors[1].instance.key == "BlackrockDepths", "in the Quarry, on Burning Steppes: the way down's map and the Depths' door")
@@ -2472,7 +2493,7 @@ do
 	key, lower = At(1427, 0.2755, 0.7238, "")
 	check(key == "BlackrockDepthsApproach" and lower.Doors[1].instance.key == "BlackrockDepths",
 		"at the Depths' door, named nothing, come from the Masonary: still the way down's map")
-	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = nil, nil, nil, ""
+	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone, Mock.indoors = nil, nil, nil, "", nil
 end
 
 -- The Scarlet Monastery's hall: Blizzard's map of it redrawn for its four wings, on Tirisfal or on

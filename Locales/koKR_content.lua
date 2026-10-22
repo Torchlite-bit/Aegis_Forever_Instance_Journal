@@ -87,6 +87,7 @@ L.SUBMAP_NAMES = {
 	["MaraudonOrange"] = "마라우돈 (주황)",
 	["MaraudonPurple"] = "마라우돈 (보라)",
 	["BlackrockMountain"] = "검은바위 산",
+	["BlackrockMountainGorge"] = "검은바위 산",
 	["BlackrockDepthsApproach"] = "검은바위 산",
 	["BlackrockDepthsApproachSteppes"] = "검은바위 산",
 	["ScarletMonasteryHall"] = "붉은십자군 수도원",

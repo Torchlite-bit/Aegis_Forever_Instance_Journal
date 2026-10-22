@@ -546,6 +546,7 @@ L.SUBMAP_NAMES = {
 	MaraudonOrange = "Мародон (оранжевый)",
 	MaraudonPurple = "Мародон (фиолетовый)",
 	BlackrockMountain = "Черная гора",
+	BlackrockMountainGorge = "Черная гора",
 	BlackrockDepthsApproach = "Черная гора",
 	BlackrockDepthsApproachSteppes = "Черная гора",
 	ScarletMonasteryHall = "Монастырь Алого ордена",

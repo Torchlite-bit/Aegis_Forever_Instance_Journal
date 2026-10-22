@@ -877,7 +877,8 @@ end
 -- for a picture marked unnamed (the door of Blackrock Depths). Where the client gives no map at all
 -- (the Deeprun Tram), the zone's name tells the place (zones), over any map.
 -- Indoors, as the client says (its minimap switches with it): a building's map (indoors = true)
--- shows only inside it, the ground before its doors reading the same area name.
+-- shows only inside it, the ground before its doors reading the same area name; names in
+-- indoorAreas count only there (Blackrock Mountain's tunnels, named like the ground outside).
 local function PlayerIndoors()
 	if type(IsIndoors) ~= "function" then return false end
 	local ok, inside = pcall(IsIndoors)
@@ -887,7 +888,9 @@ end
 
 -- Two pictures over the same ground with the same area name (Maraudon's two caves): the one with
 -- claims (boxes on its own picture, { left, top, right, bottom }) takes the spots in them, the
--- other the rest; outside the other's picture, it takes them all.
+-- other the rest; outside the other's picture, it takes them all. A picture the player is kept
+-- in (by a shared name, or a nameless spot) comes before another that names the spot: come up
+-- from the Grinding Quarry, the doorway named "Blackrock Mountain" is still the way down's.
 local function Claims(subMap, px, py)
 	for _, box in ipairs(subMap.claims) do
 		if px >= box[1] and py >= box[2] and px <= box[3] and py <= box[4] then return true end
@@ -901,23 +904,25 @@ local function PlayerSubMap(mapID)
 	if x then
 		local ok, area = pcall(GetSubZoneText)
 		area = ok and ns.Readable(area) or nil
-		local claimed, yielding
+		local claimed, kept, yielding
 		for _, subMap in ipairs(ns.GetSubMaps()) do
 			local px, py
 			if subMap.parentMapID == playerMap then px, py = OnSubMap(subMap, x, y) end
-			if area and subMap.areas and px and (ns.AreaIn(subMap.areas, area) or (subMap == playerBelow
-				and (ns.AreaIn(subMap.sharedAreas, area) or (subMap.unnamed and area == ""))))
-				and (not subMap.indoors or PlayerIndoors()) then
-				if not subMap.claims then
+			if area and subMap.areas and px and (not subMap.indoors or PlayerIndoors()) then
+				local named = ns.AreaIn(subMap.areas, area) or (ns.AreaIn(subMap.indoorAreas, area) and PlayerIndoors())
+				if not named and subMap == playerBelow
+					and (ns.AreaIn(subMap.sharedAreas, area) or (subMap.unnamed and area == "")) then
+					kept = subMap
+				elseif named and not subMap.claims then
 					below = below or subMap
-				elseif Claims(subMap, px, py) then
+				elseif named and Claims(subMap, px, py) then
 					claimed = claimed or subMap
-				else
+				elseif named then
 					yielding = yielding or subMap
 				end
 			end
 		end
-		below = claimed or below or yielding
+		below = claimed or kept or below or yielding
 	elseif not playerMap then
 		local zone = ZoneName()
 		for _, subMap in ipairs(ns.GetSubMaps()) do

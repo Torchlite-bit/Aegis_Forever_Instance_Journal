@@ -230,36 +230,57 @@ end
 	Inside Blackrock Mountain, on Blizzard's own drawn maps of it, the client's tiles: the ring level
 	(retail's map 33: the chained ring over the lava, Forgewright's Tomb, the Spire's corridors; its
 	labels still name retail's two Spire doors, where classic has one for both dungeons) and the
-	way down to Blackrock Depths (map 35). The game has no map of the mountain: the client reports a player in it on the
-	zone of the ground below, Burning Steppes (1428) under most of it, Searing Gorge (1427) under the
-	Masonary, the Depths' door and the Quarry's north end. So the lower picture is on both.
+	way down to Blackrock Depths (map 35). The game has no map of the mountain: the client reports
+	a player in it on the zone of the ground below, Burning Steppes (1428) under most of it, Searing
+	Gorge (1427) under its gate's tunnel, the Masonary, the Depths' door and the Quarry's north end.
+	So the ring's picture is on both (only the tunnel on Searing Gorge's), the lower one too.
 	The ring's rooms read The Molten Span, Blackrock Spire or Forgewright's Tomb; the lower level's,
 	The Grinding Quarry or The Masonary. The Molten Span is one room of the game's that reaches down
-	to the Molten Core's ledge too: it shows the ring. The tunnels read "Blackrock Mountain", like
-	the ground outside both gates: no picture there, but the doorway by the Molten Core's ledge
-	keeps a player come up from the Quarry below; and the Depths' door, named nothing at all
-	(unnamed), keeps one come from the Masonary.
+	to the Molten Core's ledge too: it shows the ring. The tunnels from the gates read "Blackrock
+	Mountain", like the ground outside them, but every room inside the mountain is indoors and
+	the gates' fronts are not: so the ring counts that name indoors only (indoorAreas; its own
+	names count anywhere). Before that, the map turned only at the tunnels' inner ends, the
+	player's readings there (2026-10-21) 1428 (0.2748, 0.2318) and (0.2796, 0.3509), The Molten
+	Span. The doorway by the Molten Core's ledge, "Blackrock Mountain" too,
+	keeps a player come up from the Quarry below on the lower map; and the Depths' door, named
+	nothing at all (unnamed), keeps one come from the Masonary.
 	The way in shows at the Burning Steppes gate, where the player's /aegis where read 1428
 	(0.2940, 0.3829) as the minimap turned to the mountain (2026-10-21); at the Searing Gorge gate,
 	read there on 1427 (0.3485, 0.8583), is the mountain's door.
 ]]
 local BLACKROCK_LOWER_TILES = "Interface\\WorldMap\\MicroDungeon\\SearingGorge\\BlackrockMountain\\BlackrockMountain16_"
 local BLACKROCK_DEPTHS_DOOR = { BlackrockDepths = { x = 0.3922, y = 0.1766 } }
+local BLACKROCK_SPIRE_DOOR = {
+	LowerBlackrockSpire = { x = 0.7894, y = 0.3308 },
+	UpperBlackrockSpire = { x = 0.7894, y = 0.3308 },
+}
+local BLACKROCK_RING_TILES = "Interface\\WorldMap\\MicroDungeon\\SearingGorge\\BlackrockMountain\\BlackrockMountain14_"
 ns.AddSubMap({
 	key = "BlackrockMountain",
 	name = "Blackrock Mountain",
 	parentMapID = 1428,
-	tiles = "Interface\\WorldMap\\MicroDungeon\\SearingGorge\\BlackrockMountain\\BlackrockMountain14_",
+	tiles = BLACKROCK_RING_TILES,
 	way = { mapID = 1428, x = 0.2940, y = 0.3829 },
 	calibration = {
 		{ map = { 0.1688, 0.1505 }, picture = { 0, 0 } },
 		{ map = { 0.4121, 0.3938 }, picture = { 1, 1 } },
 	},
 	areas = { ["The Molten Span"] = true, ["Blackrock Spire"] = true, ["Forgewright's Tomb"] = true },
-	instances = {
-		LowerBlackrockSpire = { x = 0.7894, y = 0.3308 },
-		UpperBlackrockSpire = { x = 0.7894, y = 0.3308 },
+	indoorAreas = { ["Blackrock Mountain"] = true },
+	instances = BLACKROCK_SPIRE_DOOR,
+})
+ns.AddSubMap({
+	key = "BlackrockMountainGorge",
+	name = "Blackrock Mountain",
+	parentMapID = 1427,
+	tiles = BLACKROCK_RING_TILES,
+	calibration = {
+		{ map = { 0.1965, 0.8235 }, picture = { 0, 0 } },
+		{ map = { 0.5158, 1.1429 }, picture = { 1, 1 } },
 	},
+	areas = {},
+	indoorAreas = { ["Blackrock Mountain"] = true },
+	instances = BLACKROCK_SPIRE_DOOR,
 })
 ns.AddSubMap({
 	key = "BlackrockDepthsApproach",

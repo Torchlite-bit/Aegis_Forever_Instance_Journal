@@ -87,6 +87,7 @@ L.SUBMAP_NAMES = {
 	["MaraudonOrange"] = "Maraudon (orange)",
 	["MaraudonPurple"] = "Maraudon (violet)",
 	["BlackrockMountain"] = "Mont Rochenoire",
+	["BlackrockMountainGorge"] = "Mont Rochenoire",
 	["BlackrockDepthsApproach"] = "Mont Rochenoire",
 	["BlackrockDepthsApproachSteppes"] = "Mont Rochenoire",
 	["ScarletMonasteryHall"] = "Monastère écarlate",
