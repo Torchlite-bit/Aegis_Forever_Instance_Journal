@@ -1,5 +1,5 @@
--- /aegis lang: the journal previewed in another language, German on an English client and Spanish
--- on a German one. The saved choice is read before the files load (the TOC's
+-- /aegis lang: the journal previewed in another language: German on an English client, Spanish
+-- on a German one, and English on a Russian one. The saved choice is read before the files load (the TOC's
 -- LoadSavedVariablesFirst), so the previewed translation lays itself over the English and the
 -- journal opens in it, while what is matched against the client's own text (an item's Equip:
 -- lines, the room the player stands in, a boss or a faction the client names) stays the client's.
@@ -113,12 +113,12 @@ end
 local byClient, byJournal = FoundCurse("Anvilmar's Curse"), FoundCurse(preview.curse)
 check(byClient == "Anvilmar's Curse" and byJournal == preview.curse,
 	"an ability found by the client's spell name and by the previewed one: " .. tostring(byClient) .. ", " .. tostring(byJournal))
-local bosses, english, clientNamed, apart = 0, 0, 0, 0
+local bosses, enNamed, clientNamed, apart = 0, 0, 0, 0
 for _, kind in ipairs({ "dungeon", "raid" }) do
 	for _, instance in ipairs(ns.GetInstances(kind)) do
 		for _, boss in ipairs(instance.bosses or {}) do
 			bosses = bosses + 1
-			if boss.enName then english = english + 1 end
+			if boss.enName then enNamed = enNamed + 1 end
 			if boss.clientName then
 				clientNamed = clientNamed + 1
 				if boss.clientName ~= boss.name then apart = apart + 1 end
@@ -127,8 +127,8 @@ for _, kind in ipairs({ "dungeon", "raid" }) do
 	end
 end
 -- German and Spanish keep many proper names alike (Ghamoo-ra): some differ.
-check(bosses > 0 and english == bosses and (CLIENT == "enUS") == (clientNamed == 0) and (CLIENT == "enUS") == (apart == 0),
-	"each boss keeps its English name, and the client's where it has one: " .. english .. " of " .. bosses .. ", "
+check(bosses > 0 and enNamed == bosses and (CLIENT == "enUS") == (clientNamed == 0) and (CLIENT == "enUS") == (apart == 0),
+	"each boss keeps its English name, and the client's where it has one: " .. enNamed .. " of " .. bosses .. ", "
 	.. clientNamed .. " named by the client, " .. apart .. " unlike the preview")
 -- A fight the journal holds no encounter id for, ended under the client's name for its boss
 do

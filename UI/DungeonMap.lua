@@ -1029,14 +1029,7 @@ local function ZoneName()
 	return nil
 end
 
--- The area below `mapID` the player is in: inside its picture, in a spot the streets above
--- do not name. Some spots below share a name with a street above (sharedAreas): once the
--- player has been seen below, those keep them there, as a spot the client names nothing does
--- for a picture marked unnamed (the door of Blackrock Depths). Where the client gives no map at all
--- (the Deeprun Tram), the zone's name tells the place (zones), over any map.
--- Indoors, as the client says (its minimap switches with it): a building's map (indoors = true)
--- shows only inside it, the ground before its doors reading the same area name; names in
--- indoorAreas count only there (Blackrock Mountain's tunnels, named like the ground outside).
+-- Indoors, as the client says: its minimap switches with it.
 local function PlayerIndoors()
 	if type(IsIndoors) ~= "function" then return false end
 	local ok, inside = pcall(IsIndoors)
@@ -1044,11 +1037,7 @@ local function PlayerIndoors()
 	return inside == true or inside == 1
 end
 
--- Two pictures over the same ground with the same area name (Maraudon's two caves): the one with
--- claims (boxes on its own picture, { left, top, right, bottom }) takes the spots in them, the
--- other the rest; outside the other's picture, it takes them all. A picture the player is kept
--- in (by a shared name, or a nameless spot) comes before another that names the spot: come up
--- from the Grinding Quarry, the doorway named "Blackrock Mountain" is still the way down's.
+-- Whether a spot on the picture is in one of its claims ({ left, top, right, bottom }).
 local function Claims(subMap, px, py)
 	for _, box in ipairs(subMap.claims) do
 		if px >= box[1] and py >= box[2] and px <= box[3] and py <= box[4] then return true end
@@ -1056,6 +1045,20 @@ local function Claims(subMap, px, py)
 	return false
 end
 
+--[[
+	The area below `mapID` the player is in: inside its picture, in a spot the streets above do
+	not name. Some spots below share a name with a street above (sharedAreas): once the player
+	has been seen below, those keep them there, as a spot the client names nothing does for a
+	picture marked unnamed (the door of Blackrock Depths). A building's map (indoors = true) shows
+	only inside it, the ground before its doors reading the same area name; names in indoorAreas
+	count only there (Blackrock Mountain's tunnels, named like the ground outside). Two pictures
+	over the same ground with the same name (Maraudon's two caves): the one with claims takes the
+	spots in them, the other the rest. Of the pictures over a spot, one whose claims take it comes
+	first, then one the player is kept in (come up from the Grinding Quarry, the doorway named
+	"Blackrock Mountain" is still the way down's), then one that names it, and last one with
+	claims that do not take it. Where the client gives no map at all (the Deeprun Tram), the
+	zone's name tells the place (zones), over any map.
+]]
 local function PlayerSubMap(mapID)
 	local playerMap, x, y = ns.PlayerMapPosition()
 	local below
@@ -1095,6 +1098,50 @@ local function PlayerSubMap(mapID)
 	return nil
 end
 
+--[[
+	Doors that close on the map shown are one icon: the Scarlet Monastery's four wings share one
+	door, and the dungeons inside Blackrock Mountain another. Its tooltip lists them all, and a
+	left click offers them to choose from. So do a picture's doors (the Spire's, for Lower and
+	Upper Blackrock Spire).
+]]
+
+-- What a shared door is called: the building its wings are named after ("Scarlet Monastery:
+-- Library"), else the place they all are (Blackrock Mountain).
+local function Building(name)
+	return name:match("^(.-)%s*\239\188\154") or name:match("^(.-)%s*:")
+end
+
+local function SharedDoorName(instances)
+	local building, location = Building(instances[1].name), instances[1].location
+	for _, instance in ipairs(instances) do
+		if Building(instance.name) ~= building then building = nil end
+		if instance.location ~= location then location = nil end
+	end
+	return building or location or instances[1].name
+end
+DungeonMap.SharedDoorName = SharedDoorName
+
+-- Each dungeon behind a shared door on its own line, with its level range.
+local function AddDoorLines(instances)
+	for _, instance in ipairs(instances) do
+		local range = instance.levelMin and string.format(L.LEVEL_RANGE, instance.levelMin, instance.levelMax or instance.levelMin) or ""
+		GameTooltip:AddDoubleLine(instance.name, range, 1, 1, 1, 1, 0.82, 0)
+	end
+end
+
+-- A left click on a shared door: a menu of its dungeons. False where the client has no menus.
+local function ChooseDoor(owner, instances)
+	if not (MenuUtil and MenuUtil.CreateContextMenu) then return false end
+	GameTooltip:Hide()
+	MenuUtil.CreateContextMenu(owner, function(_, root)
+		root:CreateTitle(SharedDoorName(instances))
+		for _, instance in ipairs(instances) do
+			root:CreateButton(instance.name, function() DungeonMap:OpenInstance(instance) end)
+		end
+	end)
+	return true
+end
+
 -- A dungeon's door on a sub-map's picture: retail's dungeon icon; a click opens the journal.
 local function SubMapDoor(index)
 	local door = overlay.Doors[index]
@@ -1112,11 +1159,8 @@ local function SubMapDoor(index)
 		door:SetScript("OnEnter", function(self)
 			GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
 			if #self.instances > 1 then
-				GameTooltip:SetText(DungeonMap.SharedDoorName(self.instances), 1, 1, 1)
-				for _, instance in ipairs(self.instances) do
-					local range = instance.levelMin and string.format(L.LEVEL_RANGE, instance.levelMin, instance.levelMax or instance.levelMin) or ""
-					GameTooltip:AddDoubleLine(instance.name, range, 1, 1, 1, 1, 0.82, 0)
-				end
+				GameTooltip:SetText(SharedDoorName(self.instances), 1, 1, 1)
+				AddDoorLines(self.instances)
 				GameTooltip:AddLine(L.ENTRANCE_CHOOSE_LEFT_CLICK, 0.1, 1, 0.1)
 			else
 				GameTooltip:SetText(self.instance.name, 1, 1, 1)
@@ -1127,18 +1171,9 @@ local function SubMapDoor(index)
 		end)
 		door:SetScript("OnLeave", function() GameTooltip:Hide() end)
 		door:SetScript("OnClick", function(self, button)
-			local instances = self.instances
 			if button == "RightButton" then
 				Dismiss()
-			elseif #instances > 1 and MenuUtil and MenuUtil.CreateContextMenu then
-				GameTooltip:Hide()
-				MenuUtil.CreateContextMenu(self, function(_, root)
-					root:CreateTitle(DungeonMap.SharedDoorName(instances))
-					for _, instance in ipairs(instances) do
-						root:CreateButton(instance.name, function() DungeonMap:OpenInstance(instance) end)
-					end
-				end)
-			else
+			elseif not (#self.instances > 1 and ChooseDoor(self, self.instances)) then
 				DungeonMap:OpenInstance(self.instance)
 			end
 		end)
@@ -1185,6 +1220,7 @@ local function DrawSubMap(subMap)
 	DrawArt(subMap)
 	for _, pin in ipairs(overlay.Pins) do pin:Hide() end
 	for _, spot in ipairs(overlay.Transitions) do spot:Hide() end
+	for _, spot in ipairs(overlay.QuestSpots) do spot:Hide() end
 	overlay.Here:Hide()
 	-- Levels (Blackrock Mountain's): a menu of them, as a dungeon's floors have.
 	ShowFloorMenu(subMap.levels and LevelName(subMap.levels[subMap.level]) or nil)
@@ -1368,6 +1404,18 @@ local BUILDING_ATLASES = { "delves-regular", "CaveUnderground-Up", "CaveUndergro
 local function IsBuilding(subMap)
 	return subMap ~= nil and subMap.icon == "building"
 end
+
+-- Its legend entry's kind: "building" (Entrance) or "cave" (Cave Entrance).
+local function WayKind(subMap)
+	return IsBuilding(subMap) and "building" or "cave"
+end
+
+-- A dungeon reached through an area below the zone, or a building, says where the way in is.
+local function AddViaLine(instance)
+	local via = instance.via and ns.GetSubMap(instance.via)
+	if not via then return end
+	GameTooltip:AddLine(string.format(IsBuilding(via) and L.ENTRANCE_VIA_BUILDING or L.ENTRANCE_VIA, via.name), 1, 1, 1, true)
+end
 local LEGEND_GLOW_ATLAS = "UI-QuestPoi-OuterGlow"
 
 --[[
@@ -1488,28 +1536,8 @@ local function ClearAreaLabel(pin)
 	end
 end
 
---[[
-	Doors that close on the map shown are one icon: the Scarlet Monastery's four wings share one
-	door, and the dungeons inside Blackrock Mountain another. Its tooltip lists them all, and a
-	left click offers them to choose from.
-]]
+-- Doors closer than this on the map shown are one icon (a shared door, above).
 local SHARED_DOOR = 0.01
-
--- What a shared door is called: the building its wings are named after ("Scarlet Monastery:
--- Library"), else the place they all are (Blackrock Mountain).
-local function Building(name)
-	return name:match("^(.-)%s*\239\188\154") or name:match("^(.-)%s*:")
-end
-
-local function SharedDoorName(instances)
-	local building, location = Building(instances[1].name), instances[1].location
-	for _, instance in ipairs(instances) do
-		if Building(instance.name) ~= building then building = nil end
-		if instance.location ~= location then location = nil end
-	end
-	return building or location or instances[1].name
-end
-DungeonMap.SharedDoorName = SharedDoorName
 
 -- "Dungeons  Level 30-45": the range they span together.
 local function SharedDoorDescription(instances)
@@ -1532,12 +1560,8 @@ local function ShowSharedDoorTooltip(pin)
 	GameTooltip:SetOwner(pin, "ANCHOR_RIGHT")
 	GameTooltip:SetText(name, 1, 1, 1)
 	GameTooltip:AddLine(description, 1, 0.82, 0)
-	for _, instance in ipairs(instances) do
-		local range = instance.levelMin and string.format(L.LEVEL_RANGE, instance.levelMin, instance.levelMax or instance.levelMin) or ""
-		GameTooltip:AddDoubleLine(instance.name, range, 1, 1, 1, 1, 0.82, 0)
-	end
-	local via = instances[1].via and ns.GetSubMap(instances[1].via)
-	if via then GameTooltip:AddLine(string.format(IsBuilding(via) and L.ENTRANCE_VIA_BUILDING or L.ENTRANCE_VIA, via.name), 1, 1, 1, true) end
+	AddDoorLines(instances)
+	AddViaLine(instances[1])
 	GameTooltip:AddLine(L.ENTRANCE_CHOOSE_LEFT_CLICK, 0.1, 1, 0.1)
 	GameTooltip:AddLine(L.ENTRANCE_RIGHT_CLICK, 0.1, 1, 0.1)
 	GameTooltip:Show()
@@ -1551,9 +1575,7 @@ local function ShowEntranceTooltip(pin)
 	GameTooltip:SetOwner(pin, "ANCHOR_RIGHT")
 	GameTooltip:SetText(instance.name, 1, 1, 1)
 	GameTooltip:AddLine(description, 1, 0.82, 0)
-	-- A dungeon reached through an area below the zone, or a building, says where the way in is.
-	local via = instance.via and ns.GetSubMap(instance.via)
-	if via then GameTooltip:AddLine(string.format(IsBuilding(via) and L.ENTRANCE_VIA_BUILDING or L.ENTRANCE_VIA, via.name), 1, 1, 1, true) end
+	AddViaLine(instance)
 	GameTooltip:AddLine(L.ENTRANCE_LEFT_CLICK, 0.1, 1, 0.1)
 	GameTooltip:AddLine(L.ENTRANCE_RIGHT_CLICK, 0.1, 1, 0.1)
 	GameTooltip:Show()
@@ -1717,21 +1739,14 @@ function EntrancePinMethods:OnMouseClickAction(button)
 	local instances = self.instances
 	if button == "RightButton" then
 		DungeonMap:SetWaypoint(self.instance, #instances > 1 and SharedDoorName(instances) or nil)
-	elseif #instances > 1 and MenuUtil and MenuUtil.CreateContextMenu then
-		GameTooltip:Hide()
-		MenuUtil.CreateContextMenu(self, function(_, root)
-			root:CreateTitle(SharedDoorName(instances))
-			for _, instance in ipairs(instances) do
-				root:CreateButton(instance.name, function() DungeonMap:OpenInstance(instance) end)
-			end
-		end)
-	else
+	elseif not (#instances > 1 and ChooseDoor(self, instances)) then
 		DungeonMap:OpenInstance(self.instance)
 	end
 end
 
--- The way down to an area below a zone: retail's cave entrance. A left click shows the area's
--- map, a right click sets a waypoint to the way down.
+-- The way into an area below a zone: retail's cave entrance, or a building's delve entrance
+-- (icon = "building"). A left click shows the area's map, a right click sets a waypoint to its
+-- way in.
 AegisJournalCavePinMixin = {}
 local CavePinMethods = {}
 
@@ -1739,7 +1754,7 @@ CavePinMethods.OnLoad = EntrancePinMethods.OnLoad
 CavePinMethods.ShowMapLegendGlow = EntrancePinMethods.ShowMapLegendGlow
 CavePinMethods.HideMapLegendGlow = EntrancePinMethods.HideMapLegendGlow
 -- Its legend entry, Cave Entrance or Entrance (a building's); the client's legend matches it by style.
-function CavePinMethods:LegendKind() return IsBuilding(self.subMap) and "building" or "cave" end
+function CavePinMethods:LegendKind() return WayKind(self.subMap) end
 function CavePinMethods:GetStyle() return self:LegendKind() end
 
 function CavePinMethods:OnAcquired(subMap, x, y)
@@ -1846,7 +1861,7 @@ function EntranceProviderMethods:RefreshAllData()
 	-- hidden from the map legend on its own.
 	for _, subMap in ipairs(ns.GetSubMaps()) do
 		local wayMapID, x, y = WayPoint(subMap)
-		if wayMapID == mapID and x and ns.MapLegend.Shows(IsBuilding(subMap) and "building" or "cave") then
+		if wayMapID == mapID and x and ns.MapLegend.Shows(WayKind(subMap)) then
 			map:AcquirePin(CAVE_PIN_TEMPLATE, subMap, x, y)
 		end
 	end

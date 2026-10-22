@@ -760,15 +760,6 @@ function ns.DataVersion()
 end
 
 --[[
-	Lays a translation of the content over the data, once every data file has loaded: names and
-	text are swapped in place, looked up by their English words (Locales/ruRU_content.lua). An
-	English client has no such tables, and nothing is changed.
-
-	A boss, an add or an instance keeps its English name as enName: what the journal matches and
-	records by (a fight the client names, a faction a ware's tooltip names, a recording sent in)
-	still finds it. The lookup tables are let go once used.
-]]
---[[
 	The client's own names, where its language is one the journal is translated into (ns.ClientL),
 	whichever language the journal previews: a boss's and a faction's, as what the client says of
 	them is matched by them too (a fight ending, a creature at hand, a ware's tooltip: ns.NamedAs),
@@ -800,9 +791,18 @@ function ns.KeepClientNames()
 	end
 end
 
+--[[
+	Lays a translation of the content over the data, once every data file has loaded and the
+	client's own names are kept (ns.KeepClientNames, before it in Core/Init.lua): names and text
+	are swapped in place, looked up by their English words (Locales/ruRU_content.lua). An English
+	client has no such tables, and nothing is changed.
+
+	A boss, an add or an instance keeps its English name as enName: what the journal matches and
+	records by (a fight the client names, a faction a ware's tooltip names, a recording sent in)
+	still finds it. The lookup tables are let go once used.
+]]
 function ns.ApplyLocale()
 	local L = ns.L
-	ns.KeepClientNames()
 	if not (L.INSTANCE_NAMES or L.BOSS_NAMES or L.STRINGS or L.FACTION_NAMES or L.SUBMAP_NAMES) then return end
 	local instanceNames = L.INSTANCE_NAMES
 	local locations = L.INSTANCE_LOCATIONS

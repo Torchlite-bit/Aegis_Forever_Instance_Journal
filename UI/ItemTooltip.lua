@@ -33,22 +33,16 @@ local SOURCE_COLOR = { 1, 0.82, 0 }
 -- Places named before "and 2 more".
 local MAX_PLACES = 3
 
--- The tooltips that show an item for itself: the main one, a chat link's, and the ones beside
--- each with what is worn.
-local TOOLTIPS = { "GameTooltip", "ItemRefTooltip", "ShoppingTooltip1", "ShoppingTooltip2",
-	"ItemRefShoppingTooltip1", "ItemRefShoppingTooltip2" }
--- The ones that show the item itself, not what is worn beside it.
+-- The tooltips that show an item: the main one and a chat link's.
 local SHOWS_ITEM = { "GameTooltip", "ItemRefTooltip" }
+-- The tooltips beside another that show what is worn, to compare with.
+local SHOWS_WORN = { "ShoppingTooltip1", "ShoppingTooltip2", "ItemRefShoppingTooltip1", "ItemRefShoppingTooltip2" }
 
 local function IsOneOf(tooltip, names)
 	for _, name in ipairs(names) do
 		if _G[name] == tooltip then return true end
 	end
 	return false
-end
-
-local function Wanted(tooltip)
-	return IsOneOf(tooltip, TOOLTIPS)
 end
 
 -- The equipment flyout's green arrow, as the Gear Finder marks its upgrades, in the line's text.
@@ -80,9 +74,6 @@ local function ShownLink(tooltip, data)
 	end
 	return link
 end
-
--- The tooltips beside another that show what is worn, to compare with.
-local SHOWS_WORN = { "ShoppingTooltip1", "ShoppingTooltip2", "ItemRefShoppingTooltip1", "ItemRefShoppingTooltip2" }
 
 -- Whether the client was asked to show one of the player's own slots: the tooltip's info
 -- (TooltipDataHandlerMixin:GetPrimaryTooltipInfo), the getter it was filled by, with its unit and slot.
@@ -304,9 +295,10 @@ end
 -- The upgrade lines first, then where it drops, then whatever the frame the tooltip belongs to adds.
 local function OnItem(tooltip, data)
 	if tooltip.IsForbidden and tooltip:IsForbidden() then return end
-	if not Wanted(tooltip) then return end
+	-- The item shown for itself: the tooltips beside it show what is worn, no upgrade on itself.
+	if not IsOneOf(tooltip, SHOWS_ITEM) then return end
 	if ns.charDB and ns.GearPanel.ShowsGains() and not ns.PawnLink:Present() then AddGains(tooltip, data) end
-	if ns.db and ItemTooltip.ShowsSources() and IsOneOf(tooltip, SHOWS_ITEM) then AddSource(tooltip, data) end
+	if ns.db and ItemTooltip.ShowsSources() then AddSource(tooltip, data) end
 end
 
 -- The client's item tooltips all come through its tooltip data, Forever's as retail's.

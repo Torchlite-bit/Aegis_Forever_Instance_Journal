@@ -750,7 +750,19 @@ function Journal:SavePosition()
 end
 
 -- Docked, the game places it: the free place is reset for when it is freed.
+-- Docked, the game places it: the free place is reset for when it is freed, and a window
+-- dragged loose goes back into its place now (out of combat, as docking does).
 function Journal:ResetPosition()
 	ns.db.position = nil
-	if frame and not docked then self:ApplyPosition() end
+	if not frame then return end
+	if not docked then
+		self:ApplyPosition()
+	elseif loose and frame:IsShown() and not InCombatLockdown() then
+		quiet = true
+		self:Hide()
+		loose, releaseAfterCombat = nil, nil
+		SetDockAttributes(frame, true)
+		self:Show()
+		quiet = nil
+	end
 end

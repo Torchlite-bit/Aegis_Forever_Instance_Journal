@@ -380,7 +380,8 @@ function CreateFrame(frameType, name, parent, template)
 		frame.selected:Hide()
 		rawset(frame, "MenuArrowButton", CreateFrame("DropdownButton", nil, frame))
 		frame.MenuArrowButton:Hide()
-		frame:SetScript("OnShow", function() Mock.navButtonOnShow = (Mock.navButtonOnShow or 0) + 1 end)
+		-- Stands in for the template's own NavButtonTemplate_OnShow, which the addon clears.
+		frame:SetScript("OnShow", function() end)
 		function frame:SetText(text) self._text = text; self.text:SetText(text) end
 	end
 	if template == "MapLegendButtonTemplate" then
@@ -1560,10 +1561,6 @@ UIPanelWindows = setmetatable({}, { __newindex = function(list, name, layout)
 	Mock.panelWindowsWrites[#Mock.panelWindowsWrites + 1] = name
 	rawset(list, name, layout)
 end })
-function RegisterUIPanel(frame, layout)
-	if not rawget(UIPanelWindows, frame:GetName()) then UIPanelWindows[frame:GetName()] = layout end
-end
-
 local function Attr(frame, name)
 	if frame:GetAttribute("UIPanelLayout-defined") then return frame:GetAttribute("UIPanelLayout-" .. name) end
 	local layout = rawget(UIPanelWindows, frame:GetName() or "")
@@ -1749,10 +1746,7 @@ end
 
 -- The manager's forbidden frame runs its own code securely, whoever set the attribute.
 local function Pass(func, ...)
-	local was = Mock.secure
-	Mock.secure = true
-	func(...)
-	Mock.secure = was
+	Mock.AsClient(func, ...)
 end
 local function Allowed()                                                         -- 854-861
 	if Mock.inCombat and not Mock.secure then
@@ -1809,12 +1803,11 @@ function CloseWindows()                                                         
 end
 CloseAllWindows = CloseWindows
 
-local function Restore(was, ...) Mock.secure = was return ... end
 -- The client's own code: a key binding, Escape, the player's click on one of the game's windows.
 function Mock.AsClient(func, ...)
 	local was = Mock.secure
 	Mock.secure = true
-	return Restore(was, func(...))
+	return RestoreSecure(was, func(...))
 end
 function Mock.PressEscape() return Mock.AsClient(CloseAllWindows) end
 -- One of the client's windows, registered as the client registers it, and shut.

@@ -2719,6 +2719,29 @@ do
 	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = nil, nil, nil, ""
 end
 
+-- A dungeon's map put away, then a picture shown over the same zone: its quest marks go with it
+do
+	ns.DungeonMap:Show(ns.GetInstance("RuinsOfLordaeron"))
+	local overlay = DungeonMap:Overlay()
+	local function Marks()
+		local marks = 0
+		for _, spot in ipairs(overlay.QuestSpots) do
+			if spot:IsShown() and spot:IsVisible() then marks = marks + 1 end
+		end
+		return marks
+	end
+	check(Mock.worldMapID == 1420 and Marks() > 0, "the Ruins of Lordaeron's map, on Tirisfal, with its quest marks")
+	overlay:_RunScript("OnMouseUp", "RightButton")
+	local hall
+	for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalCavePinTemplate")) do
+		if pin.subMap.key == "ScarletMonasteryHall" then hall = pin end
+	end
+	hall:Click("LeftButton")
+	check(overlay.subMap and overlay.subMap.key == "ScarletMonasteryHall" and Marks() == 0,
+		"put away, then the Scarlet Monastery's hall: none of the Ruins' quest marks on it")
+	WorldMapFrame:Hide()
+end
+
 -- The Scarlet Monastery's hall: Blizzard's map of it redrawn for its four wings, on Tirisfal or on
 -- the continent, whichever the client reports there
 do
@@ -2810,7 +2833,7 @@ hallDoor:_RunScript("OnEnter")
 check(GameTooltip:HasLine("Its portal is inside, in Old Ironforge: go in at the entrance."), "the dungeon's tooltip points to the way in")
 cave:_RunScript("OnEnter")
 check(GameTooltip._text == "Old Ironforge" and GameTooltip:HasLine("The way to The Hall of Thanes")
-	and GameTooltip:HasLine("Left-click to see the map of Old Ironforge"), "the cave says where it leads")
+	and GameTooltip:HasLine("Left-click to see the map of Old Ironforge"), "the way in says where it leads")
 check(Mock.areaLabel and Mock.areaLabel.name == "Old Ironforge" and Mock.areaLabel.description == "Entrance",
 	"and the map's area label calls it an entrance")
 cave:_RunScript("OnLeave")
@@ -2822,7 +2845,7 @@ check(Mock.userWaypoint.uiMapID == 1455 and Mock.userWaypoint.position.x == 0.43
 cave:Click("RightButton")
 check(chatContains("Waypoint set to the entrance of Old Ironforge."), "so does the way in's")
 
--- Left-click on the cave: Old Ironforge over the world map
+-- Left-click on the way in: Old Ironforge over the world map
 cave:Click("LeftButton")
 local below = DungeonMap:Overlay()
 check(below:IsShown() and below.subMap and below.subMap.key == "OldIronforge"
@@ -4087,6 +4110,17 @@ check(not f:IsShown(), "toggle closes it")
 	check(not f:IsShown() and f:GetAttribute("UIPanelLayout-area") == "left", "shut: docked again")
 	AegisJournal_Toggle()
 	check(Mock.slots.left == f and X() == 16, "opened again: back at the top left")
+	-- /aegis reset, dragged loose: back in its place at once, quietly
+	f:_RunScript("OnDragStart")
+	f:ClearAllPoints()
+	f:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 500, -300)
+	f:_RunScript("OnDragStop")
+	local freePlace = ns.db.position
+	sounds = 0
+	SlashCmdList.AEGISJOURNAL("reset")
+	check(f:IsShown() and Mock.slots.left == f and X() == 16 and f:GetAttribute("UIPanelLayout-area") == "left"
+		and ns.db.position == nil and sounds == 0, "/aegis reset puts a window dragged loose back into its place")
+	ns.db.position = freePlace -- the free place the checks below set the window free to
 
 	-- The game's windows move it aside, and back
 	Mock.AsClient(ShowUIPanel, vendor)

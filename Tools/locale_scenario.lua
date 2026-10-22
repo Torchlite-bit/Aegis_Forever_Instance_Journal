@@ -143,6 +143,14 @@ do
 		if not used[english] or ns.ClientL.AREA_NAMES[ns.AreaKey(translated)] ~= translated then stray[#stray + 1] = english end
 	end
 	check(#stray == 0, "every translated room is one the journal uses, and is found by its name: " .. table.concat(stray, ", "))
+	-- And the other way: every room the journal matches the player by is known in the language,
+	-- by the client's id for it (Data/Generated/AreaIDs.lua) or its translation.
+	local unmatched = {}
+	for name in pairs(used) do
+		if not (ns.AREA_IDS[name] or ns.ClientL.AREA_NAMES[name]) then unmatched[#unmatched + 1] = name end
+	end
+	table.sort(unmatched)
+	check(#unmatched == 0, "every room the journal matches is known in " .. LANGUAGE .. ": " .. table.concat(unmatched, ", "))
 end
 
 -- The content: names laid over the data once it has loaded.

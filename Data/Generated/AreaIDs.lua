@@ -5,6 +5,8 @@
 local _, ns = ...
 
 ns.AREA_IDS = {
+	["Blackrock Mountain"] = { 25, 254, 1445, 16513 },
+	["Blackrock Spire"] = { 1583, 17804 },
 	["Deeprun Tram"] = { 2257 },
 	["Ironclad Cove"] = { 1582 },
 	Ironforge = { 1537 },
@@ -13,11 +15,18 @@ ns.AREA_IDS = {
 	["Lordamere Overlook"] = { 16615 },
 	["Lost Dig Site"] = { 16880 },
 	["Lost Marsh"] = { 16877 },
+	Maraudon = { 2100 },
 	["Market Street"] = { 16617 },
 	["Mount Hyjal"] = { 616, 16004 },
 	Riverglades = { 16591 },
+	["Scarlet Monastery"] = { 796 },
 	["Shen'dralas"] = { 16651 },
 	["Site of the Guardian"] = { 16879 },
 	["Stalker's Thicket"] = { 16878 },
+	["Terrace of Repose"] = { 161 },
 	["The Deadmines"] = { 1581 },
+	["The Maul"] = { 3217, 16019 },
+	Uldaman = { 1337, 1517 },
+	["Wailing Caverns"] = { 718 },
+	["Whispering Gardens"] = { 160 },
 }

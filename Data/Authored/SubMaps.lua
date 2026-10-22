@@ -3,11 +3,13 @@ local _, ns = ...
 --[[
 	Old Ironforge, the level beneath Ironforge where the Hall of Thanes has its portal. It is
 	not instanced, and the client has no map of it: it reports a player down there on the
-	Ironforge map itself. So the Ironforge map shows a cave entrance where the way down is,
-	and the dungeon's own icon above its portal; and when the player is below, the world
-	map shows our picture of Old Ironforge instead, with the portal and the player on it.
+	Ironforge map itself. So the Ironforge map shows an entrance (a building's, the delve icon)
+	where the way down is, and the dungeon's own icon above its portal; and when the player is
+	below, the world map shows our picture of Old Ironforge instead, with the portal and the
+	player on it.
 
-	way          the cave entrance on the Ironforge map
+	way          the entrance on the Ironforge map
+	icon         "building": its way in shows retail's delve entrance, not the cave's
 	calibration  two spots, each as read in game with /aegis where (map) and on the
 	             picture (picture): the arrival at the bottom of the way down, and the portal
 	areas        what the client calls the area down there; the streets above all have names
@@ -234,10 +236,10 @@ end
 	the chained ring over the lava, Forgewright's Tomb, the Spire's corridors), its labels for
 	retail's two Spire doors and the Lower one's swirl painted out (Media/Maps/BlackrockMountainRing:
 	classic has one door for both dungeons), and the way down to Blackrock Depths (map 35, the
-	client's tiles). The game has no map of the mountain: the client reports
-	a player in it on the zone of the ground below, Burning Steppes (1428) under most of it, Searing
-	Gorge (1427) under its gate's tunnel, the Masonary, the Depths' door and the Quarry's north end.
-	So the ring's picture is on both (only the tunnel on Searing Gorge's), the lower one too.
+	client's tiles). The game has no map of the mountain: the client reports a player in it on the
+	zone of the ground below, Burning Steppes (1428) under most of it, Searing Gorge (1427) under its
+	gate's tunnel, the Masonary, the Depths' door and the Quarry's north end. So the ring's picture
+	is on both (only the tunnel on Searing Gorge's), the lower one too.
 	The ring's rooms read The Molten Span, Blackrock Spire or Forgewright's Tomb; the lower level's,
 	The Grinding Quarry or The Masonary. The Molten Span is one room of the game's that reaches down
 	to the Molten Core's ledge too: it shows the ring. The tunnels from the gates read "Blackrock
@@ -245,9 +247,9 @@ end
 	the gates' fronts are not: so the ring counts that name indoors only (indoorAreas; its own
 	names count anywhere). Before that, the map turned only at the tunnels' inner ends, the
 	player's readings there (2026-10-21) 1428 (0.2748, 0.2318) and (0.2796, 0.3509), The Molten
-	Span. The doorway by the Molten Core's ledge, "Blackrock Mountain" too,
-	keeps a player come up from the Quarry below on the lower map; and the Depths' door, named
-	nothing at all (unnamed), keeps one come from the Masonary.
+	Span. The doorway by the Molten Core's ledge, "Blackrock Mountain" too, keeps a player come up
+	from the Quarry below on the lower map; and the Depths' door, named nothing at all (unnamed),
+	keeps one come from the Masonary.
 	The ways in, with a building's icon (the player's pick), show at both gates, where the
 	player's /aegis where read 1428 (0.2940, 0.3829) and 1427 (0.3485, 0.8583) as the minimap
 	turned to the mountain (2026-10-21); each names all three dungeons (alsoLeadsTo: the Depths'
@@ -356,8 +358,9 @@ ns.AddSubMap({
 	area, 161, as is "Whispering Gardens", 160, beside it); the hall may read "Scarlet Monastery",
 	its vestibule "The Grand Vestibule". The ground before the gate reads "Terrace of Repose" too,
 	so the map shows only indoors, as the minimap switches to the building's: from the stair
-	corridor in (the player's readings: outdoors at the gate, indoors at 0.8371, 0.3221). The building's way in is marked on Tirisfal where the
-	wings' shared door stood, and each wing's door moves to its own portal in the hall.
+	corridor in (the player's readings: outdoors at the gate, indoors at 0.8371, 0.3221). The
+	building's way in is marked on Tirisfal where the wings' shared door stood, and each wing's
+	door moves to its own portal in the hall.
 ]]
 local SCARLET_HALL = {
 	name = "Scarlet Monastery",
@@ -393,7 +396,8 @@ ScarletHall("ScarletMonasteryHallContinent", 1415, { 0.473297, 0.192519 }, { 0.4
 
 -- The wings' shared door on Tirisfal moves into the hall, amid their portals (the game's portal
 -- triggers, a few yards apart: one icon for the four, as before), the way in marking the entrance.
-for _, key in ipairs({ "ScarletMonasteryGraveyard", "ScarletMonasteryLibrary", "ScarletMonasteryArmory", "ScarletMonasteryCathedral" }) do
+for _, key in ipairs({ "ScarletMonasteryGraveyard", "ScarletMonasteryLibrary",
+	"ScarletMonasteryArmory", "ScarletMonasteryCathedral" }) do
 	if ns.GetInstance(key) then
 		ns.AmendInstance(key, {
 			zoneEntrance = { mapID = 1420, x = 0.8529, y = 0.3118 },
