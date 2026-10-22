@@ -19,6 +19,27 @@ function ns.Speaks(locale)
 	return GetLocale() == locale
 end
 
+--[[
+	What a translation holds to match the client's own text (an item's Equip: lines, the room the
+	player stands in, a boss or a faction the client names) is the client's language's, previewed
+	or not: it goes to ns.ClientL. ns.LocaleTargets gives a translation the table its words go to,
+	ns.L where the journal speaks its language (where only the client does, a table thrown away
+	once the language's two files have read it: Russian's faction names are in its interface
+	file), and ns.ClientL where the client speaks it; nothing where neither does.
+]]
+ns.ClientL = {}
+local unspoken
+function ns.LocaleTargets(locale)
+	local speaks, client = ns.Speaks(locale), GetLocale() == locale
+	if not (speaks or client) then return nil end
+	if not speaks then unspoken = unspoken or setmetatable({}, { __index = L }) end
+	return speaks and L or unspoken, client and ns.ClientL or nil
+end
+-- Once every translation has loaded and been read (Core/Registry.lua's ns.KeepClientNames).
+function ns.ForgetUnspokenWords()
+	unspoken = nil
+end
+
 L.JOURNAL_TITLE = "Instance Journal"
 L.HOME = HOME or "Home"
 L.TAB_DUNGEONS = DUNGEONS or "Dungeons"
@@ -29,7 +50,11 @@ L.BINDING_TOGGLE = "Toggle Instance Journal"
 L.KEY_CLAIMED = "Shift+J now opens the Instance Journal."
 L.KEY_TAKEN = "Shift+J is already bound to %s. Choose a key under Key Bindings > AddOns > Toggle Instance Journal."
 L.POSITION_RESET = "Window position reset."
-L.SLASH_HELP = "/aegis (or /ij) opens the journal. /aegis record starts or stops recording. /aegis reset moves the window back to its default place. /aegis perf measures the journal's memory and speed. /aegis where and /aegis taxi report where you stand and the flight points on your map. /aegis travel saves a boat, zeppelin, tram or portal for the world map. /aegis items finds the listed items the server knows nothing of. /aegis gear opens the Gear Finder, /aegis weights its stat weights; /aegis gearscan saves what it reads from your gear, for checking its scoring. /aegis options opens the journal's options. /aegis lang previews the journal in another of its languages."
+-- /aegis dock (Core/Init.lua; UI/Journal.lua's docking).
+L.DOCK_ON = "The window now opens at the top left, beside the game's own windows. Drag it to move it until it closes."
+L.DOCK_OFF = "The window is free again: it opens where you last dragged it."
+L.DOCK_AFTER_COMBAT = "That takes effect when combat ends."
+L.SLASH_HELP = "/aegis (or /ij) opens the journal. /aegis record starts or stops recording. /aegis reset moves the window back to its default place. /aegis dock docks the window at the top left, beside the game's windows, or frees it again. /aegis perf measures the journal's memory and speed. /aegis where and /aegis taxi report where you stand and the flight points on your map. /aegis travel saves a boat, zeppelin, tram or portal for the world map. /aegis items finds the listed items the server knows nothing of. /aegis gear opens the Gear Finder, /aegis weights its stat weights; /aegis gearscan saves what it reads from your gear, for checking its scoring. /aegis options opens the journal's options. /aegis lang previews the journal in another of its languages."
 -- /aegis lang (Core/Init.lua)
 L.LANG_USAGE = "/aegis lang de, fr, ru, cn, tw, es, mx, pt or ko shows the journal in German, French, Russian, Chinese (Simplified or Traditional), Spanish (Spain or Latin America), Brazilian Portuguese or Korean from your next /reload, to check a translation; /aegis lang off goes back to your client's language. Now: %s."
 L.LANG_SET = "From your next /reload the journal speaks %s: only its own words, as the game's own names stay your client's. Type /reload now; /aegis lang off goes back."
@@ -156,6 +181,8 @@ L.PAWN_RELOAD_NOW = "Reload"
 L.PAWN_RELOAD_LATER = "Later"
 L.WEIGHTS_SOURCE_PAWN_LIVE = "Pawn's %s scale. Change it in Pawn, or choose the journal's in its options."
 L.OPTIONS_MINIMAP_TIP = "The journal's button on the edge of the minimap: click it to open the journal, right-click it for these options, drag it to move it."
+L.OPTIONS_DOCK = "Dock the window at the top left"
+L.OPTIONS_DOCK_TIP = "Ticked: the journal opens at the top left of the screen, where the game opens its own windows, and moves aside when one of them opens there, as they do for each other; where there isn't room for both, the game closes the older one. Drag it to move it anywhere: it docks again the next time it opens. Unticked: it opens where you last dragged it."
 -- The minimap button's tooltip.
 L.MINIMAP_LEFT_CLICK = "Click to open or close the journal."
 L.MINIMAP_RIGHT_CLICK = "Right-click for its options."
@@ -163,6 +190,8 @@ L.MINIMAP_DRAG = "Drag to move it around the minimap."
 L.OPTIONS_ARROWS_TIP = "A green arrow on items that are upgrades for your spec, as the Gear Finder counts them: in your bags, in the loot window and on loot rolls."
 L.WEIGHTS_SHOW_GAINS = "Show stat weights in tooltips"
 L.WEIGHTS_SHOW_GAINS_TIP = "Under every item, a line for each of your specs: what the item is worth by its weights, and a green arrow with what it adds to your gear when it is an upgrade. For all your characters. With Pawn installed, this shows or hides the journal's scale in Pawn instead, and with it Pawn's upgrade arrows for the journal's weights: Pawn marks upgrades only for the scales it shows."
+L.OPTIONS_SOURCES = "Show where items drop in tooltips"
+L.OPTIONS_SOURCES_TIP = "Under every item that drops in the journal's dungeons and raids, a line naming the boss and the dungeon: in your bags, on your character, in chat links, at merchants and wherever else the game shows the item. For all your characters."
 L.GEAR_WHY_CUSTOM = "%s (your weights)"
 -- The specs' names and the units their weights count in are the generated weights' own English
 -- (Data/Generated/GearWeights.lua). A translation names them here: by spec key
@@ -296,6 +325,13 @@ L.LOOT_UNFAVORITE = "Remove from favorites"
 L.LOOT_PINNED = "Pinned"
 L.LOOT_ALL = "Loot"
 L.LOOT_TRASH = "Dungeon trash"
+-- Where an item drops, on its tooltip (UI/ItemTooltip.lua): its boss and dungeon, its number of
+-- bosses there, its trash; the dungeons, for one of several; on a loot row, the other dungeons.
+L.DROPS_FROM_BOSS = "Drops from %s in %s"
+L.DROPS_FROM_TRASH = "Drops from trash in %s"
+L.DROPS_FROM_BOSSES = "Drops from %d bosses in %s"
+L.DROPS_IN = "Drops in %s"
+L.DROPS_ALSO_IN = "Also drops in %s"
 -- The world map legend's entries, each a switch (UI/MapLegend.lua).
 L.LEGEND_CLICK_HIDE = "Click to hide these on the map."
 L.LEGEND_CLICK_SHOW = "Hidden. Click to show these on the map again."
@@ -399,6 +435,8 @@ L.ENTRANCE_WAYPOINT_SET = "Waypoint set to the entrance of %s."
 L.ENTRANCE_VIA = "Its portal is below, in %s: go down at the cave entrance."
 L.ENTRANCE_WAYPOINT_VIA = "Waypoint set to the way down into %s, for %s."
 L.CAVE_LABEL = "Cave Entrance"
+L.BUILDING_LABEL = "Entrance"
+L.ENTRANCE_VIA_BUILDING = "Its portal is inside, in %s: go in at the entrance."
 L.CAVE_LEADS_TO = "The way to %s"
 L.CAVE_LEFT_CLICK = "Left-click to see the map of %s"
 L.CAVE_WAYPOINT_SET = "Waypoint set to the way down into %s."
@@ -420,7 +458,9 @@ L.TRAVEL_LIST_LINE = "%d. %s at %s (map %d, %.4f, %.4f)"
 L.TRAVEL_WAYPOINT_SET = "Waypoint set to %s."
 L.LEGEND_TRANSPORT = "Transport"
 L.LEGEND_TRANSPORT_TOOLTIP = "Boats, zeppelins, the tram and portals. Blue serves the Alliance, red the Horde, gold everyone."
-L.LEGEND_CAVE_TOOLTIP = "The way into a cave, or down to a level below the zone. Click it on the map to see where it leads."L.SEARCH_SHOW_ALL = SEARCH_RESULTS_SHOW_COUNT or "Show All %d Results"
+L.LEGEND_CAVE_TOOLTIP = "The way into a cave, where a dungeon's door is. Click it on the map to see inside."
+L.LEGEND_BUILDING_TOOLTIP = "The way into a building, a mountain's halls or a level below the zone, where a dungeon's door is. Click it on the map to see inside."
+L.SEARCH_SHOW_ALL = SEARCH_RESULTS_SHOW_COUNT or "Show All %d Results"
 L.SEARCH_RESULTS = ENCOUNTER_JOURNAL_SEARCH_RESULTS or "Search Results for \"%s\" (%d)"
 L.SEARCH_TYPE_BOSS = "Encounter"
 L.SEARCH_TYPE_ABILITY = "Ability"

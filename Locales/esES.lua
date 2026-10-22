@@ -10,9 +10,10 @@ local _, ns = ...
 	client names the race (Cielonato de la Orden Eminente, Cielonato Formavientos). The rooms of
 	Forever's new dungeons have no official Spanish form yet: they are drafted in the game's style.
 ]]
-if not ns.Speaks("esES") then return end
-
-local L = ns.L
+-- The journal's words where it speaks this language; the tables matched against the client's own
+-- text where the client does, previewed or not (ns.LocaleTargets, Locales/enUS.lua).
+local L, client = ns.LocaleTargets("esES")
+if not L then return end
 
 L.JOURNAL_TITLE = "Guía de mazmorras"
 L.HOME = HOME or "Inicio"
@@ -24,7 +25,10 @@ L.BINDING_TOGGLE = "Mostrar/ocultar la Guía de mazmorras"
 L.KEY_CLAIMED = "Ahora Mayús+J abre la Guía de mazmorras."
 L.KEY_TAKEN = "Mayús+J ya está asignada a %s. Elige una tecla en Asignación de teclas > Accesorios > Mostrar/ocultar la Guía de mazmorras."
 L.POSITION_RESET = "Se ha restablecido la posición de la ventana."
-L.SLASH_HELP = "/aegis (o /ij) abre la guía. /aegis record empieza o detiene la grabación. /aegis reset devuelve la ventana a su sitio original. /aegis perf mide la memoria y la velocidad de la guía. /aegis where y /aegis taxi indican dónde estás y los puntos de vuelo de tu mapa. /aegis travel guarda un barco, zepelín, tranvía o portal para el mapa del mundo. /aegis items busca los objetos de la lista que el servidor no conoce. /aegis gear abre el Buscador de equipo, y /aegis weights, sus pesos de estadísticas; /aegis gearscan guarda lo que lee de tu equipo, para revisar su puntuación. /aegis options abre las opciones de la guía. /aegis lang muestra la guía en otro de sus idiomas, como vista previa."
+L.DOCK_ON = "La ventana ahora se abre arriba a la izquierda, junto a las ventanas del juego. Arrástrala para moverla hasta que se cierre."
+L.DOCK_OFF = "La ventana vuelve a estar libre: se abre donde la arrastraste por última vez."
+L.DOCK_AFTER_COMBAT = "Se aplicará cuando termine el combate."
+L.SLASH_HELP = "/aegis (o /ij) abre la guía. /aegis record empieza o detiene la grabación. /aegis reset devuelve la ventana a su sitio original. /aegis dock acopla la ventana arriba a la izquierda, junto a las ventanas del juego, o la vuelve a soltar. /aegis perf mide la memoria y la velocidad de la guía. /aegis where y /aegis taxi indican dónde estás y los puntos de vuelo de tu mapa. /aegis travel guarda un barco, zepelín, tranvía o portal para el mapa del mundo. /aegis items busca los objetos de la lista que el servidor no conoce. /aegis gear abre el Buscador de equipo, y /aegis weights, sus pesos de estadísticas; /aegis gearscan guarda lo que lee de tu equipo, para revisar su puntuación. /aegis options abre las opciones de la guía. /aegis lang muestra la guía en otro de sus idiomas, como vista previa."
 -- /aegis lang (Core/Init.lua)
 L.LANG_USAGE = "/aegis lang de, fr, ru, cn, tw, es, mx, pt o ko muestra la guía en alemán, francés, ruso, chino (simplificado o tradicional), español (España o Latinoamérica), portugués de Brasil o coreano a partir de tu próximo /reload, para revisar una traducción; /aegis lang off vuelve al idioma de tu cliente. Ahora: %s."
 L.LANG_SET = "A partir de tu próximo /reload, la guía usará otro idioma (%s), pero solo en sus propios textos: los nombres del juego siguen en el idioma de tu cliente. Escribe /reload ahora; /aegis lang off lo deshace."
@@ -151,6 +155,8 @@ L.PAWN_RELOAD_NOW = "Recargar"
 L.PAWN_RELOAD_LATER = "Más tarde"
 L.WEIGHTS_SOURCE_PAWN_LIVE = "Escala %s de Pawn. Cámbiala en Pawn o elige la de la guía en sus opciones."
 L.OPTIONS_MINIMAP_TIP = "El botón de la guía en el borde del minimapa: haz clic para abrir la guía, clic derecho para ver estas opciones y arrástralo para moverlo."
+L.OPTIONS_DOCK = "Acoplar la ventana arriba a la izquierda"
+L.OPTIONS_DOCK_TIP = "Marcada: la guía se abre arriba a la izquierda de la pantalla, donde el juego abre sus propias ventanas, y se aparta cuando se abre allí una de ellas, como hacen entre sí; si no hay sitio para las dos, el juego cierra la más antigua. Arrástrala para moverla adonde quieras: se vuelve a acoplar la próxima vez que se abra. Desmarcada: se abre donde la arrastraste por última vez."
 -- The minimap button's tooltip.
 L.MINIMAP_LEFT_CLICK = "Haz clic para abrir o cerrar la guía."
 L.MINIMAP_RIGHT_CLICK = "Clic derecho para ver sus opciones."
@@ -158,6 +164,8 @@ L.MINIMAP_DRAG = "Arrástralo para moverlo por el borde del minimapa."
 L.OPTIONS_ARROWS_TIP = "Una flecha verde en los objetos que son mejoras para tu especialización, tal como las cuenta el Buscador de equipo: en tus bolsas, en la ventana de botín y en las tiradas de botín."
 L.WEIGHTS_SHOW_GAINS = "Mostrar los pesos de estadísticas en las descripciones emergentes"
 L.WEIGHTS_SHOW_GAINS_TIP = "Debajo de cada objeto, una línea por cada una de tus especializaciones: lo que vale el objeto según sus pesos y, si es una mejora, una flecha verde con lo que aporta a tu equipo. Para todos tus personajes. Con Pawn instalado, esto muestra u oculta en su lugar la escala de la guía en Pawn y, con ella, las flechas de mejora de Pawn para los pesos de la guía: Pawn solo marca mejoras para las escalas que muestra."
+L.OPTIONS_SOURCES = "Mostrar de dónde sale cada objeto en las descripciones emergentes"
+L.OPTIONS_SOURCES_TIP = "Debajo de cada objeto que se consigue en las mazmorras y bandas de la guía, una línea con el jefe y la mazmorra: en tus bolsas, en tu personaje, en los enlaces del chat, en los vendedores y en cualquier otro lugar donde el juego muestre el objeto. Para todos tus personajes."
 L.GEAR_WHY_CUSTOM = "%s (tus pesos)"
 -- The specs' names (the esES client's talent trees) and the units their weights count in, by spec
 -- key and by the English unit.
@@ -300,6 +308,11 @@ L.LOOT_UNFAVORITE = "Quitar de favoritos"
 L.LOOT_PINNED = "Fijados"
 L.LOOT_ALL = "Botín"
 L.LOOT_TRASH = "Enemigos menores de la mazmorra"
+L.DROPS_FROM_BOSS = "Botín de %s (%s)"
+L.DROPS_FROM_TRASH = "Botín de enemigos menores (%s)"
+L.DROPS_FROM_BOSSES = "Botín de %d jefes (%s)"
+L.DROPS_IN = "Botín en: %s"
+L.DROPS_ALSO_IN = "También botín en: %s"
 -- The world map legend's entries, each a switch (UI/MapLegend.lua).
 L.LEGEND_CLICK_HIDE = "Haz clic para ocultarlos en el mapa."
 L.LEGEND_CLICK_SHOW = "Ocultos. Haz clic para volver a mostrarlos en el mapa."
@@ -403,6 +416,8 @@ L.ENTRANCE_WAYPOINT_SET = "Punto de ruta fijado en la entrada de %s."
 L.ENTRANCE_VIA = "Su portal está más abajo, en %s: baja por la entrada de la cueva."
 L.ENTRANCE_WAYPOINT_VIA = "Punto de ruta fijado en la bajada a %s, para %s."
 L.CAVE_LABEL = "Entrada de cueva"
+L.BUILDING_LABEL = "Entrada"
+L.ENTRANCE_VIA_BUILDING = "Su portal está dentro, en %s: entra por la entrada."
 L.CAVE_LEADS_TO = "El camino a %s"
 L.CAVE_LEFT_CLICK = "Clic izquierdo para ver el mapa de %s"
 L.CAVE_WAYPOINT_SET = "Punto de ruta fijado en la bajada a %s."
@@ -424,7 +439,8 @@ L.TRAVEL_LIST_LINE = "%d. %s en %s (mapa %d, %.4f, %.4f)"
 L.TRAVEL_WAYPOINT_SET = "Punto de ruta fijado en %s."
 L.LEGEND_TRANSPORT = "Transporte"
 L.LEGEND_TRANSPORT_TOOLTIP = "Barcos, zepelines, el tranvía y portales. El azul sirve a la Alianza, el rojo a la Horda y el dorado a todos."
-L.LEGEND_CAVE_TOOLTIP = "El camino a una cueva o a un nivel inferior de la zona. Haz clic en él en el mapa para ver adónde lleva."
+L.LEGEND_CAVE_TOOLTIP = "El camino a una cueva, donde está la puerta de una mazmorra. Haz clic en él en el mapa para ver su interior."
+L.LEGEND_BUILDING_TOOLTIP = "El camino a un edificio, a las salas de una montaña o a un nivel inferior de la zona, donde está la puerta de una mazmorra. Haz clic en él en el mapa para ver su interior."
 L.SEARCH_SHOW_ALL = SEARCH_RESULTS_SHOW_COUNT or "Mostrar los %d resultados"
 L.SEARCH_RESULTS = ENCOUNTER_JOURNAL_SEARCH_RESULTS or "Resultados de búsqueda de \"%s\" (%d)"
 L.SEARCH_TYPE_BOSS = "Encuentro"
@@ -566,17 +582,23 @@ L.AREA_NAMES = {
 	["Dark Iron Ingress"] = "Acceso Hierro Negro",
 	["Deeprun Tram"] = "Tranvía Subterráneo",
 	["Defias Hideout"] = "Ladronera de los Defias",
+	["Dig One"] = "Excavación Uno",
 	["Dragonspire Hall"] = "Sala Dracopico",
 	["Dreamer's Rock"] = "Roca del Soñador",
 	["Elders' Square"] = "Plaza de los Ancestros",
+	["Eldre' Thalas"] = "Eldre'Thalas",
+	["Eldreth Row"] = "Hilera Eldreth",
 	["Engineering Labs"] = "Laboratorios de Ingeniería",
+	["Excavation Center"] = "Centro de excavación",
 	["Festival Lane"] = "Calle del Festival",
 	["Footman's Armory"] = "Arsenal de los Soldados",
+	["Forgewright's Tomb"] = "Tumba del Forjador",
 	["Forlorn Cloister"] = "Claustro Inhóspito",
 	["Gallery of Treasures"] = "Galería de los Tesoros",
 	["Goblin Foundry"] = "Fundición Goblin",
 	["Gordok Commons"] = "Ágora de Gordok",
 	["Hall of Champions"] = "Sala de los Campeones",
+	["Hall of the Keepers"] = "Sala de los Guardianes",
 	["Halycon's Lair"] = "Guarida de Halycon",
 	["Honor's Tomb"] = "Tumba del Honor",
 	["Hordemar City"] = "Ciudad Hordemar",
@@ -597,6 +619,7 @@ L.AREA_NAMES = {
 	["Moonshrine Ruins"] = "Ruinas del Santuario Lunar",
 	["Moonshrine Sanctum"] = "Sagrario Lunar",
 	["Mount Hyjal"] = "Monte Hyjal",
+	["North Common Hall"] = "Sala común norte",
 	["Pit of Fangs"] = "Foso de los Colmillos",
 	["Prison of Immol'thar"] = "Prisión de Immol'thar",
 	["Reliquary of Kings"] = "Relicario de los Reyes",
@@ -606,6 +629,7 @@ L.AREA_NAMES = {
 	["Site of the Guardian"] = "Lugar del Guardián",
 	["Skitterweb Tunnels"] = "Túneles de Arácnidas",
 	["Slaughter Square"] = "Plaza Degolladero",
+	["South Common Hall"] = "Sala común sur",
 	["Stalker's Thicket"] = "Matorral del Acechador",
 	["Tazz'Alaor"] = "Tazz'Alaor",
 	["Tazz'Alor"] = "Tazz'Alaor",
@@ -615,17 +639,27 @@ L.AREA_NAMES = {
 	["The Drowned Sacellum"] = "El Templete Sumergido",
 	["The Forgotten Pool"] = "Las Charcas del Olvido",
 	["The Gauntlet"] = "El Guantelete",
+	["The Grand Vestibule"] = "El Gran Vestíbulo",
+	["The Grinding Quarry"] = "La Cantera Trituradora",
 	["The Hall of Gears"] = "La Sala de Máquinas",
 	["The Hall of Lights"] = "La Sala de las Luces",
 	["The High Seat"] = "El Trono",
 	["The Hoard"] = "El Tesoro Oculto",
+	["The Masonary"] = "La Mampostería",
+	["The Molten Span"] = "El Puente Fundido",
 	["The Pool of Ask'ar"] = "La Alberca de Ask'ar",
 	["The Rookery"] = "El Grajero",
 	["The Scarlet Bastion"] = "La Basílica Escarlata",
+	["The Sealed Hall"] = "La Sala Sellada",
 	["The Shrine of Eldretharr"] = "Santuario de Eldretharr",
 	["The Slaughter House"] = "El Degolladero",
 	["The Storehouse"] = "Almacén",
+	["The Wailing Caverns"] = "Cuevas de los Lamentos",
 	["Tinkers' Court"] = "Cámara Manitas",
 	["Training Grounds"] = "Patio de Armas",
 	["Warpwood Quarter"] = "Barrio Alabeo",
 }
+
+-- Matched against the client's own text: the client's language's only, previewed or not.
+if client then client.EQUIP_PATTERNS, client.AREA_NAMES = L.EQUIP_PATTERNS, L.AREA_NAMES end
+L.EQUIP_PATTERNS, L.AREA_NAMES = nil, nil

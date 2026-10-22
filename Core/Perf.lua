@@ -114,11 +114,13 @@ end
 local ITEMS_PER_STEP, STEP_SECONDS, ANSWER_SECONDS, SHOWN_IN_CHAT = 25, 0.25, 20, 20
 local scanningItems = false
 
+-- Where each listed item drops, in English for the saved file and the recording it goes out with,
+-- and as the journal names it for the chat.
 local function ListedItems()
-	local where, order = {}, {}
-	local function Add(itemID, source)
+	local where, shown, order = {}, {}, {}
+	local function Add(itemID, source, shownSource)
 		if ns.Items:IsIdentified(itemID) and not where[itemID] then
-			where[itemID] = source
+			where[itemID], shown[itemID] = source, shownSource
 			order[#order + 1] = itemID
 		end
 	end
@@ -129,10 +131,12 @@ local function ListedItems()
 	for _, faction in ipairs(ns.GetFactions()) do lists[#lists + 1] = faction end
 	for _, list in ipairs(lists) do
 		for _, boss in ipairs(list.bosses or {}) do
-			for _, row in ipairs(boss.loot or {}) do Add(row.itemID, boss.name .. ", " .. list.name) end
+			for _, row in ipairs(boss.loot or {}) do
+				Add(row.itemID, (boss.enName or boss.name) .. ", " .. (list.enName or list.name), boss.name .. ", " .. list.name)
+			end
 		end
 	end
-	return where, order
+	return where, shown, order
 end
 
 function Perf:Items()
@@ -141,7 +145,7 @@ function Perf:Items()
 		return
 	end
 	scanningItems = true
-	local where, order = ListedItems()
+	local where, shown, order = ListedItems()
 	local steps = math.ceil(#order / ITEMS_PER_STEP)
 	ns.Print(string.format(L.ITEMS_START, #order, math.ceil(steps * STEP_SECONDS + ANSWER_SECONDS)))
 	local function Finish()
@@ -159,7 +163,7 @@ function Perf:Items()
 		if ns.LootPanel then ns.LootPanel:RefreshShown() end
 		ns.Print(string.format(L.ITEMS_DONE, #order, #unknown))
 		for index = 1, math.min(#unknown, SHOWN_IN_CHAT) do
-			ns.Print(string.format(L.ITEMS_LINE, unknown[index], missing[unknown[index]]))
+			ns.Print(string.format(L.ITEMS_LINE, unknown[index], shown[unknown[index]]))
 		end
 		if #unknown > SHOWN_IN_CHAT then ns.Print(string.format(L.ITEMS_MORE, #unknown - SHOWN_IN_CHAT)) end
 		scanningItems = false

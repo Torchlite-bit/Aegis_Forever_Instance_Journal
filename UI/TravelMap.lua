@@ -154,6 +154,17 @@ local function Near(spot, other)
 		and math.abs(spot.y - other.y) < NEAR
 end
 
+-- The journal's name for a route a saved spot names in English or in the client's language, where
+-- the journal shows another (Core/Registry.lua keeps both).
+local function JournalName(base, destination)
+	for _, names in ipairs({ base.enTo or {}, base.clientTo or {} }) do
+		for index, name in ipairs(names) do
+			if name == destination and base.to[index] then return base.to[index] end
+		end
+	end
+	return destination
+end
+
 local function Joined(base, saved)
 	local spot = { to = {}, notes = {} }
 	for key, value in pairs(base) do
@@ -161,9 +172,12 @@ local function Joined(base, saved)
 	end
 	for _, from in ipairs({ base, saved }) do
 		for _, destination in ipairs(from.to) do
+			if from == saved then destination = JournalName(base, destination) end
 			if not Contains(spot.to, destination) then spot.to[#spot.to + 1] = destination end
 		end
-		for destination, note in pairs(from.notes or {}) do spot.notes[destination] = note end
+		for destination, note in pairs(from.notes or {}) do
+			spot.notes[from == saved and JournalName(base, destination) or destination] = note
+		end
 	end
 	return spot
 end

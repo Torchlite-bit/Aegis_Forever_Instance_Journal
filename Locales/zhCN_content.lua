@@ -7,9 +7,10 @@ local _, ns = ...
 	name to follow. Every other client skips it.
 ]]
 
-if not ns.Speaks("zhCN") then return end
-
-local L = ns.L
+-- The journal's words where it speaks this language; the tables matched against the client's own
+-- text where the client does, previewed or not (ns.LocaleTargets, Locales/enUS.lua).
+local L, client = ns.LocaleTargets("zhCN")
+if not L then return end
 
 L.INSTANCE_NAMES = {
 	["AlcazPrison"] = "奥卡兹监狱",
@@ -80,8 +81,26 @@ L.FACTION_NAMES = {
 
 L.SUBMAP_NAMES = {
 	["DeadminesApproach"] = "迪菲亚藏身处",
+	["WailingCavernsApproach"] = "哀嚎洞穴",
+	["WailingCavernsApproachBarrens"] = "哀嚎洞穴",
+	["UldamanApproach"] = "奥达曼",
+	["MaraudonOrange"] = "玛拉顿（橙色）",
+	["MaraudonPurple"] = "玛拉顿（紫色）",
+	["BlackrockMountain"] = "黑石山",
+	["BlackrockMountainGorge"] = "黑石山",
+	["BlackrockDepthsApproach"] = "黑石山",
+	["BlackrockDepthsApproachSteppes"] = "黑石山",
+	["DireMaulRuins"] = "厄运之槌",
+	["ScarletMonasteryHall"] = "血色修道院",
+	["ScarletMonasteryHallContinent"] = "血色修道院",
 	["DeeprunTram"] = "矿道地铁",
 	["OldIronforge"] = "旧铁炉堡",
+}
+
+-- Levels of an area below a zone (its menu on the world map), by their English names.
+L.SUBMAP_LEVELS = {
+	["Blackrock Spire"] = "黑石塔",
+	["Blackrock Depths"] = "黑石深渊",
 }
 
 L.BOSS_NAMES = {
@@ -2568,3 +2587,7 @@ L.STRINGS = {
 	["Young Crocolisk Skins"] = "小鳄鱼皮",
 	["Zaetar's Spirit, inside the dungeon"] = "扎尔塔的灵魂，地下城内",
 }
+
+-- The client's own names for the bosses, factions and places, which what it says of them (and the
+-- routes the player saved) are matched by (Core/Registry.lua's ns.KeepClientNames).
+if client then client.BOSS_NAMES, client.FACTION_NAMES, client.STRINGS = L.BOSS_NAMES, L.FACTION_NAMES, L.STRINGS end

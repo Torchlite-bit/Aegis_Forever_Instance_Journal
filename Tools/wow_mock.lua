@@ -68,13 +68,28 @@ local function NewRegion(objectType, name, parent)
 	return region
 end
 
+-- A protected frame shown, hidden or moved by an addon's code in combat: not done, and noted in
+-- Mock.blocked, as the client blocks it (ADDON_ACTION_BLOCKED, which pcall does not catch).
+Mock.blocked, Mock.secure = {}, false
+local function Blocked(self, method)
+	if rawget(self, "_protected") and Mock.inCombat and not Mock.secure then
+		Mock.blocked[#Mock.blocked + 1] = (self._name or "?") .. ":" .. method .. "()"
+		return true
+	end
+end
+function Mock.Protect(frame) rawset(frame, "_protected", true) end
+function Region:IsProtected() return rawget(self, "_protected") == true end
+
 function Region:GetObjectType() return self._type end
 function Region:GetChildren() return unpack(rawget(self, "_children") or {}) end
 function Region:GetName() return self._name end
 function Region:GetParent() return self._parent end
 function Region:SetParent(parent) self._parent = parent end
-function Region:Show() self._shown = true; self:_RunScript("OnShow") end
-function Region:Hide() local was = self._shown; self._shown = false; if was then self:_RunScript("OnHide") end end
+function Region:Show() if Blocked(self, "Show") then return end self._shown = true; self:_RunScript("OnShow") end
+function Region:Hide()
+	if Blocked(self, "Hide") then return end
+	local was = self._shown; self._shown = false; if was then self:_RunScript("OnHide") end
+end
 -- The client's SetShown does not go through a frame's own Show or Hide: a hook on those does not hear it.
 function Region:SetShown(shown) if shown then Region.Show(self) else Region.Hide(self) end end
 function Region:IsShown() return self._shown end
@@ -83,8 +98,19 @@ function Region:IsVisible()
 	if self._parent and self._parent.IsVisible and self._parent ~= UIParent then return self._parent:IsVisible() end
 	return true
 end
-function Region:SetPoint(...) self._points[#self._points + 1] = { ... } end
-function Region:ClearAllPoints() self._points = {} end
+function Region:SetPoint(...) if Blocked(self, "SetPoint") then return end self._points[#self._points + 1] = { ... } end
+function Region:ClearAllPoints() if Blocked(self, "ClearAllPoints") then return end self._points = {} end
+-- Attributes, as frames keep them; a handler hears each change.
+function Region:SetAttribute(name, value)
+	if Blocked(self, "SetAttribute") then return end
+	local attributes = rawget(self, "_attributes") or {}
+	rawset(self, "_attributes", attributes)
+	attributes[name] = value
+	self:_RunScript("OnAttributeChanged", name, value)
+end
+function Region:GetAttribute(name) local attributes = rawget(self, "_attributes") return attributes and attributes[name] end
+function Region:StartMoving() self._moving = true end
+function Region:StopMovingOrSizing() self._moving = nil end
 function Region:GetNumPoints() return #self._points end
 function Region:GetPoint(index)
 	local point = self._points[index or 1]
@@ -142,11 +168,23 @@ function Region:HookScript(name, handler)
 		handler(...)
 	end
 end
+-- A frame's script is its owner's code: run insecure, and what ran it is secure again after.
+local function RestoreSecure(was, ...) Mock.secure = was return ... end
 function Region:_RunScript(name, ...)
 	local handler = self._scripts[name]
-	if handler then return handler(self, ...) end
+	if not handler then return end
+	local was = Mock.secure
+	Mock.secure = false
+	return RestoreSecure(was, handler(self, ...))
 end
-function Region:Click(button) return self:_RunScript("OnClick", button or "LeftButton", false) end
+-- PreClick, then OnClick, then PostClick, as the client runs a button's click.
+function Region:Click(button)
+	button = button or "LeftButton"
+	self:_RunScript("PreClick", button, false)
+	local results = { self:_RunScript("OnClick", button, false) }
+	self:_RunScript("PostClick", button, false)
+	return unpack(results)
+end
 
 -- Events Forever keeps from addons: registering or unregistering one is a forbidden action (pcall does
 -- not catch it), noted in Mock.forbidden.
@@ -327,6 +365,25 @@ function CreateFrame(frameType, name, parent, template)
 	-- Templates from the addon's own XML bring their mixins, as the client applies them.
 	local xml = template and Mock.xmlTemplates[template]
 	if xml and xml.mixin then Mixin(frame, _G[xml.mixin]) end
+	if template == "PortraitFrameTemplate" or template == "ButtonFrameTemplate" then
+		-- The template's X (UIPanelCloseButton): its click closes its parent through HideUIPanel
+		-- (Blizzard_SharedXML/Mainline/SharedUIPanelTemplates.lua:152-164).
+		local close = CreateFrame("Button", name and name .. "CloseButton", frame)
+		close:SetScript("OnClick", function(self) HideUIPanel(self:GetParent()) end)
+		rawset(frame, "CloseButton", close)
+	end
+	if template == "NavButtonTemplate" then
+		-- A step of a location bar (Blizzard_FrameXML/Mainline/NavigationBar.xml): its text, the
+		-- current step's look (selected), and the dropdown arrow its menu opens on.
+		rawset(frame, "text", frame:CreateFontString(nil, "OVERLAY"))
+		rawset(frame, "selected", frame:CreateTexture(nil, "OVERLAY"))
+		frame.selected:Hide()
+		rawset(frame, "MenuArrowButton", CreateFrame("DropdownButton", nil, frame))
+		frame.MenuArrowButton:Hide()
+		-- Stands in for the template's own NavButtonTemplate_OnShow, which the addon clears.
+		frame:SetScript("OnShow", function() end)
+		function frame:SetText(text) self._text = text; self.text:SetText(text) end
+	end
 	if template == "MapLegendButtonTemplate" then
 		-- Retail's map legend entry (Blizzard_UIPanels_Game/Mainline/MapLegendFrame.lua): hovering
 		-- it makes the pins of its templates glow, those its meta data matches (MetaDataMatches:
@@ -495,9 +552,14 @@ ScrollUtil = { InitScrollFrameWithScrollBar = function() end }
 function ScrollFrame_OnLoad(scroll) scroll.ScrollBar = CreateFrame("EventFrame", nil, scroll) end
 GameTooltip = CreateFrame("GameTooltip", "GameTooltip")
 GameTooltip._lines = {}
-function GameTooltip:SetOwner(owner) self._lines, self._owner, self._link = {}, owner, nil end
+function GameTooltip:SetOwner(owner) self._lines, self._styles, self._owner, self._link, self._data = {}, {}, owner, nil, nil end
 function GameTooltip:GetOwner() return self._owner end
-function GameTooltip:AddLine(text) self._lines[#self._lines + 1] = text end
+-- Each line's colour and wrapping, by its index (_styles).
+function GameTooltip:AddLine(text, r, g, b, wrap)
+	self._lines[#self._lines + 1] = text
+	self._styles = self._styles or {}
+	self._styles[#self._lines] = { r = r, g = g, b = b, wrap = wrap }
+end
 -- A two-column line is kept as "left<tab>right".
 function GameTooltip:AddDoubleLine(left, right) self._lines[#self._lines + 1] = left .. "\t" .. right end
 
@@ -579,6 +641,106 @@ WorldMapFrame.ScrollContainer.Child = mapCanvas
 -- Forever's map pin button, in the canvas's top-left corner (Camelot/Blizzard_WorldMap.lua).
 WorldMapFrame.WorldMapTrackingPinButton = CreateFrame("Button", nil, WorldMapFrame.ScrollContainer)
 WorldMapFrame._providers, WorldMapFrame._pools = {}, {}
+-- The map's location bar ("World > Eastern Kingdoms > Burning Steppes"), modelled on Forever's
+-- NavBar (Blizzard_FrameXML/Mainline/NavigationBar.lua): a home step (the world map) and a step per
+-- map down to the one shown, each as wide as its text plus its menu arrow; the last the current
+-- one (selected, disabled), the others links. Laid out again for each map, the same list emptied
+-- in place and its freed buttons reused last first (NavBar_Reset, NavBar_AddButton); when the
+-- steps are wider than the bar (583 px, the windowed map's) less its buffer, the first are folded
+-- into the overflow button (NavBar_CheckLength). A link's click clears the steps after it, lays
+-- the bar out again, then opens its map (NavBar_ButtonOnClick).
+local navBar = CreateFrame("Frame", nil, WorldMapFrame)
+navBar.template, navBar.navList, navBar.freeButtons, navBar.widthBuffer = "NavButtonTemplate", {}, {}, 20
+navBar:SetFrameLevel(10)
+navBar:SetWidth(583)
+navBar.overflowButton = CreateFrame("Button", nil, navBar)
+navBar.overflowButton:SetWidth(44)
+navBar.overflowButton.xoffset = -18
+navBar.overflowButton:Hide()
+WorldMapFrame.NavBar = navBar
+function NavBar_CheckLength(bar)
+	local list = rawget(bar, "navList")
+	if not list then return end
+	local maxWidth, width, folded = bar:GetWidth() - bar.widthBuffer, 0, false
+	for index = #list, 1, -1 do
+		width = width + list[index]:GetWidth()
+		if width > maxWidth then
+			list[index]:Hide()
+			folded = true
+		else
+			list[index]:Show()
+		end
+	end
+	bar.overflowButton:SetShown(folded)
+	local previous = folded and bar.overflowButton or nil
+	for index, button in ipairs(list) do
+		if button:IsShown() then
+			if previous then button:SetPoint("LEFT", previous, "RIGHT", previous.xoffset or 0, 0) end
+			previous = button
+		end
+		button:SetFrameLevel(bar:GetFrameLevel() + #list - index + 1)
+		if index < #list then
+			button.selected:Hide()
+			button:Enable()
+		else
+			button.selected:Show()
+			button:Disable()
+		end
+	end
+end
+local function ClearTrailingSteps(bar, button)
+	for index = #bar.navList, 1, -1 do
+		if bar.navList[index] == button then break end
+		bar.navList[index]:Hide()
+		bar.freeButtons[#bar.freeButtons + 1] = bar.navList[index]
+		bar.navList[index] = nil
+	end
+	NavBar_CheckLength(bar)
+end
+local function NavStep(bar)
+	local button = table.remove(bar.freeButtons)
+	if button then return button end
+	-- Each gets its click once, when made.
+	button = CreateFrame("Button", nil, bar, "NavButtonTemplate")
+	button:SetScript("OnClick", function(step, mouse)
+		if mouse == "LeftButton" then
+			ClearTrailingSteps(bar, step)
+			WorldMapFrame:SetMapID(step.id)
+		end
+	end)
+	return button
+end
+function navBar:Refresh()
+	for index = 2, #self.navList do
+		self.navList[index]:Hide()
+		self.freeButtons[#self.freeButtons + 1] = self.navList[index]
+	end
+	for index = #self.navList, 2, -1 do self.navList[index] = nil end
+	local chain, mapID = {}, Mock.worldMapID
+	while mapID and Mock.maps[mapID] do
+		table.insert(chain, 1, mapID)
+		mapID = Mock.maps[mapID].parent
+	end
+	if chain[1] ~= 947 then table.insert(chain, 1, 947) end
+	for position, id in ipairs(chain) do
+		local button = self.navList[position]
+		if not button then
+			button = NavStep(self)
+			self.navList[position] = button
+		end
+		button:ClearAllPoints()
+		button:SetText(Mock.maps[id].name)
+		button.id = id
+		if position == 1 then
+			button.xoffset = -15
+			button:SetWidth(math.min(128, button.text:GetStringWidth() + 50))
+		else
+			button:SetWidth(button.text:GetStringWidth() + 53)
+		end
+		button:Show()
+	end
+	NavBar_CheckLength(self)
+end
 function WorldMapFrame:GetCanvas() return mapCanvas end
 function WorldMapFrame:GetMapID() return Mock.worldMapID end
 function WorldMapFrame:OnMapChanged() end
@@ -589,6 +751,8 @@ function WorldMapFrame:AddDataProvider(provider)
 end
 function WorldMapFrame:SetMapID(mapID)
 	Mock.worldMapID = mapID
+	local bar = rawget(self, "NavBar")
+	if bar then bar:Refresh() end
 	self:OnMapChanged()
 	for _, provider in ipairs(self._providers) do provider:OnMapChanged() end
 end
@@ -627,12 +791,16 @@ function WorldMapFrame:ActivePins(template)
 	end
 	return list
 end
+-- As the client opens it (WorldMapMixin:OnShow, MapCanvasMixin:OnShow): its map set and the
+-- location bar laid out, the data drawn, and only then each provider told the map shows.
 WorldMapFrame.Show = function(self)
 	local was = self._shown
 	Region.Show(self)
 	if not was then
-		for _, provider in ipairs(self._providers) do provider:OnShow() end
+		local bar = rawget(self, "NavBar")
+		if bar then bar:Refresh() end
 		for _, provider in ipairs(self._providers) do provider:RefreshAllData(true) end
+		for _, provider in ipairs(self._providers) do provider:OnShow() end
 	end
 end
 WorldMapFrame.Hide = function(self)
@@ -778,13 +946,17 @@ C_TaxiMap = {
 	end,
 }
 
--- Opens on the given map, or on the player's.
+-- Opens on the given map, or on the player's: set as the map shows (drawn once), or moved to it
+-- when the map is open already.
 function OpenWorldMap(mapID)
-	Mock.worldMapID = mapID or Mock.playerMapID or 947
+	local target = mapID or Mock.playerMapID or 947
+	if WorldMapFrame:IsShown() then
+		WorldMapFrame:SetMapID(target)
+		return
+	end
+	Mock.worldMapID = target
 	WorldMapFrame:Show()
-	WorldMapFrame:SetMapID(Mock.worldMapID)
 end
-function HideUIPanel(frame) frame:Hide() end
 function UnitIsDeadOrGhost() return Mock.ghost == true end
 function SetPortraitTextureFromCreatureDisplayID(texture, displayID) texture._portrait = displayID end
 function UIDropDownMenu_SetWidth() end
@@ -807,6 +979,8 @@ function GetInstanceInfo()
 	return "Eastern Kingdoms", "none", 0, "", 0, 0, false, 0, 0, 0
 end
 function GetSubZoneText() return Mock.subzone end
+-- Indoors, as the client tells it (Mock.indoors); the minimap's zoom follows it (MINIMAP_UPDATE_ZOOM).
+function IsIndoors() return Mock.indoors == true end
 function GetRealZoneText() return Mock.instance and Mock.instance.name or "Ironforge" end
 -- The name the minimap shows: the area's, else the zone's.
 function GetMinimapZoneText()
@@ -875,13 +1049,18 @@ Mock.maps = {
 	[1455] = { name = "Ironforge", mapType = 3, parent = 1415, continent = 0, left = 450, top = 700, width = 40, height = 30 },
 	[1416] = { name = "Alterac Mountains", mapType = 3, parent = 1415, continent = 0, left = 380, top = 560, width = 70, height = 60 },
 	[1420] = { name = "Tirisfal Glades", mapType = 3, parent = 1415, continent = 0, left = 300, top = 400, width = 90, height = 70 },
+	[1421] = { name = "Silverpine Forest", mapType = 3, parent = 1415, continent = 0, left = 280, top = 470, width = 80, height = 90 },
 	[1427] = { name = "Searing Gorge", mapType = 3, parent = 1415, continent = 0, left = 500, top = 900, width = 50, height = 50 },
+	[1428] = { name = "Burning Steppes", mapType = 3, parent = 1415, continent = 0, left = 500, top = 950, width = 60, height = 50 },
+	[1418] = { name = "Badlands", mapType = 3, parent = 1415, continent = 0, left = 560, top = 840, width = 80, height = 60 },
 	[1414] = { name = "Kalimdor", mapType = 2, parent = 947, continent = 1, left = 0, top = 0, width = 1000, height = 1500 },
 	[1412] = { name = "Mulgore", mapType = 3, parent = 1414, continent = 1, left = 300, top = 900, width = 120, height = 150 },
+	[1413] = { name = "The Barrens", mapType = 3, parent = 1414, continent = 1, left = 450, top = 700, width = 200, height = 300 },
 	[2521] = { name = "Zephras Isle", mapType = 3, parent = 947, continent = 2, left = 0, top = 0, width = 200, height = 200 },
 	-- Its world rectangle lies the other way round from a door's (x, y) as the game's data gives
 	-- them, so a door lands on it only with its axes swapped.
-	[1443] = { name = "Desolace", mapType = 3, parent = 1414, continent = 1, left = 2800, top = -1600, width = 300, height = 400 },
+	[1443] = { name = "Desolace", mapType = 3, parent = 1414, continent = 1, left = 2500, top = -1700, width = 700, height = 700 },
+	[1444] = { name = "Feralas", mapType = 3, parent = 1414, continent = 1, left = -4100, top = 700, width = 700, height = 700 },
 }
 function CreateVector2D(x, y)
 	return { x = x, y = y, GetXY = function(self) return self.x, self.y end }
@@ -1098,12 +1277,22 @@ ItemLocation = { CreateFromEquipmentSlot = function(_, slot) return { equipmentS
 C_Item.GetItemGUID = function(location) return Mock.WornGUID(location.equipmentSlotIndex) end
 -- What the tooltip was asked to show: retail's tooltip info, its getter and the getter's arguments.
 -- Mock.noItemGUIDs leaves the guids out, as a client without them would.
+-- Like the client's, a tooltip shown for an item starts afresh (TooltipDataHandler's ProcessInfo).
 local function ShowItem(tooltip, link, guid, getterName, ...)
+	tooltip._lines, tooltip._styles = {}, {}
 	tooltip._link = link
 	tooltip._info = { getterName = getterName or "GetHyperlink", getterArgs = { ... } }
 	tooltip._lines[#tooltip._lines + 1] = Mock.itemNames[ItemIDOf(link)] or link
 	if Mock.noItemGUIDs then guid = nil end
 	local data = { type = Enum.TooltipDataType.Item, id = ItemIDOf(link), hyperlink = link, guid = guid }
+	tooltip._data = data
+	for _, callback in ipairs(Mock.tooltipPostCalls[Enum.TooltipDataType.Item] or {}) do callback(tooltip, data) end
+end
+-- An item added beneath the one shown (a set's piece under its token): nothing is cleared, and the
+-- tooltip's own item stays the one shown.
+function Mock.AppendItem(tooltip, link)
+	tooltip._lines[#tooltip._lines + 1] = Mock.itemNames[ItemIDOf(link)] or link
+	local data = { type = Enum.TooltipDataType.Item, id = ItemIDOf(link), hyperlink = link }
 	for _, callback in ipairs(Mock.tooltipPostCalls[Enum.TooltipDataType.Item] or {}) do callback(tooltip, data) end
 end
 function GameTooltip:SetHyperlink(link) ShowItem(self, link) end
@@ -1179,8 +1368,18 @@ function GameTooltip:SetBagItem(bag, slot)
 	if item then ShowItem(self, ItemLink(item[1]), item[2], "GetBagItem", bag, slot) end
 end
 function GameTooltip:GetPrimaryTooltipInfo() return self._info end
+function GameTooltip:GetPrimaryTooltipData() return self._data end
 function GameTooltip:GetItem()
 	if self._link then return Mock.itemNames[ItemIDOf(self._link)] or "Item", self._link end
+end
+-- A chat link's tooltip, and one beside the main tooltip with what is worn.
+for _, name in ipairs({ "ItemRefTooltip", "ShoppingTooltip1" }) do
+	local tooltip = CreateFrame("GameTooltip", name)
+	tooltip._lines, tooltip._styles = {}, {}
+	for _, method in ipairs({ "SetOwner", "GetOwner", "AddLine", "AddDoubleLine", "HasLine", "SetHyperlink", "SetItemByID",
+		"GetPrimaryTooltipInfo", "GetPrimaryTooltipData", "GetItem" }) do
+		tooltip[method] = GameTooltip[method]
+	end
 end
 function GetInventoryItemTexture(unit, slot)
 	local itemID = unit == "player" and Mock.worn[slot]
@@ -1334,3 +1533,297 @@ end
 function wipe(t) for key in pairs(t) do t[key] = nil end return t end
 tinsert, tremove = table.insert, table.remove
 format = string.format
+
+------------------------------------------------------------------------------------------
+-- The client's window manager (Blizzard_UIParentPanelManager), as far as the journal meets it
+------------------------------------------------------------------------------------------
+
+--[[
+	The game's left, center and right window slots. A window's place comes from its own
+	UIPanelLayout-* attributes, or from UIPanelWindows for the client's own windows. ShowUIPanel
+	places a window by its pushable value and makes room (UIParentPanelManager.lua:185-426),
+	HideUIPanel closes the row up (537-594), and the layout puts away a window with no room
+	beside a newer one (616-756). The manager's own code is secure whoever asks; in combat an
+	addon's ShowUIPanel or HideUIPanel is refused with one chat line (854-861), counted in
+	Mock.interfaceBlocked. The client's own callers (a key binding, Escape) run through
+	Mock.AsClient. Not modelled: doublewide and fullscreen windows, checkFit, auto-minimize,
+	extraWidth, the vertical clamp, and the shop and Edit Mode refusals.
+]]
+Mock.slots, Mock.panelWindowsWrites, Mock.interfaceBlocked = {}, {}, 0
+Mock.screen = { width = 1920, height = 1080 }
+Mock.panelLayout = { DEFAULT_FRAME_WIDTH = 384, TOP_OFFSET = -116, LEFT_OFFSET = 16, CENTER_OFFSET = 384,
+	RIGHT_OFFSET = 768, RIGHT_OFFSET_BUFFER = 80, PANEl_SPACING_X = 32 }
+function UIParent:GetRight() return Mock.screen.width end
+function UIParent:GetTop() return Mock.screen.height end
+
+-- An addon's entry in the shared list is noted (the client's own go in with rawset).
+UIPanelWindows = setmetatable({}, { __newindex = function(list, name, layout)
+	Mock.panelWindowsWrites[#Mock.panelWindowsWrites + 1] = name
+	rawset(list, name, layout)
+end })
+local function Attr(frame, name)
+	if frame:GetAttribute("UIPanelLayout-defined") then return frame:GetAttribute("UIPanelLayout-" .. name) end
+	local layout = rawget(UIPanelWindows, frame:GetName() or "")
+	return layout and layout[name]
+end
+local function Width(frame) return (Attr(frame, "width") or frame:GetWidth()) * frame:GetScale() end
+local function MaxRight() return UIParent:GetRight() - Mock.panelLayout.RIGHT_OFFSET_BUFFER end
+local function Place(frame, x)
+	local scale = frame:GetScale()
+	frame:ClearAllPoints()
+	frame:SetPoint("TOPLEFT", UIParent, "TOPLEFT", x / scale, Mock.panelLayout.TOP_OFFSET / scale)
+end
+-- CanShowRightUIPanel and CanShowUIPanels (1021-1056), quirks and all.
+local function FitsRight(frame) return Mock.panelLayout.RIGHT_OFFSET + Width(frame) <= MaxRight() end
+local function FitsAll(left, center, right)
+	local offset = Mock.panelLayout.LEFT_OFFSET + Width(left)
+	if center then
+		offset = offset + (Attr(center, "area") ~= "center" and (Attr(center, "width") or Mock.panelLayout.DEFAULT_FRAME_WIDTH) or Width(center))
+		if right then offset = offset + Width(right) end
+	end
+	return offset < MaxRight()
+end
+
+local Layout, SetPanel, MovePanel, HidePanel
+function SetPanel(key, frame, skipLayout)                       -- 434-502: the slot written, its old window hidden
+	local old = Mock.slots[key]
+	Mock.slots[key] = frame
+	if old then old:Hide() end
+	if not skipLayout then Layout(frame) end
+	if frame then frame:Show() end
+end
+function MovePanel(from, to, skipLayout)                         -- 504-523
+	SetPanel(to, nil, skipLayout)
+	local moving = Mock.slots[from]
+	if moving then Mock.slots[to], Mock.slots[from] = moving, nil end
+	if not skipLayout then Layout(Mock.slots[to]) end
+end
+function HidePanel(frame, skipLayout)                            -- 537-594
+	local s = Mock.slots
+	if frame == s.right then
+		SetPanel("right", nil, skipLayout)
+	elseif frame == s.center then
+		MovePanel("right", "center", skipLayout)
+	elseif frame == s.left then
+		local area = s.center and Attr(s.center, "area")
+		if area == "center" or (area == "centerOrLeft" and not s.right) then
+			MovePanel("right", "left", skipLayout)
+		elseif area then
+			MovePanel("center", "left", true)
+			MovePanel("right", "center", skipLayout)
+		else
+			SetPanel("left", nil, skipLayout)
+		end
+	else
+		frame:Hide()
+	end
+end
+function Layout(current)                                          -- 616-756, with its re-entry guard
+	if Mock.layingOut then return end
+	Mock.layingOut = true
+	local s, layout, maxRight = Mock.slots, Mock.panelLayout, MaxRight()
+	local centerOffset, rightOffset = layout.LEFT_OFFSET, nil
+	if s.left then
+		Place(s.left, layout.LEFT_OFFSET)
+		centerOffset = layout.LEFT_OFFSET + Width(s.left)
+	end
+	layout.CENTER_OFFSET = centerOffset
+	local center = s.center
+	if center then
+		if centerOffset + Width(center) < maxRight then
+			local area = Attr(center, "area")
+			if area == "centerOrLeft" then area = (s.left or s.right) and "left" or "center" end
+			if area == "center" then
+				center:ClearAllPoints()
+				center:SetPoint("TOP", UIParent, "TOP", 0, layout.TOP_OFFSET)
+				rightOffset = centerOffset + Width(center)
+			else
+				Place(center, centerOffset + layout.PANEl_SPACING_X)
+				rightOffset = centerOffset + Width(center) + layout.PANEl_SPACING_X
+			end
+		elseif center == current and s.left then              -- 699-707: the newer stays
+			HidePanel(s.left)
+			Mock.layingOut = nil
+			return Layout(current)
+		else                                                   -- 709-710: the older is put away
+			SetPanel("center", nil, true)
+			rightOffset = centerOffset + layout.DEFAULT_FRAME_WIDTH
+		end
+	else                                                       -- 715-721, as the client has it
+		rightOffset = s.left and Width(s.left) or layout.LEFT_OFFSET + layout.DEFAULT_FRAME_WIDTH * 2
+	end
+	layout.RIGHT_OFFSET = rightOffset
+	local right = s.right
+	if right then
+		if rightOffset + Width(right) <= maxRight then
+			Place(right, rightOffset + layout.PANEl_SPACING_X)
+		elseif right == current and (s.center or s.left) then  -- 739-747
+			HidePanel(s.center or s.left)
+			Mock.layingOut = nil
+			return Layout(current)
+		else
+			SetPanel("right", nil, true)
+		end
+	end
+	Mock.layingOut = nil
+end
+local function ShowPanel(frame)                                   -- 185-426
+	local s = Mock.slots
+	local stale = {}                                              -- 156-183, at 195
+	for _, key in ipairs({ "left", "center", "right" }) do
+		if s[key] and not s[key]:IsShown() then stale[#stale + 1] = s[key] end
+	end
+	for _, held in ipairs(stale) do HidePanel(held, true) end
+	if #stale > 0 then Layout() end
+	if UnitIsDead("player") and not Attr(frame, "whileDead") then Mock.notWhileDead = true return end   -- 211-215
+	local area = Attr(frame, "area")
+	local center = s.center
+	if center and Attr(center, "area") == "center" and area ~= "center" then  -- 219-222, 259-278
+		if not Attr(center, "allowOtherPanels") then return end
+		HidePanel(center)
+	end
+	if area == "centerOrLeft" then area = (s.left or s.center or s.right) and "left" or "center" end
+	if area == "center" then CloseWindows(); SetPanel("center", frame) return end   -- 288-296
+	local left = s.left
+	if not left then SetPanel("left", frame) return end                        -- 334-337
+	center = s.center
+	local pushable = Attr(frame, "pushable") or 0
+	local leftPushable = Attr(left, "pushable") or 0
+	local centerArea = center and Attr(center, "area")
+	local centerPushable = center and (Attr(center, "pushable") or 0) or 0
+	if center and not s.right then                                             -- 343-385
+		if leftPushable == 0 and pushable == 0 then
+			SetPanel("left", frame)
+		elseif (pushable > centerPushable or centerArea == "center") and FitsRight(frame) then
+			SetPanel("right", frame)
+		elseif pushable < leftPushable then
+			if centerArea == "center" then
+				if FitsRight(left) then MovePanel("left", "right", true) end
+				SetPanel("left", frame)
+			elseif FitsAll(frame, left, center) then
+				MovePanel("center", "right", true)
+				MovePanel("left", "center", true)
+				SetPanel("left", frame)
+			else
+				SetPanel("left", frame)
+			end
+		elseif pushable <= centerPushable and centerArea ~= "center" and FitsAll(left, frame, center) then
+			MovePanel("center", "right", true)
+			SetPanel("center", frame)
+		elseif pushable <= centerPushable and centerArea ~= "center" then
+			SetPanel("left", frame)
+		else
+			SetPanel("center", frame)
+		end
+	elseif not center then                                                      -- 388-405
+		if (Attr(left, "allowOtherPanels") or 1) == 0 or (Attr(frame, "allowOtherPanels") or 1) == 0
+			or (leftPushable == 0 and pushable == 0) then
+			SetPanel("left", frame)
+		elseif leftPushable > pushable then
+			MovePanel("left", "center", true)
+			SetPanel("left", frame)
+		else
+			SetPanel("center", frame)
+		end
+	else                                                                         -- 407-425
+		if pushable > (Attr(s.right, "pushable") or 0) then
+			if FitsAll(center, s.right, frame) then
+				MovePanel("center", "left", true)
+				MovePanel("right", "center", true)
+				SetPanel("right", frame)
+			else
+				MovePanel("right", "left", true)
+				SetPanel("center", frame)
+			end
+		elseif pushable > centerPushable then
+			MovePanel("center", "left", true)
+			SetPanel("center", frame)
+		else
+			SetPanel("left", frame)
+		end
+	end
+end
+
+-- The manager's forbidden frame runs its own code securely, whoever set the attribute.
+local function Pass(func, ...)
+	Mock.AsClient(func, ...)
+end
+local function Allowed()                                                         -- 854-861
+	if Mock.inCombat and not Mock.secure then
+		Mock.interfaceBlocked = Mock.interfaceBlocked + 1
+		return false
+	end
+	return true
+end
+function ShowUIPanel(frame)                                                       -- 871-903
+	if not frame or frame:IsShown() or not Allowed() then return end
+	if not Attr(frame, "area") then
+		frame:Show()
+	else
+		Pass(ShowPanel, frame)
+	end
+	-- Told once it shows (872-876, 902).
+	if frame:IsShown() then EventRegistry:TriggerEvent("UIParentPanelManager.ShowUIPanel", frame) end
+end
+function HideUIPanel(frame, skipLayout, skipShownCheck)                           -- 905-936
+	if not frame or (not skipShownCheck and not frame:IsShown()) or not Allowed() then return end
+	if not Attr(frame, "area") then frame:Hide() return end
+	Pass(HidePanel, frame, skipLayout)
+end
+-- Mock.panelReadFails: the client refuses an addon's read of the manager's slots.
+function GetUIPanel(key)
+	if Mock.panelReadFails and not Mock.secure then error("Attempt to access forbidden object from code tainted by an AddOn") end
+	return Mock.slots[key]
+end
+function GetUIPanelLayoutAttribute(name) return Mock.panelLayout[name] end
+function UpdateUIPanelPositions(frame) Pass(Layout, frame) end
+function UpdateScaleForFitForOpenPanels()                                         -- 758-767
+	Pass(function()
+		for _, held in pairs(Mock.slots) do held:SetScale(1) end
+		Layout()
+	end)
+end
+function CloseSpecialWindows()                                                    -- 1106-1116
+	local found
+	for _, name in ipairs(UISpecialFrames) do
+		local special = _G[name]
+		if special and special:IsShown() then special:Hide(); found = 1 end
+	end
+	return found
+end
+function CloseWindows()                                                           -- 1134-1173
+	local s = Mock.slots
+	local left, center, right = s.left, s.center, s.right
+	HideUIPanel(left, true, true)
+	HideUIPanel(center, true, true)
+	HideUIPanel(right, true, true)
+	local found = CloseSpecialWindows()
+	UpdateUIPanelPositions()
+	return found
+end
+CloseAllWindows = CloseWindows
+
+-- The client's own code: a key binding, Escape, the player's click on one of the game's windows.
+function Mock.AsClient(func, ...)
+	local was = Mock.secure
+	Mock.secure = true
+	return RestoreSecure(was, func(...))
+end
+function Mock.PressEscape() return Mock.AsClient(CloseAllWindows) end
+-- One of the client's windows, registered as the client registers it, and shut.
+function Mock.BlizzardPanel(name, layout, width, protected)
+	local panel = _G[name] or CreateFrame("Frame", name, UIParent)
+	panel:SetSize(width, 500)
+	rawset(panel, "_shown", false)
+	rawset(UIPanelWindows, name, layout)
+	if protected then Mock.Protect(panel) end
+	Mock.panels[#Mock.panels + 1] = panel
+	return panel
+end
+-- The slots emptied and the client's windows shut, between tests.
+Mock.panels = {}
+function Mock.ResetPanels()
+	for key in pairs(Mock.slots) do Mock.slots[key] = nil end
+	for _, panel in ipairs(Mock.panels) do rawset(panel, "_shown", false) end
+	Mock.panelLayout.CENTER_OFFSET, Mock.panelLayout.RIGHT_OFFSET = 384, 768
+end

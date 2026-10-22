@@ -5,9 +5,10 @@ local _, ns = ...
 	the English table (Locales/enUS.lua), so every file that already holds ns.L sees these
 	strings, and anything not translated here stays English. Every other client skips it.
 ]]
-if not ns.Speaks("ruRU") then return end
-
-local L = ns.L
+-- The journal's words where it speaks this language; the tables matched against the client's own
+-- text where the client does, previewed or not (ns.LocaleTargets, Locales/enUS.lua).
+local L, client = ns.LocaleTargets("ruRU")
+if not L then return end
 
 L.JOURNAL_TITLE = "Путеводитель по подземельям"
 L.HOME = HOME or "Главная"
@@ -19,7 +20,10 @@ L.BINDING_TOGGLE = "Открыть путеводитель по подземе�
 L.KEY_CLAIMED = "Shift+J теперь открывает путеводитель по подземельям."
 L.KEY_TAKEN = "Shift+J уже назначена на %s. Выберите клавишу в Назначение клавиш > Модификации > Открыть путеводитель по подземельям."
 L.POSITION_RESET = "Положение окна сброшено."
-L.SLASH_HELP = "/aegis (или /ij) открывает путеводитель. /aegis record включает или выключает запись. /aegis reset возвращает окно на место по умолчанию. /aegis perf измеряет память и скорость путеводителя. /aegis where и /aegis taxi показывают, где вы стоите и точки полетов на карте. /aegis travel сохраняет корабль, дирижабль, подземку или портал для карты мира. /aegis items находит предметы из списка, о которых сервер ничего не знает. /aegis gear открывает поиск снаряжения, /aegis weights — настройку приоритетов характеристик; /aegis gearscan сохраняет данные экипировки для проверки расчета улучшений."
+L.DOCK_ON = "Теперь окно открывается в левом верхнем углу, рядом с окнами игры. Перетащите его, чтобы переместить до закрытия."
+L.DOCK_OFF = "Окно снова свободно: оно открывается там, куда вы перетащили его в последний раз."
+L.DOCK_AFTER_COMBAT = "Это вступит в силу после окончания боя."
+L.SLASH_HELP = "/aegis (или /ij) открывает путеводитель. /aegis record включает или выключает запись. /aegis reset возвращает окно на место по умолчанию. /aegis dock закрепляет окно слева вверху, рядом с окнами игры, или снова освобождает его. /aegis perf измеряет память и скорость путеводителя. /aegis where и /aegis taxi показывают, где вы стоите и точки полетов на карте. /aegis travel сохраняет корабль, дирижабль, подземку или портал для карты мира. /aegis items находит предметы из списка, о которых сервер ничего не знает. /aegis gear открывает поиск снаряжения, /aegis weights — настройку приоритетов характеристик; /aegis gearscan сохраняет данные экипировки для проверки расчета улучшений."
 L.LANG_USAGE = "/aegis lang de, fr, ru, cn, tw, es, mx, pt или ko показывает путеводитель на немецком, французском, русском, китайском (упрощённом или традиционном), испанском (Испания или Латинская Америка), бразильском португальском или корейском после следующего /reload, чтобы проверить перевод; /aegis lang off возвращает язык вашего клиента. Сейчас: %s."
 L.LANG_SET = "После следующего /reload путеводитель перейдёт на язык %s — только его собственные тексты: названия из самой игры останутся на языке вашего клиента. Введите /reload сейчас; /aegis lang off вернёт всё как было."
 L.LANG_OFF = "После следующего /reload путеводитель снова будет на языке вашего клиента. Введите /reload сейчас."
@@ -48,12 +52,16 @@ L.PAWN_RELOAD_NOW = "Перезагрузить"
 L.PAWN_RELOAD_LATER = "Позже"
 L.WEIGHTS_SOURCE_PAWN_LIVE = "Шкала Pawn «%s». Измените её в Pawn или выберите в настройках приоритет журнала."
 L.OPTIONS_MINIMAP_TIP = "Кнопка путеводителя на краю миникарты: ЛКМ открывает путеводитель, ПКМ — эти настройки, перетаскивание перемещает кнопку."
+L.OPTIONS_DOCK = "Закрепить окно в левом верхнем углу"
+L.OPTIONS_DOCK_TIP = "Включено: путеводитель открывается в левом верхнем углу экрана, там, где игра открывает свои окна, и сдвигается, когда там открывается одно из них, как они делают друг для друга; если места для обоих нет, игра закрывает более старое. Перетащите его, чтобы переместить куда угодно: при следующем открытии он снова закрепится. Выключено: он открывается там, куда вы перетащили его в последний раз."
 L.MINIMAP_LEFT_CLICK = "ЛКМ — открыть или закрыть путеводитель."
 L.MINIMAP_RIGHT_CLICK = "ПКМ — настройки."
 L.MINIMAP_DRAG = "Перетащите, чтобы передвинуть кнопку вдоль миникарты."
 L.OPTIONS_ARROWS_TIP = "Зелёная стрелка на предметах, которые по расчёту поиска снаряжения являются улучшениями для вашей специализации: в сумках, в окне добычи и при розыгрыше добычи."
 L.WEIGHTS_SHOW_GAINS = "Показывать приоритет характеристик в подсказках"
 L.WEIGHTS_SHOW_GAINS_TIP = "Под каждым предметом — строка для каждой вашей специализации: сколько стоит предмет по её приоритету и, если это улучшение, зелёная стрелка с тем, что он добавит к вашему снаряжению. Для всех ваших персонажей. Если установлен Pawn, этот флажок вместо этого показывает или скрывает шкалу журнала в Pawn, а вместе с ней стрелки улучшений Pawn по приоритету журнала: Pawn отмечает улучшения только для тех шкал, которые показывает."
+L.OPTIONS_SOURCES = "Показывать в подсказках, где добывается предмет"
+L.OPTIONS_SOURCES_TIP = "Под каждым предметом, который добывается в подземельях и рейдах путеводителя, — строка с боссом и подземельем: в сумках, на персонаже, в ссылках в чате, у торговцев и везде, где игра показывает предмет. Для всех ваших персонажей."
 L.ITEMS_START = "Запрос к серверу о %d предметах из списка путеводителя. Ответ придет примерно через %d сек.; можете продолжать игру."
 L.ITEMS_SCANNING = "Ожидание ответа от сервера; данные появятся через секунду."
 L.ITEMS_DONE = "Из %d предметов сервер ничего не знает о %d: скорее всего, их еще нет на сервере Forever. Путеводитель скрывает их, пока сервер или записанное прохождение не подтвердят их наличие. Полный список будет сохранен в файл при следующем /reload или выходе из игры."
@@ -285,6 +293,11 @@ L.LOOT_UNFAVORITE = "Удалить из избранного"
 L.LOOT_PINNED = "Закрепленные"
 L.LOOT_ALL = "Добыча"
 L.LOOT_TRASH = "Трэш подземелья"
+L.DROPS_FROM_BOSS = "Добыча: %s (%s)"
+L.DROPS_FROM_TRASH = "Добыча: трэш (%s)"
+L.DROPS_FROM_BOSSES = "Добыча с боссов: %d (%s)"
+L.DROPS_IN = "Добыча в подземельях: %s"
+L.DROPS_ALSO_IN = "Также добыча в подземельях: %s"
 L.LEGEND_CLICK_HIDE = "Нажмите, чтобы скрыть их на карте."
 L.LEGEND_CLICK_SHOW = "Скрыто. Нажмите, чтобы снова показать их на карте."
 L.LEGEND_GAME_FILTER = "Фильтр самой игры, как в меню фильтров карты: у выполняемых заданий и готовых к сдаче он общий."
@@ -383,6 +396,8 @@ L.ENTRANCE_WAYPOINT_SET = "Точка маршрута установлена у
 L.ENTRANCE_VIA = "Портал находится ниже, в зоне «%s»: спуститесь у входа в пещеру."
 L.ENTRANCE_WAYPOINT_VIA = "Точка маршрута установлена у спуска в %s, к %s."
 L.CAVE_LABEL = "Вход в пещеру"
+L.BUILDING_LABEL = "Вход"
+L.ENTRANCE_VIA_BUILDING = "Портал находится внутри: %s. Войдите через вход."
 L.CAVE_LEADS_TO = "Путь к %s"
 L.CAVE_LEFT_CLICK = "ЛКМ — посмотреть карту: %s"
 L.CAVE_WAYPOINT_SET = "Точка маршрута установлена у спуска в %s."
@@ -404,7 +419,8 @@ L.TRAVEL_LIST_LINE = "%d. %s у %s (карта %d, %.4f, %.4f)"
 L.TRAVEL_WAYPOINT_SET = "Точка маршрута установлена: %s."
 L.LEGEND_TRANSPORT = "Транспорт"
 L.LEGEND_TRANSPORT_TOOLTIP = "Корабли, дирижабли, подземка и порталы. Синий — для Альянса, красный — для Орды, золотой — для всех."
-L.LEGEND_CAVE_TOOLTIP = "Путь в пещеру или на уровень ниже зоны. Нажмите на карте, чтобы увидеть, куда он ведет."
+L.LEGEND_CAVE_TOOLTIP = "Путь в пещеру, где находится вход в подземелье. Нажмите на карте, чтобы увидеть, что внутри."
+L.LEGEND_BUILDING_TOOLTIP = "Путь в здание, в залы горы или на уровень ниже зоны, где находится вход в подземелье. Нажмите на карте, чтобы увидеть, что внутри."
 L.SEARCH_SHOW_ALL = SEARCH_RESULTS_SHOW_COUNT or "Показать все результаты: %d"
 L.SEARCH_RESULTS = ENCOUNTER_JOURNAL_SEARCH_RESULTS or "Результаты поиска «%s» (%d)"
 L.SEARCH_TYPE_BOSS = "Босс"
@@ -525,7 +541,25 @@ L.INSTANCE_DESCRIPTIONS = {
 L.SUBMAP_NAMES = {
 	OldIronforge = "Старый Стальгорн",
 	DeadminesApproach = "Убежище Братства Справедливости",
+	WailingCavernsApproach = "Пещеры Стенаний",
+	WailingCavernsApproachBarrens = "Пещеры Стенаний",
+	UldamanApproach = "Ульдаман",
+	MaraudonOrange = "Мародон (оранжевый)",
+	MaraudonPurple = "Мародон (фиолетовый)",
+	BlackrockMountain = "Черная гора",
+	BlackrockMountainGorge = "Черная гора",
+	BlackrockDepthsApproach = "Черная гора",
+	BlackrockDepthsApproachSteppes = "Черная гора",
+	DireMaulRuins = "Забытый Город",
+	ScarletMonasteryHall = "Монастырь Алого ордена",
+	ScarletMonasteryHallContinent = "Монастырь Алого ордена",
 	DeeprunTram = "Подземный поезд",
+}
+
+-- Levels of an area below a zone (its menu on the world map), by their English names.
+L.SUBMAP_LEVELS = {
+	["Blackrock Spire"] = "Пик Черной горы",
+	["Blackrock Depths"] = "Глубины Черной горы",
 }
 
 L.FACTION_NAMES = {
@@ -655,17 +689,23 @@ L.AREA_NAMES = {
 	["Crusaders' Square"] = "Площадь рыцарей",
 	["Dark Iron Ingress"] = "Проход Темного Железа",
 	["Defias Hideout"] = "Убежище Братства Справедливости",
+	["Dig One"] = "Раскоп номер один",
 	["Dragonspire Hall"] = "Зал Драконов",
 	["Dreamer's Rock"] = "Покои Спящего",
 	["Elders' Square"] = "Площадь Старейшин",
+	["Eldre' Thalas"] = "Эльдре'Талас",
+	["Eldreth Row"] = "Улица Эльдрета",
 	["Engineering Labs"] = "Инженерные лаборатории",
+	["Excavation Center"] = "Центр раскопок",
 	["Festival Lane"] = "Праздничная улица",
 	["Footman's Armory"] = "Оружейная пехоты",
+	["Forgewright's Tomb"] = "Гробница Кузнеца",
 	["Forlorn Cloister"] = "Покинутый двор",
 	["Gallery of Treasures"] = "Сокровищница",
 	["Goblin Foundry"] = "Гоблинский цех",
 	["Gordok Commons"] = "Общий зал Гордока",
 	["Hall of Champions"] = "Чертог Защитников",
+	["Hall of the Keepers"] = "Зал Хранителей",
 	["Halycon's Lair"] = "Логово Халикона",
 	["Honor's Tomb"] = "Гробница Доблести",
 	["Hordemar City"] = "Ордамар",
@@ -677,12 +717,14 @@ L.AREA_NAMES = {
 	["Mok'Doom"] = "Мок'Дум",
 	["Moonshrine Ruins"] = "Руины Лунного святилища",
 	["Moonshrine Sanctum"] = "Святилище Лунного Света",
+	["North Common Hall"] = "Северный общий зал",
 	["Pit of Fangs"] = "Змеиная яма",
 	["Prison of Immol'thar"] = "Тюрьма Бессмер'тера",
 	["Reliquary of Kings"] = "Реликварий королей",
 	["Screaming Gully"] = "Овраг Воплей",
 	["Skitterweb Tunnels"] = "Паучий лабиринт",
 	["Slaughter Square"] = "Площадь Живодерни",
+	["South Common Hall"] = "Южный общий зал",
 	["Tazz'Alaor"] = "Тазз'Алаор",
 	["Tazz'Alor"] = "Тазз'Алор",
 	["The Clockwerk Run"] = "Заводной проход",
@@ -690,17 +732,27 @@ L.AREA_NAMES = {
 	["The Drowned Sacellum"] = "Затопленное святилище",
 	["The Forgotten Pool"] = "Забытый пруд",
 	["The Gauntlet"] = "Улица Испытаний",
+	["The Grand Vestibule"] = "Большой вестибюль",
+	["The Grinding Quarry"] = "Дробильный карьер",
 	["The Hall of Gears"] = "Зал Шестеренок",
 	["The Hall of Lights"] = "Зал Света",
 	["The High Seat"] = "Высокий трон",
 	["The Hoard"] = "Арсенал",
+	["The Masonary"] = "Каменотёсня",
+	["The Molten Span"] = "Огненный пролёт",
 	["The Pool of Ask'ar"] = "Пруд Аск'ара",
 	["The Rookery"] = "Гнездовье",
 	["The Scarlet Bastion"] = "Бастион Алого ордена",
+	["The Sealed Hall"] = "Запечатанный зал",
 	["The Shrine of Eldretharr"] = "Святилище Элдретарра",
 	["The Slaughter House"] = "Живодерня",
 	["The Storehouse"] = "Кладовая",
+	["The Wailing Caverns"] = "Пещеры Стенаний",
 	["Tinkers' Court"] = "Двор Механиков",
 	["Training Grounds"] = "Тренировочная площадка",
 	["Warpwood Quarter"] = "Квартал Криводревов",
 }
+
+-- Matched against the client's own text: the client's language's only, previewed or not.
+if client then client.EQUIP_PATTERNS, client.AREA_NAMES = L.EQUIP_PATTERNS, L.AREA_NAMES end
+L.EQUIP_PATTERNS, L.AREA_NAMES = nil, nil

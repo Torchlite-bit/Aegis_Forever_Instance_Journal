@@ -1,6 +1,6 @@
 <p align="center"><img src="docs/images/logo.png" alt="Aegis Instance Journal" width="220"></p>
 
-# Aegis: Forever Instance Journal (v0.31.1)
+# Aegis: Forever Instance Journal (v0.38.0)
 
 **Retail's instance journal and dungeon maps, brought to WoW: Forever.**
 
@@ -56,6 +56,11 @@ and to send in your recorded runs.
 - **3 raids, coming soon**: Barrow Deeps, Hyjal Summit and Onyxia's Lair.
 - A **level-range filter**; **WoW: Forever's emblem** marks what Forever added;
   **Not yet tested** marks what still needs a recorded run.
+- **Docked like the game's own windows**: it opens at the top left and moves aside
+  when one of them opens there. Drag it anywhere until it closes, or untick docking
+  in its options to have it open where you last left it.
+- **Where it drops**: an item's tooltip names the boss and dungeon that drop it,
+  wherever you see the item.
 
 ### 🗡️ Boss pages
 
@@ -87,6 +92,10 @@ Five side tabs, as in retail, plus one:
 - **The places Blizzard never mapped**: Old Ironforge, the Defias Hideout on the
   way to the Deadmines, and the Deeprun Tram, with your arrow where the game
   gives a position.
+- **The ways in**: the Wailing Caverns' cave, Uldaman's dig, Maraudon's two caves,
+  Blackrock Mountain's two levels and the ruins of Dire Maul on Blizzard's own drawn
+  maps, and the Scarlet Monastery's hall redrawn for its four wings, each shown
+  when you're there, with your arrow and the dungeon doors.
 
 | The Hall of Thanes | City of Dalaran, with the map legend | Old Ironforge |
 |:---:|:---:|:---:|
@@ -97,6 +106,9 @@ Five side tabs, as in retail, plus one:
 - **Every dungeon and raid door**, with retail's portal icons: **left-click**
   opens the journal, **right-click** sets a waypoint. Wings that share a door
   (Scarlet Monastery, Blackrock Mountain) share one icon with a menu.
+- **Cave and building entrances** mark the ways in, each with its own switch in
+  the legend. A dungeon's floors, and Blackrock Mountain's levels, are one more
+  step of the map's location bar.
 - **Flight masters** on zone maps, and the **boats, zeppelins, airships, trams
   and portals** where Forever actually put them.
 - **Quest marks that follow your log**: **!** where an available quest starts,
@@ -223,6 +235,7 @@ the folder to exactly `Aegis_Forever_Instance_Journal`**: GitHub's ZIP unpacks a
 | `/aegis items` | Find the journal's items the server doesn't have yet |
 | `/aegis perf` | How much time and memory the journal uses |
 | `/aegis reset` | Put the window back in its default place |
+| `/aegis dock` | Dock the window at the top left, or free it again |
 
 **Shift+J taken by another addon?** The journal offers to take it once, or set
 your own key in **Key Bindings › AddOns › Toggle Instance Journal**.
@@ -268,7 +281,7 @@ and checks it; `--perf` measures it.
 
 ## Something broken?
 
-1. Check the **version** in the AddOns list (`0.28.0`) and quote it.
+1. Check the **version** in the AddOns list (`0.38.0`) and quote it.
 2. A red line under **Recent** on the Record tab says what went wrong.
    Screenshot it.
 3. Tell us on **[Discord](https://discord.gg/Hr66t25vE7)** or open an
@@ -304,9 +317,15 @@ post to match.
 
 ## License
 
-The code is MIT. See [LICENSE](LICENSE). Santiago Reyes's maps are his and are
-not covered by it. World of Warcraft, its art and its game data are Blizzard
-Entertainment's; this addon is not made or endorsed by Blizzard.
+The code is MIT. See [LICENSE](LICENSE). The maps are not covered by it:
+
+- **Torchlite's maps**, each signed "Redrawn by Torchlite", are all rights reserved. They come
+  with the addon, but using them anywhere else needs Torchlite's permission. See
+  [LICENSE-MAPS.md](LICENSE-MAPS.md).
+- **Santiago Reyes's maps** are his, used with his permission. See [CREDITS.md](CREDITS.md).
+
+World of Warcraft, its art and its game data are Blizzard Entertainment's; this addon is not
+made or endorsed by Blizzard.
 
 ---
 

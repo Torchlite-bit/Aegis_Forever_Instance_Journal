@@ -7,9 +7,10 @@ local _, ns = ...
 	name to follow. Every other client skips it.
 ]]
 
-if not ns.Speaks("ptBR") then return end
-
-local L = ns.L
+-- The journal's words where it speaks this language; the tables matched against the client's own
+-- text where the client does, previewed or not (ns.LocaleTargets, Locales/enUS.lua).
+local L, client = ns.LocaleTargets("ptBR")
+if not L then return end
 
 L.INSTANCE_NAMES = {
 	["AlcazPrison"] = "Prisão de Alcaz",
@@ -80,8 +81,26 @@ L.FACTION_NAMES = {
 
 L.SUBMAP_NAMES = {
 	["DeadminesApproach"] = "Esconderijo Défias",
+	["WailingCavernsApproach"] = "Caverna Ululante",
+	["WailingCavernsApproachBarrens"] = "Caverna Ululante",
+	["UldamanApproach"] = "Uldaman",
+	["MaraudonOrange"] = "Maraudon (laranja)",
+	["MaraudonPurple"] = "Maraudon (roxo)",
+	["BlackrockMountain"] = "Montanha Rocha Negra",
+	["BlackrockMountainGorge"] = "Montanha Rocha Negra",
+	["BlackrockDepthsApproach"] = "Montanha Rocha Negra",
+	["BlackrockDepthsApproachSteppes"] = "Montanha Rocha Negra",
+	["DireMaulRuins"] = "Gládio Cruel",
+	["ScarletMonasteryHall"] = "Monastério Escarlate",
+	["ScarletMonasteryHallContinent"] = "Monastério Escarlate",
 	["DeeprunTram"] = "Metrô Correfundo",
 	["OldIronforge"] = "Antiga Altaforja",
+}
+
+-- Levels of an area below a zone (its menu on the world map), by their English names.
+L.SUBMAP_LEVELS = {
+	["Blackrock Spire"] = "Pico da Rocha Negra",
+	["Blackrock Depths"] = "Abismo Rocha Negra",
 }
 
 L.BOSS_NAMES = {
@@ -2521,3 +2540,7 @@ L.STRINGS = {
 	["Zephras Isle"] = "Ilha de Zefras",
 	["Zoram Strand, Ashenvale"] = "Praia de Zoram, Vale Gris",
 }
+
+-- The client's own names for the bosses, factions and places, which what it says of them (and the
+-- routes the player saved) are matched by (Core/Registry.lua's ns.KeepClientNames).
+if client then client.BOSS_NAMES, client.FACTION_NAMES, client.STRINGS = L.BOSS_NAMES, L.FACTION_NAMES, L.STRINGS end

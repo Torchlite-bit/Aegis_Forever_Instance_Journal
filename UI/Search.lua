@@ -96,6 +96,23 @@ local function NameOf(entry)
 	return entry.name
 end
 
+-- An ability is found by the client's name for its spell too, the one its page shows.
+local function SpellName(entry)
+	if entry.kind ~= "ability" or not entry.spellID or not (C_Spell and C_Spell.GetSpellInfo) then return nil end
+	if entry.spellName == nil then
+		local ok, info = pcall(C_Spell.GetSpellInfo, entry.spellID)
+		entry.spellName = ok and info and type(info.name) == "string" and info.name ~= "" and info.name or false
+	end
+	return entry.spellName or nil
+end
+
+-- How well a name matches: 0 the whole of it, 1 its start, 2 anywhere; nil not at all.
+local function Rank(lower, query)
+	local at = lower:find(query, 1, true)
+	if not at then return nil end
+	return (lower == query and 0) or (at == 1 and 1) or 2
+end
+
 local warmed = false
 local function WarmUp()
 	if warmed then return end
@@ -147,10 +164,16 @@ function Search:Find(text)
 		local name = NameOf(entry)
 		if name then
 			if entry.lowerOf ~= name then entry.lower, entry.lowerOf = name:lower(), name end
-			local at = entry.lower:find(query, 1, true)
-			if at and Available(entry) then
-				entry.rank = (entry.lower == query and 0) or (at == 1 and 1) or 2
-				entry.shownName = name
+			local rank, shown = Rank(entry.lower, query), name
+			local spell = SpellName(entry)
+			if spell and spell ~= name then
+				entry.spellLower = entry.spellLower or spell:lower()
+				local spellRank = Rank(entry.spellLower, query)
+				if spellRank and (not rank or spellRank <= rank) then rank, shown = spellRank, spell end
+			end
+			if rank and Available(entry) then
+				entry.rank = rank
+				entry.shownName = shown
 				results[#results + 1] = entry
 			end
 		end
@@ -225,6 +248,8 @@ end
 
 local function ShowEntryTooltip(owner, entry)
 	if entry.kind == "item" then
+		-- The result names where it drops itself, one result per place, each opening it.
+		ns.ItemTooltip:UseSource(owner, entry.itemID)
 		GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
 		if ns.Items:IsIdentified(entry.itemID) then
 			GameTooltip:SetItemByID(entry.itemID)

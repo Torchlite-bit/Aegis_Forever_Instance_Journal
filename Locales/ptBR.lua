@@ -6,9 +6,10 @@ local _, ns = ...
 	(Locales/enUS.lua), so every file that already holds ns.L sees these strings, and anything not
 	translated here stays English. Every other client skips it.
 ]]
-if not ns.Speaks("ptBR") then return end
-
-local L = ns.L
+-- The journal's words where it speaks this language; the tables matched against the client's own
+-- text where the client does, previewed or not (ns.LocaleTargets, Locales/enUS.lua).
+local L, client = ns.LocaleTargets("ptBR")
+if not L then return end
 
 L.JOURNAL_TITLE = "Diário de Masmorras"
 L.HOME = HOME or "Início"
@@ -20,7 +21,10 @@ L.BINDING_TOGGLE = "Abrir/fechar o Diário de Masmorras"
 L.KEY_CLAIMED = "Shift+J agora abre o Diário de Masmorras."
 L.KEY_TAKEN = "Shift+J já está atribuído a %s. Escolha uma tecla em Teclas de Atalho > AddOns > Abrir/fechar o Diário de Masmorras."
 L.POSITION_RESET = "Posição da janela redefinida."
-L.SLASH_HELP = "/aegis (ou /ij) abre o diário. /aegis record inicia ou para a gravação. /aegis reset devolve a janela ao lugar padrão. /aegis perf mede a memória e a velocidade do diário. /aegis where e /aegis taxi informam onde você está e os pontos de voo do seu mapa. /aegis travel salva um barco, zepelim, metrô ou portal para o mapa-múndi. /aegis items procura os itens listados que o servidor não conhece. /aegis gear abre o Localizador de Equipamento, /aegis weights os pesos de atributos dele; /aegis gearscan salva o que ele lê do seu equipamento, para conferir a pontuação. /aegis options abre as opções do diário. /aegis lang mostra o diário em outro dos idiomas dele."
+L.DOCK_ON = "A janela agora abre no canto superior esquerdo, ao lado das janelas do jogo. Arraste-a para movê-la até que ela feche."
+L.DOCK_OFF = "A janela está livre de novo: ela abre onde você a arrastou por último."
+L.DOCK_AFTER_COMBAT = "Isso vale quando o combate terminar."
+L.SLASH_HELP = "/aegis (ou /ij) abre o diário. /aegis record inicia ou para a gravação. /aegis reset devolve a janela ao lugar padrão. /aegis dock encaixa a janela no canto superior esquerdo, ao lado das janelas do jogo, ou a solta de novo. /aegis perf mede a memória e a velocidade do diário. /aegis where e /aegis taxi informam onde você está e os pontos de voo do seu mapa. /aegis travel salva um barco, zepelim, metrô ou portal para o mapa-múndi. /aegis items procura os itens listados que o servidor não conhece. /aegis gear abre o Localizador de Equipamento, /aegis weights os pesos de atributos dele; /aegis gearscan salva o que ele lê do seu equipamento, para conferir a pontuação. /aegis options abre as opções do diário. /aegis lang mostra o diário em outro dos idiomas dele."
 -- /aegis lang (Core/Init.lua)
 L.LANG_USAGE = "/aegis lang de, fr, ru, cn, tw, es, mx, pt ou ko mostra o diário em alemão, francês, russo, chinês (simplificado ou tradicional), espanhol (Espanha ou América Latina), português do Brasil ou coreano a partir do seu próximo /reload, para conferir uma tradução; /aegis lang off volta ao idioma do seu cliente. Agora: %s."
 L.LANG_SET = "A partir do seu próximo /reload, o diário aparece neste idioma: %s. Só os textos dele mudam: os nomes do jogo continuam os do seu cliente. Digite /reload agora; /aegis lang off desfaz a mudança."
@@ -143,12 +147,16 @@ L.PAWN_RELOAD_NOW = "Recarregar"
 L.PAWN_RELOAD_LATER = "Depois"
 L.WEIGHTS_SOURCE_PAWN_LIVE = "Escala %s do Pawn. Altere-a no Pawn ou escolha os pesos do diário nas opções do diário."
 L.OPTIONS_MINIMAP_TIP = "O botão do diário na borda do minimapa: clique nele para abrir o diário, clique com o botão direito para abrir estas opções e arraste-o para movê-lo."
+L.OPTIONS_DOCK = "Fixar a janela no canto superior esquerdo"
+L.OPTIONS_DOCK_TIP = "Marcada: o diário abre no canto superior esquerdo da tela, onde o jogo abre as próprias janelas, e se afasta quando uma delas abre ali, como elas fazem entre si; se não houver espaço para as duas, o jogo fecha a mais antiga. Arraste-o para movê-lo para qualquer lugar: ele volta a se fixar na próxima vez que abrir. Desmarcada: ele abre onde você o arrastou por último."
 L.MINIMAP_LEFT_CLICK = "Clique para abrir ou fechar o diário."
 L.MINIMAP_RIGHT_CLICK = "Clique com o botão direito para ver as opções."
 L.MINIMAP_DRAG = "Arraste para movê-lo pela borda do minimapa."
 L.OPTIONS_ARROWS_TIP = "Uma seta verde nos itens que são melhorias para a sua especialização, segundo o Localizador de Equipamento: nas suas bolsas, na janela de saque e nas rolagens de saque."
 L.WEIGHTS_SHOW_GAINS = "Mostrar pesos de atributos nas dicas"
 L.WEIGHTS_SHOW_GAINS_TIP = "Abaixo de cada item, uma linha para cada uma das suas especializações: quanto o item vale segundo os pesos dela e, quando ele é uma melhoria, uma seta verde com o que ele acrescenta ao seu equipamento. Para todos os seus personagens. Com o Pawn instalado, isto mostra ou oculta, em vez disso, a escala do diário no Pawn e, com ela, as setas de melhoria do Pawn para os pesos do diário: o Pawn só marca melhorias para as escalas que exibe."
+L.OPTIONS_SOURCES = "Mostrar nas dicas onde cada item é obtido"
+L.OPTIONS_SOURCES_TIP = "Abaixo de cada item obtido nas masmorras e raides do diário, uma linha com o chefe e a masmorra: nas suas bolsas, no seu personagem, nos links do bate-papo, nos vendedores e em qualquer outro lugar onde o jogo mostre o item. Para todos os seus personagens."
 L.GEAR_WHY_CUSTOM = "%s (seus pesos)"
 -- The specs' names (the classic talent trees) and the units their weights count in, by spec key
 -- and by the English unit.
@@ -291,6 +299,11 @@ L.LOOT_UNFAVORITE = "Remover dos favoritos"
 L.LOOT_PINNED = "Fixado"
 L.LOOT_ALL = "Saque"
 L.LOOT_TRASH = "Inimigos comuns da masmorra"
+L.DROPS_FROM_BOSS = "Saque: %s (%s)"
+L.DROPS_FROM_TRASH = "Saque: inimigos comuns (%s)"
+L.DROPS_FROM_BOSSES = "Saque: %d chefes (%s)"
+L.DROPS_IN = "Saque em: %s"
+L.DROPS_ALSO_IN = "Saque também em: %s"
 L.LEGEND_CLICK_HIDE = "Clique para ocultá-los no mapa."
 L.LEGEND_CLICK_SHOW = "Ocultos. Clique para mostrá-los no mapa de novo."
 L.LEGEND_GAME_FILTER = "O filtro do próprio jogo, como no menu de filtros do mapa: missões em andamento e prontas para entregar compartilham o mesmo."
@@ -389,6 +402,8 @@ L.ENTRANCE_WAYPOINT_SET = "Marcador no mapa definido na entrada de %s."
 L.ENTRANCE_VIA = "O portal fica mais abaixo, em %s: desça pela entrada da caverna."
 L.ENTRANCE_WAYPOINT_VIA = "Marcador no mapa definido na descida para %s, a caminho de %s."
 L.CAVE_LABEL = "Entrada de Caverna"
+L.BUILDING_LABEL = "Entrada"
+L.ENTRANCE_VIA_BUILDING = "O portal fica lá dentro, em %s: entre pela entrada."
 L.CAVE_LEADS_TO = "O caminho para %s"
 L.CAVE_LEFT_CLICK = "Clique com o botão esquerdo para ver o mapa de %s"
 L.CAVE_WAYPOINT_SET = "Marcador no mapa definido na descida para %s."
@@ -410,7 +425,8 @@ L.TRAVEL_LIST_LINE = "%d. %s em %s (mapa %d, %.4f, %.4f)"
 L.TRAVEL_WAYPOINT_SET = "Marcador no mapa definido para %s."
 L.LEGEND_TRANSPORT = "Transporte"
 L.LEGEND_TRANSPORT_TOOLTIP = "Barcos, zepelins, o metrô e portais. Azul atende a Aliança; vermelho, a Horda; dourado, todos."
-L.LEGEND_CAVE_TOOLTIP = "O caminho para dentro de uma caverna ou para um nível abaixo da zona. Clique nele no mapa para ver aonde leva."
+L.LEGEND_CAVE_TOOLTIP = "O caminho para dentro de uma caverna, onde fica a porta de uma masmorra. Clique nele no mapa para ver o interior."
+L.LEGEND_BUILDING_TOOLTIP = "O caminho para dentro de um edifício, dos salões de uma montanha ou de um nível abaixo da zona, onde fica a porta de uma masmorra. Clique nele no mapa para ver o interior."
 L.SEARCH_SHOW_ALL = SEARCH_RESULTS_SHOW_COUNT or "Mostrar todos os %d resultados"
 L.SEARCH_RESULTS = ENCOUNTER_JOURNAL_SEARCH_RESULTS or "Resultados da busca por “%s” (%d)"
 L.SEARCH_TYPE_BOSS = "Encontro"
@@ -528,17 +544,23 @@ L.AREA_NAMES = {
 	["Dark Iron Ingress"] = "Passagem Ferro Negro",
 	["Deeprun Tram"] = "Metrô Correfundo",
 	["Defias Hideout"] = "Esconderijo Défias",
+	["Dig One"] = "Escavação Um",
 	["Dragonspire Hall"] = "Salão do Espinodrago",
 	["Dreamer's Rock"] = "Rocha do Sonhador",
 	["Elders' Square"] = "Praça dos Anciãos",
+	["Eldre' Thalas"] = "Eldre'Thalas",
+	["Eldreth Row"] = "Fileira Eldreth",
 	["Engineering Labs"] = "Laboratório de Engenharia",
+	["Excavation Center"] = "Centro de Escavação",
 	["Festival Lane"] = "Alameda do Festival",
 	["Footman's Armory"] = "Armaria do Soldado",
+	["Forgewright's Tomb"] = "Tumba do Forjador",
 	["Forlorn Cloister"] = "Claustro Esquecido",
 	["Gallery of Treasures"] = "Galeria dos Tesouros",
 	["Goblin Foundry"] = "Fundição dos Goblins",
 	["Gordok Commons"] = "Pátio Gordok",
 	["Hall of Champions"] = "Salão dos Campeões",
+	["Hall of the Keepers"] = "Salão dos Guardiões",
 	["Halycon's Lair"] = "Covil de Halycon",
 	["Honor's Tomb"] = "Tumba de Honra",
 	["Hordemar City"] = "Hordamar",
@@ -559,6 +581,7 @@ L.AREA_NAMES = {
 	["Moonshrine Ruins"] = "Ruínas do Sacrário Lunar",
 	["Moonshrine Sanctum"] = "Sacrário Lunar",
 	["Mount Hyjal"] = "Monte Hyjal",
+	["North Common Hall"] = "Salão Comunal Norte",
 	["Pit of Fangs"] = "Fosso das Presas",
 	["Prison of Immol'thar"] = "Prisão de Immol'thar",
 	["Reliquary of Kings"] = "Relicário dos Reis",
@@ -568,6 +591,7 @@ L.AREA_NAMES = {
 	["Site of the Guardian"] = "Sítio do Guardião",
 	["Skitterweb Tunnels"] = "Túneis Tremeteia",
 	["Slaughter Square"] = "Praça do Massacre",
+	["South Common Hall"] = "Salão Comunal Sul",
 	["Stalker's Thicket"] = "Matagal do Espreitador",
 	["Tazz'Alaor"] = "Tazz'Alaor",
 	["Tazz'Alor"] = "Tazz'Alor",
@@ -577,17 +601,27 @@ L.AREA_NAMES = {
 	["The Drowned Sacellum"] = "O Sacelo Inundado",
 	["The Forgotten Pool"] = "Charcos Esquecidos",
 	["The Gauntlet"] = "Forquilha",
+	["The Grand Vestibule"] = "O Grande Vestíbulo",
+	["The Grinding Quarry"] = "A Pedreira Trituradora",
 	["The Hall of Gears"] = "Salão das Engrenagens",
 	["The Hall of Lights"] = "O Salão das Luzes",
 	["The High Seat"] = "A Sala do Trono",
 	["The Hoard"] = "O Cofre",
+	["The Masonary"] = "A Alvenaria",
+	["The Molten Span"] = "A Ponte Derretida",
 	["The Pool of Ask'ar"] = "O Poço de Ask'Ar",
 	["The Rookery"] = "O Viveiro",
 	["The Scarlet Bastion"] = "O Bastião Escarlate",
+	["The Sealed Hall"] = "O Salão Selado",
 	["The Shrine of Eldretharr"] = "Altar de Eldretharr",
 	["The Slaughter House"] = "O Matadouro",
 	["The Storehouse"] = "O Armazém",
+	["The Wailing Caverns"] = "Caverna Ululante",
 	["Tinkers' Court"] = "Paço dos Faz-tudo",
 	["Training Grounds"] = "Campo de Treinamento",
 	["Warpwood Quarter"] = "Distrito Lenhatorta",
 }
+
+-- Matched against the client's own text: the client's language's only, previewed or not.
+if client then client.EQUIP_PATTERNS, client.AREA_NAMES = L.EQUIP_PATTERNS, L.AREA_NAMES end
+L.EQUIP_PATTERNS, L.AREA_NAMES = nil, nil

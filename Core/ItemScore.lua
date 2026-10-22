@@ -133,11 +133,11 @@ local LINE_PATTERNS = {
 	{ "block value of your shield by " .. NUMBER, "BLOCK VALUE" },
 	{ "attack speed by " .. NUMBER, "HASTE" },
 }
--- A client in another language words these its own way: its locale file's L.EQUIP_PATTERNS, the
--- same pairs with "{n}" where the number is.
+-- A client in another language words these its own way: its locale file's EQUIP_PATTERNS, the
+-- same pairs with "{n}" where the number is, kept in ns.ClientL whichever language is previewed.
 local localPatterns, localFrom
 local function LinePatterns()
-	local given = ns.L.EQUIP_PATTERNS
+	local given = ns.ClientL.EQUIP_PATTERNS
 	if type(given) ~= "table" then return LINE_PATTERNS end
 	if localFrom ~= given then
 		localPatterns, localFrom = {}, given

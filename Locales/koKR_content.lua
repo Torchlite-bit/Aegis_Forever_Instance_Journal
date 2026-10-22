@@ -7,9 +7,10 @@ local _, ns = ...
 	name to follow. Every other client skips it.
 ]]
 
-if not ns.Speaks("koKR") then return end
-
-local L = ns.L
+-- The journal's words where it speaks this language; the tables matched against the client's own
+-- text where the client does, previewed or not (ns.LocaleTargets, Locales/enUS.lua).
+local L, client = ns.LocaleTargets("koKR")
+if not L then return end
 
 L.INSTANCE_NAMES = {
 	["AlcazPrison"] = "알카즈 감옥",
@@ -80,8 +81,26 @@ L.FACTION_NAMES = {
 
 L.SUBMAP_NAMES = {
 	["DeadminesApproach"] = "데피아즈단 은신처",
+	["WailingCavernsApproach"] = "통곡의 동굴",
+	["WailingCavernsApproachBarrens"] = "통곡의 동굴",
+	["UldamanApproach"] = "울다만",
+	["MaraudonOrange"] = "마라우돈 (주황)",
+	["MaraudonPurple"] = "마라우돈 (보라)",
+	["BlackrockMountain"] = "검은바위 산",
+	["BlackrockMountainGorge"] = "검은바위 산",
+	["BlackrockDepthsApproach"] = "검은바위 산",
+	["BlackrockDepthsApproachSteppes"] = "검은바위 산",
+	["DireMaulRuins"] = "혈투의 전장",
+	["ScarletMonasteryHall"] = "붉은십자군 수도원",
+	["ScarletMonasteryHallContinent"] = "붉은십자군 수도원",
 	["DeeprunTram"] = "깊은굴 지하철",
 	["OldIronforge"] = "구 아이언포지",
+}
+
+-- Levels of an area below a zone (its menu on the world map), by their English names.
+L.SUBMAP_LEVELS = {
+	["Blackrock Spire"] = "검은바위 첨탑",
+	["Blackrock Depths"] = "검은바위 나락",
 }
 
 L.BOSS_NAMES = {
@@ -2521,3 +2540,7 @@ L.STRINGS = {
 	["Zephras Isle"] = "제프라스 섬",
 	["Zoram Strand, Ashenvale"] = "잿빛 골짜기 조람 해안",
 }
+
+-- The client's own names for the bosses, factions and places, which what it says of them (and the
+-- routes the player saved) are matched by (Core/Registry.lua's ns.KeepClientNames).
+if client then client.BOSS_NAMES, client.FACTION_NAMES, client.STRINGS = L.BOSS_NAMES, L.FACTION_NAMES, L.STRINGS end

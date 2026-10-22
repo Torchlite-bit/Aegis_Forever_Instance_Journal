@@ -6,9 +6,10 @@ local _, ns = ...
 	holds ns.L sees these strings, and anything not translated here stays English. Every other
 	client skips it.
 ]]
-if not ns.Speaks("deDE") then return end
-
-local L = ns.L
+-- The journal's words where it speaks this language; the tables matched against the client's own
+-- text where the client does, previewed or not (ns.LocaleTargets, Locales/enUS.lua).
+local L, client = ns.LocaleTargets("deDE")
+if not L then return end
 
 L.JOURNAL_TITLE = "Dungeonkompendium"
 L.HOME = HOME or "Startseite"
@@ -20,7 +21,10 @@ L.BINDING_TOGGLE = "Dungeonkompendium ein-/ausblenden"
 L.KEY_CLAIMED = "Umschalt+J öffnet jetzt das Dungeonkompendium."
 L.KEY_TAKEN = "Umschalt+J ist bereits mit %s belegt. Wählt eine Taste unter Tastenbelegungen > AddOns > Dungeonkompendium ein-/ausblenden."
 L.POSITION_RESET = "Fensterposition zurückgesetzt."
-L.SLASH_HELP = "/aegis (oder /ij) öffnet das Kompendium. /aegis record startet oder beendet die Aufzeichnung. /aegis reset setzt das Fenster an seinen Standardplatz zurück. /aegis perf misst Speicherbedarf und Geschwindigkeit des Kompendiums. /aegis where und /aegis taxi melden, wo Ihr steht und welche Flugpunkte auf Eurer Karte liegen. /aegis travel speichert ein Schiff, einen Zeppelin, eine Bahn oder ein Portal für die Weltkarte. /aegis items sucht die aufgeführten Gegenstände, die der Server nicht kennt. /aegis gear öffnet die Ausrüstungssuche, /aegis weights ihre Wertgewichtung; /aegis gearscan speichert, was sie aus Eurer Ausrüstung ausliest, um ihre Bewertung zu prüfen. /aegis options öffnet die Optionen des Kompendiums. /aegis lang zeigt das Kompendium zur Probe in einer seiner anderen Sprachen."
+L.DOCK_ON = "Das Fenster öffnet sich jetzt oben links neben den Fenstern des Spiels. Zieht es, um es bis zum Schließen zu verschieben."
+L.DOCK_OFF = "Das Fenster ist wieder frei: Es öffnet sich dort, wo Ihr es zuletzt hingezogen habt."
+L.DOCK_AFTER_COMBAT = "Das gilt, sobald der Kampf endet."
+L.SLASH_HELP = "/aegis (oder /ij) öffnet das Kompendium. /aegis record startet oder beendet die Aufzeichnung. /aegis reset setzt das Fenster an seinen Standardplatz zurück. /aegis dock dockt das Fenster oben links neben den Fenstern des Spiels an oder gibt es wieder frei. /aegis perf misst Speicherbedarf und Geschwindigkeit des Kompendiums. /aegis where und /aegis taxi melden, wo Ihr steht und welche Flugpunkte auf Eurer Karte liegen. /aegis travel speichert ein Schiff, einen Zeppelin, eine Bahn oder ein Portal für die Weltkarte. /aegis items sucht die aufgeführten Gegenstände, die der Server nicht kennt. /aegis gear öffnet die Ausrüstungssuche, /aegis weights ihre Wertgewichtung; /aegis gearscan speichert, was sie aus Eurer Ausrüstung ausliest, um ihre Bewertung zu prüfen. /aegis options öffnet die Optionen des Kompendiums. /aegis lang zeigt das Kompendium zur Probe in einer seiner anderen Sprachen."
 -- /aegis lang (Core/Init.lua)
 L.LANG_USAGE = "/aegis lang de, fr, ru, cn, tw, es, mx, pt oder ko zeigt das Kompendium ab Eurem nächsten /reload auf Deutsch, Französisch, Russisch, Chinesisch (vereinfacht oder traditionell), Spanisch (Spanien oder Lateinamerika), brasilianischem Portugiesisch oder Koreanisch, um eine Übersetzung zu prüfen; /aegis lang off kehrt zur Sprache Eures Clients zurück. Aktuell: %s."
 L.LANG_SET = "Ab Eurem nächsten /reload erscheint das Kompendium in der Sprache %s: nur seine eigenen Texte, denn die Namen aus dem Spiel bleiben in der Sprache Eures Clients. Gebt jetzt /reload ein; /aegis lang off macht es rückgängig."
@@ -143,12 +147,16 @@ L.PAWN_RELOAD_NOW = "Neu laden"
 L.PAWN_RELOAD_LATER = "Später"
 L.WEIGHTS_SOURCE_PAWN_LIVE = "Pawn-Skala %s. Ändert sie in Pawn oder wählt in den Optionen die Gewichtung des Kompendiums."
 L.OPTIONS_MINIMAP_TIP = "Die Schaltfläche des Kompendiums am Rand der Minikarte: Klickt darauf, um das Kompendium zu öffnen; ein Rechtsklick öffnet diese Optionen; zieht sie, um sie zu verschieben."
+L.OPTIONS_DOCK = "Fenster oben links andocken"
+L.OPTIONS_DOCK_TIP = "Aktiviert: Das Kompendium öffnet sich oben links, wo das Spiel seine eigenen Fenster öffnet, und rückt zur Seite, wenn dort eines davon geöffnet wird, so wie sie es untereinander tun; ist für beide kein Platz, schließt das Spiel das ältere. Zieht es, um es irgendwohin zu verschieben: Beim nächsten Öffnen dockt es wieder an. Deaktiviert: Es öffnet sich dort, wo Ihr es zuletzt hingezogen habt."
 L.MINIMAP_LEFT_CLICK = "Klickt, um das Kompendium zu öffnen oder zu schließen."
 L.MINIMAP_RIGHT_CLICK = "Rechtsklick für die Optionen."
 L.MINIMAP_DRAG = "Zieht die Schaltfläche, um sie am Rand der Minikarte zu verschieben."
 L.OPTIONS_ARROWS_TIP = "Ein grüner Pfeil auf Gegenständen, die für Eure Spezialisierung Verbesserungen sind, so wie die Ausrüstungssuche sie zählt: in Euren Taschen, im Beutefenster und beim Würfeln um Beute."
 L.WEIGHTS_SHOW_GAINS = "Wertgewichtung in Tooltips anzeigen"
 L.WEIGHTS_SHOW_GAINS_TIP = "Unter jedem Gegenstand eine Zeile für jede Eurer Spezialisierungen: was der Gegenstand nach ihrer Gewichtung wert ist, und ein grüner Pfeil mit dem, was er Eurer Ausrüstung hinzufügt, wenn er eine Verbesserung ist. Für alle Eure Charaktere. Ist Pawn installiert, blendet dies stattdessen die Skala des Kompendiums in Pawn ein oder aus, und mit ihr Pawns Verbesserungspfeile für die Gewichtung des Kompendiums: Pawn markiert Verbesserungen nur für die Skalen, die es anzeigt."
+L.OPTIONS_SOURCES = "In Tooltips anzeigen, wo Gegenstände zu finden sind"
+L.OPTIONS_SOURCES_TIP = "Unter jedem Gegenstand, der in den Dungeons und Schlachtzügen des Kompendiums als Beute zu finden ist, eine Zeile mit dem Boss und dem Dungeon: in Euren Taschen, an Eurem Charakter, in Chatlinks, bei Händlern und überall sonst, wo das Spiel den Gegenstand zeigt. Für alle Eure Charaktere."
 L.GEAR_WHY_CUSTOM = "%s (Eure Gewichtung)"
 -- The specs' names and the units their weights count in, by spec key and by the English unit.
 L.GEAR_SPEC_NAMES = {
@@ -290,6 +298,11 @@ L.LOOT_UNFAVORITE = "Aus Favoriten entfernen"
 L.LOOT_PINNED = "Angeheftet"
 L.LOOT_ALL = "Beute"
 L.LOOT_TRASH = "Dungeon-Trash"
+L.DROPS_FROM_BOSS = "Beute von %s (%s)"
+L.DROPS_FROM_TRASH = "Beute vom Trash (%s)"
+L.DROPS_FROM_BOSSES = "Beute von %d Bossen (%s)"
+L.DROPS_IN = "Beute in: %s"
+L.DROPS_ALSO_IN = "Auch Beute in: %s"
 L.LEGEND_CLICK_HIDE = "Klickt, um diese auf der Karte auszublenden."
 L.LEGEND_CLICK_SHOW = "Ausgeblendet. Klickt, um diese wieder auf der Karte anzuzeigen."
 L.LEGEND_GAME_FILTER = "Der eigene Kartenfilter des Spiels, wie im Filtermenü der Karte: Laufende und abgabebereite Quests teilen sich einen."
@@ -388,6 +401,8 @@ L.ENTRANCE_WAYPOINT_SET = "Wegpunkt zum Eingang von %s gesetzt."
 L.ENTRANCE_VIA = "Das Portal liegt weiter unten, in %s: Steigt am Höhleneingang hinab."
 L.ENTRANCE_WAYPOINT_VIA = "Wegpunkt zum Abstieg nach %s gesetzt, für %s."
 L.CAVE_LABEL = "Höhleneingang"
+L.BUILDING_LABEL = "Eingang"
+L.ENTRANCE_VIA_BUILDING = "Sein Portal liegt drinnen, in %s: Geht am Eingang hinein."
 L.CAVE_LEADS_TO = "Der Weg nach %s"
 L.CAVE_LEFT_CLICK = "Linksklick, um die Karte von %s zu sehen"
 L.CAVE_WAYPOINT_SET = "Wegpunkt zum Abstieg nach %s gesetzt."
@@ -409,7 +424,8 @@ L.TRAVEL_LIST_LINE = "%d. %s bei %s (Karte %d, %.4f, %.4f)"
 L.TRAVEL_WAYPOINT_SET = "Wegpunkt zu %s gesetzt."
 L.LEGEND_TRANSPORT = "Transportmittel"
 L.LEGEND_TRANSPORT_TOOLTIP = "Schiffe, Zeppeline, die Tiefenbahn und Portale. Blau dient der Allianz, Rot der Horde, Gold allen."
-L.LEGEND_CAVE_TOOLTIP = "Der Weg in eine Höhle oder hinab auf eine Ebene unterhalb des Gebiets. Klickt auf der Karte darauf, um zu sehen, wohin er führt."
+L.LEGEND_CAVE_TOOLTIP = "Der Weg in eine Höhle, wo der Eingang eines Dungeons liegt. Klickt auf der Karte darauf, um hineinzusehen."
+L.LEGEND_BUILDING_TOOLTIP = "Der Weg in ein Gebäude, in die Hallen eines Berges oder auf eine Ebene unterhalb des Gebiets, wo der Eingang eines Dungeons liegt. Klickt auf der Karte darauf, um hineinzusehen."
 L.SEARCH_SHOW_ALL = SEARCH_RESULTS_SHOW_COUNT or "Alle %d Ergebnisse anzeigen"
 L.SEARCH_RESULTS = ENCOUNTER_JOURNAL_SEARCH_RESULTS or "Suchergebnisse für „%s“ (%d)"
 L.SEARCH_TYPE_BOSS = "Begegnung"
@@ -511,17 +527,23 @@ L.AREA_NAMES = {
 	["Crusaders' Square"] = "Platz der Kreuzfahrer",
 	["Dark Iron Ingress"] = "Zugang der Dunkeleisen",
 	["Defias Hideout"] = "Versteck der Defias",
+	["Dig One"] = "Grabung Eins",
 	["Dragonspire Hall"] = "Halle der Drachenspitze",
 	["Dreamer's Rock"] = "Fels des Träumers",
 	["Elders' Square"] = "Platz der Ältesten",
+	["Eldre' Thalas"] = "Eldre'Thalas",
+	["Eldreth Row"] = "Eldrethgasse",
 	["Engineering Labs"] = "Ingenieurslabore",
+	["Excavation Center"] = "Ausgrabungszentrum",
 	["Festival Lane"] = "Festgasse",
 	["Footman's Armory"] = "Waffenkammer der Fußsoldaten",
+	["Forgewright's Tomb"] = "Grab des Schmiedemeisters",
 	["Forlorn Cloister"] = "Verlassener Kreuzgang",
 	["Gallery of Treasures"] = "Galerie der Schätze",
 	["Goblin Foundry"] = "Goblingießerei",
 	["Gordok Commons"] = "Gordokplatz",
 	["Hall of Champions"] = "Halle der Champions",
+	["Hall of the Keepers"] = "Halle der Bewahrer",
 	["Halycon's Lair"] = "Halycons Hort",
 	["Honor's Tomb"] = "Grab der Ehre",
 	["Hordemar City"] = "Stadt Hordemar",
@@ -533,12 +555,14 @@ L.AREA_NAMES = {
 	["Mok'Doom"] = "Mok'Doom",
 	["Moonshrine Ruins"] = "Ruinen des Mondschreins",
 	["Moonshrine Sanctum"] = "Sanktum des Mondschreins",
+	["North Common Hall"] = "Nördliche Gemeinschaftshalle",
 	["Pit of Fangs"] = "Grube der Fänge",
 	["Prison of Immol'thar"] = "Gefängnis von Immol'thar",
 	["Reliquary of Kings"] = "Reliquiar der Könige",
 	["Screaming Gully"] = "Schreiende Schlucht",
 	["Skitterweb Tunnels"] = "Huschnetztunnel",
 	["Slaughter Square"] = "Schlachthofplatz",
+	["South Common Hall"] = "Südliche Gemeinschaftshalle",
 	["Tazz'Alaor"] = "Tazz'Alaor",
 	["Tazz'Alor"] = "Tazz'Alor",
 	["The Clockwerk Run"] = "Der Uhrwerkgang",
@@ -546,17 +570,27 @@ L.AREA_NAMES = {
 	["The Drowned Sacellum"] = "Das Versunkene Sacellum",
 	["The Forgotten Pool"] = "Der Vergessene Teich",
 	["The Gauntlet"] = "Der Spießrutenlauf",
+	["The Grand Vestibule"] = "Die Große Vorhalle",
+	["The Grinding Quarry"] = "Der Mahlende Steinbruch",
 	["The Hall of Gears"] = "Die Halle der Zahnräder",
 	["The Hall of Lights"] = "Die Halle der Lichter",
 	["The High Seat"] = "Der Hohe Sitz",
 	["The Hoard"] = "Der Hort",
+	["The Masonary"] = "Die Steinmetzhalle",
+	["The Molten Span"] = "Die Geschmolzene Spanne",
 	["The Pool of Ask'ar"] = "Der Teich von Ask'ar",
 	["The Rookery"] = "Die Brutstätte",
 	["The Scarlet Bastion"] = "Die Scharlachrote Bastion",
+	["The Sealed Hall"] = "Die Versiegelte Halle",
 	["The Shrine of Eldretharr"] = "Der Schrein von Eldretharr",
 	["The Slaughter House"] = "Das Schlachthaus",
 	["The Storehouse"] = "Das Lagerhaus",
+	["The Wailing Caverns"] = "Die Höhlen des Wehklagens",
 	["Tinkers' Court"] = "Tüftlerhof",
 	["Training Grounds"] = "Übungsplatz",
 	["Warpwood Quarter"] = "Wucherborkenviertel",
 }
+
+-- Matched against the client's own text: the client's language's only, previewed or not.
+if client then client.EQUIP_PATTERNS, client.AREA_NAMES = L.EQUIP_PATTERNS, L.AREA_NAMES end
+L.EQUIP_PATTERNS, L.AREA_NAMES = nil, nil

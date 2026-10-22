@@ -43,6 +43,10 @@ Mock.Fire("PLAYER_LOGIN")
 check(ns.db and ns.charDB, "saved variables initialised")
 -- Recording by itself in dungeons is on for players; the scenario turns it on where it tests it.
 ns.Recorder:SetAutoRecord(false)
+-- Docked like the game's windows is the players' default; the scenario frees the window, and docks
+-- it where it tests docking.
+check(ns.Journal:IsDocked(), "the window docked at first, like the game's own")
+ns.db.docked = false
 check(Mock.bindings["SHIFT-J"] == "AEGISJOURNAL_TOGGLE", "Shift+J bound on first login")
 check(Mock.bindingsSaved == 1, "binding saved to the set in use")
 check(chatContains("Shift+J now opens"), "player told about Shift+J")
@@ -337,7 +341,7 @@ do
 	GetCreatureDifficultyColor = nil
 	-- Turned off in the journal's options (Options > AddOns), the badges go at once, and come back
 	local category, boxes = Mock.settingsCategory, Mock.settings
-	check(category and category.name == ns.L.OPTIONS_TITLE and #category.controls == 5
+	check(category and category.name == ns.L.OPTIONS_TITLE and #category.controls == 7
 		and boxes.AEGIS_JOURNAL_BOSS_LEVELS and boxes.AEGIS_JOURNAL_BOSS_LEVELS:GetValue() == true
 		and boxes.AEGIS_JOURNAL_BOSS_LEVELS.tooltip == ns.L.OPTIONS_BOSS_LEVELS_TIP,
 		"the journal's page in the game's options, the boss levels shown")
@@ -350,6 +354,21 @@ do
 	check(ns.db.hideGearTipGains and not ns.GearPanel.ShowsGains(), "the stat weights in tooltips, the same box as the weights editor's")
 	boxes.AEGIS_JOURNAL_ITEM_TIPS:SetValue(true)
 	check(not ns.db.hideGearTipGains and boxes.AEGIS_JOURNAL_ITEM_TIPS:GetValue() == true, "and back")
+	-- Where items drop, on their tooltips: on, and turned off for the whole account
+	local vancleefLine = "Drops from Edwin VanCleef in The Deadmines"
+	GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+	GameTooltip:SetHyperlink(Mock.ItemLink(5191))
+	local shownBefore = GameTooltip:HasLine(vancleefLine)
+	boxes.AEGIS_JOURNAL_ITEM_SOURCES:SetValue(false)
+	GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+	GameTooltip:SetHyperlink(Mock.ItemLink(5191))
+	check(shownBefore and ns.db.hideItemSources and not ns.ItemTooltip.ShowsSources() and not GameTooltip:HasLine(vancleefLine)
+		and boxes.AEGIS_JOURNAL_ITEM_SOURCES.tooltip == ns.L.OPTIONS_SOURCES_TIP,
+		"where items drop, in their tooltips, and the box that turns it off")
+	boxes.AEGIS_JOURNAL_ITEM_SOURCES:SetValue(true)
+	GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+	GameTooltip:SetHyperlink(Mock.ItemLink(5191))
+	check(not ns.db.hideItemSources and GameTooltip:HasLine(vancleefLine), "and back")
 	check(SLASH_AEGISJOURNAL1 == "/aegis" and SLASH_AEGISJOURNAL3 == "/ij" and ns.L.SLASH_HELP:find("/ij", 1, true),
 		"/ij opens the journal as /aegis does, and the help says so")
 	SlashCmdList.AEGISJOURNAL("options")
@@ -1713,18 +1732,18 @@ do
 		and ns.AreaName("Anvilmar's Rest") == Mock.subzone,
 		"a German client's name for the area lights it up too, through the area's id")
 	ns.AREA_IDS = {}
-	ns.L.AREA_NAMES = { ["Anvilmar's Rest"] = "Anvilmars Rast" }
+	ns.ClientL.AREA_NAMES = { ["Anvilmar's Rest"] = "Anvilmars Rast" }
 	ns.Areas:Forget()
 	check(ns.AreaKey("Anvilmars Rast") == "Anvilmar's Rest" and ns.AreaName("Anvilmar's Rest") == "Anvilmars Rast",
 		"without an id, the translation's name")
 	-- Two rooms a translation names alike: a table holding either one is found by that name
-	ns.L.AREA_NAMES = { ["Anvilmar's Rest"] = "Halle", ["Dark Iron Ingress"] = "Halle" }
+	ns.ClientL.AREA_NAMES = { ["Anvilmar's Rest"] = "Halle", ["Dark Iron Ingress"] = "Halle" }
 	ns.Areas:Forget()
 	local spot, english = ns.AreaIn({ ["Dark Iron Ingress"] = 7 }, "Halle")
 	check(spot == 7 and english == "Dark Iron Ingress" and ns.AreaIn({ ["Anvilmar's Rest"] = 8 }, "Halle") == 8
 		and ns.AreaIn({ ["Anvilmar's Rest"] = 9 }, "Anvilmar's Rest") == 9 and ns.AreaIn({}, "Halle") == nil,
 		"two rooms one translation names alike are each found by that name")
-	ns.L.AREA_NAMES, ns.AREA_IDS = nil, ids
+	ns.ClientL.AREA_NAMES, ns.AREA_IDS = nil, ids
 	Mock.areaNames[9001] = nil
 	-- A Forever zone the world map gives a level range by name: by its name in the client's words too
 	local hyjal = ns.AREA_IDS["Mount Hyjal"] and ns.AREA_IDS["Mount Hyjal"][1]
@@ -1889,13 +1908,28 @@ end
 
 -- Several floors: a floor menu, and the stairs between them
 do
+	-- Standing in Tirisfal, the journal opens Shadowfang Keep's map on its own zone, Silverpine
+	Mock.playerMapID = 1420
 	ns.Journal:OpenInstance(ns.GetInstance("ShadowfangKeep"))
 	tabs[1]:Click()
 	page.InstanceOverview.MapButton:Click()
-	local floorMenu = overlay.FloorDropdown
-	check(floorMenu:IsShown() and #floorMenu._menu.radios == 4 and floorMenu._menu.radios[1].isSelected(), "a menu of the four levels the site shows")
-	check(floorMenu._points[1][2] == WorldMapFrame.WorldMapTrackingPinButton and floorMenu._points[1][3] == "RIGHT",
-		"beside the map pin button, not under it")
+	local step, bar = ns.DungeonMap:FloorStep(), WorldMapFrame.NavBar
+	local trail = {}
+	for _, button in ipairs(bar.navList) do trail[#trail + 1] = button:GetText() end
+	trail[#trail + 1] = step:GetText()
+	check(Mock.worldMapID == 1421 and table.concat(trail, " > ") == "Azeroth > Eastern Kingdoms > Silverpine Forest > The Courtyard",
+		"a dungeon's map opens on its own zone, which the location bar names: " .. table.concat(trail, " > "))
+	local zone = bar.navList[#bar.navList]
+	local floorMenu = step.MenuArrowButton
+	check(step:IsShown() and step:GetText() == "The Courtyard" and not overlay.FloorDropdown:IsShown() and floorMenu:IsShown()
+		and #floorMenu._menu.radios == 4 and floorMenu._menu.radios[1].isSelected(),
+		"a menu of the four levels the site shows, as one more step of the map's location bar, on its arrow")
+	check(step._points[1][2] == zone and step._points[1][3] == "RIGHT" and step:GetFrameLevel() < zone:GetFrameLevel()
+		and step.selected:IsShown() and not step:IsEnabled() and zone:IsEnabled() and not zone.selected:IsShown()
+		and step:GetScript("OnShow") == nil, "after the zone's step, under its arrow: the current step, the zone's a link again")
+	local ownSteps = 0
+	for _, button in ipairs(bar.navList) do if button == step then ownSteps = ownSteps + 1 end end
+	check(ownSteps == 0, "beside the bar's own list of steps, never in it")
 	local levelNames = {}
 	for _, radio in ipairs(floorMenu._menu.radios) do levelNames[#levelNames + 1] = radio.text end
 	check(table.concat(levelNames, ", ") == "The Courtyard, Dining Hall, The Wall Walk, Arugal's Chamber",
@@ -1910,7 +1944,8 @@ do
 	for _, spot in ipairs(shown(overlay.Transitions)) do courtyardWays[#courtyardWays + 1] = spot.to end
 	check(table.concat(courtyardWays, ",") == "3", "the courtyard's way up to the wall walk, moved to the new floors: " .. table.concat(courtyardWays, ","))
 	shown(overlay.Transitions)[1]:Click()
-	check(overlay.floor == 3 and floorMenu._menu.radios[3].isSelected(), "the stairs go up a level")
+	check(overlay.floor == 3 and floorMenu._menu.radios[3].isSelected() and step:GetText() == "The Wall Walk",
+		"the stairs go up a level, the step named for it")
 	local wallWalkWays = {}
 	for _, spot in ipairs(shown(overlay.Transitions)) do wallWalkWays[#wallWalkWays + 1] = spot.to end
 	check(table.concat(wallWalkWays, ",") == "4", "and on up to Arugal: " .. table.concat(wallWalkWays, ","))
@@ -1925,8 +1960,39 @@ do
 	table.sort(topBosses)
 	check(overlay.floor == 4 and table.concat(topBosses, ", ") == "Archmage Arugal, Arugal's Voidwalker, Fenrus the Devourer, Wolf Master Nandos",
 		"the top level's bosses: " .. table.concat(topBosses, ", "))
+	-- The bar laid out again (a map shown anew): the step follows its last
+	bar:Refresh()
+	zone = bar.navList[#bar.navList]
+	check(step:IsShown() and step._points[1][2] == zone and zone:IsEnabled(), "laid out again, the bar keeps the step after its zone")
+	-- The zone's step, a link: its own map, without the dungeon's
+	zone:Click("LeftButton")
+	zone = bar.navList[#bar.navList] -- the bar laid out again may have given its button to another step
+	check(not overlay:IsShown() and not step:IsShown() and not zone:IsEnabled() and zone.selected:IsShown()
+		and zone:GetText() == "Silverpine Forest", "a click on the zone's step shows the zone's own map, the zone the current step again")
+	page.InstanceOverview.MapButton:Click()
+	check(step:IsShown(), "and the dungeon's map brings the step back")
 	WorldMapFrame:Hide()
-	check(not floorMenu:IsShown(), "the floor menu goes with the map")
+	check(not step:IsShown() and not overlay.FloorDropdown:IsShown(), "the floor menu goes with the map")
+	-- A map with no location bar: the menu beside the map pin button instead
+	local navBar = WorldMapFrame.NavBar
+	WorldMapFrame.NavBar = nil
+	page.InstanceOverview.MapButton:Click()
+	check(overlay.FloorDropdown:IsShown() and not step:IsShown() and #overlay.FloorDropdown._menu.radios == 4
+		and overlay.FloorDropdown._points[1][2] == WorldMapFrame.WorldMapTrackingPinButton and overlay.FloorDropdown._points[1][3] == "RIGHT",
+		"with no location bar, the menu beside the map pin button, not under it")
+	WorldMapFrame:Hide()
+	WorldMapFrame.NavBar = navBar
+	-- A dungeon with no known door, shown over the player's own zone: not a step after a zone it is
+	-- not in, the menu beside the map pin button
+	local keep = ns.GetInstance("ShadowfangKeep")
+	local door = keep.zoneEntrance
+	keep.zoneEntrance = nil
+	page.InstanceOverview.MapButton:Click()
+	check(Mock.worldMapID == 1420 and overlay:IsShown() and not step:IsShown() and overlay.FloorDropdown:IsShown(),
+		"no door known: the map on the player's zone, the floor menu off its location bar")
+	WorldMapFrame:Hide()
+	keep.zoneEntrance = door
+	Mock.playerMapID = nil
 end
 
 -- The journal's quests on the maps: a "!" where each starts, greyed while it cannot be taken
@@ -2185,23 +2251,45 @@ for _, pin in ipairs(doors) do
 	if pin.instance.key == "TheDeadmines" then deadminesDoor = pin end
 end
 table.sort(doorNames)
-check(table.concat(doorNames, ",") == "BlackrockDepths,CityOfDalaran,HallOfThanes,RuinsOfLordaeron,ScarletMonasteryGraveyard,TheDeadmines,"
-	.. "TheStockade",
+check(table.concat(doorNames, ",") == "BlackrockDepths,CityOfDalaran,HallOfThanes,RuinsOfLordaeron,ScarletMonasteryGraveyard,ShadowfangKeep,TheDeadmines,"
+	.. "TheStockade,Uldaman",
 	"the continent shows the doors of its zones: " .. table.concat(doorNames, ","))
 check(deadminesDoor._position[1] == 0.4069 and deadminesDoor._position[2] == 0.7958, "on the continent where it was read")
 WorldMapFrame:SetMapID(1414)
-check(#WorldMapFrame:ActivePins("AegisJournalEntrancePinTemplate") == 0, "none on a continent whose zones it does not know")
+do
+	local wailingDoor
+	for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalEntrancePinTemplate")) do
+		if pin.instance.key == "WailingCaverns" then wailingDoor = pin end
+	end
+	check(wailingDoor and wailingDoor._position[1] == 0.5239 and wailingDoor._position[2] == 0.5525,
+		"Wailing Caverns' portal on Kalimdor, where the game's data puts it, below the Barrens")
+end
 -- A door given in the world's coordinates (as the game's data has Maraudon's): put on its zone's
 -- map by the client, the axis order being the one that lands on it
 do
 	local maraudon = ns.GetInstance("Maraudon")
 	local door = ns.DungeonMap:Entrance(maraudon)
-	check(door and door.mapID == 1443 and math.abs(door.x - (2918.4 - 2800) / 300) < 1e-6
-		and math.abs(door.y - (-1422.6 + 1600) / 400) < 1e-6, "Maraudon's door, from the world's coordinates onto Desolace")
+	check(door and door.mapID == 1443 and math.abs(door.x - (2617.57 - 2500) / 700) < 1e-6
+		and math.abs(door.y - (-1484.07 + 1700) / 700) < 1e-6, "Maraudon's door, from the world's coordinates onto Desolace")
 	WorldMapFrame:SetMapID(1443)
 	local onDesolace = WorldMapFrame:ActivePins("AegisJournalEntrancePinTemplate")
 	check(#onDesolace == 1 and onDesolace[1].instance.key == "Maraudon", "and shown there")
 	check(ns.DungeonMap:Entrance(ns.GetInstance("ZulFarrak")) == nil, "a door on a map the client does not have stays off it")
+	-- Dire Maul's wings, each over its own portal in the ruins: three doors on Feralas, not one
+	local wings = {}
+	for _, key in ipairs({ "DireMaulNorth", "DireMaulEast", "DireMaulWest" }) do
+		local wing = ns.DungeonMap:Entrance(ns.GetInstance(key))
+		wings[#wings + 1] = wing and wing.mapID == 1444 and string.format("%.3f,%.3f", wing.x, wing.y) or "none"
+	end
+	check(table.concat(wings, " ") == string.format("%.3f,%.3f %.3f,%.3f %.3f,%.3f", (-3519.95 + 4100) / 700, (1089.93 - 700) / 700,
+		(-3759.69 + 4100) / 700, (934.93 - 700) / 700, (-3790 + 4100) / 700, (1247 - 700) / 700),
+		"Dire Maul's three wings, each over its own portal: " .. table.concat(wings, " "))
+	WorldMapFrame:SetMapID(1444)
+	local maulDoors = {}
+	for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalEntrancePinTemplate")) do
+		if pin.instance.key:find("^DireMaul") then maulDoors[#maulDoors + 1] = #pin.instances end
+	end
+	check(#maulDoors == 3 and maulDoors[1] == 1 and maulDoors[2] == 1 and maulDoors[3] == 1, "three doors on Feralas, one a wing")
 end
 WorldMapFrame:SetMapID(947)
 check(#WorldMapFrame:ActivePins("AegisJournalEntrancePinTemplate") == 0, "and none on the world map itself, as on retail")
@@ -2211,7 +2299,7 @@ doors = WorldMapFrame:ActivePins("AegisJournalEntrancePinTemplate")
 doors[1]:Click("RightButton")
 check(Mock.userWaypoint and Mock.userWaypoint.uiMapID == 1436 and Mock.userWaypoint.position.x == 0.4254
 	and Mock.superTracked, "right-click: the client's own waypoint, to the way down in Moonbrook")
-check(chatContains("Waypoint set to the way down into Defias Hideout, for The Deadmines."), "and says so")
+check(chatContains("Waypoint set to the entrance of Defias Hideout."), "and says so")
 local stockade = ns.GetInstance("TheStockade")
 check(ns.DungeonMap:SetWaypoint(stockade) and chatContains("Waypoint set to the entrance of The Stockade"),
 	"a door with no way down gets its waypoint at the door")
@@ -2230,8 +2318,8 @@ check(not WorldMapFrame:IsShown() and page:IsShown() and page.instance.key == "T
 OpenWorldMap(1436)
 local moonbrookCave = WorldMapFrame:ActivePins("AegisJournalCavePinTemplate")[1]
 check(moonbrookCave and moonbrookCave.subMap.key == "DeadminesApproach" and moonbrookCave._position[1] == 0.4254
-	and moonbrookCave._position[2] == 0.7176 and moonbrookCave.Texture._atlas == "CaveUnderground-Up",
-	"the cave entrance at the Moonbrook house's door, on Westfall's map")
+	and moonbrookCave._position[2] == 0.7176 and moonbrookCave.Texture._atlas == "delves-regular",
+	"the way in at the Moonbrook house's door, on Westfall's map, with the delve icon (the player's pick)")
 moonbrookCave:_RunScript("OnEnter")
 check(GameTooltip._text == "Defias Hideout" and GameTooltip:HasLine("The way to The Deadmines"), "its tooltip")
 moonbrookCave:_RunScript("OnLeave")
@@ -2240,7 +2328,7 @@ check(westfallDoor:GetWidth() == 22 and westfallDoor:GetHeight() == 22 and westf
 	and moonbrookCave:GetWidth() == 22 and moonbrookCave.Texture:GetWidth() == 32,
 	"a door or a cave answers the mouse over its icon only: the pin is the icon's size, the art keeps its own")
 westfallDoor:_RunScript("OnEnter")
-check(GameTooltip:HasLine("Its portal is below, in Defias Hideout: go down at the cave entrance."), "the Deadmines door points to it")
+check(GameTooltip:HasLine("Its portal is inside, in Defias Hideout: go in at the entrance."), "the Deadmines door points to it")
 westfallDoor:_RunScript("OnLeave")
 WorldMapFrame:SetMapID(1415)
 check(#WorldMapFrame:ActivePins("AegisJournalCavePinTemplate") == 0, "the cave shows on its zone, not the continent")
@@ -2256,6 +2344,470 @@ local mineArrow = mine.PlayerPin
 check(mineArrow:IsShown() and math.abs(mineArrow._points[1][4] - 0.248 * mine.Art._width) < 1e-3, "and the player at the portal")
 WorldMapFrame:Hide()
 Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = nil, nil, nil, ""
+
+-- The Wailing Caverns' cave: Blizzard's own drawn map of it, from the client's tiles, on Kalimdor
+-- or on the Barrens, whichever the client reports there
+do
+	OpenWorldMap(1413)
+	local mouth
+	for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalCavePinTemplate")) do
+		if pin.subMap.key == "WailingCavernsApproach" then mouth = pin end
+	end
+	check(mouth and mouth._position[1] == 0.4597 and mouth._position[2] == 0.3625, "the cave's mouth on the Barrens")
+	WorldMapFrame:Hide()
+	for _, case in ipairs({ { 1414, 0.5256, 0.5492, "Cavern of Mists", "WailingCavernsApproach" },
+		{ 1413, 0.4772, 0.3502, "The Wailing Caverns", "WailingCavernsApproachBarrens" } }) do
+		Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = case[1], case[2], case[3], case[4]
+		OpenWorldMap()
+		local cave = DungeonMap:Overlay()
+		local tile = cave.Art.Tiles and cave.Art.Tiles[1]
+		check(cave:IsShown() and cave.subMap and cave.subMap.key == case[5] and tile and tile:IsShown()
+			and tile:GetTexture() == "Interface\\WorldMap\\MicroDungeon\\Barrens\\WailingCavernsBarrens\\WailingCavernsBarrens20_1"
+			and not cave.Art.Picture:IsShown() and cave.Doors[1]:IsShown() and cave.Doors[1].instance.key == "WailingCaverns"
+			and cave.PlayerPin:IsShown(), "in the cave, on " .. case[1] .. ": Blizzard's drawn map of it, the portal and the player")
+		WorldMapFrame:Hide()
+	end
+	-- On the ground above it, by the oasis: the Barrens' own map
+	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1413, 0.4772, 0.3502, "Lushwater Oasis"
+	OpenWorldMap()
+	check(not DungeonMap:Overlay():IsShown(), "on the ground above the cave, the Barrens' own map")
+	WorldMapFrame:Hide()
+	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = nil, nil, nil, ""
+end
+
+-- Uldaman's dig: Blizzard's own drawn map of the excavation cave, from the client's tiles, on the Badlands
+do
+	OpenWorldMap(1418)
+	local mouth
+	for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalCavePinTemplate")) do
+		if pin.subMap.key == "UldamanApproach" then mouth = pin end
+	end
+	check(mouth and mouth._position[1] == 0.4445 and mouth._position[2] == 0.1216
+		and mouth.Texture._atlas ~= "delves-regular", "the dig's mouth on the Badlands, with the cave icon")
+	local door
+	for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalEntrancePinTemplate")) do
+		if pin.instance.key == "Uldaman" then door = pin end
+	end
+	check(door and door._position[1] == 0.3521 and door._position[2] == 0.1001, "Uldaman's door over its portal, deep in the dig")
+	WorldMapFrame:Hide()
+	for _, room in ipairs({ "Uldaman", "Excavation Center", "Dig One", "Hall of the Keepers", "North Common Hall",
+		"South Common Hall", "The Sealed Hall" }) do
+		Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1418, 0.40, 0.11, room
+		OpenWorldMap()
+		local cave = DungeonMap:Overlay()
+		local tile = cave.Art.Tiles and cave.Art.Tiles[1]
+		check(cave:IsShown() and cave.subMap and cave.subMap.key == "UldamanApproach" and tile and tile:IsShown()
+			and tile:GetTexture() == "Interface\\WorldMap\\MicroDungeon\\Badlands\\Uldaman\\Uldaman18_1"
+			and not cave.Art.Picture:IsShown() and cave.Doors[1]:IsShown() and cave.Doors[1].instance.key == "Uldaman"
+			and cave.PlayerPin:IsShown(), "in the dig, in " .. room .. ": Blizzard's drawn map of it, the portal and the player")
+		WorldMapFrame:Hide()
+	end
+	-- Out on the terrace before it: the Badlands' own map
+	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1418, 0.4445, 0.1216, "The Maker's Terrace"
+	OpenWorldMap()
+	check(not DungeonMap:Overlay():IsShown(), "on the terrace outside, the Badlands' own map")
+	WorldMapFrame:Hide()
+	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = nil, nil, nil, ""
+end
+
+-- Maraudon's two caves: Blizzard's drawn maps of both, on Kalimdor, one way in on Desolace; where
+-- their pictures overlap, the orange shows but on the purple cave's own floor
+do
+	OpenWorldMap(1443)
+	local mouths = {}
+	for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalCavePinTemplate")) do
+		if pin.subMap.key:find("^Maraudon") then mouths[#mouths + 1] = pin end
+	end
+	check(#mouths == 1 and mouths[1].subMap.key == "MaraudonOrange" and mouths[1]._position[1] == 0.2886
+		and mouths[1]._position[2] == 0.6254, "one way in on Desolace, the shared mouth, the orange cave's")
+	mouths[1]:_RunScript("OnEnter")
+	check(GameTooltip._text == "Maraudon (Orange)", "named for its cave")
+	mouths[1]:_RunScript("OnLeave")
+	WorldMapFrame:Hide()
+	check(ns.DungeonMap:SetWaypoint(ns.GetInstance("Maraudon")) and Mock.userWaypoint.uiMapID == 1443
+		and Mock.userWaypoint.position.x == 0.2886 and chatContains("Waypoint set to the way down into Maraudon (Orange), for Maraudon."),
+		"Maraudon's waypoint: to the way down, named so")
+	local TILES = "Interface\\WorldMap\\MicroDungeon\\Desolace\\MaraudonOutside\\MaraudonOutside"
+	for _, case in ipairs({
+		{ 0.39264, 0.58223, "MaraudonOrange", "21_1", "at the orange portal" },
+		{ 0.38600, 0.56992, "MaraudonPurple", "22_1", "at the purple portal" },
+		{ 0.3900, 0.5750, "MaraudonOrange", "21_1", "where the pictures overlap, off the purple floor" },
+		{ 0.3835, 0.5760, "MaraudonPurple", "22_1", "where they overlap, on the purple floor" },
+		{ 0.3860, 0.5795, "MaraudonPurple", "22_1", "on the purple floor's lower lobe" } }) do
+		Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1414, case[1], case[2], "Maraudon"
+		OpenWorldMap()
+		local cave = DungeonMap:Overlay()
+		local tile = cave.Art.Tiles and cave.Art.Tiles[1]
+		check(cave:IsShown() and cave.subMap and cave.subMap.key == case[3] and tile and tile:IsShown()
+			and tile:GetTexture() == TILES .. case[4] and cave.Doors[1]:IsShown() and cave.Doors[1].instance.key == "Maraudon"
+			and cave.PlayerPin:IsShown(), case[5] .. ": the " .. case[3] .. " map, its portal and the player")
+		local step = DungeonMap:FloorStep()
+		check(not (cave.FloorDropdown and cave.FloorDropdown:IsShown()) and not (step and step:IsShown()),
+			"no level menu for a cave of one level")
+		if case[3] == "MaraudonPurple" and case[1] == 0.3835 then
+			local px = (0.3835 - 0.377763) / (0.392981 - 0.377763)
+			check(math.abs(cave.PlayerPin._points[1][4] - px * cave.Art._width) < 1e-3, "the player where they stand on it")
+		end
+		WorldMapFrame:Hide()
+	end
+	-- Out in the Valley of Spears above: Desolace's own map; and at the mouth, should the client
+	-- give the cave's rectangle on Kalimdor but the valley's name, not a cave's
+	for _, case in ipairs({ { 1443, 0.2886, 0.6254 }, { 1414, 0.3835, 0.5760 } }) do
+		Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = case[1], case[2], case[3], "Valley of Spears"
+		OpenWorldMap()
+		check(not DungeonMap:Overlay():IsShown(), "in the valley outside, on " .. case[1] .. ": not a cave's map")
+		WorldMapFrame:Hide()
+	end
+	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = nil, nil, nil, ""
+end
+
+-- Inside Blackrock Mountain: the ring level and the way down to Blackrock Depths, each on the zone
+-- the client reports for the ground below
+do
+	OpenWorldMap(1428)
+	local gate
+	for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalCavePinTemplate")) do
+		if pin.subMap.key:find("^Blackrock") then
+			check(gate == nil, "one way in on Burning Steppes")
+			gate = pin
+		end
+	end
+	check(gate and gate.subMap.key == "BlackrockMountain" and gate._position[1] == 0.2940 and gate._position[2] == 0.3829
+		and gate.Texture._atlas == "delves-regular", "the way in at the Burning Steppes gate, with the delve icon a building takes")
+	gate:_RunScript("OnEnter")
+	local leads = {}
+	for _, line in ipairs(GameTooltip._lines) do
+		if type(line) == "string" and line:find("^The way to ") then leads[#leads + 1] = line end
+	end
+	check(GameTooltip._text == "Blackrock Mountain" and Mock.areaLabel and Mock.areaLabel.description == "Entrance"
+		and table.concat(leads, "|") == "The way to Blackrock Depths|The way to Lower Blackrock Spire|The way to Upper Blackrock Spire",
+		"its tooltip: the mountain, leading to its three dungeons: " .. table.concat(leads, "|"))
+	gate:_RunScript("OnLeave")
+	WorldMapFrame:Hide()
+	-- The Searing Gorge gate: its way in too, where the minimap turned, the mountain's door beside it
+	OpenWorldMap(1427)
+	local gorgeGate, door
+	for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalCavePinTemplate")) do
+		if pin.subMap.key:find("^Blackrock") then
+			check(gorgeGate == nil, "one way in on Searing Gorge")
+			gorgeGate = pin
+		end
+	end
+	check(gorgeGate and gorgeGate.subMap.key == "BlackrockMountainGorge" and gorgeGate._position[1] == 0.3485
+		and gorgeGate._position[2] == 0.8583 and gorgeGate.Texture._atlas == "delves-regular",
+		"the way in at the Searing Gorge gate, with the delve icon")
+	gorgeGate:_RunScript("OnEnter")
+	check(GameTooltip:HasLine("The way to Blackrock Depths") and GameTooltip:HasLine("The way to Upper Blackrock Spire"),
+		"naming the mountain's dungeons")
+	gorgeGate:_RunScript("OnLeave")
+	for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalEntrancePinTemplate")) do
+		if pin.instance.key == "BlackrockDepths" then door = pin end
+	end
+	check(door and #door.instances == 3 and door._position[1] == 0.328 and door._position[2] == 0.888,
+		"and the mountain's door, its three dungeons', a little into the mountain beside it")
+	WorldMapFrame:Hide()
+
+	local LOWER = "Interface\\WorldMap\\MicroDungeon\\SearingGorge\\BlackrockMountain\\BlackrockMountain16_1"
+	local function At(mapID, x, y, area)
+		Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = mapID, x, y, area
+		OpenWorldMap()
+		local shown = DungeonMap:Overlay()
+		local key = shown:IsShown() and shown.subMap and shown.subMap.key or nil
+		WorldMapFrame:Hide()
+		return key, shown
+	end
+	-- Before the gates, outdoors, and at the Depths' door unseen below: the zone's own map
+	Mock.indoors = false
+	check(At(1428, 0.2940, 0.3829, "Blackrock Mountain") == nil and At(1427, 0.3485, 0.8583, "Blackrock Mountain") == nil
+		and At(1427, 0.2755, 0.7238, "") == nil, "before the gates, and nameless ground, show the zone's own map")
+	-- Through either gate, indoors, the tunnels named like the ground outside: the ring's map, on
+	-- Searing Gorge for its gate's tunnel (the player's readings where the minimap turned)
+	Mock.indoors = true
+	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1427, 0.3485, 0.8583, "Blackrock Mountain"
+	OpenWorldMap()
+	local shown = DungeonMap:Overlay()
+	check(shown:IsShown() and shown.subMap and shown.subMap.key == "BlackrockMountainGorge" and shown.Art.Picture:IsShown()
+		and shown.Art.Picture:GetTexture():find("Media\\Maps\\BlackrockMountainRing", 1, true)
+		and shown.Doors[1]:IsShown() and #shown.Doors[1].instances == 2 and shown.PlayerPin:IsShown(),
+		"in the Searing Gorge gate's tunnel: the ring's map, on Searing Gorge, with the Spire's door")
+	WorldMapFrame:Hide()
+	local key
+	check(At(1428, 0.2940, 0.3829, "Blackrock Mountain") == "BlackrockMountain"
+		and At(1428, 0.2870, 0.3700, "Blackrock Mountain") == "BlackrockMountain", "in the Burning Steppes gate's tunnel: the ring's map")
+	-- The ring: the Molten Span (where the map used to turn), the Spire's door, the Tomb; its own names
+	-- count even should the client not call the cavern indoors
+	for _, case in ipairs({ { 0.2915, 0.2233, "The Molten Span", true }, { 0.2748, 0.2318, "The Molten Span", false },
+		{ 0.2796, 0.3509, "The Molten Span", true }, { 0.3603, 0.2273, "Blackrock Spire", false },
+		{ 0.2700, 0.2700, "Forgewright's Tomb", true } }) do
+		Mock.indoors = case[4]
+		local key, shown = At(1428, case[1], case[2], case[3])
+		check(key == "BlackrockMountain" and shown.Art.Picture:IsShown()
+			and shown.Art.Picture:GetTexture():find("Media\\Maps\\BlackrockMountainRing", 1, true),
+			"in " .. case[3] .. ": the ring level's map")
+	end
+	Mock.indoors = true
+	-- The Spire's one door for both of its dungeons: one icon, both names, a choice on a click
+	local _, ring = At(1428, 0.3603, 0.2273, "Blackrock Spire")
+	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1428, 0.3603, 0.2273, "Blackrock Spire"
+	OpenWorldMap()
+	local spire = ring.Doors[1]
+	check(spire:IsShown() and not (ring.Doors[2] and ring.Doors[2]:IsShown()) and #spire.instances == 2
+		and spire.instances[1].key == "LowerBlackrockSpire" and spire.instances[2].key == "UpperBlackrockSpire",
+		"the Spire's door: one icon for Lower and Upper Blackrock Spire")
+	spire:_RunScript("OnEnter")
+	check(GameTooltip._text == "Blackrock Mountain" and GameTooltip:HasLine("Lower Blackrock Spire\tLevel 55-60")
+		and GameTooltip:HasLine("Upper Blackrock Spire\tLevel 59-60")
+		and GameTooltip:HasLine("Left-click to choose one to open in the Instance Journal"), "its tooltip names both")
+	spire:_RunScript("OnLeave")
+	Mock.contextMenu = nil
+	spire:Click("LeftButton")
+	check(Mock.contextMenu and Mock.contextMenu.title == "Blackrock Mountain" and #Mock.contextMenu.buttons == 2
+		and Mock.contextMenu.buttons[1].text == "Lower Blackrock Spire", "a left click offers both")
+	WorldMapFrame:Hide()
+	-- Down the chain to the Molten Core's ledge: still the ring (one room of the game's), and through
+	-- the doorway from above; into the Quarry, the lower map
+	check(At(1428, 0.2626, 0.2457, "The Molten Span") == "BlackrockMountain", "on the ledge by the Molten Core: the ring's map")
+	check(At(1428, 0.2600, 0.2500, "Blackrock Mountain") == "BlackrockMountain", "the doorway, come from the ring: the ring's map")
+	local lower
+	key, lower = At(1428, 0.2500, 0.2000, "The Grinding Quarry")
+	local tile = lower.Art.Tiles and lower.Art.Tiles[1]
+	check(key == "BlackrockDepthsApproachSteppes" and tile and tile:GetTexture() == LOWER and lower.Doors[1]:IsShown()
+		and lower.Doors[1].instance.key == "BlackrockDepths", "in the Quarry, on Burning Steppes: the way down's map and the Depths' door")
+	check(At(1428, 0.2600, 0.2500, "Blackrock Mountain") == "BlackrockDepthsApproachSteppes", "the doorway, come up from the Quarry: still below")
+	check(At(1428, 0.2626, 0.2457, "The Molten Span") == "BlackrockMountain", "and on the ledge, the ring's map again")
+	-- The Quarry's north end, the Masonary and the Depths' door, on Searing Gorge
+	check(At(1427, 0.2700, 0.8000, "The Grinding Quarry") == "BlackrockDepthsApproach", "the Quarry's north end, on Searing Gorge")
+	check(At(1427, 0.2623, 0.7755, "The Masonary") == "BlackrockDepthsApproach", "the Masonary")
+	key, lower = At(1427, 0.2755, 0.7238, "")
+	check(key == "BlackrockDepthsApproach" and lower.Doors[1].instance.key == "BlackrockDepths",
+		"at the Depths' door, named nothing, come from the Masonary: still the way down's map")
+	-- Its levels' menu, by retail's names: on the ring, the way down's picture a choice away, and back
+	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1428, 0.2915, 0.2233, "The Molten Span"
+	OpenWorldMap()
+	local view = DungeonMap:Overlay()
+	local levelStep = DungeonMap:FloorStep()
+	local levels = levelStep.MenuArrowButton
+	local steps = {}
+	for _, button in ipairs(WorldMapFrame.NavBar.navList) do steps[#steps + 1] = button:GetText() end
+	steps[#steps + 1] = levelStep:GetText()
+	check(view.subMap.key == "BlackrockMountain" and levelStep:IsShown() and #levels._menu.radios == 2
+		and levels._menu.radios[1].text == "Blackrock Spire" and levels._menu.radios[2].text == "Blackrock Depths"
+		and levels._menu.radios[1].isSelected() and table.concat(steps, " > ") == "Azeroth > Eastern Kingdoms > Burning Steppes > Blackrock Spire",
+		"on the ring: the location bar ends in the level, its arrow a menu of the mountain's two: " .. table.concat(steps, " > "))
+	levels._menu.radios[2].setSelected()
+	view = DungeonMap:Overlay()
+	check(view:IsShown() and view.subMap.key == "BlackrockDepthsApproachSteppes" and levels._menu.radios[2].isSelected()
+		and levelStep:GetText() == "Blackrock Depths" and view.Doors[1].instance.key == "BlackrockDepths" and not view.PlayerPin:IsShown(),
+		"Blackrock Depths chosen: the way down's picture on Burning Steppes, its door, no arrow (the player is above)")
+	levels._menu.radios[1].setSelected()
+	view = DungeonMap:Overlay()
+	check(view.subMap.key == "BlackrockMountain" and view.PlayerPin:IsShown(), "and back to the ring, the player on it")
+	-- Put away with a right click: Burning Steppes the current step again
+	local barSteps = WorldMapFrame.NavBar.navList
+	view.Doors[1]:Click("RightButton")
+	check(not view:IsShown() and not levelStep:IsShown() and not barSteps[#barSteps]:IsEnabled()
+		and barSteps[#barSteps].selected:IsShown(), "put away: Burning Steppes the current step again")
+	WorldMapFrame:Hide()
+	OpenWorldMap()
+	check(levelStep:IsShown() and barSteps[#barSteps]:IsEnabled(), "back with the map")
+	-- The bar counts only its own steps: the level's fits in the room they leave, its name cut short
+	local bar = WorldMapFrame.NavBar
+	local function Room()
+		local used = 0
+		for index, button in ipairs(bar.navList) do
+			if button:IsShown() then used = used + button:GetWidth() + (index < #bar.navList and button.xoffset or 0) end
+		end
+		return bar:GetWidth() - used - 21
+	end
+	check(levelStep:GetWidth() <= Room() and levelStep.text:GetWidth() > 0
+		and levelStep.text:GetWidth() < levelStep.text:GetUnboundedStringWidth(),
+		"the level's step fits the bar, its name cut short where it must be")
+	-- Too narrow a bar (the map made smaller): the menu beside the pin button, the zone current again
+	bar:SetWidth(470)
+	bar:_RunScript("OnSizeChanged")
+	check(not levelStep:IsShown() and view.FloorDropdown:IsShown() and view.FloorDropdown:GetText() == "Blackrock Spire"
+		and not barSteps[#barSteps]:IsEnabled() and barSteps[#barSteps].selected:IsShown(),
+		"no room left on the bar: the menu beside the map pin button, the zone the current step again")
+	bar:SetWidth(583)
+	bar:_RunScript("OnSizeChanged")
+	check(levelStep:IsShown() and not view.FloorDropdown:IsShown(), "room again: back on the bar")
+	-- The bar folding its own first step into its overflow button, its other steps leaving room
+	-- enough by their widths alone (the overflow button takes some too): the menu off the bar
+	bar:SetWidth(440)
+	bar:Refresh()
+	check(bar.overflowButton:IsShown() and not levelStep:IsShown() and view.FloorDropdown:IsShown(),
+		"the bar folded: the menu beside the map pin button")
+	bar:SetWidth(583)
+	bar:Refresh()
+	check(not bar.overflowButton:IsShown() and levelStep:IsShown(), "unfolded: back on the bar")
+	-- Eastern Kingdoms clicked: its map, without the cave's step; back down to Burning Steppes, back
+	barSteps[2]:Click("LeftButton")
+	check(Mock.worldMapID == 1415 and not levelStep:IsShown() and not view:IsShown()
+		and barSteps[#barSteps]:GetText() == "Eastern Kingdoms" and not barSteps[#barSteps]:IsEnabled(),
+		"a click on Eastern Kingdoms: its own map, the bar ending there")
+	WorldMapFrame:SetMapID(1428)
+	check(levelStep:IsShown() and DungeonMap:Overlay():IsShown(), "back on Burning Steppes, the ring and its step again")
+	-- Burning Steppes, the zone's step, clicked: the zone's own map (known before the bar lays
+	-- itself out again and reuses its buttons in another order)
+	barSteps[#barSteps]:Click("LeftButton")
+	check(not DungeonMap:Overlay():IsShown() and not levelStep:IsShown() and Mock.worldMapID == 1428,
+		"a click on Burning Steppes, the zone's step: Burning Steppes' own map")
+	WorldMapFrame:Hide()
+	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1427, 0.3485, 0.8583, "Blackrock Mountain"
+	OpenWorldMap()
+	DungeonMap:FloorStep().MenuArrowButton._menu.radios[2].setSelected()
+	check(DungeonMap:Overlay().subMap.key == "BlackrockDepthsApproach", "on Searing Gorge, the way down's picture placed there")
+	WorldMapFrame:Hide()
+	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone, Mock.indoors = nil, nil, nil, "", nil
+end
+
+-- The ruins of Dire Maul on Feralas: the player's picture of Blizzard's drawn map, shown in the
+-- ruins' named streets, its doors the wings', the way in at the foot of the great stair
+do
+	OpenWorldMap(1444)
+	local stair
+	for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalCavePinTemplate")) do
+		if pin.subMap.key == "DireMaulRuins" then stair = pin end
+	end
+	check(stair and stair._position[1] == 0.5913 and stair._position[2] == 0.4475 and stair.Texture._atlas == "delves-regular",
+		"the way into the ruins at the foot of the great stair, with the delve icon")
+	local northDoor
+	for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalEntrancePinTemplate")) do
+		if pin.instance.key == "DireMaulNorth" then northDoor = pin end
+	end
+	northDoor:_RunScript("OnEnter")
+	check(GameTooltip:HasLine("Its portal is inside, in Dire Maul: go in at the entrance."), "a wing's door says the way is through the ruins")
+	northDoor:_RunScript("OnLeave")
+	WorldMapFrame:Hide()
+	check(ns.DungeonMap:SetWaypoint(ns.GetInstance("DireMaulNorth")) and Mock.userWaypoint.uiMapID == 1444
+		and Mock.userWaypoint.position.x == 0.5913 and Mock.userWaypoint.position.y == 0.4475, "and its waypoint goes to the stair")
+	local function At(x, y, area)
+		Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1444, x, y, area
+		OpenWorldMap()
+		local shown = DungeonMap:Overlay()
+		local key = shown:IsShown() and shown.subMap and shown.subMap.key or nil
+		return key, shown
+	end
+	-- Fresh on nameless ground, and on named Feralas ground inside the picture: Feralas' own map
+	check(At(0.6132, 0.2662, "") == nil, "nameless ground, not seen in the ruins: Feralas' map")
+	WorldMapFrame:Hide()
+	check(At(0.5200, 0.3000, "The Twin Colossals") == nil, "Feralas ground in the picture's rectangle: Feralas' map")
+	WorldMapFrame:Hide()
+	-- The hall, Eldreth Row: the picture, the wings' doors, the player where they stand
+	local key, ruins = At(0.5945, 0.3594, "Eldreth Row")
+	local doorKeys = {}
+	for _, door in ipairs(ruins.Doors) do if door:IsShown() then doorKeys[#doorKeys + 1] = door.instance.key end end
+	table.sort(doorKeys)
+	check(key == "DireMaulRuins" and ruins.Art.Picture:GetTexture():find("Media\\Maps\\DireMaulRuins", 1, true)
+		and math.abs(ruins.Art.Picture._texCoord[2] - 1000 / 1024) < 1e-9 and math.abs(ruins.Art.Picture._texCoord[4] - 667 / 1024) < 1e-9
+		and table.concat(doorKeys, ",") == "DireMaulEast,DireMaulEast,DireMaulNorth,DireMaulWest,DireMaulWest" and ruins.PlayerPin:IsShown()
+		and math.abs(ruins.PlayerPin._points[1][4] - (0.5945 - 0.495224) / (0.683018 - 0.495224) * ruins.Art._width) < 1e-3,
+		"in the hall: the ruins' picture, an icon on each of its five doors, the player where they stand")
+	local westDoors = {}
+	for _, door in ipairs(ruins.Doors) do
+		if door:IsShown() and door.instance.key == "DireMaulWest" then westDoors[#westDoors + 1] = door._points[1][5] end
+	end
+	check(#westDoors == 2 and westDoors[1] ~= westDoors[2], "the west wing's two doorways, an icon each")
+	WorldMapFrame:Hide()
+	-- The courtyard's paving, then its nameless grass: kept; the arena
+	check(At(0.6441, 0.2878, "Eldre' Thalas") == "DireMaulRuins", "on the courtyard's paving")
+	WorldMapFrame:Hide()
+	check(At(0.6132, 0.2662, "") == "DireMaulRuins", "on its nameless grass, come from the paving: still the ruins")
+	WorldMapFrame:Hide()
+	check(At(0.6256, 0.2994, "The Maul") == "DireMaulRuins", "in the arena, the Maul")
+	WorldMapFrame:Hide()
+	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = nil, nil, nil, ""
+end
+
+-- A dungeon's map put away, then a picture shown over the same zone: its quest marks go with it
+do
+	ns.DungeonMap:Show(ns.GetInstance("RuinsOfLordaeron"))
+	local overlay = DungeonMap:Overlay()
+	local function Marks()
+		local marks = 0
+		for _, spot in ipairs(overlay.QuestSpots) do
+			if spot:IsShown() and spot:IsVisible() then marks = marks + 1 end
+		end
+		return marks
+	end
+	check(Mock.worldMapID == 1420 and Marks() > 0, "the Ruins of Lordaeron's map, on Tirisfal, with its quest marks")
+	overlay:_RunScript("OnMouseUp", "RightButton")
+	local hall
+	for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalCavePinTemplate")) do
+		if pin.subMap.key == "ScarletMonasteryHall" then hall = pin end
+	end
+	hall:Click("LeftButton")
+	check(overlay.subMap and overlay.subMap.key == "ScarletMonasteryHall" and Marks() == 0,
+		"put away, then the Scarlet Monastery's hall: none of the Ruins' quest marks on it")
+	WorldMapFrame:Hide()
+end
+
+-- The Scarlet Monastery's hall: Blizzard's map of it redrawn for its four wings, on Tirisfal or on
+-- the continent, whichever the client reports there
+do
+	-- Its way in on Tirisfal, a building's: retail's delve entrance, where the wings' door stood
+	OpenWorldMap(1420)
+	local entrance
+	for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalCavePinTemplate")) do
+		if pin.subMap.key == "ScarletMonasteryHall" then entrance = pin end
+	end
+	check(entrance and entrance._position[1] == 0.826 and entrance._position[2] == 0.338
+		and entrance.Texture._atlas == "delves-regular", "the hall's way in on Tirisfal, with the delve icon a building takes")
+	entrance:_RunScript("OnEnter")
+	local leads = {}
+	for _, line in ipairs(GameTooltip._lines) do
+		if type(line) == "string" and line:find("^The way to ") then leads[#leads + 1] = line end
+	end
+	check(GameTooltip._text == "Scarlet Monastery" and Mock.areaLabel and Mock.areaLabel.description == "Entrance"
+		and table.concat(leads, "|") == "The way to Scarlet Monastery: Armory|The way to Scarlet Monastery: Cathedral|"
+			.. "The way to Scarlet Monastery: Graveyard|The way to Scarlet Monastery: Library",
+		"its tooltip: an entrance, leading to the four wings, by name: " .. table.concat(leads, "|"))
+	entrance:_RunScript("OnLeave")
+	WorldMapFrame:Hide()
+	-- Indoors, from the stair corridor in (the player's own reading there, /aegis where, 2026-10-21)
+	Mock.indoors = true
+	for _, case in ipairs({ { 1420, 0.8371, 0.3221, "Terrace of Repose", "ScarletMonasteryHall" },
+		{ 1420, 0.84, 0.31, "Whispering Gardens", "ScarletMonasteryHall" },
+		{ 1420, 0.84, 0.31, "Scarlet Monastery", "ScarletMonasteryHall" },
+		{ 1415, 0.4762, 0.1953, "The Grand Vestibule", "ScarletMonasteryHallContinent" } }) do
+		Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = case[1], case[2], case[3], case[4]
+		OpenWorldMap()
+		local hall = DungeonMap:Overlay()
+		local wings = {}
+		for _, door in ipairs(hall.Doors) do
+			if door:IsShown() then wings[#wings + 1] = door.instance.key end
+		end
+		table.sort(wings)
+		check(hall:IsShown() and hall.subMap and hall.subMap.key == case[5]
+			and hall.Art.Picture:GetTexture():find("Media\\Maps\\ScarletMonasteryHall", 1, true)
+			and table.concat(wings, ",") == "ScarletMonasteryArmory,ScarletMonasteryCathedral,ScarletMonasteryGraveyard,ScarletMonasteryLibrary"
+			and hall.PlayerPin:IsShown(), "in the hall, on " .. case[1] .. ": its map with the four wings' doors: " .. table.concat(wings, ","))
+		WorldMapFrame:Hide()
+	end
+	-- Outdoors, on the terrace before the gate and the road beyond (the same area name): Tirisfal's
+	-- own map; the player's own readings
+	Mock.indoors = false
+	local outside = {}
+	for _, spot in ipairs({ { 0.8237, 0.3276 }, { 0.8251, 0.3329 }, { 0.822, 0.321 } }) do
+		Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1420, spot[1], spot[2], "Terrace of Repose"
+		OpenWorldMap()
+		if DungeonMap:Overlay():IsShown() then outside[#outside + 1] = spot[1] .. "," .. spot[2] end
+		WorldMapFrame:Hide()
+	end
+	check(#outside == 0, "outdoors before the gate, the same area name: Tirisfal's own map: " .. table.concat(outside, " "))
+	-- Stepping in and out with the map open: the hall's map comes and goes
+	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone = 1420, 0.8371, 0.3221, "Terrace of Repose"
+	OpenWorldMap()
+	local before = DungeonMap:Overlay():IsShown()
+	Mock.indoors = true
+	Mock.Fire("MINIMAP_UPDATE_ZOOM")
+	local inside = DungeonMap:Overlay():IsShown() and DungeonMap:Overlay().subMap.key == "ScarletMonasteryHall"
+	Mock.indoors = false
+	Mock.Fire("MINIMAP_UPDATE_ZOOM")
+	check(not before and inside and not DungeonMap:Overlay():IsShown(), "stepping in with the map open shows the hall; stepping out, Tirisfal again")
+	WorldMapFrame:Hide()
+	Mock.playerMapID, Mock.playerX, Mock.playerY, Mock.subzone, Mock.indoors = nil, nil, nil, "", nil
+end
 
 -- In combat the map still hands out the journal's pins: none of them asks the blocked call
 Mock.inCombat = true
@@ -2274,26 +2826,26 @@ end
 cave = WorldMapFrame:ActivePins("AegisJournalCavePinTemplate")[1]
 check(hallDoor and hallDoor._position[1] == 0.2815 and hallDoor._position[2] == 0.4775,
 	"the Hall of Thanes over its portal on the Ironforge map")
-check(cave and cave.subMap.key == "OldIronforge" and cave.Texture._atlas == "CaveUnderground-Up"
-	and cave._position[1] == 0.435 and cave._position[2] == 0.52, "retail's cave entrance where the way down is")
-check(#WorldMapFrame:ActivePins("AegisJournalCavePinTemplate") == 1, "one cave")
+check(cave and cave.subMap.key == "OldIronforge" and cave.Texture._atlas == "delves-regular"
+	and cave._position[1] == 0.435 and cave._position[2] == 0.52, "the delve icon of a way in where the way down is (the player's pick)")
+check(#WorldMapFrame:ActivePins("AegisJournalCavePinTemplate") == 1, "one way in")
 hallDoor:_RunScript("OnEnter")
-check(GameTooltip:HasLine("Its portal is below, in Old Ironforge: go down at the cave entrance."), "the dungeon's tooltip points to the cave")
+check(GameTooltip:HasLine("Its portal is inside, in Old Ironforge: go in at the entrance."), "the dungeon's tooltip points to the way in")
 cave:_RunScript("OnEnter")
 check(GameTooltip._text == "Old Ironforge" and GameTooltip:HasLine("The way to The Hall of Thanes")
-	and GameTooltip:HasLine("Left-click to see the map of Old Ironforge"), "the cave says where it leads")
-check(Mock.areaLabel and Mock.areaLabel.name == "Old Ironforge" and Mock.areaLabel.description == "Cave Entrance",
-	"and the map's area label calls it a cave entrance")
+	and GameTooltip:HasLine("Left-click to see the map of Old Ironforge"), "the way in says where it leads")
+check(Mock.areaLabel and Mock.areaLabel.name == "Old Ironforge" and Mock.areaLabel.description == "Entrance",
+	"and the map's area label calls it an entrance")
 cave:_RunScript("OnLeave")
 check(Mock.areaLabel == nil, "the label goes with the mouse")
 hallDoor:Click("RightButton")
 check(Mock.userWaypoint.uiMapID == 1455 and Mock.userWaypoint.position.x == 0.435 and Mock.userWaypoint.position.y == 0.52
-	and chatContains("Waypoint set to the way down into Old Ironforge, for The Hall of Thanes."),
+	and chatContains("Waypoint set to the entrance of Old Ironforge."),
 	"the dungeon's waypoint leads to the way down, which is walkable")
 cave:Click("RightButton")
-check(chatContains("Waypoint set to the way down into Old Ironforge."), "so does the cave's")
+check(chatContains("Waypoint set to the entrance of Old Ironforge."), "so does the way in's")
 
--- Left-click on the cave: Old Ironforge over the world map
+-- Left-click on the way in: Old Ironforge over the world map
 cave:Click("LeftButton")
 local below = DungeonMap:Overlay()
 check(below:IsShown() and below.subMap and below.subMap.key == "OldIronforge"
@@ -2407,7 +2959,18 @@ check(dungeonEntry and dungeonEntry.nameText == "Dungeon" and raidEntry and raid
 	"the legend's own Dungeon and Raid entries found")
 check(caveEntry and caveEntry.atlas == "CaveUnderground-Up" and caveEntry.nameText == "Cave Entrance"
 	and caveEntry.templates[1] == "AegisJournalCavePinTemplate", "a Cave Entrance entry with retail's icon")
-check(legend:Entry("delve") == nil, "and no Delve entry: the ways down are all caves")
+do
+	local buildingEntry = legend:Entry("building")
+	check(buildingEntry and buildingEntry.atlas == "delves-regular" and buildingEntry.nameText == "Entrance"
+		and buildingEntry.templates[1] == "AegisJournalCavePinTemplate" and buildingEntry.metaData.Style == "building"
+		and caveEntry.metaData.Style == "cave", "an Entrance entry with the delve icon, its pins told from caves by their style")
+	check(buildingEntry.layoutIndex == 4 and buildingEntry.gridRow == 2 and buildingEntry.gridColumn == 2,
+		"Entrance under Cave Entrance")
+	check(caveEntry.tooltipText == ns.L.LEGEND_CAVE_TOOLTIP and buildingEntry.tooltipText == ns.L.LEGEND_BUILDING_TOOLTIP
+		and caveEntry.tooltipText:find("where a dungeon's door is", 1, true)
+		and buildingEntry.tooltipText:find("where a dungeon's door is", 1, true),
+		"Cave Entrance's tooltip in the journal's words, like Entrance's: where a dungeon's door is")
+end
 local movement = caveEntry:GetParent()
 local flight = select(1, movement:GetChildren())
 check(flight.nameText == "Flightpoint" and caveEntry.layoutIndex == 2 and caveEntry.gridRow == 1 and caveEntry.gridColumn == 2
@@ -2424,24 +2987,56 @@ check(ironforgeDoor.isRaid == false, "entrances say whether they are raids, as t
 dungeonEntry:_RunScript("OnEnter")
 check(ironforgeDoor.legendGlow and ironforgeDoor.legendGlow:IsShown() and ironforgeDoor.legendGlow._atlas == "UI-QuestPoi-OuterGlow",
 	"hovering Dungeon in the legend lights up the dungeons, with retail's glow")
-check(not caveDoor.legendGlow, "and not the cave")
+check(not caveDoor.legendGlow, "and not the way in")
 dungeonEntry:_RunScript("OnLeave")
 check(not ironforgeDoor.legendGlow:IsShown(), "until the mouse leaves")
 raidEntry:_RunScript("OnEnter")
 check(not ironforgeDoor.legendGlow:IsShown(), "Raid does not light up a dungeon")
 raidEntry:_RunScript("OnLeave")
 caveEntry:_RunScript("OnEnter")
-check(caveDoor.legendGlow and caveDoor.legendGlow:IsShown(), "Cave Entrance lights up the cave")
+check(not caveDoor.legendGlow, "Cave Entrance leaves Old Ironforge's way in, a building's, dark")
 caveEntry:_RunScript("OnLeave")
+legend:Entry("building"):_RunScript("OnEnter")
+check(caveDoor.legendGlow and caveDoor.legendGlow:IsShown(), "Entrance lights it up")
+legend:Entry("building"):_RunScript("OnLeave")
 check(not caveDoor.legendGlow:IsShown(), "and lets it go")
 ironforgeDoor:_RunScript("OnEnter")
 check(dungeonEntry.highlightLocked == true and not raidEntry.highlightLocked, "hovering a dungeon lights its legend entry")
 ironforgeDoor:_RunScript("OnLeave")
 check(dungeonEntry.highlightLocked == false, "until the mouse leaves")
 caveDoor:_RunScript("OnEnter")
-check(caveEntry.highlightLocked == true, "the cave lights its entry too")
+check(legend:Entry("building").highlightLocked == true and not caveEntry.highlightLocked, "the way in lights its own entry, Entrance")
 caveDoor:_RunScript("OnLeave")
-check(caveEntry.highlightLocked == false, "and lets it go")
+check(legend:Entry("building").highlightLocked == false, "and lets it go")
+-- A cave's mouth (the Wailing Caverns', on the Barrens): Cave Entrance's, not Entrance's
+do
+	local buildingEntry = legend:Entry("building")
+	OpenWorldMap(1413)
+	local mouth = WorldMapFrame:ActivePins("AegisJournalCavePinTemplate")[1]
+	check(mouth and mouth.subMap.key == "WailingCavernsApproach" and mouth.Texture._atlas == "CaveUnderground-Up",
+		"a cave's mouth keeps the cave icon")
+	caveEntry:_RunScript("OnEnter")
+	buildingEntry:_RunScript("OnEnter")
+	buildingEntry:_RunScript("OnLeave")
+	check(mouth.legendGlow and mouth.legendGlow:IsShown(), "Cave Entrance lights the cave, Entrance does not put it out")
+	caveEntry:_RunScript("OnLeave")
+	check(not mouth.legendGlow:IsShown(), "and lets it go")
+	mouth:_RunScript("OnEnter")
+	check(caveEntry.highlightLocked == true and not buildingEntry.highlightLocked, "the cave lights Cave Entrance only")
+	mouth:_RunScript("OnLeave")
+	-- Each kind hidden from its own entry
+	legend:Toggle("building")
+	check(#WorldMapFrame:ActivePins("AegisJournalCavePinTemplate") == 1 and ns.db.mapHidden.building and buildingEntry:GetAlpha() < 1,
+		"Entrance switched off: the caves stay")
+	WorldMapFrame:SetMapID(1455)
+	check(#WorldMapFrame:ActivePins("AegisJournalCavePinTemplate") == 0, "and Old Ironforge's way in goes")
+	legend:Toggle("building")
+	check(#WorldMapFrame:ActivePins("AegisJournalCavePinTemplate") == 1 and not ns.db.mapHidden.building, "back on, it comes back")
+	legend:Toggle("cave")
+	check(#WorldMapFrame:ActivePins("AegisJournalCavePinTemplate") == 1, "Cave Entrance switched off: the way in stays")
+	legend:Toggle("cave")
+	caveDoor = WorldMapFrame:ActivePins("AegisJournalCavePinTemplate")[1]
+end
 -- The journal's quest marks: a "!" lights the legend's Quest entry, a "?" Turn In as well, as the
 -- client's own marks do; hovering Quest lights the journal's "!" marks up
 do
@@ -3327,9 +3922,48 @@ check(page.boss and page.boss.name == "Edwin VanCleef", "a boss opens on its pag
 
 search("rockslicer")
 check(previewNames()[1] == "Rockslicer", "loot is found by name")
-searchButtons[1]:Click()
-check(page.boss.name == "Rhahk'Zor" and page.Loot:IsShown() and page.Loot.revealedItemID == 872,
-	"an item opens its boss's loot, brought into view")
+do
+	-- The result names where it drops, and a click opens it: its tooltip adds no line of its own
+	local function SaysWhereItDrops()
+		for _, line in ipairs(GameTooltip._lines) do
+			if type(line) == "string" and (line:find("^Drops ") or line:find("^Also drops ")) then return line end
+		end
+	end
+	searchButtons[1]:_RunScript("OnEnter")
+	local resultSays = SaysWhereItDrops()
+	searchButtons[1]:_RunScript("OnLeave")
+	check(resultSays == nil and ns.ItemTooltip:SourceText(872) == "Drops from Rhahk'Zor in The Deadmines",
+		"a search result's item names no place in its tooltip: the result is the place")
+	searchButtons[1]:Click()
+	check(page.boss.name == "Rhahk'Zor" and page.Loot:IsShown() and page.Loot.revealedItemID == 872,
+		"an item opens its boss's loot, brought into view")
+	local rockslicerRow
+	for _, row in ipairs(lootRows()) do
+		if row.itemID == 872 then rockslicerRow = row end
+	end
+	rockslicerRow:_RunScript("OnEnter")
+	local rowSays = SaysWhereItDrops()
+	rockslicerRow:_RunScript("OnLeave")
+	check(rockslicerRow and rowSays == nil, "nor does its loot row, where no other dungeon drops it")
+	-- A loot row's item that drops in other dungeons too names only those
+	local shadowfang = ns.GetInstance("ShadowfangKeep")
+	local captain
+	for _, boss in ipairs(shadowfang.bosses) do
+		if (boss.enName or boss.name) == "Deathsworn Captain" then captain = boss end
+	end
+	Mock.itemsCached[6641] = true
+	ns.Journal:OpenBoss(shadowfang, captain)
+	ns.EncounterPage:SetTab(ns.Journal:Page(), ns.EncounterPage.TAB_LOOT)
+	ns.LootPanel:Reveal(6641)
+	local alsoRow
+	for _, row in ipairs(lootRows()) do
+		if row.itemID == 6641 then alsoRow = row end
+	end
+	alsoRow:_RunScript("OnEnter")
+	local alsoSays = SaysWhereItDrops()
+	alsoRow:_RunScript("OnLeave")
+	check(alsoSays == "Also drops in Ruins of Lordaeron", "a loot row names only the other dungeons its item drops in: " .. tostring(alsoSays))
+end
 
 search("graveweave")
 check(#ns.Search:Find("graveweave") == 1 and previewNames()[1] == "Graveweave Bindings"
@@ -3415,6 +4049,323 @@ SlashCmdList.AEGISJOURNAL("reset")
 check(ns.db.position == nil, "/aegis reset clears the saved position")
 AegisJournal_Toggle()
 check(not f:IsShown(), "toggle closes it")
+-- Docked like the game's own windows (UI/Journal.lua), in the client's window manager as the mock
+-- plays it: at the top left, moved aside and put away by the game's windows, through Escape, its X
+-- and combat, let loose by a drag till it shuts, and free again
+;(function()
+	local L, box = ns.L, Mock.settings.AEGIS_JOURNAL_DOCK
+	local savedPlayer, savedWidth, savedTab = Mock.units.player, Mock.screen.width, f.selectedTab
+	local function X() return select(4, f:GetPoint(1)) end
+	local function Y() return select(5, f:GetPoint(1)) end
+	-- The next frame drawn: a journal placed by hand looks at the game's windows again.
+	local function NextFrame() if f.DockWatch:IsVisible() then f.DockWatch:_RunScript("OnUpdate", 0.016) end end
+	local function Clean() return #Mock.blocked == 0 and Mock.interfaceBlocked == 0 and #Mock.panelWindowsWrites == 0 end
+	local sounds, showCalls = 0, 0
+	local playSound, showUIPanel = ns.PlaySoundKit, ShowUIPanel
+	ns.PlaySoundKit = function(...) sounds = sounds + 1 return playSound(...) end
+	ShowUIPanel = function(...) showCalls = showCalls + 1 return showUIPanel(...) end
+	Mock.inCombat = nil
+	WorldMapFrame:Hide()
+	local vendor = Mock.BlizzardPanel("MockMerchantFrame", { area = "left", pushable = 0 }, 384)
+	local character = Mock.BlizzardPanel("MockCharacterFrame", { area = "left", pushable = 3, whileDead = 1, width = 713 }, 631)
+	local spells = Mock.BlizzardPanel("MockSpellBookFrame",
+		{ area = "centerOrLeft", pushable = 3, whileDead = 1, allowOtherPanels = 1 }, 809, true)
+	local finder = Mock.BlizzardPanel("MockGroupFinderFrame", { area = "left", pushable = 7 }, 400)
+	local menu = Mock.BlizzardPanel("MockGameMenuFrame", { area = "center", pushable = 0, whileDead = 1 }, 300)
+
+	check(box and box.default == true and box:GetValue() == false and box.tooltip == L.OPTIONS_DOCK_TIP,
+		"docking offered in the options, on by default (the scenario freed it)")
+	ns.db.position = { point = "TOPLEFT", relativePoint = "TOPLEFT", x = 300, y = -200 }
+	ns.Journal:ApplyPosition()
+	AegisJournal_Toggle()
+	check(f:IsShown() and X() == 300 and showCalls == 0 and f:GetAttribute("UIPanelLayout-defined")
+		and f:GetAttribute("UIPanelLayout-area") == nil and not f.DockWatch:IsShown(),
+		"free: where it was dragged, none of the game's windows")
+	Mock.inCombat = true
+	f.CloseButton:Click()
+	Mock.inCombat = nil
+	check(not f:IsShown() and Mock.interfaceBlocked == 0, "its X closes it in combat, nothing refused")
+
+	box:SetValue(true)
+	check(ns.db.docked == true and box:GetValue() == true and f:GetAttribute("UIPanelLayout-area") == "left"
+		and f:GetAttribute("UIPanelLayout-pushable") == 8 and f:GetAttribute("UIPanelLayout-width") == 843
+		and f:GetAttribute("UIPanelLayout-whileDead") == 1 and rawget(UIPanelWindows, "AegisJournalFrame") == nil,
+		"ticked: its place set on its own frame, nothing in the game's list")
+	for name, value in pairs(rawget(f, "_attributes")) do
+		check(type(value) ~= "function" and type(value) ~= "table", "only plain values among its attributes: " .. name)
+	end
+	AegisJournal_Toggle()
+	check(Mock.slots.left == f and X() == 16 and Y() == -116 and showCalls == 1 and not f.DockWatch:IsShown(),
+		"docked: opened through the game, in its left slot at the top left")
+	-- Dragged while docked: loose where it is put, out of the game's row; shut and opened again, docked again
+	sounds = 0
+	f:_RunScript("OnDragStart")
+	check(f._moving and not Mock.slots.left and f:IsShown() and f:GetAttribute("UIPanelLayout-area") == nil
+		and not f.DockWatch:IsShown() and sounds == 0, "dragged: let loose, out of the game's slot, still on screen, quietly")
+	f:ClearAllPoints()
+	f:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 500, -300)
+	f:_RunScript("OnDragStop")
+	check(not f._moving and X() == 500 and ns.db.position.x == 300, "where it was put; its free place kept")
+	Mock.AsClient(ShowUIPanel, vendor)
+	check(Mock.slots.left == vendor and not Mock.slots.center and f:IsShown() and X() == 500,
+		"a vendor opens at the left; the loose journal stays where it was put")
+	Mock.AsClient(HideUIPanel, vendor)
+	AegisJournal_Toggle()
+	check(not f:IsShown() and f:GetAttribute("UIPanelLayout-area") == "left", "shut: docked again")
+	AegisJournal_Toggle()
+	check(Mock.slots.left == f and X() == 16, "opened again: back at the top left")
+	-- /aegis reset, dragged loose: back in its place at once, quietly
+	f:_RunScript("OnDragStart")
+	f:ClearAllPoints()
+	f:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 500, -300)
+	f:_RunScript("OnDragStop")
+	local freePlace = ns.db.position
+	sounds = 0
+	SlashCmdList.AEGISJOURNAL("reset")
+	check(f:IsShown() and Mock.slots.left == f and X() == 16 and f:GetAttribute("UIPanelLayout-area") == "left"
+		and ns.db.position == nil and sounds == 0, "/aegis reset puts a window dragged loose back into its place")
+	ns.db.position = freePlace -- the free place the checks below set the window free to
+
+	-- The game's windows move it aside, and back
+	Mock.AsClient(ShowUIPanel, vendor)
+	check(Mock.slots.left == vendor and Mock.slots.center == f and X() == 432 and f:IsShown(), "a vendor: it slides aside")
+	Mock.AsClient(HideUIPanel, vendor)
+	check(Mock.slots.left == f and X() == 16, "the vendor shut: back at the left")
+	Mock.AsClient(ShowUIPanel, finder)
+	check(Mock.slots.left == finder and Mock.slots.center == f and X() == 448, "even the group finder (7) goes before it")
+	Mock.AsClient(HideUIPanel, finder)
+	AegisJournal_Toggle()
+	check(not f:IsShown() and not Mock.slots.left, "toggled shut: its slot freed")
+	Mock.AsClient(ShowUIPanel, vendor)
+	AegisJournal_Toggle()
+	check(Mock.slots.left == vendor and Mock.slots.center == f and X() == 432, "opened beside a window already open")
+	Mock.AsClient(ShowUIPanel, character)
+	check(Mock.slots.left == character and not vendor:IsShown() and Mock.slots.center == f and X() == 761,
+		"no room for three: the newest takes the vendor's place, the journal stays the last")
+	Mock.PressEscape()
+	check(not f:IsShown() and not character:IsShown() and next(Mock.slots) == nil and Clean(), "Escape shuts them all")
+
+	-- A window that widens as it shows, after the row is laid out (Forever's character sheet sets
+	-- its width in its OnShow): the journal moves past its full width at once
+	local widening = Mock.BlizzardPanel("MockWideningFrame", { area = "left", pushable = 3, whileDead = 1 }, 448)
+	widening:SetScript("OnShow", function(self)
+		self:SetAttribute("UIPanelLayout-defined", true)
+		self:SetAttribute("UIPanelLayout-area", "left")
+		self:SetAttribute("UIPanelLayout-pushable", 3)
+		self:SetAttribute("UIPanelLayout-whileDead", 1)
+		self:SetAttribute("UIPanelLayout-width", 713)
+	end)
+	AegisJournal_Toggle()
+	Mock.AsClient(ShowUIPanel, widening)
+	check(Mock.slots.left == widening and Mock.slots.center == f and X() == 761,
+		"a window widening as it shows: the journal past its full width, not its first: " .. tostring(X()))
+	Mock.PressEscape()
+	check(not f:IsShown() and Clean(), "and shut cleanly")
+
+	-- No room for two, at UI scale 1 on a wide screen
+	Mock.screen.width = 1365
+	AegisJournal_Toggle()
+	Mock.AsClient(ShowUIPanel, character)
+	check(Mock.slots.left == character and not f:IsShown() and not Mock.slots.center, "1365 wide: the character panel puts it away")
+	AegisJournal_Toggle()
+	check(Mock.slots.left == f and f:IsShown() and not character:IsShown(), "opened again: the newer stays, the panel shuts")
+	Mock.PressEscape()
+	Mock.screen.width = savedWidth
+
+	-- The game's menu takes no window: it opens by itself, over it
+	Mock.AsClient(ShowUIPanel, menu)
+	AegisJournal_Toggle()
+	check(f:IsShown() and not Mock.slots.left and X() == 16 and f.DockWatch:IsShown() and Mock.interfaceBlocked == 0,
+		"the game menu open: shown by itself over it")
+	NextFrame()
+	check(f:IsShown() and X() == 16, "and stays")
+	Mock.PressEscape()
+	check(not f:IsShown() and not menu:IsShown(), "Escape shuts both")
+
+	Mock.units.player = { dead = true }
+	AegisJournal_Toggle()
+	check(Mock.slots.left == f and not Mock.notWhileDead, "dead: it still opens")
+	AegisJournal_Toggle()
+	Mock.units.player = savedPlayer
+
+	Mock.AsClient(ShowUIPanel, vendor)
+	AegisJournal_Toggle()
+	Mock.screen.width = 1200
+	Mock.AsClient(UpdateScaleForFitForOpenPanels)
+	check(not f:IsShown() and Mock.slots.left == vendor, "a larger UI scale: no room, put away")
+	Mock.screen.width = savedWidth
+	Mock.PressEscape()
+
+	-- In combat: opened by itself, following the game's windows
+	Mock.inCombat = true
+	AegisJournal_Toggle()
+	check(f:IsShown() and not Mock.slots.left and X() == 16 and f.DockWatch:IsShown(), "combat: shown by itself at the top left")
+	Mock.AsClient(ShowUIPanel, vendor)
+	check(Mock.slots.left == vendor, "the game puts its own window at the left")
+	NextFrame()
+	check(X() == 432, "the journal moves aside on the next frame")
+	Mock.AsClient(ShowUIPanel, spells)
+	check(Mock.slots.center == spells and #Mock.blocked == 0, "the spellbook opens beside the vendor, by the game's own code")
+	NextFrame()
+	check(not f:IsShown(), "no room left: the journal shuts, as the last of the row")
+	Mock.AsClient(HideUIPanel, spells)
+	AegisJournal_Toggle()
+	check(f:IsShown() and X() == 432, "opened in combat beside the vendor")
+	Mock.AsClient(HideUIPanel, vendor)
+	NextFrame()
+	check(X() == 16, "the vendor shut: back at the left")
+	Mock.PressEscape()
+	check(not f:IsShown() and Clean(), "Escape in combat")
+	Mock.ResetPanels()
+
+	-- Shut in combat while in a slot, opened again in combat, and combat's end
+	Mock.inCombat = nil
+	Mock.AsClient(ShowUIPanel, vendor)
+	AegisJournal_Toggle()
+	check(Mock.slots.center == f, "out of combat, in the slot beside the vendor")
+	Mock.inCombat = true
+	AegisJournal_Toggle()
+	check(not f:IsShown() and Mock.slots.center == f and Mock.interfaceBlocked == 0, "shut in combat: still counted in its slot")
+	AegisJournal_Toggle()
+	check(f:IsShown() and Mock.slots.center == f and X() == 432 and not f.DockWatch:IsShown(), "opened again in combat: in its slot")
+	f.CloseButton:Click()
+	check(not f:IsShown() and Mock.slots.center == f and Mock.interfaceBlocked == 0, "its X in combat")
+	Mock.inCombat = nil
+	Mock.Fire("PLAYER_REGEN_ENABLED")
+	check(Mock.slots.center == nil and Mock.slots.left == vendor, "combat over: its slot freed")
+	Mock.PressEscape()
+
+	-- Opened in combat and still open after: it keeps following
+	Mock.inCombat = true
+	AegisJournal_Toggle()
+	Mock.inCombat = nil
+	Mock.Fire("PLAYER_REGEN_ENABLED")
+	Mock.AsClient(ShowUIPanel, character)
+	NextFrame()
+	check(f:IsShown() and X() == 761, "opened in combat, it follows after combat too")
+	AegisJournal_Toggle()
+	check(not f:IsShown() and Clean(), "and shuts")
+	Mock.PressEscape()
+
+	-- Dragged loose in combat while in a slot: let out of it once combat ends
+	Mock.AsClient(ShowUIPanel, vendor)
+	AegisJournal_Toggle()
+	Mock.inCombat = true
+	f:_RunScript("OnDragStart")
+	f:ClearAllPoints()
+	f:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 600, -200)
+	f:_RunScript("OnDragStop")
+	check(f:IsShown() and Mock.slots.center == f and X() == 600 and Mock.interfaceBlocked == 0,
+		"dragged in combat: loose where it was put, still counted in its slot")
+	Mock.inCombat = nil
+	Mock.Fire("PLAYER_REGEN_ENABLED")
+	check(f:IsShown() and Mock.slots.center == nil and Mock.slots.left == vendor and X() == 600,
+		"combat over: let out of its slot, still where it was put")
+	AegisJournal_Toggle()
+	check(not f:IsShown() and f:GetAttribute("UIPanelLayout-area") == "left", "and docked again once shut")
+	Mock.PressEscape()
+	-- Placed by hand in combat and dragged: it no longer follows the game's windows
+	Mock.inCombat = true
+	AegisJournal_Toggle()
+	f:_RunScript("OnDragStart")
+	f:ClearAllPoints()
+	f:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 700, -200)
+	f:_RunScript("OnDragStop")
+	Mock.AsClient(ShowUIPanel, vendor)
+	NextFrame()
+	check(f:IsShown() and X() == 700 and not f.DockWatch:IsShown(), "placed by hand in combat and dragged: it stays put")
+	AegisJournal_Toggle()
+	Mock.PressEscape()
+	Mock.inCombat = nil
+	Mock.Fire("PLAYER_REGEN_ENABLED")
+	check(not f:IsShown() and f:GetAttribute("UIPanelLayout-area") == "left" and Clean(), "shut: docked again, cleanly")
+
+	-- No room in combat: over the panel, until a newer window opens
+	Mock.screen.width = 1365
+	Mock.AsClient(ShowUIPanel, character)
+	Mock.inCombat = true
+	AegisJournal_Toggle()
+	check(f:IsShown() and X() == 16 and f.DockWatch:IsShown(), "no room in combat: over the panel")
+	NextFrame()
+	check(f:IsShown() and X() == 16, "and stays over it")
+	Mock.AsClient(ShowUIPanel, vendor)
+	NextFrame()
+	check(not f:IsShown(), "a newer window: it shuts")
+	Mock.PressEscape()
+	Mock.inCombat = nil
+	Mock.screen.width = savedWidth
+
+	-- Put away by the game in combat: its own scripts ask nothing of the manager
+	Mock.AsClient(ShowUIPanel, vendor)
+	AegisJournal_Toggle()
+	Mock.inCombat = true
+	Mock.AsClient(ShowUIPanel, spells)
+	check(not f:IsShown() and Mock.slots.left == vendor and Mock.slots.center == spells and Clean(), "put away in combat, cleanly")
+	Mock.PressEscape()
+	Mock.inCombat = nil
+
+	-- The world map (with its quest log), and a boss opened from its pin
+	rawset(UIPanelWindows, "WorldMapFrame", { area = "left", pushable = 0, whileDead = 1, allowOtherPanels = 1, width = 1035 })
+	AegisJournal_Toggle()
+	Mock.AsClient(ShowUIPanel, WorldMapFrame)
+	check(Mock.slots.left == WorldMapFrame and not f:IsShown(), "the map leaves no room: the journal put away")
+	local deadmines, boss = ns.GetInstance("TheDeadmines"), nil
+	for _, candidate in ipairs(deadmines.bosses) do if not candidate.trash then boss = candidate break end end
+	ns.DungeonMap:OpenBoss(deadmines, boss)
+	check(not WorldMapFrame:IsShown() and Mock.slots.left == f and X() == 16, "a boss from the map: the map shut, the journal at the left")
+	AegisJournal_Toggle()
+	rawset(UIPanelWindows, "WorldMapFrame", nil)
+
+	-- Switching while open, and in combat
+	Mock.AsClient(ShowUIPanel, vendor)
+	AegisJournal_Toggle()
+	sounds = 0
+	SlashCmdList.AEGISJOURNAL("dock")
+	check(not ns.db.docked and f:IsShown() and X() == 300 and Mock.slots.center == nil and Mock.slots.left == vendor
+		and f:GetAttribute("UIPanelLayout-area") == nil and sounds == 0 and chatContains(L.DOCK_OFF)
+		and Mock.settingsNotified.AEGIS_JOURNAL_DOCK == 1, "/aegis dock while open: free, where it was dragged, quietly")
+	SlashCmdList.AEGISJOURNAL("dock")
+	check(ns.db.docked and Mock.slots.center == f and X() == 432 and chatContains(L.DOCK_ON)
+		and Mock.settingsNotified.AEGIS_JOURNAL_DOCK == 2, "and docked again, beside the vendor")
+	Mock.inCombat = true
+	SlashCmdList.AEGISJOURNAL("dock")
+	check(not ns.db.docked and not box:GetValue() and f:GetAttribute("UIPanelLayout-area") == "left"
+		and chatContains(L.DOCK_AFTER_COMBAT), "in combat: the choice saved, the window as it was")
+	Mock.inCombat = nil
+	Mock.Fire("PLAYER_REGEN_ENABLED")
+	check(f:GetAttribute("UIPanelLayout-area") == nil and f:IsShown() and X() == 300 and Mock.slots.center == nil,
+		"applied when combat ends")
+	box:SetValue(true)
+	SlashCmdList.AEGISJOURNAL("reset")
+	check(ns.db.position == nil and Mock.slots.center == f and X() == 432, "/aegis reset while docked: it stays in its slot")
+	Mock.PressEscape()
+
+	-- The client will not let the slots be read: over at the top left, no error
+	Mock.panelReadFails = true
+	Mock.AsClient(ShowUIPanel, vendor)
+	Mock.inCombat = true
+	AegisJournal_Toggle()
+	NextFrame()
+	check(f:IsShown() and X() == 16, "slots unreadable: shown at the top left")
+	Mock.PressEscape()
+	Mock.inCombat, Mock.panelReadFails = nil, nil
+
+	-- The mock can tell: a protected window touched by an addon's code in combat, and an addon's
+	-- ShowUIPanel in combat
+	Mock.inCombat = true
+	spells:Show()
+	ShowUIPanel(vendor)
+	check(Mock.blocked[1] == "MockSpellBookFrame:Show()" and Mock.interfaceBlocked == 1, "the blocked and refused calls are seen")
+	Mock.blocked, Mock.interfaceBlocked, Mock.inCombat = {}, 0, nil
+
+	ShowUIPanel, ns.PlaySoundKit = showUIPanel, playSound
+	box:SetValue(false)
+	Mock.ResetPanels()
+	ns.db.position = nil
+	ns.Journal:ApplyPosition()
+	ns.Journal:SelectTab(savedTab or 1)
+	check(not f:IsShown() and not ns.db.docked and Clean(), "free and shut again")
+end)()
 
 -- A second login must not take Shift+J back after the player changed it
 Mock.bindings["SHIFT-J"] = "SOMETHING_ELSE"
@@ -3700,8 +4651,9 @@ do
 	local text = record.CopyBox:GetText() or ""
 	check(record.CopyScroll:IsShown() and not record.List:IsShown() and record.Copy:GetText() == "Back"
 		and record.ListTitle:GetText() == "Your recording, as text", "Copy turns the right page into the recording as text")
-	check(text:find("^AEGIS RECORDING;1;") and text:find(";Testy McTester\n", 1, true)
-		and text:find("\nQUEST;96403;Important Heirlooms;", 1, true), "the text, credited: " .. text:sub(1, 120))
+	check(text:find("^AEGIS RECORDING;1;") and text:find(";Testy McTester;enUS;\n", 1, true)
+		and text:find("\nQUEST;96403;Important Heirlooms;", 1, true),
+		"the text, credited, with the client's language and no preview: " .. text:sub(1, 120))
 	check(record.CopyHint:GetText():find("paste it in our Discord", 1, true) and not record.LogLink:IsShown()
 		and not text:find("COMBATLOG;", 1, true), "no combat log written: straight to Discord")
 	record.CopyBox:SetText("typed over")
@@ -3713,7 +4665,7 @@ do
 	ns.db.creditName = nil
 	Mock.units.player = { name = "Brandy" }
 	record.Copy:Click()
-	check(record.CopyBox:GetText():find(";Brandy\n", 1, true), "with no name given, the character's own")
+	check(record.CopyBox:GetText():find(";Brandy;enUS;\n", 1, true), "with no name given, the character's own")
 	record.Copy:Click()
 	check(record.List:IsShown(), "Back turns it back too")
 	Mock.units.player = nil
@@ -3961,19 +4913,19 @@ end)()
 	Mock.Fire("TOOLTIP_DATA_UPDATE", 4242)
 	check(IS:Read(Mock.ItemLink(LATE)).stats.CRIT == 2, "until the client says more of its tooltip came")
 
-	-- Another language's wordings, from its locale file (L.EQUIP_PATTERNS, "{n}" for the number)
+	-- Another language's wordings, from its locale file (ns.ClientL.EQUIP_PATTERNS, "{n}" for the number)
 	do
 		local GERMAN = 990784
 		Mock.itemInstant[GERMAN] = { "INVTYPE_NECK", 4, 0, "Miscellaneous" }
 		Mock.itemsCached[GERMAN] = true
 		Mock.itemLines[GERMAN] = { "Equip: Erh\195\182ht Eure Chance, einen kritischen Treffer zu erzielen, um 2%.",
 			"Equip: Erh\195\182ht durch Feuerzauber und Feuereffekte zugef\195\188gten Schaden um bis zu 9." }
-		ns.L.EQUIP_PATTERNS = { { "kritischen treffer zu erzielen, um {n}", "CRIT" },
+		ns.ClientL.EQUIP_PATTERNS = { { "kritischen treffer zu erzielen, um {n}", "CRIT" },
 			{ "durch feuerzauber.-um bis zu {n}", "FIRE DAMAGE" } }
 		IS:Forget()
 		local german = IS:Read(Mock.ItemLink(GERMAN)).stats
 		check(german.CRIT == 2 and german["FIRE DAMAGE"] == 9, "a German client's Equip: lines, by its own wordings")
-		ns.L.EQUIP_PATTERNS = nil
+		ns.ClientL.EQUIP_PATTERNS = nil
 		IS:Forget()
 		check(not IS:Read(Mock.ItemLink(GERMAN)).stats.CRIT, "and without them, the English ones only")
 	end
@@ -4382,7 +5334,7 @@ end)()
 		end
 		check(back.entry and count == 1 and Upgraded(finderLines) and not Has(finderLines, "Worth ")
 			and not Has(finderLines, "Gear Finder (") and not Has(finderLines, "Other upgrades")
-			and Has(finderLines, ns.L.GEAR_TIP_CELL_CLICK),
+			and Has(finderLines, ns.L.GEAR_TIP_CELL_CLICK) and not Has(finderLines, "Drops "),
 			"the Gear Finder's tooltips kept plain: the item, each spec's line once, where it drops, the click")
 		-- The gain it shows for its own spec is the one the Gear Finder found (a second ring's, over
 		-- the other); another frame's tooltip weighs the item afresh.
@@ -4405,6 +5357,116 @@ end)()
 		back:_RunScript("OnEnter")
 		check(not Row(GameTooltip._lines, label), "the Gear Finder's too")
 		ns.GearPanel.SetShowsGains(true)
+
+		-- Where it drops: a gold line on the item itself, wherever the game shows it
+		local IT = ns.ItemTooltip
+		-- The line that says where an item drops, its place among the lines, and its colour.
+		local function SourceOf(tooltip)
+			for index, line in ipairs(tooltip._lines) do
+				if type(line) == "string" and (line:find("^Drops ") or line:find("^Also drops ")) then
+					return line, index, tooltip._styles and tooltip._styles[index]
+				end
+			end
+		end
+		local function Tip(itemID, tooltip)
+			tooltip = tooltip or GameTooltip
+			tooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+			tooltip:SetHyperlink(Mock.ItemLink(itemID))
+			return SourceOf(tooltip)
+		end
+		for _, itemID in ipairs({ 5191, 10402, 14611, 10797, 252512, 6641, 18387 }) do Mock.itemsCached[itemID] = true end
+		local cached9326 = Mock.itemsCached[9326]
+		Mock.itemsCached[9326] = nil
+		local expected = {
+			[5191] = "Drops from Edwin VanCleef in The Deadmines",
+			[10402] = "Drops from trash in The Deadmines",
+			[14611] = "Drops from 6 bosses in Scholomance",
+			[10797] = "Drops from 4 bosses in The Temple of Atal'Hakkar",
+			[252512] = "Drops in Blackfathom Deeps, The Stockade, Razorfen Kraul, and 2 more",
+			[6641] = "Drops in Ruins of Lordaeron, Shadowfang Keep",
+			[18387] = "Drops from Tsu'zee in Dire Maul: Capital Gardens",
+		}
+		local wrongText = {}
+		for itemID, text in pairs(expected) do
+			local shown = Tip(itemID)
+			if IT:SourceText(itemID) ~= text or shown ~= text then
+				wrongText[#wrongText + 1] = itemID .. ": " .. tostring(IT:SourceText(itemID)) .. " / " .. tostring(shown)
+			end
+		end
+		check(#wrongText == 0, "each item names its boss and dungeon, its bosses there, its trash, or its dungeons: "
+			.. table.concat(wrongText, "; "))
+		check(IT:SourceText(9326) == nil and Tip(9326) == nil, "a dungeon's common trash drop, left off its Trash page, gets no line")
+		Mock.itemsCached[9326] = cached9326
+		local _, _, style = Tip(5191)
+		check(style and style.r == 1 and style.g == 0.82 and style.b == 0 and style.wrap == true,
+			"in the Gear Finder's gold, wrapping rather than widening the tooltip")
+		-- Below the upgrade lines, last
+		local capeLines = TipLines(Mock.ItemLink(CAPE))
+		local _, upgradeAt = Row(capeLines, label)
+		local capeSource, sourceAt = SourceOf(GameTooltip)
+		check(capeSource and upgradeAt and sourceAt > upgradeAt and sourceAt == #capeLines,
+			"after the upgrade lines: " .. tostring(capeSource))
+		-- Shown again, the tooltip has it once; an item added beneath another is not the one shown
+		GameTooltip:SetOwner(UIParent, "ANCHOR_RIGHT")
+		GameTooltip:SetHyperlink(Mock.ItemLink(5191))
+		GameTooltip:SetHyperlink(Mock.ItemLink(5191))
+		local sources = 0
+		for _, line in ipairs(GameTooltip._lines) do
+			if type(line) == "string" and line:find("^Drops ") then sources = sources + 1 end
+		end
+		Mock.AppendItem(GameTooltip, Mock.ItemLink(10402))
+		check(sources == 1 and not GameTooltip:HasLine(expected[10402]), "once, however often the tooltip is shown again, and not for an item added beneath it")
+		-- On the item itself: a chat link's tooltip too, not the one beside it with what is worn, nor an item no dungeon drops
+		check(Tip(5191, ItemRefTooltip) == expected[5191] and Tip(5191, ShoppingTooltip1) == nil and Tip(WORN_CAPE) == nil,
+			"on a chat link's tooltip, not on the worn item's beside it, and not on an item no dungeon drops")
+		-- What the client keeps back, or a tooltip it forbids, is left alone
+		local secret = issecretvalue
+		issecretvalue = function(value) return value == 5191 or value == Mock.ItemLink(5191) end
+		local ok, kept = pcall(Tip, 5191)
+		issecretvalue = secret
+		GameTooltip.IsForbidden = function() return true end
+		local forbidden = Tip(5191)
+		GameTooltip.IsForbidden = nil
+		check(ok and kept == nil and forbidden == nil, "an item the client keeps back, or a tooltip it forbids, is left alone")
+		-- The data changing (a boss's loot amended) is followed at once
+		local deadmines = ns.GetInstance("TheDeadmines")
+		local vancleef
+		for _, boss in ipairs(deadmines.bosses) do
+			if (boss.enName or boss.name) == "Edwin VanCleef" then vancleef = boss end
+		end
+		local vancleefLoot, amended = vancleef.loot, {}
+		for _, row in ipairs(vancleefLoot) do amended[#amended + 1] = row end
+		amended[#amended + 1] = { itemID = 990970 }
+		amended[#amended + 1] = { itemID = 990970 }
+		amended[#amended + 1] = { itemID = 990971 }
+		ns.AmendInstance("TheDeadmines", { bosses = { ["Edwin VanCleef"] = { loot = amended } } })
+		local added = Tip(990970)
+		-- Another boss there listing it (twice) too: the line follows, the bosses each counted once
+		local rhahk
+		for _, boss in ipairs(deadmines.bosses) do
+			if (boss.enName or boss.name) == "Rhahk'Zor" then rhahk = boss end
+		end
+		local rhahkLoot, rhahkAmended = rhahk.loot, {}
+		for _, row in ipairs(rhahkLoot) do rhahkAmended[#rhahkAmended + 1] = row end
+		rhahkAmended[#rhahkAmended + 1] = { itemID = 990970 }
+		rhahkAmended[#rhahkAmended + 1] = { itemID = 990970 }
+		ns.AmendInstance("TheDeadmines", { bosses = { ["Rhahk'Zor"] = { loot = rhahkAmended } } })
+		local twoBosses = Tip(990970)
+		ns.AmendInstance("TheDeadmines", { bosses = { ["Rhahk'Zor"] = { loot = rhahkLoot } } })
+		check(twoBosses == "Drops from 2 bosses in The Deadmines",
+			"a second boss listing it, twice: the line follows at once, each boss counted once: " .. tostring(twoBosses))
+		-- An item hidden until the server confirms it gets no line, until the client describes it
+		ns.Items:AddUnconfirmed({ [990971] = true })
+		local hidden = Tip(990971)
+		Mock.itemsCached[990971] = true
+		local described = Tip(990971)
+		Mock.itemsCached[990971] = nil
+		ns.AmendInstance("TheDeadmines", { bosses = { ["Edwin VanCleef"] = { loot = vancleefLoot } } })
+		check(added == "Drops from Edwin VanCleef in The Deadmines" and Tip(990970) == nil,
+			"a boss's loot changing is followed at once, an item he lists twice counted once: " .. tostring(added))
+		check(hidden == nil and described == "Drops from Edwin VanCleef in The Deadmines",
+			"a hidden item gets none, until the client describes it: " .. tostring(hidden) .. " / " .. tostring(described))
+
 		local other = { _lines = {}, AddLine = GameTooltip.AddLine, AddDoubleLine = GameTooltip.AddDoubleLine }
 		for _, callback in ipairs(Mock.tooltipPostCalls[Enum.TooltipDataType.Item]) do
 			callback(other, { hyperlink = Mock.ItemLink(CAPE) })
@@ -4574,7 +5636,8 @@ end)()
 		Mock.bagItems["0:1"] = { CAPE }
 		ContainerFrameCombinedBags:Show()
 		ContainerFrameCombinedBags:UpdateItems()
-		check(#GameTooltip._lines == 1 and not UA:Marked(bagCape), "Pawn's tooltips and arrows are the ones shown")
+		check(#GameTooltip._lines == 2 and GameTooltip._lines[2] == ns.ItemTooltip:SourceText(CAPE) and not UA:Marked(bagCape),
+			"Pawn's tooltips and arrows are the ones shown; where it drops stays")
 		local redraws = 0
 		UA.baganator = { RequestItemButtonsRefresh = function() redraws = redraws + 1 end }
 		UA:Refresh()
@@ -5160,4 +6223,5 @@ end)()
 	IS:Forget()
 end)()
 
+check(#Mock.blocked == 0 and Mock.interfaceBlocked == 0, "no blocked or refused call in the whole run")
 return string.format("All %d checks passed.", checks)

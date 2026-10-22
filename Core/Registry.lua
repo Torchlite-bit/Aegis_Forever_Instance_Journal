@@ -16,8 +16,13 @@ local factions = {}
 -- Sorted lists handed out by GetInstances and GetFactions, kept until the data changes.
 -- Callers read them and never change them.
 local listCache, factionList = {}, nil
+-- Where each item drops (ns.ItemDrops), built on first use; and how many times the data has changed.
+local drops, moreDrops, dropInstance
+local dataVersion = 0
 local function DataChanged()
 	listCache, factionList = {}, nil
+	drops, moreDrops, dropInstance = nil, nil, nil
+	dataVersion = dataVersion + 1
 end
 
 -- Art given as a list of files the client may have: the first it has, else nil.
@@ -319,9 +324,14 @@ local function StandingFor(faction, reaction)
 	return standing
 end
 
+-- Whether a boss or a faction goes by a name: the journal's own, its English or the client's.
+function ns.NamedAs(entry, name)
+	return name ~= nil and (entry.name == name or entry.enName == name or entry.clientName == name)
+end
+
 local function FactionNamed(name)
 	for _, faction in ipairs(factions) do
-		if faction.name == name or faction.enName == name then return faction end
+		if ns.NamedAs(faction, name) then return faction end
 	end
 	return nil
 end
@@ -506,7 +516,7 @@ end
 -- Whether a faction's own rewards list an item (not counting wares a vendor was seen selling).
 function ns.FactionListsItem(factionName, itemID)
 	for _, faction in ipairs(factions) do
-		if faction.name == factionName or faction.enName == factionName then
+		if ns.NamedAs(faction, factionName) then
 			for _, standing in ipairs(faction.bosses) do
 				for _, row in ipairs(standing.loot) do
 					if row.itemID == itemID and not row.seen and not row.listed then return true end
@@ -687,9 +697,105 @@ function ns.GetFactions()
 end
 
 --[[
-	Lays a translation of the content over the data, once every data file has loaded: names and
-	text are swapped in place, looked up by their English words (Locales/ruRU_content.lua). An
-	English client has no such tables, and nothing is changed.
+	Where each item drops, for its tooltip (UI/ItemTooltip.lua): the bosses whose loot lists it, and
+	the trash, in the journal's order (dungeons, then raids, as GetInstances sorts them; each one's
+	bosses in their order, its trash last). Most items drop in one place: drops[itemID] is that boss,
+	and moreDrops[itemID] lists them all only for an item with more than one. A faction's rewards are
+	not drops, and are left out. Built on first use, and again after the data changes.
+]]
+local function IndexDrops()
+	drops, moreDrops, dropInstance = {}, {}, {}
+	for _, kind in ipairs({ "dungeon", "raid" }) do
+		for _, instance in ipairs(ns.GetInstances(kind)) do
+			for _, boss in ipairs(instance.bosses) do
+				dropInstance[boss] = instance
+				for _, row in ipairs(boss.loot or {}) do
+					local itemID = row.itemID
+					-- One known by its name only ("?Name") has no tooltip of its own.
+					if type(itemID) == "number" then
+						local first = drops[itemID]
+						if not first then
+							drops[itemID] = boss
+						elseif first ~= boss then
+							-- A boss's rows are walked together: one listing an item twice is the last one here.
+							local more = moreDrops[itemID]
+							if not more then
+								moreDrops[itemID] = { first, boss }
+							elseif more[#more] ~= boss then
+								more[#more + 1] = boss
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+end
+
+local function NextDrop(itemID, index)
+	index = index + 1
+	local more, boss = moreDrops[itemID], nil
+	if more then
+		boss = more[index]
+	elseif index == 1 then
+		boss = drops[itemID]
+	end
+	if boss then return index, boss, dropInstance[boss] end
+end
+
+-- for _, boss, instance in ns.ItemDrops(itemID) do ... end
+function ns.ItemDrops(itemID)
+	if not drops then IndexDrops() end
+	return NextDrop, itemID, 0
+end
+
+function ns.HasDrops(itemID)
+	if not drops then IndexDrops() end
+	return drops[itemID] ~= nil
+end
+
+-- Goes up each time the data changes: whatever is worked out from it is worked out again.
+function ns.DataVersion()
+	return dataVersion
+end
+
+--[[
+	The client's own names, where its language is one the journal is translated into (ns.ClientL),
+	whichever language the journal previews: a boss's and a faction's, as what the client says of
+	them is matched by them too (a fight ending, a creature at hand, a ware's tooltip: ns.NamedAs),
+	and a route's, as the player may have saved it under that (UI/TravelMap.lua). Taken before the
+	journal's own words are laid over the data (Core/Init.lua), and let go once used.
+]]
+function ns.KeepClientNames()
+	ns.ForgetUnspokenWords()
+	local client = ns.ClientL
+	local bossNames, factionNames, strings = client.BOSS_NAMES, client.FACTION_NAMES, client.STRINGS
+	client.BOSS_NAMES, client.FACTION_NAMES, client.STRINGS = nil, nil, nil
+	if bossNames or factionNames then
+		for _, instance in ipairs(instances) do
+			instance.enName = instance.enName or instance.name
+			if instance.kind == "faction" and factionNames then instance.clientName = factionNames[instance.factionID] end
+			for _, boss in ipairs(instance.bosses or {}) do
+				boss.enName = boss.enName or boss.name
+				if bossNames then boss.clientName = bossNames[boss.enName] end
+			end
+		end
+	end
+	if strings then
+		for _, spot in ipairs(transports) do
+			if spot.to and not spot.clientTo then
+				spot.clientTo = {}
+				for index, destination in ipairs(spot.to) do spot.clientTo[index] = strings[destination] or destination end
+			end
+		end
+	end
+end
+
+--[[
+	Lays a translation of the content over the data, once every data file has loaded and the
+	client's own names are kept (ns.KeepClientNames, before it in Core/Init.lua): names and text
+	are swapped in place, looked up by their English words (Locales/ruRU_content.lua). An English
+	client has no such tables, and nothing is changed.
 
 	A boss, an add or an instance keeps its English name as enName: what the journal matches and
 	records by (a fight the client names, a faction a ware's tooltip names, a recording sent in)
@@ -719,6 +825,8 @@ function ns.ApplyLocale()
 	end
 	local function TrAbility(ability)
 		if type(ability) ~= "table" then return end
+		-- The English is kept, for the role alerts read from it (UI/AbilitiesPanel.lua).
+		ability.enName = ability.enName or ability.name
 		if ability.name and abilityNames then ability.name = abilityNames[ability.name] or ability.name end
 		if ability.text then ability.text = Tr(ability.text) end
 	end
@@ -821,6 +929,11 @@ function ns.ApplyLocale()
 	end
 	for _, spot in ipairs(transports) do
 		if spot.area then spot.area = Tr(spot.area) end
+		-- The English is kept, so a route the player saved under it is known as this one (UI/TravelMap.lua).
+		if spot.to and not spot.enTo then
+			spot.enTo = {}
+			for index, destination in ipairs(spot.to) do spot.enTo[index] = destination end
+		end
 		for index, destination in ipairs(spot.to or {}) do spot.to[index] = Tr(destination) end
 		-- A route's note ("Skyborne only") is kept under its destination: under the new name now.
 		if spot.notes then

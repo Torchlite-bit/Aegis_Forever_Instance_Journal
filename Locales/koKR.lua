@@ -7,9 +7,10 @@ local _, ns = ...
 	Every other client skips it. Names new in WoW: Forever have no official Korean form yet: they
 	are drafted in the game's style (the glossary's), to be checked once Blizzard names them.
 ]]
-if not ns.Speaks("koKR") then return end
-
-local L = ns.L
+-- The journal's words where it speaks this language; the tables matched against the client's own
+-- text where the client does, previewed or not (ns.LocaleTargets, Locales/enUS.lua).
+local L, client = ns.LocaleTargets("koKR")
+if not L then return end
 
 L.JOURNAL_TITLE = "던전 도감"
 L.HOME = HOME or "홈"
@@ -21,7 +22,10 @@ L.BINDING_TOGGLE = "던전 도감 열기/닫기"
 L.KEY_CLAIMED = "이제 Shift+J 키를 누르면 던전 도감이 열립니다."
 L.KEY_TAKEN = "Shift+J 키는 이미 %s에 지정되어 있습니다. 단축키 설정 > 애드온 > 던전 도감 열기/닫기에서 다른 키를 지정하십시오."
 L.POSITION_RESET = "창 위치를 초기화했습니다."
-L.SLASH_HELP = "/aegis (또는 /ij): 도감을 엽니다. /aegis record: 기록을 시작하거나 중지합니다. /aegis reset: 창을 기본 위치로 되돌립니다. /aegis perf: 도감의 메모리 사용량과 속도를 측정합니다. /aegis where, /aegis taxi: 현재 위치와 지도에 있는 비행 지점을 알려줍니다. /aegis travel: 세계 지도에 표시할 배, 비행선, 지하철, 차원문을 저장합니다. /aegis items: 도감에 실린 아이템 중 서버가 모르는 것을 찾습니다. /aegis gear: 장비 찾기를 엽니다. /aegis weights: 장비 찾기의 능력치 가중치를 엽니다. /aegis gearscan: 장비 찾기가 내 장비에서 읽은 내용을 저장해 점수 계산을 확인할 수 있게 합니다. /aegis options: 도감 설정을 엽니다. /aegis lang: 도감을 다른 언어로 미리 봅니다."
+L.DOCK_ON = "이제 창이 왼쪽 위, 게임 창 옆에서 열립니다. 끌어서 옮기면 닫을 때까지 그 자리에 있습니다."
+L.DOCK_OFF = "창이 다시 자유롭게 움직입니다: 마지막으로 끌어다 놓은 곳에서 열립니다."
+L.DOCK_AFTER_COMBAT = "전투가 끝나면 적용됩니다."
+L.SLASH_HELP = "/aegis (또는 /ij): 도감을 엽니다. /aegis record: 기록을 시작하거나 중지합니다. /aegis reset: 창을 기본 위치로 되돌립니다. /aegis dock: 창을 왼쪽 위, 게임 창 옆에 고정하거나 다시 풀어 줍니다. /aegis perf: 도감의 메모리 사용량과 속도를 측정합니다. /aegis where, /aegis taxi: 현재 위치와 지도에 있는 비행 지점을 알려줍니다. /aegis travel: 세계 지도에 표시할 배, 비행선, 지하철, 차원문을 저장합니다. /aegis items: 도감에 실린 아이템 중 서버가 모르는 것을 찾습니다. /aegis gear: 장비 찾기를 엽니다. /aegis weights: 장비 찾기의 능력치 가중치를 엽니다. /aegis gearscan: 장비 찾기가 내 장비에서 읽은 내용을 저장해 점수 계산을 확인할 수 있게 합니다. /aegis options: 도감 설정을 엽니다. /aegis lang: 도감을 다른 언어로 미리 봅니다."
 -- /aegis lang (Core/Init.lua)
 L.LANG_USAGE = "/aegis lang de, fr, ru, cn, tw, es, mx, pt, ko: 다음 /reload부터 도감을 독일어, 프랑스어, 러시아어, 중국어(간체 또는 번체), 스페인어(스페인 또는 중남미), 브라질 포르투갈어, 한국어로 표시해 번역을 확인할 수 있습니다. /aegis lang off: 클라이언트 언어로 돌아갑니다. 현재: %s."
 L.LANG_SET = "다음 /reload부터 도감의 언어: %s. 바뀌는 것은 도감 자체의 문구뿐이며, 게임 속 이름은 클라이언트 언어 그대로입니다. 지금 /reload를 입력하십시오. /aegis lang off로 되돌릴 수 있습니다."
@@ -148,6 +152,8 @@ L.PAWN_RELOAD_NOW = "다시 불러오기"
 L.PAWN_RELOAD_LATER = "나중에"
 L.WEIGHTS_SOURCE_PAWN_LIVE = "Pawn의 %s 능력치 비율. Pawn에서 바꾸거나, 설정에서 도감 가중치를 선택하십시오."
 L.OPTIONS_MINIMAP_TIP = "미니맵 가장자리에 있는 도감 버튼입니다. 클릭하면 도감을 열고, 오른쪽 클릭하면 이 설정을 열며, 끌어서 옮길 수 있습니다."
+L.OPTIONS_DOCK = "창을 왼쪽 위에 고정"
+L.OPTIONS_DOCK_TIP = "선택하면: 도감이 화면 왼쪽 위, 게임이 자체 창을 여는 곳에서 열리고, 그곳에 게임 창이 열리면 게임 창끼리 그러하듯 옆으로 비켜납니다. 둘 다 들어갈 자리가 없으면 게임이 먼저 연 창을 닫습니다. 끌어서 아무 곳으로나 옮길 수 있으며, 다음에 열 때 다시 고정됩니다. 선택하지 않으면: 마지막으로 끌어다 놓은 곳에서 열립니다."
 -- The minimap button's tooltip.
 L.MINIMAP_LEFT_CLICK = "클릭하면 도감을 열거나 닫습니다."
 L.MINIMAP_RIGHT_CLICK = "오른쪽 클릭하면 설정을 엽니다."
@@ -155,6 +161,8 @@ L.MINIMAP_DRAG = "끌어서 미니맵 둘레로 옮길 수 있습니다."
 L.OPTIONS_ARROWS_TIP = "장비 찾기가 판단하기에 내 특성에 향상이 되는 아이템에 녹색 화살표를 표시합니다. 가방, 전리품 창, 주사위 굴림 창에 표시됩니다."
 L.WEIGHTS_SHOW_GAINS = "툴팁에 능력치 가중치 표시"
 L.WEIGHTS_SHOW_GAINS_TIP = "모든 아이템 아래에 내 특성마다 한 줄씩 표시합니다: 그 특성의 가중치로 매긴 아이템의 가치와, 향상 아이템이면 녹색 화살표와 함께 내 장비에 더해지는 값. 모든 캐릭터에 적용됩니다. Pawn이 설치되어 있으면 대신 Pawn에서 도감의 능력치 비율을 표시하거나 숨기며, 그에 따라 도감 가중치에 대한 Pawn의 향상 화살표도 표시하거나 숨깁니다. Pawn은 표시 중인 능력치 비율에 대해서만 향상 아이템을 표시합니다."
+L.OPTIONS_SOURCES = "툴팁에 아이템 획득처 표시"
+L.OPTIONS_SOURCES_TIP = "도감의 던전과 공격대에서 얻을 수 있는 모든 아이템 아래에 그 아이템을 떨어뜨리는 우두머리와 던전을 한 줄로 표시합니다. 가방, 캐릭터 창, 대화창 링크, 상인 등 게임이 아이템을 보여 주는 모든 곳에 표시됩니다. 모든 캐릭터에 적용됩니다."
 L.GEAR_WHY_CUSTOM = "%s (내 가중치)"
 --[[
 	The specs' names, as the Korean client's talent tabs name them, and the units their weights
@@ -311,6 +319,11 @@ L.LOOT_UNFAVORITE = "즐겨찾기에서 제거"
 L.LOOT_PINNED = "고정됨"
 L.LOOT_ALL = "전리품"
 L.LOOT_TRASH = "던전 일반 몬스터"
+L.DROPS_FROM_BOSS = "획득처: %s (%s)"
+L.DROPS_FROM_TRASH = "획득처: 일반 몬스터 (%s)"
+L.DROPS_FROM_BOSSES = "획득처: 우두머리 %d명 (%s)"
+L.DROPS_IN = "획득처: %s"
+L.DROPS_ALSO_IN = "다른 획득처: %s"
 -- The world map legend's entries, each a switch (UI/MapLegend.lua).
 L.LEGEND_CLICK_HIDE = "클릭하면 지도에서 숨깁니다."
 L.LEGEND_CLICK_SHOW = "숨겨져 있습니다. 클릭하면 지도에 다시 표시합니다."
@@ -414,6 +427,8 @@ L.ENTRANCE_WAYPOINT_SET = "%s 입구에 지도 핀을 설정했습니다."
 L.ENTRANCE_VIA = "차원문은 아래쪽 %s에 있습니다. 동굴 입구에서 내려가십시오."
 L.ENTRANCE_WAYPOINT_VIA = "%s 아래로 내려가는 길에 지도 핀을 설정했습니다. 목적지: %s."
 L.CAVE_LABEL = "동굴 입구"
+L.BUILDING_LABEL = "입구"
+L.ENTRANCE_VIA_BUILDING = "포털은 %s 안에 있습니다. 입구로 들어가세요."
 L.CAVE_LEADS_TO = "%s 가는 길"
 L.CAVE_LEFT_CLICK = "왼쪽 클릭하면 %s 지도를 봅니다"
 L.CAVE_WAYPOINT_SET = "%s 아래로 내려가는 길에 지도 핀을 설정했습니다."
@@ -435,7 +450,8 @@ L.TRAVEL_LIST_LINE = "%d. %s - 위치: %s (지도 %d, %.4f, %.4f)"
 L.TRAVEL_WAYPOINT_SET = "%s에 지도 핀을 설정했습니다."
 L.LEGEND_TRANSPORT = "교통수단"
 L.LEGEND_TRANSPORT_TOOLTIP = "배, 비행선, 지하철, 차원문입니다. 파란색은 얼라이언스, 빨간색은 호드, 금색은 모두가 이용합니다."
-L.LEGEND_CAVE_TOOLTIP = "동굴로 들어가는 길, 또는 지역 아래층으로 내려가는 길입니다. 지도에서 클릭하면 어디로 이어지는지 볼 수 있습니다."
+L.LEGEND_CAVE_TOOLTIP = "던전 입구가 있는 동굴로 들어가는 길입니다. 지도에서 클릭하면 안쪽을 볼 수 있습니다."
+L.LEGEND_BUILDING_TOOLTIP = "던전 입구가 있는 건물, 산속 전당 또는 지역 아래층으로 들어가는 길입니다. 지도에서 클릭하면 안쪽을 볼 수 있습니다."
 L.SEARCH_SHOW_ALL = SEARCH_RESULTS_SHOW_COUNT or "결과 %d개 모두 보기"
 L.SEARCH_RESULTS = ENCOUNTER_JOURNAL_SEARCH_RESULTS or "\"%s\" 검색 결과 (%d)"
 L.SEARCH_TYPE_BOSS = "우두머리"
@@ -537,17 +553,23 @@ L.AREA_NAMES = {
 	["Dark Iron Ingress"] = "검은무쇠 침투지",
 	["Deeprun Tram"] = "깊은굴 지하철",
 	["Defias Hideout"] = "데피아즈단 은신처",
+	["Dig One"] = "제1 발굴지",
 	["Dragonspire Hall"] = "용첨탑 전당",
 	["Dreamer's Rock"] = "꿈꾸는 자의 바위",
 	["Elders' Square"] = "장로의 광장",
+	["Eldre' Thalas"] = "엘드레탈라스",
+	["Eldreth Row"] = "엘드레스 거리",
 	["Engineering Labs"] = "기계공학 연구소",
+	["Excavation Center"] = "발굴 본부",
 	["Festival Lane"] = "축제의 거리",
 	["Footman's Armory"] = "보병 무기고",
+	["Forgewright's Tomb"] = "대장장이의 무덤",
 	["Forlorn Cloister"] = "쓸쓸한 회랑",
 	["Gallery of Treasures"] = "보물 전시실",
 	["Goblin Foundry"] = "고블린 주물 공장",
 	["Gordok Commons"] = "고르독 광장",
 	["Hall of Champions"] = "용사의 전당",
+	["Hall of the Keepers"] = "수호자의 전당",
 	["Halycon's Lair"] = "할리콘의 둥지",
 	["Honor's Tomb"] = "명예의 무덤",
 	["Hordemar City"] = "호드마르 도시",
@@ -568,6 +590,7 @@ L.AREA_NAMES = {
 	["Moonshrine Ruins"] = "달의 제단 폐허",
 	["Moonshrine Sanctum"] = "달의 제단 성소",
 	["Mount Hyjal"] = "하이잘 산",
+	["North Common Hall"] = "북쪽 공용 전당",
 	["Pit of Fangs"] = "송곳니 구덩이",
 	["Prison of Immol'thar"] = "이몰타르의 감옥",
 	["Reliquary of Kings"] = "왕가의 성물 보관소",
@@ -577,6 +600,7 @@ L.AREA_NAMES = {
 	["Site of the Guardian"] = "수호자의 터",
 	["Skitterweb Tunnels"] = "그물걸이 통로",
 	["Slaughter Square"] = "학살의 광장",
+	["South Common Hall"] = "남쪽 공용 전당",
 	["Stalker's Thicket"] = "추적자의 숲",
 	["Tazz'Alaor"] = "타즈알라올",
 	["Tazz'Alor"] = "타즈알로",
@@ -586,17 +610,27 @@ L.AREA_NAMES = {
 	["The Drowned Sacellum"] = "가라앉은 제단",
 	["The Forgotten Pool"] = "잊혀진 웅덩이",
 	["The Gauntlet"] = "투쟁의 거리",
+	["The Grand Vestibule"] = "대현관",
+	["The Grinding Quarry"] = "분쇄 채석장",
 	["The Hall of Gears"] = "톱니바퀴의 전당",
 	["The Hall of Lights"] = "보물 전시실",
 	["The High Seat"] = "왕좌",
 	["The Hoard"] = "보병 무기고",
+	["The Masonary"] = "석공장",
+	["The Molten Span"] = "녹아내린 다리",
 	["The Pool of Ask'ar"] = "아스카르 연못",
 	["The Rookery"] = "부화장",
 	["The Scarlet Bastion"] = "붉은십자군 성채",
+	["The Sealed Hall"] = "봉인된 전당",
 	["The Shrine of Eldretharr"] = "엘드레사르 제단",
 	["The Slaughter House"] = "도살장",
 	["The Storehouse"] = "창고",
+	["The Wailing Caverns"] = "통곡의 동굴",
 	["Tinkers' Court"] = "땜장이 왕실",
 	["Training Grounds"] = "훈련장",
 	["Warpwood Quarter"] = "굽이나무 지구",
 }
+
+-- Matched against the client's own text: the client's language's only, previewed or not.
+if client then client.EQUIP_PATTERNS, client.AREA_NAMES = L.EQUIP_PATTERNS, L.AREA_NAMES end
+L.EQUIP_PATTERNS, L.AREA_NAMES = nil, nil

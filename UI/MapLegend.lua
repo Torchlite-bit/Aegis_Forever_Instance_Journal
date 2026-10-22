@@ -8,8 +8,9 @@ local L = ns.L
 	hovering its Dungeon, Raid or Flightpoint entry lights up the journal's entrances and
 	flight points, and its Quest and Turn In entries the journal's quest marks ("!" and "?"), as
 	it does the client's own on retail; hovering one of those lights up its entry; and Cave
-	Entrance and Transport entries join Movement for the journal's own icons. A quest in the log
-	pointed at on the map lights its In Progress or Turn In entry only (see KeepDarkForLog).
+	Entrance, Transport and Entrance entries join Movement for the journal's own icons (Entrance:
+	the delve icon of a way into a building, a mountain's halls or a level below a zone). A quest in
+	the log pointed at on the map lights its In Progress or Turn In entry only (see KeepDarkForLog).
 
 	Blizzard's frames are only shown, anchored and hooked after their own code; nothing of
 	theirs is replaced or written into.
@@ -22,7 +23,7 @@ ns.MapLegend = MapLegend
 	Every entry of the legend is a switch, as the map's filter menu is: a click hides that kind of
 	marker on the world map, another shows it again, and a hidden kind's entry is dimmed.
 
-	The journal's own markers (dungeon and raid doors, flight points, caves, transports) are hidden
+	The journal's own markers (dungeon and raid doors, flight points, caves, entrances, transports) are hidden
 	by the journal, for the account (ns.db.mapHidden). The game's quest markers are hidden by the
 	game's own map filters, the ones its filter menu sets, so the two always agree: quests on offer
 	("questPOILocalStory": the Quest entry), and quests in the log ("questPOI": In Progress and Turn
@@ -30,7 +31,7 @@ ns.MapLegend = MapLegend
 	filters. Repeatable quests have no filter of their own, so their entry is no switch.
 ]]
 local SWITCHES = {
-	dungeon = {}, raid = {}, flight = {}, cave = {}, transport = {},
+	dungeon = {}, raid = {}, flight = {}, cave = {}, building = {}, transport = {},
 	quest = { cvar = "questPOILocalStory" }, turnin = { cvar = "questPOI" }, inprogress = { cvar = "questPOI" },
 }
 local DIMMED_ALPHA = 0.45
@@ -50,14 +51,18 @@ local CLIENT_QUEST_LOG_TEMPLATE = "QuestPinTemplate"
 
 local TRANSPORT_TEMPLATE = "AegisJournalTransportPinTemplate"
 
--- The entries the journal adds under Movement, in order.
+-- The entries the journal adds under Movement, in order (two to a row: Entrance falls under Cave
+-- Entrance). Caves and the entrances of buildings are pins of one template, told apart by their
+-- style (the pin's GetStyle, which the client's legend matches against MetaData.Style). Both say
+-- in the journal's own words where they lead, the cave's as the building's does.
 local ADDED_ENTRIES = {
 	{
 		kind = "cave",
 		Atlas = "CaveUnderground-Up",
 		Name = MAP_LEGEND_CAVE or L.CAVE_LABEL,
-		Tooltip = MAP_LEGEND_CAVE_TOOLTIP or L.LEGEND_CAVE_TOOLTIP,
+		Tooltip = L.LEGEND_CAVE_TOOLTIP,
 		TemplateNames = { CAVE_TEMPLATE },
+		MetaData = { Style = "cave" },
 	},
 	{
 		kind = "transport",
@@ -66,9 +71,18 @@ local ADDED_ENTRIES = {
 		Tooltip = L.LEGEND_TRANSPORT_TOOLTIP,
 		TemplateNames = { TRANSPORT_TEMPLATE },
 	},
+	{
+		kind = "building",
+		Atlas = "delves-regular",
+		Name = L.BUILDING_LABEL,
+		Tooltip = L.LEGEND_BUILDING_TOOLTIP,
+		TemplateNames = { CAVE_TEMPLATE },
+		MetaData = { Style = "building" },
+	},
 }
 
--- The legend's entry for each kind of pin: "dungeon", "raid", "cave", "flight", "transport".
+-- The legend's entry for each kind of pin: "dungeon", "raid", "cave", "building", "flight",
+-- "transport".
 local entries = {}
 local hooked = false
 

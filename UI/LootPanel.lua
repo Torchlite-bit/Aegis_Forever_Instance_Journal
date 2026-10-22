@@ -201,6 +201,8 @@ end
 ------------------------------------------------------------------------------------------
 
 local function ShowTooltip(row)
+	-- The row names its boss: the item's tooltip names only the other dungeons it drops in.
+	ns.ItemTooltip:UseSource(row, row.itemID, row.instanceKey and ns.GetInstance(row.instanceKey))
 	GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
 	if row.link then
 		GameTooltip:SetHyperlink(row.link)

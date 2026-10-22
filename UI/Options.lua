@@ -21,6 +21,9 @@ local CHECKBOXES = {
 	{ variable = "AEGIS_JOURNAL_ITEM_TIPS", name = "WEIGHTS_SHOW_GAINS", tip = "WEIGHTS_SHOW_GAINS_TIP",
 		get = function() return ns.GearPanel.ShowsGains() end,
 		set = function(shown) ns.GearPanel.SetShowsGains(shown, true) end },
+	{ variable = "AEGIS_JOURNAL_ITEM_SOURCES", name = "OPTIONS_SOURCES", tip = "OPTIONS_SOURCES_TIP",
+		get = function() return ns.ItemTooltip.ShowsSources() end,
+		set = function(shown) ns.ItemTooltip.SetShowsSources(shown) end },
 	{ variable = "AEGIS_JOURNAL_UPGRADE_ARROWS", name = "OPTIONS_ARROWS", tip = "OPTIONS_ARROWS_TIP",
 		get = function() return ns.UpgradeArrows.Shows() end,
 		set = function(shown) ns.UpgradeArrows.SetShows(shown) end },
@@ -30,6 +33,9 @@ local CHECKBOXES = {
 	{ variable = "AEGIS_JOURNAL_MINIMAP", name = "OPTIONS_MINIMAP", tip = "OPTIONS_MINIMAP_TIP",
 		get = function() return ns.MinimapButton.Shows() end,
 		set = function(shown) ns.MinimapButton.SetShows(shown) end },
+	{ variable = "AEGIS_JOURNAL_DOCK", name = "OPTIONS_DOCK", tip = "OPTIONS_DOCK_TIP",
+		get = function() return ns.Journal:IsDocked() end,
+		set = function(on) ns.Journal:SetDocked(on, true) end },
 }
 
 function Options:Register()

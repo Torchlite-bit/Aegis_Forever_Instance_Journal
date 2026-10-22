@@ -135,7 +135,7 @@ local defeated = {}
 local function BossNamed(instance, name)
 	if not (instance and name) then return nil end
 	for _, boss in ipairs(instance.bosses) do
-		if boss.name == name or boss.enName == name then return boss end
+		if ns.NamedAs(boss, name) then return boss end
 		for _, alias in ipairs(boss.aliases or {}) do
 			if alias == name then return boss end
 		end
@@ -194,6 +194,7 @@ local function WatchDeaths(instance)
 			if boss.npcID then watched[boss.npcID] = boss end
 			watched[boss.name] = boss
 			if boss.enName then watched[boss.enName] = boss end
+			if boss.clientName then watched[boss.clientName] = boss end
 		end
 	end
 	if watched then
@@ -424,6 +425,34 @@ local function Dismiss()
 	DungeonMap:Refresh()
 end
 
+-- A level's name, in the journal's language (its English, from retail's own level names, is the key).
+local function LevelName(name)
+	return L.SUBMAP_LEVELS and L.SUBMAP_LEVELS[name] or name
+end
+
+-- The floor menu's choices: an area's levels (Blackrock Mountain), or a dungeon's floors.
+local function FillFloorMenu(_, root)
+	local subMap = overlay.subMap
+	if subMap and subMap.levels then
+		for index, name in ipairs(subMap.levels) do
+			root:CreateRadio(LevelName(name),
+				function() return overlay.subMap and overlay.subMap.level == index end,
+				function() DungeonMap:ShowLevel(subMap, index) end)
+		end
+		return
+	end
+	local instance = overlay.instance
+	if not instance then return end
+	for index in ipairs(Floors(instance)) do
+		root:CreateRadio(FloorName(instance, index),
+			function() return overlay.floor == index end,
+			function()
+				chosenFloor[instance.key] = index
+				DungeonMap:Refresh()
+			end)
+	end
+end
+
 local function CreateFloorDropdown()
 	local ok, dropdown = pcall(CreateFrame, "DropdownButton", nil, Container(), "WowStyle1DropdownTemplate")
 	if not (ok and dropdown and dropdown.SetupMenu) then return nil end
@@ -436,20 +465,150 @@ local function CreateFloorDropdown()
 		dropdown:SetPoint("TOPLEFT", Container(), "TOPLEFT", 6, -6)
 	end
 	dropdown:SetFrameLevel(overlay:GetFrameLevel() + 100)
-	dropdown:SetupMenu(function(_, root)
-		local instance = overlay.instance
-		if not instance then return end
-		for index in ipairs(Floors(instance)) do
-			root:CreateRadio(FloorName(instance, index),
-				function() return overlay.floor == index end,
-				function()
-					chosenFloor[instance.key] = index
-					DungeonMap:Refresh()
-				end)
-		end
-	end)
+	dropdown:SetupMenu(FillFloorMenu)
 	dropdown:Hide()
 	return dropdown
+end
+
+--[[
+	The floor menu as one more step of the world map's location bar, after the zone's ("World >
+	Eastern Kingdoms > Burning Steppes > Blackrock Spire"), its choices on the step's arrow, as the
+	bar's own steps have theirs. The step is a button of the bar's own template, but the journal's,
+	beside the bar's list of steps and never in it: the bar's menus clear every step after their
+	own, and the world map takes no taint from the journal this way (it only reads the bar, and
+	sets its own button and the zone step's look). The zone's step turns back into a link, as the
+	bar's earlier steps are, its click showing the zone's own map. Each time the bar lays itself
+	out again (NavBar_CheckLength, on a new map) or changes size, the step follows its last.
+	The bar counts only its own steps when it folds them into its overflow button, so the step
+	fits in the room they leave (counted as the bar counts, by their widths), its name cut short
+	(the whole of it on the mouse) when it must be; with too little room, the bar folded already,
+	or no bar, the menu stays beside the map pin button.
+]]
+local CRUMB_EXTRA = 53         -- a step's width beyond its text, with a menu arrow (NavBar_AddButton)
+local CRUMB_TIP = 21           -- the step's own arrow's tip, past its right edge (arrowUp)
+local CRUMB_MIN_TEXT = 40      -- less room for its name than this: the menu beside the pin button
+local crumb, menuText, menuMayBar, crumbZone
+local hookedSteps = setmetatable({}, { __mode = "k" })
+
+-- The map's location bar and its last step, the zone's.
+local function LocationBar()
+	local bar = WorldMapFrame and rawget(WorldMapFrame, "NavBar")
+	local steps = bar and rawget(bar, "navList")
+	return bar, steps and steps[#steps], steps
+end
+
+-- The zone's step clicked: known before its click is handled (PreClick), as handling it may lay
+-- the bar out again and hand its button to another step.
+local function ZoneStepClicked(self, button)
+	if self == crumbZone and menuText and button == "LeftButton" then Dismiss() end
+end
+
+-- The room the bar's shown steps leave after them, counted by their widths as the bar counts.
+local function RoomLeft(bar, steps)
+	local used = 0
+	for index, step in ipairs(steps) do
+		if step:IsShown() then
+			used = used + step:GetWidth()
+			if index < #steps then used = used + (step.xoffset or 0) end
+		end
+	end
+	return bar:GetWidth() - used - (steps[#steps].xoffset or 0) - CRUMB_TIP
+end
+
+-- The zone's step as the bar leaves its last: the current one, not a link.
+local function RestoreZoneStep()
+	local _, last = LocationBar()
+	if crumbZone and crumbZone == last then
+		crumbZone:Disable()
+		if crumbZone.selected then crumbZone.selected:Show() end
+	end
+	crumbZone = nil
+end
+
+local function MakeCrumb(bar)
+	local ok, step = pcall(CreateFrame, "Button", nil, bar, rawget(bar, "template") or "NavButtonTemplate")
+	if not (ok and step and step.text and step.MenuArrowButton and step.MenuArrowButton.SetupMenu) then return nil end
+	-- Not the template's own menu (NavButtonTemplate_OnShow): it would clear the bar's steps.
+	step:SetScript("OnShow", nil)
+	step.MenuArrowButton:SetupMenu(FillFloorMenu)
+	step.MenuArrowButton:Show()
+	-- The step the map is at, as the bar's last one is; a name cut short, whole on the mouse.
+	if step.selected then step.selected:Show() end
+	step:Disable()
+	if type(NavBar_ButtonOnEnter) == "function" then step:SetScript("OnEnter", NavBar_ButtonOnEnter) end
+	if type(NavBar_ButtonOnLeave) == "function" then step:SetScript("OnLeave", NavBar_ButtonOnLeave) end
+	return step
+end
+
+-- The step on the bar for menuText, if the bar has room for it: true when it shows.
+local function PlaceCrumb()
+	local bar, last, steps = LocationBar()
+	if not (menuText and last) then return false end
+	local overflow = rawget(bar, "overflowButton")
+	if overflow and overflow:IsShown() then return false end
+	crumb = crumb or MakeCrumb(bar)
+	if not crumb then return false end
+	crumb:SetText(menuText)
+	crumb.text:SetWidth(0)
+	local full = crumb.text:GetStringWidth()
+	local width = math.min(full, RoomLeft(bar, steps) - CRUMB_EXTRA)
+	if width < math.min(full, CRUMB_MIN_TEXT) then
+		crumb:Hide()
+		return false
+	end
+	crumb.text:SetWidth(width < full and width or 0)
+	crumb:SetWidth(width + CRUMB_EXTRA)
+	crumb:ClearAllPoints()
+	crumb:SetPoint("LEFT", last, "RIGHT", last.xoffset or 0, 0)
+	-- Under the zone's step, whose arrow's tip lies over it, as each step's does over the next.
+	crumb:SetFrameLevel(math.max(last:GetFrameLevel() - 1, bar:GetFrameLevel()))
+	if crumb.MenuArrowButton.GenerateMenu then crumb.MenuArrowButton:GenerateMenu() end
+	crumb:Show()
+	if crumbZone and crumbZone ~= last then RestoreZoneStep() end
+	last:Enable()
+	if last.selected then last.selected:Hide() end
+	if not hookedSteps[last] then
+		hookedSteps[last] = true
+		last:HookScript("PreClick", ZoneStepClicked)
+	end
+	crumbZone = last
+	return true
+end
+
+-- The floor menu where it fits: the bar's step, else beside the map pin button, else none.
+local function UpdateFloorMenu()
+	local menuOnBar = menuText ~= nil and menuMayBar and PlaceCrumb()
+	if not menuOnBar then
+		if crumb then crumb:Hide() end
+		RestoreZoneStep()
+	end
+	local dropdown = overlay and overlay.FloorDropdown
+	if not dropdown then return end
+	dropdown:SetShown(menuText ~= nil and not menuOnBar)
+	if menuText and not menuOnBar then
+		if dropdown.GenerateMenu then dropdown:GenerateMenu() end
+		if dropdown.SetText then dropdown:SetText(menuText) end
+	end
+end
+
+-- Follows the bar as it lays itself out again (a new map) or changes size (the map maximized).
+local barWatched
+local function WatchBar()
+	local bar = LocationBar()
+	if barWatched or not bar then return end
+	barWatched = true
+	hooksecurefunc("NavBar_CheckLength", function(laidOut)
+		if menuText and laidOut == (LocationBar()) then UpdateFloorMenu() end
+	end)
+	bar:HookScript("OnSizeChanged", function() if menuText then UpdateFloorMenu() end end)
+end
+
+-- The floor menu, with the current floor's name (or none: hidden); onBar false keeps it off the
+-- location bar (a dungeon shown over a zone not its own).
+local function ShowFloorMenu(text, onBar)
+	WatchBar()
+	menuText, menuMayBar = text, onBar ~= false
+	UpdateFloorMenu()
 end
 
 --[[
@@ -870,23 +1029,61 @@ local function ZoneName()
 	return nil
 end
 
--- The area below `mapID` the player is in: inside its picture, in a spot the streets above
--- do not name. Some spots below share a name with a street above (sharedAreas): once the
--- player has been seen below, those keep them there. Where the client gives no map at all
--- (the Deeprun Tram), the zone's name tells the place (zones), over any map.
+-- Indoors, as the client says: its minimap switches with it.
+local function PlayerIndoors()
+	if type(IsIndoors) ~= "function" then return false end
+	local ok, inside = pcall(IsIndoors)
+	inside = ok and ns.Readable(inside)
+	return inside == true or inside == 1
+end
+
+-- Whether a spot on the picture is in one of its claims ({ left, top, right, bottom }).
+local function Claims(subMap, px, py)
+	for _, box in ipairs(subMap.claims) do
+		if px >= box[1] and py >= box[2] and px <= box[3] and py <= box[4] then return true end
+	end
+	return false
+end
+
+--[[
+	The area below `mapID` the player is in: inside its picture, in a spot the streets above do
+	not name. Some spots below share a name with a street above (sharedAreas): once the player
+	has been seen below, those keep them there, as a spot the client names nothing does for a
+	picture marked unnamed (the door of Blackrock Depths). A building's map (indoors = true) shows
+	only inside it, the ground before its doors reading the same area name; names in indoorAreas
+	count only there (Blackrock Mountain's tunnels, named like the ground outside). Two pictures
+	over the same ground with the same name (Maraudon's two caves): the one with claims takes the
+	spots in them, the other the rest. Of the pictures over a spot, one whose claims take it comes
+	first, then one the player is kept in (come up from the Grinding Quarry, the doorway named
+	"Blackrock Mountain" is still the way down's), then one that names it, and last one with
+	claims that do not take it. Where the client gives no map at all (the Deeprun Tram), the
+	zone's name tells the place (zones), over any map.
+]]
 local function PlayerSubMap(mapID)
 	local playerMap, x, y = ns.PlayerMapPosition()
 	local below
 	if x then
 		local ok, area = pcall(GetSubZoneText)
 		area = ok and ns.Readable(area) or nil
+		local claimed, kept, yielding
 		for _, subMap in ipairs(ns.GetSubMaps()) do
-			if area and subMap.areas and subMap.parentMapID == playerMap and OnSubMap(subMap, x, y) and (ns.AreaIn(subMap.areas, area)
-				or (subMap == playerBelow and ns.AreaIn(subMap.sharedAreas, area))) then
-				below = subMap
-				break
+			local px, py
+			if subMap.parentMapID == playerMap then px, py = OnSubMap(subMap, x, y) end
+			if area and subMap.areas and px and (not subMap.indoors or PlayerIndoors()) then
+				local named = ns.AreaIn(subMap.areas, area) or (ns.AreaIn(subMap.indoorAreas, area) and PlayerIndoors())
+				if not named and subMap == playerBelow
+					and (ns.AreaIn(subMap.sharedAreas, area) or (subMap.unnamed and area == "")) then
+					kept = subMap
+				elseif named and not subMap.claims then
+					below = below or subMap
+				elseif named and Claims(subMap, px, py) then
+					claimed = claimed or subMap
+				elseif named then
+					yielding = yielding or subMap
+				end
 			end
 		end
+		below = claimed or kept or below or yielding
 	elseif not playerMap then
 		local zone = ZoneName()
 		for _, subMap in ipairs(ns.GetSubMaps()) do
@@ -901,6 +1098,50 @@ local function PlayerSubMap(mapID)
 	return nil
 end
 
+--[[
+	Doors that close on the map shown are one icon: the Scarlet Monastery's four wings share one
+	door, and the dungeons inside Blackrock Mountain another. Its tooltip lists them all, and a
+	left click offers them to choose from. So do a picture's doors (the Spire's, for Lower and
+	Upper Blackrock Spire).
+]]
+
+-- What a shared door is called: the building its wings are named after ("Scarlet Monastery:
+-- Library"), else the place they all are (Blackrock Mountain).
+local function Building(name)
+	return name:match("^(.-)%s*\239\188\154") or name:match("^(.-)%s*:")
+end
+
+local function SharedDoorName(instances)
+	local building, location = Building(instances[1].name), instances[1].location
+	for _, instance in ipairs(instances) do
+		if Building(instance.name) ~= building then building = nil end
+		if instance.location ~= location then location = nil end
+	end
+	return building or location or instances[1].name
+end
+DungeonMap.SharedDoorName = SharedDoorName
+
+-- Each dungeon behind a shared door on its own line, with its level range.
+local function AddDoorLines(instances)
+	for _, instance in ipairs(instances) do
+		local range = instance.levelMin and string.format(L.LEVEL_RANGE, instance.levelMin, instance.levelMax or instance.levelMin) or ""
+		GameTooltip:AddDoubleLine(instance.name, range, 1, 1, 1, 1, 0.82, 0)
+	end
+end
+
+-- A left click on a shared door: a menu of its dungeons. False where the client has no menus.
+local function ChooseDoor(owner, instances)
+	if not (MenuUtil and MenuUtil.CreateContextMenu) then return false end
+	GameTooltip:Hide()
+	MenuUtil.CreateContextMenu(owner, function(_, root)
+		root:CreateTitle(SharedDoorName(instances))
+		for _, instance in ipairs(instances) do
+			root:CreateButton(instance.name, function() DungeonMap:OpenInstance(instance) end)
+		end
+	end)
+	return true
+end
+
 -- A dungeon's door on a sub-map's picture: retail's dungeon icon; a click opens the journal.
 local function SubMapDoor(index)
 	local door = overlay.Doors[index]
@@ -913,16 +1154,28 @@ local function SubMapDoor(index)
 		door.Texture:SetAtlas(DUNGEON_ATLAS)
 		door:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight", "ADD")
 		door:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+		-- One door to several dungeons (Lower and Upper Blackrock Spire): each by name, a left
+		-- click to choose from them, as on the zone maps.
 		door:SetScript("OnEnter", function(self)
 			GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-			GameTooltip:SetText(self.instance.name, 1, 1, 1)
-			GameTooltip:AddLine(EntranceDescription(self.instance), 1, 0.82, 0)
-			GameTooltip:AddLine(L.ENTRANCE_LEFT_CLICK, 0.1, 1, 0.1)
+			if #self.instances > 1 then
+				GameTooltip:SetText(SharedDoorName(self.instances), 1, 1, 1)
+				AddDoorLines(self.instances)
+				GameTooltip:AddLine(L.ENTRANCE_CHOOSE_LEFT_CLICK, 0.1, 1, 0.1)
+			else
+				GameTooltip:SetText(self.instance.name, 1, 1, 1)
+				GameTooltip:AddLine(EntranceDescription(self.instance), 1, 0.82, 0)
+				GameTooltip:AddLine(L.ENTRANCE_LEFT_CLICK, 0.1, 1, 0.1)
+			end
 			GameTooltip:Show()
 		end)
 		door:SetScript("OnLeave", function() GameTooltip:Hide() end)
 		door:SetScript("OnClick", function(self, button)
-			if button == "RightButton" then Dismiss() else DungeonMap:OpenInstance(self.instance) end
+			if button == "RightButton" then
+				Dismiss()
+			elseif not (#self.instances > 1 and ChooseDoor(self, self.instances)) then
+				DungeonMap:OpenInstance(self.instance)
+			end
 		end)
 		overlay.Doors[index] = door
 	end
@@ -946,6 +1199,10 @@ local function UpdatePlayerArrow()
 	local mapID, x, y = ns.PlayerMapPosition()
 	local px, py
 	if subMap.parentMapID and mapID == subMap.parentMapID and x then px, py = OnSubMap(subMap, x, y) end
+	-- Another level than the player's, chosen from the menu: they are not on it.
+	if px and subMap.levels and playerBelow and playerBelow.levels == subMap.levels and playerBelow.level ~= subMap.level then
+		px = nil
+	end
 	if not px then
 		pin:Hide()
 		return
@@ -963,20 +1220,37 @@ local function DrawSubMap(subMap)
 	DrawArt(subMap)
 	for _, pin in ipairs(overlay.Pins) do pin:Hide() end
 	for _, spot in ipairs(overlay.Transitions) do spot:Hide() end
+	for _, spot in ipairs(overlay.QuestSpots) do spot:Hide() end
 	overlay.Here:Hide()
-	if overlay.FloorDropdown then overlay.FloorDropdown:Hide() end
-	local scale, count = PinScale(), 0
-	for key, point in pairs(subMap.instances) do
+	-- Levels (Blackrock Mountain's): a menu of them, as a dungeon's floors have.
+	ShowFloorMenu(subMap.levels and LevelName(subMap.levels[subMap.level]) or nil)
+	-- Dungeons that share a door on the picture are one door, their names in order; a dungeon with
+	-- several doors on it (a list of points: Dire Maul's west and east wings) has an icon on each.
+	local spots = {}
+	for key, points in pairs(subMap.instances) do
 		local instance = ns.GetInstance(key)
-		if instance then
-			count = count + 1
-			local door = SubMapDoor(count)
-			door.instance = instance
-			Place(door, point.x, point.y, scale)
-			door:Show()
+		for _, point in ipairs(instance and (points[1] and points or { points }) or {}) do
+			local spot
+			for _, other in ipairs(spots) do
+				if other.x == point.x and other.y == point.y then spot = other end
+			end
+			if not spot then
+				spot = { x = point.x, y = point.y, instances = {} }
+				spots[#spots + 1] = spot
+			end
+			spot.instances[#spot.instances + 1] = instance
 		end
 	end
-	for extra = count + 1, #overlay.Doors do overlay.Doors[extra]:Hide() end
+	table.sort(spots, function(a, b) return a.x < b.x or (a.x == b.x and a.y < b.y) end)
+	local scale = PinScale()
+	for index, spot in ipairs(spots) do
+		table.sort(spot.instances, function(a, b) return a.name < b.name end)
+		local door = SubMapDoor(index)
+		door.instance, door.instances = spot.instances[1], spot.instances
+		Place(door, spot.x, spot.y, scale)
+		door:Show()
+	end
+	for extra = #spots + 1, #overlay.Doors do overlay.Doors[extra]:Hide() end
 	overlay:Show()
 	UpdatePlayerArrow()
 	if not overlay.playerTicker and C_Timer.NewTicker then
@@ -1010,7 +1284,7 @@ local function UpdateOverlay()
 		if overlay then
 			overlay:Hide()
 			overlay.instance, overlay.subMap = nil, nil
-			if overlay.FloorDropdown then overlay.FloorDropdown:Hide() end
+			ShowFloorMenu(nil)
 			StopPlayerArrow()
 		end
 		return
@@ -1036,12 +1310,11 @@ local function UpdateOverlay()
 	overlay:Show()
 	TuckAfterDraw()
 
-	local dropdown = overlay.FloorDropdown
-	if dropdown then
-		dropdown:SetShown(#floors > 1)
-		if #floors > 1 and dropdown.GenerateMenu then dropdown:GenerateMenu() end
-		if #floors > 1 and dropdown.SetText then dropdown:SetText(FloorName(instance, index)) end
-	end
+	-- On the location bar only over the dungeon's own zone (where the journal opens it, if its door
+	-- is known), not after a zone it is not in.
+	local entrance = forced and forced.instance == instance and DungeonMap:Entrance(instance)
+	ShowFloorMenu(#floors > 1 and FloorName(instance, index) or nil,
+		not (forced and forced.instance == instance) or (entrance ~= nil and entrance.mapID == mapID))
 end
 
 ------------------------------------------------------------------------------------------
@@ -1051,21 +1324,23 @@ end
 local ProviderMethods = {}
 
 -- The area the player stands in matters only while the map is open: listen only then.
-local ZONE_EVENTS = { "ZONE_CHANGED", "ZONE_CHANGED_INDOORS", "ZONE_CHANGED_NEW_AREA" }
+-- MINIMAP_UPDATE_ZOOM: the player stepping indoors or out, as the minimap follows it.
+local ZONE_EVENTS = { "ZONE_CHANGED", "ZONE_CHANGED_INDOORS", "ZONE_CHANGED_NEW_AREA", "MINIMAP_UPDATE_ZOOM" }
 local zoneWatch = CreateFrame("Frame")
 -- Walking down into an area below the zone, or back up, changes what the map shows.
 zoneWatch:SetScript("OnEvent", function() UpdateOverlay() end)
 
 function ProviderMethods:OnShow()
-	dismissed, homeMapID = false, nil
 	ns.RegisterEvents(zoneWatch, unpack(ZONE_EVENTS))
 end
 
+-- What one opening of the map chose (a dungeon shown, the overlay put away, the map it opened on)
+-- ends as it closes: the client draws the map before it tells its providers it shows.
 function ProviderMethods:OnHide()
 	ns.UnregisterEvents(zoneWatch, unpack(ZONE_EVENTS))
-	forced, homeMapID = nil, nil
+	forced, dismissed, homeMapID = nil, false, nil
 	if overlay then overlay:Hide() end
-	if overlay and overlay.FloorDropdown then overlay.FloorDropdown:Hide() end
+	ShowFloorMenu(nil)
 	StopPlayerArrow()
 end
 
@@ -1118,9 +1393,29 @@ end
 local ENTRANCE_PIN_TEMPLATE = "AegisJournalEntrancePinTemplate"
 local ENTRANCE_CVAR = "showDungeonEntrancesOnMap"
 local MAP_TYPE_CONTINENT, MAP_TYPE_ZONE = 2, 3
--- Retail's cave entrance (its map legend's "Cave"), for the way down to an area below a zone.
+-- Retail's cave entrance (its map legend's "Cave"), for the way down to an area below a zone;
+-- a building's way in (icon = "building": the Scarlet Monastery's hall) shows retail's delve
+-- entrance, or the cave where the client lacks it.
 local CAVE_PIN_TEMPLATE = "AegisJournalCavePinTemplate"
 local CAVE_ATLASES = { "CaveUnderground-Up", "CaveUnderground-Down" }
+local BUILDING_ATLASES = { "delves-regular", "CaveUnderground-Up", "CaveUnderground-Down" }
+
+-- A building's way in, not a cave's way down.
+local function IsBuilding(subMap)
+	return subMap ~= nil and subMap.icon == "building"
+end
+
+-- Its legend entry's kind: "building" (Entrance) or "cave" (Cave Entrance).
+local function WayKind(subMap)
+	return IsBuilding(subMap) and "building" or "cave"
+end
+
+-- A dungeon reached through an area below the zone, or a building, says where the way in is.
+local function AddViaLine(instance)
+	local via = instance.via and ns.GetSubMap(instance.via)
+	if not via then return end
+	GameTooltip:AddLine(string.format(IsBuilding(via) and L.ENTRANCE_VIA_BUILDING or L.ENTRANCE_VIA, via.name), 1, 1, 1, true)
+end
 local LEGEND_GLOW_ATLAS = "UI-QuestPoi-OuterGlow"
 
 --[[
@@ -1241,28 +1536,8 @@ local function ClearAreaLabel(pin)
 	end
 end
 
---[[
-	Doors that close on the map shown are one icon: the Scarlet Monastery's four wings share one
-	door, and the dungeons inside Blackrock Mountain another. Its tooltip lists them all, and a
-	left click offers them to choose from.
-]]
+-- Doors closer than this on the map shown are one icon (a shared door, above).
 local SHARED_DOOR = 0.01
-
--- What a shared door is called: the building its wings are named after ("Scarlet Monastery:
--- Library"), else the place they all are (Blackrock Mountain).
-local function Building(name)
-	return name:match("^(.-)%s*\239\188\154") or name:match("^(.-)%s*:")
-end
-
-local function SharedDoorName(instances)
-	local building, location = Building(instances[1].name), instances[1].location
-	for _, instance in ipairs(instances) do
-		if Building(instance.name) ~= building then building = nil end
-		if instance.location ~= location then location = nil end
-	end
-	return building or location or instances[1].name
-end
-DungeonMap.SharedDoorName = SharedDoorName
 
 -- "Dungeons  Level 30-45": the range they span together.
 local function SharedDoorDescription(instances)
@@ -1285,10 +1560,8 @@ local function ShowSharedDoorTooltip(pin)
 	GameTooltip:SetOwner(pin, "ANCHOR_RIGHT")
 	GameTooltip:SetText(name, 1, 1, 1)
 	GameTooltip:AddLine(description, 1, 0.82, 0)
-	for _, instance in ipairs(instances) do
-		local range = instance.levelMin and string.format(L.LEVEL_RANGE, instance.levelMin, instance.levelMax or instance.levelMin) or ""
-		GameTooltip:AddDoubleLine(instance.name, range, 1, 1, 1, 1, 0.82, 0)
-	end
+	AddDoorLines(instances)
+	AddViaLine(instances[1])
 	GameTooltip:AddLine(L.ENTRANCE_CHOOSE_LEFT_CLICK, 0.1, 1, 0.1)
 	GameTooltip:AddLine(L.ENTRANCE_RIGHT_CLICK, 0.1, 1, 0.1)
 	GameTooltip:Show()
@@ -1302,9 +1575,7 @@ local function ShowEntranceTooltip(pin)
 	GameTooltip:SetOwner(pin, "ANCHOR_RIGHT")
 	GameTooltip:SetText(instance.name, 1, 1, 1)
 	GameTooltip:AddLine(description, 1, 0.82, 0)
-	-- A dungeon reached through an area below the zone says where the way down is.
-	local via = instance.via and ns.GetSubMap(instance.via)
-	if via then GameTooltip:AddLine(string.format(L.ENTRANCE_VIA, via.name), 1, 1, 1, true) end
+	AddViaLine(instance)
 	GameTooltip:AddLine(L.ENTRANCE_LEFT_CLICK, 0.1, 1, 0.1)
 	GameTooltip:AddLine(L.ENTRANCE_RIGHT_CLICK, 0.1, 1, 0.1)
 	GameTooltip:Show()
@@ -1353,7 +1624,11 @@ function DungeonMap:SetWaypoint(instance, title)
 		local wayMapID, x, y = WayPoint(via)
 		if not x then return false end
 		SetWaypointAt(wayMapID, x, y, via.name)
-		ns.Print(string.format(L.ENTRANCE_WAYPOINT_VIA, via.name, instance.name))
+		if IsBuilding(via) then
+			ns.Print(string.format(L.ENTRANCE_WAYPOINT_SET, title or via.name))
+		else
+			ns.Print(string.format(L.ENTRANCE_WAYPOINT_VIA, via.name, instance.name))
+		end
 		return true
 	end
 	local entrance = self:Entrance(instance)
@@ -1371,6 +1646,23 @@ function DungeonMap:ShowSubMap(subMap)
 	ns.PlaySoundKit("IG_QUEST_LOG_OPEN")
 	provider:RefreshAllData()
 	return true
+end
+
+-- Another level of an area below a zone, from its menu: that level's picture over the map shown,
+-- the one the client places on this zone where the level has one here.
+function DungeonMap:ShowLevel(subMap, index)
+	local mapID = WorldMapFrame:GetMapID()
+	local choice
+	for _, other in ipairs(ns.GetSubMaps()) do
+		if other.levels == subMap.levels and other.level == index then
+			if other.parentMapID == mapID then
+				choice = other
+				break
+			end
+			choice = choice or other
+		end
+	end
+	return choice ~= nil and self:ShowSubMap(choice)
 end
 
 -- The art at the atlas's size (32 when the client gives none), the pin no bigger than the icon in it.
@@ -1447,33 +1739,28 @@ function EntrancePinMethods:OnMouseClickAction(button)
 	local instances = self.instances
 	if button == "RightButton" then
 		DungeonMap:SetWaypoint(self.instance, #instances > 1 and SharedDoorName(instances) or nil)
-	elseif #instances > 1 and MenuUtil and MenuUtil.CreateContextMenu then
-		GameTooltip:Hide()
-		MenuUtil.CreateContextMenu(self, function(_, root)
-			root:CreateTitle(SharedDoorName(instances))
-			for _, instance in ipairs(instances) do
-				root:CreateButton(instance.name, function() DungeonMap:OpenInstance(instance) end)
-			end
-		end)
-	else
+	elseif not (#instances > 1 and ChooseDoor(self, instances)) then
 		DungeonMap:OpenInstance(self.instance)
 	end
 end
 
--- The way down to an area below a zone: retail's cave entrance. A left click shows the area's
--- map, a right click sets a waypoint to the way down.
+-- The way into an area below a zone: retail's cave entrance, or a building's delve entrance
+-- (icon = "building"). A left click shows the area's map, a right click sets a waypoint to its
+-- way in.
 AegisJournalCavePinMixin = {}
 local CavePinMethods = {}
 
 CavePinMethods.OnLoad = EntrancePinMethods.OnLoad
 CavePinMethods.ShowMapLegendGlow = EntrancePinMethods.ShowMapLegendGlow
 CavePinMethods.HideMapLegendGlow = EntrancePinMethods.HideMapLegendGlow
-function CavePinMethods:LegendKind() return "cave" end
+-- Its legend entry, Cave Entrance or Entrance (a building's); the client's legend matches it by style.
+function CavePinMethods:LegendKind() return WayKind(self.subMap) end
+function CavePinMethods:GetStyle() return self:LegendKind() end
 
 function CavePinMethods:OnAcquired(subMap, x, y)
 	self.subMap, self.wayX, self.wayY = subMap, x, y
 	self:HideMapLegendGlow()
-	for _, atlas in ipairs(CAVE_ATLASES) do
+	for _, atlas in ipairs(IsBuilding(subMap) and BUILDING_ATLASES or CAVE_ATLASES) do
 		if ns.AtlasExists(atlas) then
 			self.Texture:SetAtlas(atlas, true)
 			self.HighlightTexture:SetAtlas(atlas, true)
@@ -1489,17 +1776,26 @@ CavePinMethods.CheckMouseButtonPassthrough = DungeonMap.CheckMouseButtonPassthro
 
 function CavePinMethods:OnMouseEnter()
 	local subMap = self.subMap
-	SetAreaLabel(self, subMap.name, L.CAVE_LABEL)
+	SetAreaLabel(self, subMap.name, IsBuilding(subMap) and L.BUILDING_LABEL or L.CAVE_LABEL)
 	GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
 	GameTooltip:SetText(subMap.name, 1, 1, 1)
+	-- Each dungeon it leads to, by name (the Scarlet Monastery's hall leads to four), with those
+	-- further in, on another of its pictures (alsoLeadsTo: Blackrock Depths, below the ring).
+	local leadsTo = {}
 	for key in pairs(subMap.instances) do
 		local instance = ns.GetInstance(key)
-		if instance then GameTooltip:AddLine(string.format(L.CAVE_LEADS_TO, instance.name), 1, 0.82, 0) end
+		if instance then leadsTo[#leadsTo + 1] = instance.name end
 	end
+	for _, key in ipairs(subMap.alsoLeadsTo or {}) do
+		local instance = ns.GetInstance(key)
+		if instance then leadsTo[#leadsTo + 1] = instance.name end
+	end
+	table.sort(leadsTo)
+	for _, name in ipairs(leadsTo) do GameTooltip:AddLine(string.format(L.CAVE_LEADS_TO, name), 1, 0.82, 0) end
 	GameTooltip:AddLine(string.format(L.CAVE_LEFT_CLICK, subMap.name), 0.1, 1, 0.1)
 	GameTooltip:AddLine(L.ENTRANCE_RIGHT_CLICK, 0.1, 1, 0.1)
 	GameTooltip:Show()
-	ns.MapLegend:PinEnter("cave")
+	ns.MapLegend:PinEnter(self:LegendKind())
 end
 
 CavePinMethods.OnMouseLeave = EntrancePinMethods.OnMouseLeave
@@ -1508,7 +1804,7 @@ function CavePinMethods:OnMouseClickAction(button)
 	local subMap = self.subMap
 	if button == "RightButton" then
 		SetWaypointAt(self:GetMap():GetMapID(), self.wayX, self.wayY, subMap.name)
-		ns.Print(string.format(L.CAVE_WAYPOINT_SET, subMap.name))
+		ns.Print(string.format(IsBuilding(subMap) and L.ENTRANCE_WAYPOINT_SET or L.CAVE_WAYPOINT_SET, subMap.name))
 	else
 		DungeonMap:ShowSubMap(subMap)
 	end
@@ -1561,10 +1857,13 @@ function EntranceProviderMethods:RefreshAllData()
 			map:AcquirePin(ENTRANCE_PIN_TEMPLATE, door.instances[1], door.x, door.y, door.instances)
 		end
 	end
-	-- Caves show on their own zone's map only, as on retail.
-	for _, subMap in ipairs(ns.MapLegend.Shows("cave") and ns.GetSubMaps() or {}) do
+	-- Caves and buildings' entrances show on their own zone's map only, as on retail; each kind
+	-- hidden from the map legend on its own.
+	for _, subMap in ipairs(ns.GetSubMaps()) do
 		local wayMapID, x, y = WayPoint(subMap)
-		if wayMapID == mapID and x then map:AcquirePin(CAVE_PIN_TEMPLATE, subMap, x, y) end
+		if wayMapID == mapID and x and ns.MapLegend.Shows(WayKind(subMap)) then
+			map:AcquirePin(CAVE_PIN_TEMPLATE, subMap, x, y)
+		end
 	end
 end
 
@@ -1617,7 +1916,12 @@ function DungeonMap:Show(instance, floorIndex)
 	local floor = floors[floorIndex or 1] or floors[1]
 	if self:IsNative(floor) then return OpenWorld(floor.uiMapID) end
 
-	if not WorldMapFrame:IsShown() and not OpenWorld(nil) then return false end
+	-- On the dungeon's own zone, where its door is known: the map's location bar then reads
+	-- "... > Silverpine Forest > The Courtyard", and putting the dungeon away shows its door.
+	local entrance = self:Entrance(instance)
+	if not (entrance and entrance.mapID and OpenWorld(entrance.mapID)) then
+		if not WorldMapFrame:IsShown() and not OpenWorld(nil) then return false end
+	end
 	chosenFloor[instance.key] = floorIndex or chosenFloor[instance.key]
 	forced = { instance = instance, mapID = WorldMapFrame:GetMapID(), floor = floorIndex or 1 }
 	dismissed = false
@@ -1630,13 +1934,18 @@ function DungeonMap:Overlay()
 	return overlay
 end
 
+-- The floor menu's step on the map's location bar, once made.
+function DungeonMap:FloorStep()
+	return crumb
+end
+
 ------------------------------------------------------------------------------------------
 -- Events
 ------------------------------------------------------------------------------------------
 
 -- Being below a zone depends on the streets the player walked through, so inside a zone with
 -- an area below, its streets are followed even while the map is closed.
-local BELOW_EVENTS = { "ZONE_CHANGED", "ZONE_CHANGED_INDOORS" }
+local BELOW_EVENTS = { "ZONE_CHANGED", "ZONE_CHANGED_INDOORS", "MINIMAP_UPDATE_ZOOM" }
 local belowWatch = CreateFrame("Frame")
 belowWatch:SetScript("OnEvent", function() PlayerSubMap() end)
 

@@ -12,6 +12,54 @@ and the version shown in the AddOns list. Quote it in bug reports.
 
 ---
 
+## [0.38.0] (restart)
+
+### Added
+- **Where it drops**: an item's tooltip names the boss and dungeon that drop it, wherever the game
+  shows the item: your bags, the character sheet, chat links, loot and merchants. "Drops from Edwin
+  VanCleef in The Deadmines", or how many bosses there drop it, or the dungeons for an item found in
+  several. On by default, with a box in the journal's options to turn it off.
+- **The journal docks like the game's own windows** *(player request)*: it opens at the top left,
+  moves aside when one of the game's windows opens there, and comes back when that one closes. Drag
+  it to put it anywhere until it closes. To have it open where you last left it, as before, untick
+  the option in the journal's options or type `/aegis dock`. It works in combat too.
+- **Maps of the ways in**: inside the Wailing Caverns' cave, Uldaman's dig, Maraudon's two caves
+  (orange and purple), Blackrock Mountain and the ruins of Dire Maul, the world map shows Blizzard's
+  own drawn map of the place, with your arrow and the dungeon doors. It changes as you walk in and out.
+- **The Scarlet Monastery's hall**, redrawn for the classic four wings: the passages to the
+  Cathedral and the Armory drawn back in, each wing's door at its own portal, and sketches of a
+  Scarlet crusader and the Ashbringer. It shows once you step inside.
+- **Blackrock Mountain's two levels**: the upper ring with the Spire's door, and the level below with
+  the Depths' door. Pick one as a new step of the world map's location bar: "World > Eastern
+  Kingdoms > Burning Steppes > Blackrock Spire". A dungeon's floors are picked there too.
+- Entrance icons: a cave's way in gets the cave entrance icon, and a building's or hall's (the
+  Scarlet Monastery, Blackrock Mountain's two gates, Dire Maul's ruins, Old Ironforge, the Defias
+  Hideout) the delve entrance icon. The map legend has an Entrance entry beside Cave Entrance, each
+  turning its own icons on and off.
+
+### Changed
+- Dungeon doors stand on their portals: the Wailing Caverns', Uldaman's, Maraudon's, and each of
+  Dire Maul's three wings, which all shared one spot south of the ruins. On the ruins' map every
+  doorway has its own icon.
+- The journal's Map button opens a dungeon on its own zone's map.
+- `/aegis reset` puts a docked window you dragged loose straight back into its place.
+- The new maps' rooms are named in every language the journal speaks.
+- Maps drawn for the journal, like the Scarlet Monastery's hall, are signed "Redrawn by Torchlite"
+  and are all rights reserved; the code stays MIT. See LICENSE-MAPS.md.
+- On games in other languages, abilities nobody has written alerts for get them from the ability's
+  English name, as on an English game.
+- Recordings and `/aegis gearscan` note your game's language, and the gear scan and `/aegis items`
+  save dungeon and boss names in English.
+
+### Fixed
+- Previewing a language with `/aegis lang` now changes only the journal's own words. Before, the
+  preview also changed what the journal reads from the game: the Gear Finder and the upgrades on item
+  tooltips misread item stats, the dungeon map lost track of the room you were in, and some bosses
+  weren't marked when killed. All of that now follows your game's language.
+- On a game in another language, the quartermasters you captured stay with their factions after a
+  reload. Before, they dropped out at your next reload.
+- Search finds an ability by the spell name its page shows, as well as by the journal's name for it.
+
 ## [0.37.0] (restart)
 
 ### Added

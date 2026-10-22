@@ -165,6 +165,8 @@ end
 -- player chose it for its slot.
 local function ShowEntryTooltip(owner, entry, anchor, clickText, picked)
 	ns.ItemTooltip:UseCompare(owner, entry.link, entry.compare)
+	-- Its own line below says where it drops, and a click opens that place.
+	ns.ItemTooltip:UseSource(owner, entry.itemID)
 	GameTooltip:SetOwner(owner, anchor or "ANCHOR_RIGHT")
 	GameTooltip:SetHyperlink(entry.link)
 	GameTooltip:AddLine(entry.instance.name .. " \194\183 " .. SourceName(entry), 1, 0.82, 0)
@@ -225,6 +227,7 @@ local function ShowCellTooltip(cell)
 	end
 	-- No upgrade: what is worn, as the sheet's own slot shows it, with what it is worth.
 	ns.ItemTooltip:UseCompare(cell, nil)
+	ns.ItemTooltip:UseSource(cell, nil)
 	GameTooltip:SetOwner(cell, anchor)
 	local slotID = cell.def.slot
 	if GetInventoryItemLink("player", slotID) then

@@ -10,8 +10,9 @@ local L = ns.L
 	The client also names any area by its id (C_Map.GetAreaInfo), in its own language. ns.AREA_IDS
 	(Data/Generated/AreaIDs.lua) gives each English name its ids, found once by /aegis areas on an
 	English client: from them every client knows its own names for the journal's areas, Forever's
-	new ones too, without a translation. A name without an id is taken from the translation
-	(L.AREA_NAMES, English -> the client's language), else left as it is.
+	new ones too, without a translation. A name without an id is taken from the client's language's
+	translation (ns.ClientL.AREA_NAMES, English -> the client's language, whichever language the
+	journal previews), else left as it is.
 ]]
 
 local Areas = {}
@@ -50,6 +51,7 @@ function ns.AreaNamesUsed()
 	end
 	for _, subMap in ipairs(ns.GetSubMaps()) do
 		Keys(subMap.areas)
+		Keys(subMap.indoorAreas)
 		Keys(subMap.sharedAreas)
 		Keys(subMap.zones)
 	end
@@ -66,7 +68,8 @@ function ns.AreaName(english)
 		local name = AreaInfo(areaID)
 		if name then return name end
 	end
-	return L.AREA_NAMES and L.AREA_NAMES[english] or english
+	local translated = ns.ClientL.AREA_NAMES
+	return translated and translated[english] or english
 end
 
 -- For each name the client may give an area, the journal's English names it stands for: one
@@ -91,7 +94,7 @@ local function Reverse()
 			local localized = AreaInfo(areaID)
 			if localized then Add(localized, english) end
 		end
-		local translated = L.AREA_NAMES and L.AREA_NAMES[english]
+		local translated = ns.ClientL.AREA_NAMES and ns.ClientL.AREA_NAMES[english]
 		if translated then Add(translated, english) end
 	end
 	return reverse

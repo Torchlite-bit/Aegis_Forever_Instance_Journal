@@ -503,6 +503,7 @@ function GearFinder:Scan()
 	local scan = {
 		build = select(4, GetBuildInfo()) or 0, version = (GetBuildInfo()), class = IS:Class(), level = IS:Level(),
 		spec = spec, specWhy = why, talentSpec = IS:TalentSpec(IS:Class()) or false, dualWield = IS:CanDualWield(),
+		locale = GetLocale(), preview = ns.previewLocale or false,
 		worn = {}, drops = {}, unknownKeys = {}, errors = {},
 	}
 	ns.db.gearScan = scan
@@ -530,7 +531,7 @@ function GearFinder:Scan()
 						if not info or info.pending then
 							waiting = waiting + 1
 						elseif info.kind == "EQUIPMENT" and info.link then
-							Add(scan.drops, info.link, instance.name .. " / " .. boss.name)
+							Add(scan.drops, info.link, (instance.enName or instance.name) .. " / " .. (boss.enName or boss.name))
 						end
 					end
 				end

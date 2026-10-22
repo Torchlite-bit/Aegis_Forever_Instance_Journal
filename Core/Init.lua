@@ -117,6 +117,11 @@ SlashCmdList.AEGISJOURNAL = function(message)
 	elseif command == "reset" then
 		ns.Journal:ResetPosition()
 		ns.Print(L.POSITION_RESET)
+	elseif command == "dock" then
+		local on = not ns.Journal:IsDocked()
+		local waits = ns.Journal:SetDocked(on)
+		ns.Print(on and L.DOCK_ON or L.DOCK_OFF)
+		if waits then ns.Print(L.DOCK_AFTER_COMBAT) end
 	elseif command == "perf" then
 		ns.Perf:Run()
 	elseif command == "where" then
@@ -151,9 +156,14 @@ events:SetScript("OnEvent", function(self, event, arg1)
 	if event == "ADDON_LOADED" then
 		if arg1 == addonName then
 			InitSavedVariables()
-			-- The content in the client's language, where the journal has it. A mistake in a
-			-- translation is reported, and the journal still opens.
-			local ok, problem = pcall(ns.ApplyLocale)
+			-- The content in the journal's language, where it has it. A mistake in a translation is
+			-- reported, and the journal still opens. The quartermasters the player captured join
+			-- their factions first, known by the client's names for them, so the translation covers
+			-- what they add.
+			local ok, problem = pcall(ns.KeepClientNames)
+			if not ok then geterrorhandler()(problem) end
+			ns.Recorder:ShareVendors()
+			ok, problem = pcall(ns.ApplyLocale)
 			if not ok then geterrorhandler()(problem) end
 			self:UnregisterEvent("ADDON_LOADED")
 		end
