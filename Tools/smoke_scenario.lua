@@ -2275,6 +2275,21 @@ do
 	local onDesolace = WorldMapFrame:ActivePins("AegisJournalEntrancePinTemplate")
 	check(#onDesolace == 1 and onDesolace[1].instance.key == "Maraudon", "and shown there")
 	check(ns.DungeonMap:Entrance(ns.GetInstance("ZulFarrak")) == nil, "a door on a map the client does not have stays off it")
+	-- Dire Maul's wings, each over its own portal in the ruins: three doors on Feralas, not one
+	local wings = {}
+	for _, key in ipairs({ "DireMaulNorth", "DireMaulEast", "DireMaulWest" }) do
+		local wing = ns.DungeonMap:Entrance(ns.GetInstance(key))
+		wings[#wings + 1] = wing and wing.mapID == 1444 and string.format("%.3f,%.3f", wing.x, wing.y) or "none"
+	end
+	check(table.concat(wings, " ") == string.format("%.3f,%.3f %.3f,%.3f %.3f,%.3f", (-3519.95 + 4100) / 700, (1089.93 - 700) / 700,
+		(-3759.69 + 4100) / 700, (934.93 - 700) / 700, (-3790 + 4100) / 700, (1247 - 700) / 700),
+		"Dire Maul's three wings, each over its own portal: " .. table.concat(wings, " "))
+	WorldMapFrame:SetMapID(1444)
+	local maulDoors = {}
+	for _, pin in ipairs(WorldMapFrame:ActivePins("AegisJournalEntrancePinTemplate")) do
+		if pin.instance.key:find("^DireMaul") then maulDoors[#maulDoors + 1] = #pin.instances end
+	end
+	check(#maulDoors == 3 and maulDoors[1] == 1 and maulDoors[2] == 1 and maulDoors[3] == 1, "three doors on Feralas, one a wing")
 end
 WorldMapFrame:SetMapID(947)
 check(#WorldMapFrame:ActivePins("AegisJournalEntrancePinTemplate") == 0, "and none on the world map itself, as on retail")

@@ -1059,6 +1059,7 @@ Mock.maps = {
 	-- Its world rectangle lies the other way round from a door's (x, y) as the game's data gives
 	-- them, so a door lands on it only with its axes swapped.
 	[1443] = { name = "Desolace", mapType = 3, parent = 1414, continent = 1, left = 2500, top = -1700, width = 700, height = 700 },
+	[1444] = { name = "Feralas", mapType = 3, parent = 1414, continent = 1, left = -4100, top = 700, width = 700, height = 700 },
 }
 function CreateVector2D(x, y)
 	return { x = x, y = y, GetXY = function(self) return self.x, self.y end }

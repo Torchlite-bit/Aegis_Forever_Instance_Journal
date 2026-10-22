@@ -400,3 +400,17 @@ for _, key in ipairs({ "ScarletMonasteryGraveyard", "ScarletMonasteryLibrary", "
 		})
 	end
 end
+
+--[[
+	Dire Maul's three wings, each door over its own portal in the ruins on Feralas, where the
+	game's own triggers stand (classic's 3189 for the north wing, 3183 for the east, and 3186 and
+	3187 for the west wing's two doorways side by side: its door between them, as retail's later
+	single trigger 6369 has it). Their data had all three at one spot well south of the ruins.
+]]
+for key, world in pairs({
+	DireMaulNorth = { 1, -3519.95, 1089.93 },
+	DireMaulEast = { 1, -3759.69, 934.93 },
+	DireMaulWest = { 1, -3790.0, 1247.0 },
+}) do
+	if ns.GetInstance(key) then ns.AmendInstance(key, { zoneEntrance = { mapID = 1444, world = world } }) end
+end
